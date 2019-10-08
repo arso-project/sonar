@@ -123,7 +123,7 @@ function sonarView (lvl, cstore, opts) {
         //     body = body + ' ' + value[name]
         //   }
         // }
-        let title
+        let title = ""
         if (value.title) title = objectToString(value.title)
         else if (value.label) title = objectToString(value.label)
 
