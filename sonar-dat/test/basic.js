@@ -39,7 +39,7 @@ tape('basic', t => {
             cb(err)
           })
         })
-      }, 100)
+      }, 1000)
 
       function finish (err) {
         t.error(err, 'finish ok')
