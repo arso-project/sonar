@@ -79,6 +79,11 @@ class IslandManager {
     })
   }
 
+  openByKey (key, cb) {
+    const island = this.open(key)
+    island.ready(err => cb(err, island))
+  }
+
   open (key, opts) {
     if (typeof opts === 'function') return this.open(key, {}, opts)
     key = hex(key)
