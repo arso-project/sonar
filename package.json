@@ -1,0 +1,16 @@
+{
+  "name": "sonar",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/arso-project/sonar.git"
+  },
+  "scripts": {
+    "bootstrap": "lerna bootstrap"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "GPL-3.0",
+  "devDependencies": {
+    "lerna": "^3.16.5"
+  }
+}
