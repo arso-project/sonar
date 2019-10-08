@@ -33,8 +33,8 @@ function getTextdumpSchema () {
 }
 
 function makeSonarSchema (schema) {
-  let tschema = []
-  for (let [name, prop] of Object.entries(schema.properties)) {
+  const tschema = []
+  for (const [name, prop] of Object.entries(schema.properties)) {
     if (prop.type === 'string') {
       tschema.push({
         name: name,

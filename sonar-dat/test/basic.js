@@ -16,7 +16,7 @@ tape('basic', t => {
 
       const records = [
         { title: 'Hello world', body: 'so rough' },
-        { title: 'Hello moon', body: 'so dark' },
+        { title: 'Hello moon', body: 'so dark' }
       ]
 
       const batch = records.map(value => ({ op: 'put', schema: 'doc', value }))

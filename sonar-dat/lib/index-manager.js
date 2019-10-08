@@ -19,7 +19,7 @@ module.exports = class IndexManager {
       this.info = {}
     }
 
-    for (let name of Object.keys(this.info)) {
+    for (const name of Object.keys(this.info)) {
       this.indexes[name] = await this.catalog.open(this._indexName(name))
     }
 

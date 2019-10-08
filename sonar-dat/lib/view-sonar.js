@@ -96,7 +96,7 @@ function sonarView (lvl, cstore, opts) {
 
   async function _query (opts) {
     // console.log('QUERY', opts)
-    let { query, index: indexKey, snippetField } = opts
+    const { query, index: indexKey, snippetField } = opts
     // indexKey = 'textdump'
     // await manager.ready()
     const index = await manager.get(indexKey)
@@ -112,18 +112,18 @@ function sonarView (lvl, cstore, opts) {
       textdump: []
     }
 
-    for (let msg of msgs) {
+    for (const msg of msgs) {
       // console.log('map', msg)
       try {
-        let { schema: schemaName, id, value, source } = msg
+        const { schema: schemaName, id, value, source } = msg
 
-        let body = objectToString(value)
+        const body = objectToString(value)
         // for (let [name, def] of Object.entries(schema.properties)) {
         //   if (def.type === 'string') {
         //     body = body + ' ' + value[name]
         //   }
         // }
-        let title = ""
+        let title = ''
         if (value.title) title = objectToString(value.title)
         else if (value.label) title = objectToString(value.label)
 
@@ -134,8 +134,8 @@ function sonarView (lvl, cstore, opts) {
 
         await manager.make(schemaName, schema)
 
-        let indexSchema = manager.getSchema(schemaName)
-        let fields = indexSchema.map(f => f.name)
+        const indexSchema = manager.getSchema(schemaName)
+        const fields = indexSchema.map(f => f.name)
 
         const doc = Object.entries(value).reduce((acc, [key, value]) => {
           if (fields.indexOf(key) !== -1) acc[key] = value
@@ -155,9 +155,9 @@ function sonarView (lvl, cstore, opts) {
       }
     }
 
-    let ret = {}
-    for (let [schemaName, currentDocs] of Object.entries(docs)) {
-      let index = await manager.get(schemaName)
+    const ret = {}
+    for (const [schemaName, currentDocs] of Object.entries(docs)) {
+      const index = await manager.get(schemaName)
       try {
         // console.log('push to', schemaName, currentDocs)
         await index.addDocuments(currentDocs)
@@ -203,4 +203,3 @@ function objectToString (obj) {
   }
   return ''
 }
-
