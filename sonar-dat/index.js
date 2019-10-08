@@ -46,11 +46,11 @@ class IslandManager {
   }
 
   openByName (name, cb) {
-    this._islandByName(name, (err, info) => {
+    this._islandByName(name, (err, key) => {
       if (err) return cb(err)
       let island
-      if (info) {
-        island = this.open(info.key)
+      if (key) {
+        island = this.open(key)
         island.ready(err => cb(err, island))
       } else {
         this.create(name, cb)
@@ -72,10 +72,10 @@ class IslandManager {
   _islandByName (name, cb) {
     this.config.load((err, config) => {
       if (err) return cb(err)
-      if (!Array.isArray(config.islands)) return cb()
-      const result = config.islands.filter(i => i.name === name)
+      if (!config.islands) return cb()
+      const result = Object.entries(config.islands).filter(([k, v]) => v.name === name)
       if (!result.length) return cb()
-      return cb(null, result[0])
+      return cb(null, result[0][0])
     })
   }
 
