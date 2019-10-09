@@ -1,4 +1,4 @@
-const { openIsland, IslandManager } = require('../sonar-dat')
+const { openIsland, IslandManager } = require('@arso-project/sonar-dat')
 
 if (require.main === module) {
   const opts = extractOptions()
