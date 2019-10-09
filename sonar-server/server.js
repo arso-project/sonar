@@ -19,12 +19,14 @@ function makeServer (opts) {
     const name = req.params.name
     islands.openByName(name, (err, island) => {
       if (err) {
-        res.send({ error: 'Could not create island' })
+        res.code(500).send({ error: 'Could not create island' })
       } else {
         res.send({ msg: 'Island with name ' + name + ' created!', key: island.key.toString('hex') })
       }
     })
   })
+
+  // TODO: Delete island
 
   fastify.post('/:key/:schema', (req, res) => {
     const key = req.params.key
@@ -35,7 +37,7 @@ function makeServer (opts) {
       } else {
         island.put({ schema: schema, value: req.body }, (err, id) => {
           if (err) {
-            res.error({ error: 'Could not create record' })
+            res.code(500).send({ error: 'Could not create record' })
           } else {
             res.send({ msg: 'Created record', id: id })
           }
@@ -55,10 +57,10 @@ function makeServer (opts) {
     const id = req.params.id
     islands.openByKey(key, (err, island) => {
       if (err) {
-        res.erro({ error: 'Could not open island', key: key })
+        res.error({ error: 'Could not open island', key: key })
       } else {
         island.get({ schema: schema, id: id }, (err, record) => {
-          if (err) return res.error({ error_code: 404 })
+          if (err) return res.code(404).send({ error_code: 404 })
           res.send(record)
         })
       }
@@ -66,12 +68,62 @@ function makeServer (opts) {
   })
 
   // TODO: Search/query
-  fastify.get('/:key/:schema/_search', (req, res) => {
+  fastify.post('/:key/:schema/_search', (req, res) => {
+    const key = req.params.key
+    const schema = req.params.schema
+    const query = req.body
+    islands.openByKey(key, (err, island) => {
+      if (err) {
+        res.error({ error: 'Could not open island', key: key })
+      } else {
+        const results = []
+        const rs = island.api.search.query({ query })
+        let error = false
+        rs.on('data', data => results.push(data))
+        rs.on('error', err => (error = err))
+        rs.on('close', () => {
+          if (error) res.code(422).send({ error })
+        })
+        rs.on('end', () => {
+          res.send(results)
+        })
+      }
+    })
   })
 
   // TODO: Batch insertion of records
 
-  // TODO: Get schema
+  // Get schema
+  fastify.get('/:key/:schema/_schema', (req, res) => {
+    const key = req.params.key
+    const schema = req.params.schema
+    islands.openByKey(key, (err, island) => {
+      if (err) {
+        res.code(500).send({ error: 'Could not open island', key: key })
+      } else {
+        island.getSchema(schema, (err, schemaValue) => {
+          if (err) return res.code(404).send({ error_code: 404 })
+          res.send(schemaValue)
+        })
+      }
+    })
+  })
+
+  // Set schema
+  fastify.put('/:key/:schema/_schema', (req, res) => {
+    const key = req.params.key
+    const schema = req.params.schema
+    islands.openByKey(key, (err, island) => {
+      if (err) {
+        res.code(500).send({ error: 'Could not open island', key: key })
+      } else {
+        island.putSchema(schema, req.body, (err) => {
+          if (err) return res.code(400).send({ error_code: 400 })
+          res.send({ msg: 'Schema set' })
+        })
+      }
+    })
+  })
 
   function start () {
     fastify.listen(opts.port || 9191, 'localhost', (err) => {

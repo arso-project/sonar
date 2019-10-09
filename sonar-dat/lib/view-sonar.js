@@ -2,6 +2,7 @@ const Sonar = require('@arso-project/sonar-tantivy')
 const { Readable } = require('stream')
 // const debug = require('debug')('sonarview')
 const through = require('through2')
+const pump = require('pump')
 
 module.exports = sonarView
 const IndexManager = require('./index-manager')
@@ -55,15 +56,6 @@ function sonarView (lvl, cstore, opts) {
         let { query, index } = args
         index = index || 'textdump'
 
-        _query({ query, index, snippetField: 'body' })
-          .then(results => {
-            results.forEach(result => {
-              stream.push(result)
-            })
-            stream.push(null)
-            log.debug('query "%s" on %s: %d results [time: %s]', query, index, results.length, time())
-          })
-          .catch(err => console.error(err))
         const transform = through.obj(function (row, enc, next) {
           const record = {
             value: {
@@ -89,7 +81,17 @@ function sonarView (lvl, cstore, opts) {
           this.push(record)
           next()
         })
-        return stream.pipe(transform)
+        _query({ query, index, snippetField: 'body' })
+          .then(results => {
+            results.forEach(result => {
+              stream.push(result)
+            })
+            stream.push(null)
+            log.debug('query "%s" on %s: %d results [time: %s]', query, index, results.length, time())
+          })
+          .catch(err => transform.destroy(err))
+//stream.on('error', err => console.log('STREAM ERROR', err))
+        return pump(stream, transform)
       }
     }
   }
