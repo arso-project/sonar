@@ -2,7 +2,20 @@
 
 ## API
 
+### Create island
+
+curl -XPUT http://localhost:9191/_create/<islandName>
+
+### Add record
+
+curl -XPOST http://localhost:9191/<key>/<schemaName> -d '{"name": "Test doc"}' -H "Content-Type: application/json"
+
+### Get record
+
+curl http://localhost:9191/<key>/<schemaName>/<id>
+
 ### Set schema
+
 curl -XPUT http://localhost:9191/<key>/<schemaName>/_schema -d '{"properties": {"name": {"type": "text", "index": true}}}' -H "Content-Type: application/json"
 
 ### Get schema
