@@ -1,8 +1,6 @@
 const axios = require('axios')
 
-// TODO: Config
-
-class SonarClient {
+module.exports = class SonarClient {
   constructor (baseUrl, islandKey) {
     this.baseUrl = baseUrl
     this.islandKey = islandKey
@@ -34,6 +32,15 @@ class SonarClient {
     return this._call('GET', '/' + this.islandKey + '/' + schema + '/' + id)
   }
 
+  put (record) {
+    const { schema, id, value } = record
+    if (id) {
+      return this._call('PUT', '/' + this.islandKey + '/' + schema + '/' + id, value)
+    } else {
+      return this._call('POST', '/' + this.islandKey + '/' + schema, value)
+    }
+  }
+
   search (schemaName, query) {
     return this._call('POST', '/' + this.islandKey + '/' + schemaName + '/_search', query)
   }
@@ -49,16 +56,3 @@ class SonarClient {
     })
   }
 }
-
-const client = new SonarClient('http://localhost:9191', '54d722bf355f5182931a59a9375dd0cd84883fae5acdfc4d568ace8d42c82fca')
-client.get('doc', 'YiGVbMKE').then(res => console.log(res.data))
-// create new island
-client.create('newIsland')
-  .then(res => console.log('successful'))
-  .catch(error => console.error(error))
-client.getSchema('doc')
-  .then(res => console.log(res.data))
-
-client.search('doc', '"test"')
-  .then(res => res.data.forEach((el) => console.log(el)))
-  .catch(err => console.error(err))

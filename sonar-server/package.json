@@ -11,8 +11,9 @@
   "author": "",
   "license": "GPL-3.0",
   "dependencies": {
+    "@arso-project/sonar-dat": "*",
     "fastify": "^2.9.0",
-    "@arso-project/sonar-dat": "*"
+    "hyperdrive-http": "^4.4.0"
   },
   "devDependencies": {
     "pino-pretty": "^3.2.0"
