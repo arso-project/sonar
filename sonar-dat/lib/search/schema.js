@@ -1,7 +1,8 @@
 module.exports = {
   getTextdumpSchema,
   makeTantivySchema,
-  mergeSchemas
+  mergeSchemas,
+  addSchemaProperty
 }
 
 function getTextdumpSchema () {
@@ -31,6 +32,21 @@ function getTextdumpSchema () {
     ...commonFields()
   ]
   return schema
+}
+
+// Property: Object
+// with at least the following parameters:
+// title, type
+// optionally:
+// format, maxLength
+
+function addSchemaProperty (schema, property) {
+  const { title, ...rest } = property
+  if (!title || !rest.type) throw new Error('title and type expected')
+  if (!schema.properties) schema.properties = {}
+
+  schema.properties[title] = rest
+//  return schema
 }
 
 function mergeSchemas (schemas) {

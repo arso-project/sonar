@@ -3,7 +3,7 @@ const tmp = require('temporary-directory')
 const { stepper } = require('./lib/util')
 
 const { IslandManager } = require('..')
-const { makeTantivySchema, mergeSchemas } = require('../lib/search/schema')
+const { makeTantivySchema, mergeSchemas, addSchemaProperty } = require('../lib/search/schema')
 const getExampleSchemas = require('../lib/search/example_schemas')
 
 tape('basic', t => {
@@ -67,6 +67,28 @@ tape('schema_merge', t => {
       t.deepEqual(Object.keys(e), ['name', 'type', 'options'])
       t.equal(e.name.split(':').length, 2)
     })
+    t.end()
+  })
+})
+
+tape.only('schema_addProperty', t => {
+  tmp((err, dir, cleanup) => {
+    t.error(err, 'tempdir ok')
+    const schema = getExampleSchemas()[0]
+    
+    const property = {
+      title: 'foo',
+      type: 'string',
+      format :'date-time',
+      erny: 'bert',
+      favAnimal: 'Bee'
+    }
+    
+    addSchemaProperty(schema, property)
+
+    let { title, ...testProp } = property
+
+    t.deepEqual(testProp, schema.properties.foo)
     t.end()
   })
 })
