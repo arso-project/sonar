@@ -79,6 +79,12 @@ class IslandManager {
     })
   }
 
+  close () {
+    for (let island of Object.values(this.islands)) {
+      island.close()
+    }
+  }
+
   _saveIsland (opts, cb) {
     let { key, name } = opts
     key = hex(key)

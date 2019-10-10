@@ -10,6 +10,8 @@ function sonarView (level, island, opts) {
   const manager = new IndexManager(opts.storage, level, island)
   const schemas = {}
 
+  island.on('close', () => manager.close())
+
   return {
     batch: true,
     batchSize: 500,
