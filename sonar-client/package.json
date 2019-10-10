@@ -4,11 +4,18 @@
   "description": "Client for sonar",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "tape test/*.js"
   },
   "author": "",
   "license": "GPL-3.0",
   "dependencies": {
     "axios": "^0.19.0"
+  },
+  "devDependencies": {
+    "@arso-project/sonar-server": "*",
+    "axios-debug-log": "^0.6.2",
+    "tape": "^4.11.0",
+    "tape-plus": "^1.0.0",
+    "temporary-directory": "^1.0.2"
   }
 }

@@ -10,7 +10,7 @@ module.exports = function apiRoutes (fastify, opts, done) {
   // Get record
   fastify.get('/:key/:schema/:id', handlers.get)
   // Search/Query
-  fastify.post('/:key/:schema/_search', handlers.search)
+  fastify.post('/:key/_search', handlers.search)
   // Get schema
   fastify.get('/:key/:schema/_schema', handlers.getSchema)
   // Put schema
@@ -92,11 +92,11 @@ function createApiHandlers (islands) {
       const query = req.body
 
       islands.get(key, (err, island) => {
-        if (err) {
-          res.code(500).send({ error: 'Could not open island', key: key })
-        } else {
+        if (err) return res.code(500).send({ error: 'Could not open island', key: key })
+
+        if (query.simple) {
           const results = []
-          const rs = island.api.search.query({ query })
+          const rs = island.api.search.query({ query: query.simple })
           let error = false
           rs.on('data', data => results.push(data))
           rs.on('error', err => (error = err))
@@ -106,6 +106,8 @@ function createApiHandlers (islands) {
           rs.on('end', () => {
             res.send(results)
           })
+        } else {
+          res.code(404).send({ error: 'Unsupported query' })
         }
       })
     }

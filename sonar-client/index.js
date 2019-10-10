@@ -41,18 +41,22 @@ module.exports = class SonarClient {
     }
   }
 
-  search (schemaName, query) {
-    return this._call('POST', '/' + this.islandKey + '/' + schemaName + '/_search', query)
+  search (query) {
+    if (typeof query === 'string') {
+      query = { simple: query }
+    }
+    return this._call('POST', '/' + this.islandKey + '/_search', query)
   }
 
-  _call (method, url, data) {
+  async _call (method, url, data) {
     if (data === undefined) data = {}
     const fullUrl = this.baseUrl + url
-    return axios({
+    const result = await axios({
       method,
       url: fullUrl,
       data,
       headers: { 'Content-Type': 'application/json' }
     })
+    return result.data
   }
 }
