@@ -42,8 +42,8 @@ function sonarView (level, island, opts) {
 
     for (const msg of msgs) {
       try {
-        pushToTexdump(msg)
-        pushToNamedIndex(msg)
+        await pushToTexdump(msg)
+        await pushToNamedIndex(msg)
       } catch (err) {
         log.error('Could not prepare message:', msg, err)
       }
