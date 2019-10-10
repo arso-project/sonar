@@ -2,7 +2,7 @@ module.exports = function apiRoutes (fastify, opts, done) {
   const handlers = createApiHandlers(opts.islands)
 
   // Create island
-  fastify.post('/_create/:name', handlers.createIsland)
+  fastify.put('/_create/:name', handlers.createIsland)
   // Create record
   fastify.post('/:key/:schema', handlers.put)
   // Update record
@@ -93,7 +93,7 @@ function createApiHandlers (islands) {
 
       islands.get(key, (err, island) => {
         if (err) {
-          res.error({ error: 'Could not open island', key: key })
+          res.code(500).send({ error: 'Could not open island', key: key })
         } else {
           const results = []
           const rs = island.api.search.query({ query })
