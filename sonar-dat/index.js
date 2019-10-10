@@ -7,7 +7,7 @@ const p = require('path')
 const crypto = require('hypercore-crypto')
 const thunky = require('thunky')
 
-const sonarView = require('./lib/view-sonar')
+const sonarView = require('./lib/search/view-sonar')
 const ConfigHandler = require('./lib/config')
 const Network = require('./lib/network')
 
@@ -28,8 +28,10 @@ class IslandManager {
       if (err) return cb(err)
       if (!config.islands) return cb()
       for (const info of config.islands) {
-        const island = this.open(info.key)
-        this.network.add(island)
+        if (info.share) {
+          const island = this._open(info.key)
+          this.network.add(island)
+        }
       }
       cb()
     })

@@ -1,6 +1,6 @@
 module.exports = {
   getTextdumpSchema,
-  makeSonarSchema
+  makeTantivySchema
 }
 
 function getTextdumpSchema () {
@@ -32,7 +32,7 @@ function getTextdumpSchema () {
   return schema
 }
 
-function makeSonarSchema (schema) {
+function makeTantivySchema (schema) {
   const tschema = []
   for (const [name, prop] of Object.entries(schema.properties)) {
     if (prop.type === 'string') {
