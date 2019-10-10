@@ -110,7 +110,6 @@ function replyStream(res, stream) {
     if (error) res.code(422).send({ error })
   })
   stream.on('end', () => {
-    console.log('results', results)
     res.send(results)
   })
 }
