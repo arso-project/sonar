@@ -32,6 +32,15 @@ module.exports = class SonarClient {
     return this._call('GET', '/' + this.islandKey + '/' + schema + '/' + id)
   }
 
+  put (record) {
+    const { schema, id, value } = record
+    if (id) {
+      return this._call('PUT', '/' + this.islandKey + '/' + schema + '/' + id, value)
+    } else {
+      return this._call('POST', '/' + this.islandKey + '/' + schema, value)
+    }
+  }
+
   search (schemaName, query) {
     return this._call('POST', '/' + this.islandKey + '/' + schemaName + '/_search', query)
   }
