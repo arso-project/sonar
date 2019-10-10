@@ -3,8 +3,7 @@ const through = require('through2')
 const log = require('../log').child({ component: 'view-sonar' })
 const { clock } = require('../log')
 
-module.exports = function query (indexManager, args) {
-  let { query, index: indexName } = args
+module.exports = function doQuery (indexManager, query, indexName) {
   indexName = indexName || 'textdump'
   const resultStream = executeQuery(indexManager, indexName, query)
   const transform = transformResults()
@@ -14,7 +13,7 @@ module.exports = function query (indexManager, args) {
   return resultStream.pipe(transform)
 }
 
-function executeQuery (manager, indexName, query) {
+function executeQuery (indexManager, indexName, query) {
   const snippetField = 'body'
   const stream = new Readable({
     objectMode: true,
@@ -26,8 +25,15 @@ function executeQuery (manager, indexName, query) {
   async function start () {
     const time = clock()
     try {
-      const index = await manager.get(indexName)
-      const results = await index.query(query, { snippetField })
+      const index = await indexManager.get(indexName)
+      let results
+
+      if (typeof query === 'string') {
+        results = await index.query(query, { snippetField })
+      } else {
+        results = await index.queryJson(query, { snippetField })
+        results = results.docs
+      }
 
       results.forEach(result => {
         stream.push(result)

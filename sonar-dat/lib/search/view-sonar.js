@@ -1,5 +1,5 @@
 const IndexManager = require('./index-manager')
-const query = require('./query')
+const doQuery = require('./query')
 
 const log = require('../log').child({ component: 'view-sonar' })
 const { clock } = require('../log')
@@ -27,8 +27,8 @@ function sonarView (level, island, opts) {
           .then(info => cb(null, info))
           .catch(err => cb(err))
       },
-      query (kcore, args) {
-        const resultStream = query(manager, args)
+      query (kcore, query, indexName) {
+        const resultStream = doQuery(manager, query, indexName)
         return resultStream
       }
     }

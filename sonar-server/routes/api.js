@@ -93,23 +93,24 @@ function createApiHandlers (islands) {
 
       islands.get(key, (err, island) => {
         if (err) return res.code(500).send({ error: 'Could not open island', key: key })
-
-        if (query.simple) {
-          const results = []
-          const rs = island.api.search.query({ query: query.simple })
-          let error = false
-          rs.on('data', data => results.push(data))
-          rs.on('error', err => (error = err))
-          rs.on('close', () => {
-            if (error) res.code(422).send({ error })
-          })
-          rs.on('end', () => {
-            res.send(results)
-          })
-        } else {
-          res.code(404).send({ error: 'Unsupported query' })
-        }
+        // Query can either be a string (tantivy query) or an object (toshi json query)
+        const resultStream = island.api.search.query(query)
+        replyStream(res, resultStream)
       })
     }
   }
+}
+
+function replyStream(res, stream) {
+  const results = []
+  let error = false
+  stream.on('data', data => results.push(data))
+  stream.on('error', err => (error = err))
+  stream.on('close', () => {
+    if (error) res.code(422).send({ error })
+  })
+  stream.on('end', () => {
+    console.log('results', results)
+    res.send(results)
+  })
 }

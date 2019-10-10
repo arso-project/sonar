@@ -43,7 +43,7 @@ module.exports = class SonarClient {
 
   search (query) {
     if (typeof query === 'string') {
-      query = { simple: query }
+      query = JSON.stringify(query)
     }
     return this._call('POST', '/' + this.islandKey + '/_search', query)
   }

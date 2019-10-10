@@ -31,6 +31,7 @@ tape('basic', t => {
       // island.on('indexed-all', () => {
         step((cb) => {
           query(island, 'hello', (err, res) => {
+            console.log(res)
             t.equal(res.length, 2)
             cb(err)
           })
@@ -61,7 +62,7 @@ tape('schema_merge', t => {
     const schemas = getExampleSchemas()
 
     const fullSchema = mergeSchemas(schemas)
-  
+
     t.equal(Array.isArray(fullSchema), true)
     fullSchema.forEach(e => {
       t.deepEqual(Object.keys(e), ['name', 'type', 'options'])
@@ -71,7 +72,7 @@ tape('schema_merge', t => {
   })
 })
 
-tape.only('schema_addProperty', t => {
+tape('schema_addProperty', t => {
   tmp((err, dir, cleanup) => {
     t.error(err, 'tempdir ok')
     const schema = getExampleSchemas()[0]
@@ -95,8 +96,10 @@ tape.only('schema_addProperty', t => {
 
 function query (island, query, cb) {
   const results = []
-  const rs = island.api.search.query({ query })
-  rs.on('data', results.push.bind(results))
+  const rs = island.api.search.query(query)
+  rs.on('data', row => {
+    results.push(row)
+  })
   rs.on('error', err => cb(err))
   rs.on('end', () => {
     cb(null, results)
