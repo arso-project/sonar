@@ -5,6 +5,7 @@ const { makeTantivySchema, getTextdumpSchema } = require('./schema')
 
 module.exports = class IndexManager {
   constructor (storagePath, level, island) {
+    this.storagePath = storagePath
     this.catalog = new Catalog(storagePath)
     this.level = level
     this.island = island
@@ -12,13 +13,18 @@ module.exports = class IndexManager {
     this.info = {}
     this.indexes = {}
     this._init = false
+
+    this.ready = async () => {
+      if (!this._readyPromise) this._readyPromise = this._ready()
+      return this._readyPromise
+    }
   }
 
   close () {
     this.catalog.close()
   }
 
-  async ready () {
+  async _ready () {
     if (this._init) return
     try {
       this.info = JSON.parse(await this.level.get('indexes'))
