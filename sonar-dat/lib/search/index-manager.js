@@ -14,6 +14,10 @@ module.exports = class IndexManager {
     this._init = false
   }
 
+  close () {
+    this.catalog.close()
+  }
+
   async ready () {
     if (this._init) return
     try {

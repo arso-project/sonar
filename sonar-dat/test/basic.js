@@ -43,7 +43,7 @@ tape('basic', t => {
 
       function finish (err) {
         t.error(err, 'finish ok')
-        island.api.search.catalog.close()
+        island.api.search.close()
         cleanup((err) => {
           t.ifError(err)
           t.end()

@@ -19,6 +19,7 @@ function sonarView (level, island, opts) {
         info: 'promise',
         query: 'streaming'
       },
+      close: () => manager.close(),
       info (kcore, args, cb) {
         manager.getInfo()
           .then(info => cb(null, info))
