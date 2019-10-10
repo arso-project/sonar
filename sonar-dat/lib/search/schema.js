@@ -1,6 +1,7 @@
 module.exports = {
   getTextdumpSchema,
-  makeTantivySchema
+  makeTantivySchema,
+  mergeSchemas
 }
 
 function getTextdumpSchema () {
@@ -32,12 +33,28 @@ function getTextdumpSchema () {
   return schema
 }
 
-function makeTantivySchema (schema) {
+function mergeSchemas (schemas) {
+  if (!Array.isArray(schemas)) throw new Error('Expecting Array')
+
+  const tschemas = []
+
+  schemas.forEach(s => {
+    tschemas.push(...makeTantivySchema(s, { doPrefix: true }))
+  })
+
+  return tschemas
+}
+
+function makeTantivySchema (schema, opts = {}) {
+  let prefix = ''
+  if (opts.doPrefix) {
+    prefix = schema.title + ':'
+  }
   const tschema = []
   for (const [name, prop] of Object.entries(schema.properties)) {
     if (prop.type === 'string') {
       tschema.push({
-        name: name,
+        name: prefix + name,
         type: 'text',
         options: {
           indexing: {
@@ -50,7 +67,7 @@ function makeTantivySchema (schema) {
     }
     if (prop.type === 'date') {
       tschema.push({
-        name: name,
+        name: prefix + name,
         type: 'date',
         options: {
           indexed: true,
@@ -61,13 +78,15 @@ function makeTantivySchema (schema) {
     }
   }
 
-  return [...tschema, ...commonFields()]
+  return [...tschema, ...commonFields(prefix)]
 }
 
-function commonFields () {
+function commonFields (prefix) {
+  if (!prefix) prefix = ''
+
   return [
     {
-      name: 'id',
+      name: prefix + 'id',
       type: 'text',
       options: {
         indexing: {
@@ -78,7 +97,7 @@ function commonFields () {
       }
     },
     {
-      name: 'source',
+      name: prefix + 'source',
       type: 'text',
       options: {
         indexing: {
@@ -89,7 +108,7 @@ function commonFields () {
       }
     },
     {
-      name: 'schema',
+      name: prefix + 'schema',
       type: 'text',
       options: {
         indexing: {

@@ -3,6 +3,8 @@ const tmp = require('temporary-directory')
 const { stepper } = require('./lib/util')
 
 const { IslandManager } = require('..')
+const { makeTantivySchema, mergeSchemas } = require('../lib/search/schema')
+const getExampleSchemas = require('../lib/search/example_schemas')
 
 tape('basic', t => {
   tmp((err, dir, cleanup) => {
@@ -50,6 +52,22 @@ tape('basic', t => {
         })
       }
     })
+  })
+})
+
+tape('schema_merge', t => {
+  tmp((err, dir, cleanup) => {
+    t.error(err, 'tempdir ok')
+    const schemas = getExampleSchemas()
+
+    const fullSchema = mergeSchemas(schemas)
+  
+    t.equal(Array.isArray(fullSchema), true)
+    fullSchema.forEach(e => {
+      t.deepEqual(Object.keys(e), ['name', 'type', 'options'])
+      t.equal(e.name.split(':').length, 2)
+    })
+    t.end()
   })
 })
 
