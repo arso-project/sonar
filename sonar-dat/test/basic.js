@@ -9,7 +9,7 @@ tape('basic', t => {
     t.error(err, 'tempdir ok')
     const islands = new IslandManager(dir)
 
-    islands.openByName('first', (err, island) => {
+    islands.create('first', (err, island) => {
       t.error(err, 'island created')
 
       const step = stepper(finish)

@@ -1,11 +1,14 @@
-const { clock } = require('./log')
+const Catalog = require('@arso-project/sonar-tantivy')
+const { clock } = require('../log')
 
-const { makeSonarSchema, getTextdumpSchema } = require('./schema')
+const { makeTantivySchema, getTextdumpSchema } = require('./schema')
 
 module.exports = class IndexManager {
-  constructor (lvl, catalog) {
-    this.catalog = catalog
-    this.lvl = lvl
+  constructor (storagePath, level, island) {
+    this.catalog = new Catalog(storagePath)
+    this.level = level
+    this.island = island
+
     this.info = {}
     this.indexes = {}
     this._init = false
@@ -14,7 +17,7 @@ module.exports = class IndexManager {
   async ready () {
     if (this._init) return
     try {
-      this.info = JSON.parse(await this.lvl.get('indexes'))
+      this.info = JSON.parse(await this.level.get('indexes'))
     } catch (e) {
       this.info = {}
     }
@@ -32,12 +35,12 @@ module.exports = class IndexManager {
     if (this.indexes[name]) return
     let indexSchema
     if (name === 'textdump') indexSchema = getTextdumpSchema()
-    else indexSchema = makeSonarSchema(schema)
+    else indexSchema = makeTantivySchema(schema)
 
     this.info[name] = indexSchema
     this.indexes[name] = await this.catalog.openOrCreate(this._indexName(name), indexSchema)
 
-    await this.lvl.put('indexes', JSON.stringify(this.info))
+    await this.level.put('indexes', JSON.stringify(this.info))
   }
 
   getSchema (name) {

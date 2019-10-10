@@ -2,9 +2,10 @@
   "name": "@arso-project/sonar-server",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node bin.js | pino-pretty"
   },
   "keywords": [],
   "author": "",
@@ -12,5 +13,8 @@
   "dependencies": {
     "fastify": "^2.9.0",
     "@arso-project/sonar-dat": "*"
+  },
+  "devDependencies": {
+    "pino-pretty": "^3.2.0"
   }
 }

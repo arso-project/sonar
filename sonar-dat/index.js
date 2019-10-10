@@ -7,7 +7,7 @@ const p = require('path')
 const crypto = require('hypercore-crypto')
 const thunky = require('thunky')
 
-const sonarView = require('./lib/view-sonar')
+const sonarView = require('./lib/search/view-sonar')
 const ConfigHandler = require('./lib/config')
 const Network = require('./lib/network')
 
@@ -28,8 +28,10 @@ class IslandManager {
       if (err) return cb(err)
       if (!config.islands) return cb()
       for (const info of config.islands) {
-        const island = this.open(info.key)
-        this.network.add(island)
+        if (info.share) {
+          const island = this._open(info.key)
+          this.network.add(island)
+        }
       }
       cb()
     })
@@ -38,63 +40,25 @@ class IslandManager {
   create (name, cb) {
     const keyPair = crypto.keyPair()
     const key = keyPair.publicKey
-    const island = this.open(key, { keyPair, name })
+    const island = this._open(key, { keyPair, name })
     island.ready(err => {
       if (err) return cb(err)
       this._saveIsland({ key, name }, err => cb(err, island))
     })
   }
 
-  openByName (name, cb) {
-    this._islandByName(name, (err, key) => {
-      if (err) return cb(err)
-      let island
-      if (key) {
-        island = this.open(key)
+  get (keyOrName, cb) {
+    if (isKey(keyOrName)) {
+      const island = this._open(keyOrName)
+      island.ready(err => cb(err, island))
+    } else {
+      this._islandByName(keyOrName, (err, info) => {
+        if (err) return cb(err)
+        if (!info) return cb(new Error('Not found.'))
+        const island = this._open(info.key)
         island.ready(err => cb(err, island))
-      } else {
-        this.create(name, cb)
-      }
-    })
-  }
-
-  _saveIsland (opts, cb) {
-    let { key, name } = opts
-    key = hex(key)
-    this.config.load((err, config) => {
-      if (err) return cb(err)
-      config.islands = config.islands || {}
-      config.islands[key] = { name }
-      this.config.save(config, cb)
-    })
-  }
-
-  _islandByName (name, cb) {
-    this.config.load((err, config) => {
-      if (err) return cb(err)
-      if (!config.islands) return cb()
-      const result = Object.entries(config.islands).filter(([k, v]) => v.name === name)
-      if (!result.length) return cb()
-      return cb(null, result[0][0])
-    })
-  }
-
-  openByKey (key, cb) {
-    const island = this.open(key)
-    island.ready(err => cb(err, island))
-  }
-
-  open (key, opts) {
-    if (typeof opts === 'function') return this.open(key, {}, opts)
-    key = hex(key)
-
-    if (this.islands[key]) return this.islands[key]
-
-    const basePath = p.join(this.basePath, key)
-
-    const island = openIsland(basePath, key)
-    this.islands[key] = island
-    return island
+      })
+    }
   }
 
   share (key) {
@@ -113,6 +77,46 @@ class IslandManager {
       config.islands[key].share = false
       return config
     })
+  }
+
+  _saveIsland (opts, cb) {
+    let { key, name } = opts
+    key = hex(key)
+    this.config.load((err, config) => {
+      if (err) return cb(err)
+      config.islands = config.islands || {}
+      config.islands[key] = { name, key }
+      this.config.save(config, cb)
+    })
+  }
+
+  _islandByName (name, cb) {
+    this.config.load((err, config) => {
+      if (err || !config.islands) return cb(err)
+      const result = Object.values(config.islands).find(v => v.name === name)
+      return cb(null, result)
+    })
+  }
+
+  _islandByKey (key, cb) {
+    this.config.load((err, config) => {
+      if (err || !config.islands) return cb(err)
+      const result = config.islands[key]
+      cb(null, result)
+    })
+  }
+
+  _open (key, opts) {
+    if (typeof opts === 'function') return this.open(key, {}, opts)
+    key = hex(key)
+
+    if (this.islands[key]) return this.islands[key]
+
+    const basePath = p.join(this.basePath, key)
+
+    const island = openIsland(basePath, key)
+    this.islands[key] = island
+    return island
   }
 }
 
@@ -145,4 +149,10 @@ module.exports = {
 
 function hex (key) {
   return Buffer.isBuffer(key) ? key.toString('hex') : key
+}
+
+function isKey (key) {
+  if (!(key instanceof Buffer || typeof key === 'string')) return false
+  const length = Buffer.from(key, 'hex').length
+  return length === 64
 }
