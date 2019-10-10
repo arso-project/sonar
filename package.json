@@ -6,7 +6,8 @@
   },
   "scripts": {
     "install": "lerna bootstrap",
-    "bootstrap": "lerna bootstrap"
+    "bootstrap": "lerna bootstrap",
+    "test": "lerna run test"
   },
   "license": "GPL-3.0",
   "devDependencies": {
