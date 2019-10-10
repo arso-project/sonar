@@ -45,12 +45,12 @@ class IslandManager {
     })
   }
 
-  get (key, cb) {
-    if (isKey(key)) {
-      const island = this._open(key)
+  get (keyOrName, cb) {
+    if (isKey(keyOrName)) {
+      const island = this._open(keyOrName)
       island.ready(err => cb(err, island))
     } else {
-      this._islandByName(key, (err, info) => {
+      this._islandByName(keyOrName, (err, info) => {
         if (err) return cb(err)
         if (!info) return cb(new Error('Not found.'))
         const island = this._open(info.key)
