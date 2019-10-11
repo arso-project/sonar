@@ -1,6 +1,6 @@
 const axios = require('axios')
 
-module.exports = class SonarClient {
+class SonarClient {
   constructor (baseUrl, islandKey) {
     this.baseUrl = baseUrl
     this.islandKey = islandKey
@@ -44,6 +44,8 @@ module.exports = class SonarClient {
   search (query) {
     if (typeof query === 'string') {
       query = JSON.stringify(query)
+    } else if (typeof query === 'QueryBuilder') {
+      query = query.getQuery()
     }
     return this._call('POST', '/' + this.islandKey + '/_search', query)
   }
@@ -59,4 +61,49 @@ module.exports = class SonarClient {
     })
     return result.data
   }
+}
+
+class QueryBuilder {
+  constructor (schema) {
+    this.schema = schema
+    this.query = {
+      query: {
+        bool : {
+          must: [],
+          must_not: []
+        }
+      }
+    }
+  }
+
+  bool (boolType, queries) {
+    this.query['query']['bool'][boolType] = queries
+    return this
+  }
+
+  limit (limit) {
+    this.query['limit'] = limit
+    return this
+  }
+
+  term (field, value) {
+    return {term: { [field]: value }}
+  }
+
+  getQuery () {
+    return this.query
+  }
+  //get query () {
+    //return this.query
+  //}
+
+  //set query (value) {
+    //this.query = value
+  //}
+
+}
+
+module.exports = {
+  SonarClient,
+  QueryBuilder
 }

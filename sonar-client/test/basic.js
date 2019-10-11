@@ -2,7 +2,7 @@ const { group } = require('tape-plus')
 require('axios-debug-log')
 
 const { makeServer } = require('./util/server')
-const SonarClient = require('..')
+const { SonarClient, QueryBuilder } = require('..')
 
 group('basics', test => {
   const port = 21212
@@ -41,5 +41,17 @@ group('basics', test => {
     t.equal(results.length, 1, 'should return one result')
     t.equal(results[0].value.title, 'hello world', 'toshi query worked')
   })
+
+  test('query builder', async t => {
+    const query = new QueryBuilder('doc')
+    query
+      .bool('must', [query.term('title', 'hello')])
+      .bool('must_not', [query.term('title', 'moon')])
+      .limit(10)
+    let results = await client.search(query)
+    t.equal(results.length, 1, 'should return one result')
+    t.equal(results[0].value.title, 'hello world', 'toshi query worked')
+  })
+
 
 })
