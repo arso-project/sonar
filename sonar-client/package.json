@@ -1,5 +1,5 @@
 {
-  "name": "sonar-client",
+  "name": "@arso-project/sonar-client",
   "version": "1.0.0",
   "description": "Client for sonar",
   "main": "index.js",
