@@ -53,5 +53,13 @@ group('basics', test => {
     t.equal(results[0].value.title, 'hello world', 'toshi query worked')
   })
 
+  // TODO: Test query for all documents
+  // TODO: Test range query
+  // TODO: Test regex query
+  // TODO: Test facet query
+  // TODO: Test exact query
+  // TODO: Test fuzzy query
+  // TODO: Test phrase query
+
 
 })

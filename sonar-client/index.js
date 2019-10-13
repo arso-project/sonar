@@ -44,7 +44,7 @@ class SonarClient {
   search (query) {
     if (typeof query === 'string') {
       query = JSON.stringify(query)
-    } else if (typeof query === 'QueryBuilder') {
+    } else if (query instanceof QueryBuilder) {
       query = query.getQuery()
     }
     return this._call('POST', '/' + this.islandKey + '/_search', query)
@@ -66,6 +66,7 @@ class SonarClient {
 class QueryBuilder {
   constructor (schema) {
     this.schema = schema
+    // FIXME: This should not be necessary
     this.query = {
       query: {
         bool : {
