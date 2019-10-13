@@ -1,6 +1,6 @@
 {
   "name": "@arso-project/sonar-ui",
-  "version": "0.0.1",
+  "version": "0.0.0",
   "description": "",
   "main": "build/bundle.js",
   "scripts": {
@@ -12,7 +12,7 @@
   "author": "",
   "license": "GPL-3.0",
   "dependencies": {
-    "@arso-project/sonar-client": "*",
+    "@arso-project/sonar-client": "^0.0.0",
     "react": "^16.10.2",
     "react-dom": "^16.10.2",
     "react-router": "^5.1.2",
