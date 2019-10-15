@@ -1,3 +1,5 @@
+const { hyperdriveHandler } = require('./hyperdrive')
+
 module.exports = function apiRoutes (fastify, opts, done) {
   const handlers = createApiHandlers(opts.islands)
 
@@ -15,6 +17,10 @@ module.exports = function apiRoutes (fastify, opts, done) {
   fastify.get('/:key/:schema/_schema', handlers.getSchema)
   // Put schema
   fastify.put('/:key/:schema/_schema', handlers.putSchema)
+
+  // Get files
+  fastify.get('/:key/files', handlers.files)
+  fastify.get('/:key/files/*', handlers.files)
 
   // TODO: Create record with id / Replace record
   // TODO: Batch insertion of records
@@ -85,6 +91,12 @@ function createApiHandlers (islands) {
           })
         }
       })
+    },
+
+    files (req, res) {
+      let { key, '*': path } = req.params
+      path = path || ''
+      hyperdriveHandler(islands, key, path, req, res)
     },
 
     search (req, res) {
