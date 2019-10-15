@@ -1,0 +1,279 @@
+:root {
+  --hue-primary: 180;
+  --hue-secondary: 0;
+
+  --color-primary: hsl(var(--hue-primary), 100%, 30%);
+  --color-secondary: hsl(var(--hue-secondary), 100%, 40%);
+
+  --color-text-main: #222;
+  --color-text-secondary: hsl(0, 0%, 50%);
+  --color-border: hsl(var(--hue-primary), 7%, 80%);
+
+  --sidebar-width: 16rem;
+}
+
+html {
+  margin: 0;
+  padding: 0;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+body {
+  font-family: Inter, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  margin: 0;
+  padding: 0;
+  padding-left: var(--sidebar-width);
+}
+
+.sonar-start {
+  padding: 2rem;
+  h1 {
+    text-align: center;
+    font-size: 4rem;
+    color: var(--color-primary);
+    margin: 2rem 0;
+  }
+
+  p {
+    max-width: 40rem;
+    font-size: 2rem;
+    color: var(--color-text-secondary);
+    margin: 0 auto;
+  }
+}
+
+.sonar-sidebar {
+  position: fixed;
+  left: 0;
+  width: 20rem;
+  width: var(--sidebar-width);
+  height: 100%;
+  background: #112;
+  padding: 2rem;
+  color: #fff;
+  h2 {
+    font-size: 2rem;
+    font-weight: 400;
+    color: hsl(var(--hue-secondary), 100%, 70%);
+    margin-bottom: 1rem;
+  }
+  li {
+    list-style-type: none;
+  }
+  a {
+    display: block;
+    color: #fff;
+    font-weight: 400;
+    text-decoration: none;
+    font-size: 2rem;
+    &:focus {
+      color: var(--color-primary);
+      outline: none;
+    }
+    &.active {
+      text-decoration: underline;
+      /* background-color: hsl(var(--hue-primary), 100%, 15%); */
+    }
+  }
+}
+
+.sonar-filebrowser {
+  --color-bg-hover: hsl(var(--hue-primary), 15%, 97%);
+  --hue-focus: 240;
+
+  padding: 2rem;
+  font-size: 1.5rem;
+  .sonar-filebrowser__breadcrumb {
+    font-weight: bold;
+    margin: 0 0 1rem 0;
+    span {
+      cursor: pointer;
+      color: var(--color-primary);
+      margin: 0 .5rem 0 0;
+      padding: .25rem;
+      position: relative;
+      &:after {
+        content: '/';
+        color: var(--color-text-secondary);
+        /* padding: 0 .5rem; */
+        display: inline-block;
+        position: relative;
+        left: .5rem;
+      }
+      &:first-child,
+      &:last-child {
+        /* padding: 0 .5rem 0 0; */
+        &:after {
+          display: none;
+        }
+      }
+      &:last-child {
+        color: inherit;
+      }
+      &:not(:last-child):hover {
+        border-radius: 5px;
+        background-color: var(--color-bg-hover);
+        text-decoration: underline;
+      }
+    }
+  }
+
+  .sonar-filebrowser__list {
+    border: 1px solid var(--color-border);
+    border-radius: 2px;
+    li {
+      display: block;
+      border-bottom: 1px solid var(--color-border);
+      &:last-child {
+        border-bottom: none;
+      }
+      > *:first-child {
+        padding: 1rem;
+      }
+    }
+    a {
+      cursor: pointer;
+      display: block;
+      text-decoration: none;
+      display: flex;
+      color: var(--color-text-secondary);
+      &:hover {
+        background-color: var(--color-bg-hover);
+      }
+      &:focus {
+        box-shadow: 0 0 3px hsla(var(--hue-focus), 70%, 50%, 90%);
+      }
+      span {
+        width: 33%;
+      }
+      /* filename column */
+      span:first-child {
+        color: var(--color-primary);
+      }
+    }
+
+    em {
+      font-style: italic;
+      color: #999
+    }
+  }
+}
+
+.sonar-search {
+  --color-text-secondary: hsl(0, 0%, 50%);
+  --color-text-secondary2: hsl(0, 0%, 30%);
+
+  padding: 2rem;
+
+  .sonar-search__input {
+    margin: 0 0 1rem 0;
+    input {
+      border: 2px solid hsl(var(--hue-primary), 20%, 50%);
+      color: var(--color-text-main);
+      font-size: 1.5rem;
+      padding: .75rem 1rem;
+      border-radius: 4px;
+      &:focus {
+        box-shadow: 0 0 3px hsla(var(--hue-primary), 90%, 40%, 60%);
+        border-color: hsl(var(--hue-primary), 90%, 40%);
+      }
+    }
+  }
+  .sonar-search__item {
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--color-border);
+    h3 {
+      font-size: 2rem;
+      font-weight: 500;
+      color: var(--color-primary);
+    }
+  }
+  .sonar-search__meta {
+    dl {
+      display: flex;
+      color: var(--color-text-secondary);
+      dt, dd {
+        flex: 0;
+      }
+      dt {
+        margin-right: .25rem;
+        font-variant: all-small-caps;
+      }
+      dd {
+        color: var(--color-text-secondary2);
+        border-bottom: 1px dotted var(--color-border);
+        margin-right: 1rem;
+      }
+    }
+  }
+
+  .sonar-search__snippet {
+    font-size: 1.5rem;
+  }
+}
+
+.sonar-config {
+  --input-border: hsl(var(--hue-primary), 10%, 70%);
+  --input-border2: hsl(var(--hue-primary), 20%, 60%);
+
+  padding: 2rem;
+
+  input[type="text"], button {
+    /* box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3); */
+    padding: .5rem 1rem;
+    border: 2px solid var(--input-border);
+    color: var(--color-text-main);
+    border-radius: 2px;
+    font-size: 1.5rem;
+    &:focus {
+      box-shadow: 1px 1px 3px hsla(var(--hue-primary), 100%, 50%, 50%);
+      border-color: var(--color-primary);
+      color: var(--color-primary);
+    }
+  }
+
+  button {
+    /* box-shadow: 1px 1px 4px rgba(0, 0, 0, 0.2); */
+    /* background-color: hsl(var(--hue-primary), 60%, 70%); */
+
+    --gradient-start: hsl(var(--hue-primary), 30%, 94%);
+    --gradient-stop: hsl(var(--hue-primary), 30%, 89%);
+
+    color: hsl(var(--hue-primary), 60%, 15%);
+    background-image: 
+      linear-gradient(
+        to bottom, 
+        var(--gradient-start), 
+        var(--gradient-stop)
+      );
+    border-radius: 4px;
+    border-style: 2px solid;
+    border-color: hsl(var(--hue-primary), 40%, 70%);
+
+    cursor: pointer;
+
+    &:hover {
+      --gradient-stop: hsl(var(--hue-primary), 30%, 82%);
+      box-shadow: 1px 1px 4px rgba(0, 0, 0, 0.2);
+      border-color: var(--input-border2);
+    }
+  }
+
+  .sonar-config__row {
+    border-bottom: 1px solid var(--color-border);
+    padding: 1rem;
+    display: flex;
+    label {
+      display: block;
+      width: 20rem;
+      font-size: 1.5rem;
+      padding-top: 1rem;
+      color: var(--color-text-secondary);
+      font-style: italic;
+    }
+  }
+}
