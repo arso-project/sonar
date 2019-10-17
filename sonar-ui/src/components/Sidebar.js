@@ -1,13 +1,15 @@
 import React from 'react'
-import { Link } from 'react-router-dom'
+import { NavLink } from 'react-router-dom'
 
 export default function Sidebar (props) {
   return (
-    <div>
+    <div className='sonar-sidebar'>
+      <h2>Sonar</h2>
       <ul>
-        <li><Link to='/'>Start</Link></li>
-        <li><Link to='/search'>Search</Link></li>
-        <li><Link to='/config'>Config</Link></li>
+        <li><NavLink exact to='/'>Start</NavLink></li>
+        <li><NavLink to='/search'>Search</NavLink></li>
+        <li><NavLink to='/filebrowser'>Filebrowser</NavLink></li>
+        <li><NavLink to='/config'>Config</NavLink></li>
       </ul>
     </div>
   )

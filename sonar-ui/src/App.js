@@ -8,7 +8,9 @@ export default function App (props) {
   return (
     <Router>
       <Sidebar />
-      <Routes />
+      <div>
+        <Routes />
+      </div>
     </Router>
   )
 }

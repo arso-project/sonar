@@ -48,6 +48,23 @@ module.exports = class SonarClient {
     return this._call('POST', '/' + this.islandKey + '/_search', query)
   }
 
+  async readdir (path) {
+    const self = this
+    if (path.charAt(0) === '/') path = path.substring(1)
+    let files = await this._call('GET', '/' + this.islandKey + '/files/' + path)
+    if (files && files.length) {
+      files = files.map(file => {
+        file.link = makeLink(file)
+        return file
+      })
+    }
+    return files
+
+    function makeLink (file) {
+      return `${self.baseUrl}/${self.islandKey}/files/${file.path}`
+    }
+  }
+
   async _call (method, url, data) {
     if (data === undefined) data = {}
     const fullUrl = this.baseUrl + url
