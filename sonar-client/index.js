@@ -24,12 +24,12 @@ module.exports = class SonarClient {
     return this._call('PUT', '/' + this.islandKey + '/' + this.schema + '/_schema')
   }
 
-  get (schema, id) {
-    if (this.schema && id === undefined) {
-      id = schema
-      schema = this.schema
+  get ({ schema, id }) {
+    if (schema) {
+      return this._call('GET', '/' + this.islandKey + '/' + schema + '/' + id)
+    } else {
+      return this._call('GET', '/' + this.islandKey + '/' + id)
     }
-    return this._call('GET', '/' + this.islandKey + '/' + schema + '/' + id)
   }
 
   put (record) {

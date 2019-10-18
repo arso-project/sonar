@@ -1,4 +1,5 @@
 const { hyperdriveHandler } = require('./hyperdrive')
+const collect = require('collect-stream')
 
 module.exports = function apiRoutes (fastify, opts, done) {
   const handlers = createApiHandlers(opts.islands)
@@ -10,6 +11,7 @@ module.exports = function apiRoutes (fastify, opts, done) {
   // Update record
   fastify.put('/:key/:schema/:id', handlers.put)
   // Get record
+  fastify.get('/:key/:id', handlers.get)
   fastify.get('/:key/:schema/:id', handlers.get)
   // Search/Query
   fastify.post('/:key/_search', handlers.search)
@@ -57,10 +59,26 @@ function createApiHandlers (islands) {
       const { key, schema, id } = req.params
       islands.get(key, (err, island) => {
         if (err) return res.code(404).send({ error: 'Island not found' })
-        island.get({ key, schema, id }, (err, record) => {
-          if (err) return res.code(404).send()
-          res.send(record)
-        })
+
+        // TODO: This uses two different APIs, which is of course not right.
+        // With schema and id, it uses HyperContentDB.get(), which looks
+        // up records by filepath. Without schema, it uses entities view's
+        // allWithId method, which is not only badly named but also should
+        // just expose a .get method. It's also faster so that should be
+        // used. Has to be fixed in hyper-content-db.
+        if (schema) {
+          island.get({ schema, id }, (err, record) => {
+            res.send(record)
+          })
+        } else {
+          const queryStream = island.api.entities.allWithId({ id })
+          const getStream = island.createGetStream()
+          const resultStream = queryStream.pipe(getStream)
+          collect(resultStream, (err, results) => {
+            if (err) return res.code(404).send()
+            res.send(results)
+          })
+        }
       })
     },
 

@@ -6,10 +6,11 @@ export class ErrorStore {
 
   push (error, meta) {
     const timestamp = Date.now()
-    const info = { error, meta, timestamp }
+    const message = error instanceof Error ? error.message : error
+    const info = { error, meta, timestamp, message }
     this.errors.push(info)
     console.error('Error: %o (meta %o)', error, meta)
-    this.watchers.forEach(fn => fn(info))
+    this.watchers.forEach(fn => fn(this.errors))
   }
 
   watch (fn) {
