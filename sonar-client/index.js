@@ -11,17 +11,11 @@ module.exports = class SonarClient {
   }
 
   getSchema (schemaName) {
-    if (this.schema && schemaName === undefined) {
-      schemaName = this.schema
-    }
     return this._call('GET', '/' + this.islandKey + '/' + schemaName + '/_schema')
   }
 
   putSchema (schemaName, schema) {
-    if (this.schema && schemaName && schema === undefined) {
-      schema = schemaName
-    }
-    return this._call('PUT', '/' + this.islandKey + '/' + this.schema + '/_schema')
+    return this._call('PUT', '/' + this.islandKey + '/' + schemaName + '/_schema')
   }
 
   get ({ schema, id }) {
