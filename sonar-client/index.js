@@ -11,11 +11,12 @@ module.exports = class SonarClient {
   }
 
   getSchema (schemaName) {
+    schemaName = schemaName.replace('/', '-')
     return this._call('GET', '/' + this.islandKey + '/' + schemaName + '/_schema')
   }
 
   putSchema (schemaName, schema) {
-    return this._call('PUT', '/' + this.islandKey + '/' + schemaName + '/_schema')
+    return this._call('PUT', '/' + this.islandKey + '/' + schemaName + '/_schema', schema)
   }
 
   get ({ schema, id }) {

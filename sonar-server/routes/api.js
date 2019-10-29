@@ -87,7 +87,9 @@ function createApiHandlers (islands) {
 
     getSchema (req, res) {
       const key = req.params.key
-      const schema = req.params.schema
+      let schema = req.params.schema
+      // TODO: Settle the routing/naming for schemas.
+      schema = schema.replace('-', '/')
       islands.get(key, (err, island) => {
         if (err) {
           res.code(500).send({ error: 'Could not open island', key: key })
@@ -108,7 +110,9 @@ function createApiHandlers (islands) {
         } else {
           island.putSchema(schema, req.body, (err) => {
             if (err) return res.code(400).send({ error_code: 400 })
-            res.send({ msg: 'Schema set' })
+            island.getSchema(schema, (err, result) => {
+              res.send({ schema })
+            })
           })
         }
       })
