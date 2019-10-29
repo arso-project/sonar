@@ -3,6 +3,18 @@ require('axios-debug-log')
 
 const Client = require('@arso-project/sonar-client')
 
+function usage () {
+  console.log(`sonar [options] COMMAND
+Options:
+ --endpoint, -e: Endpoint URL
+
+Commands:
+  put-fixtures:  Put development fixtures
+  search:        Search
+`)
+  process.exit(1)
+}
+
 const argv = minimist(process.argv.slice(2), {
   default: {
     endpoint: 'http://localhost:9191/api',
@@ -14,9 +26,7 @@ const argv = minimist(process.argv.slice(2), {
   }
 })
 
-console.log(argv)
 const [command, ...args] = argv._
-if (!command) usage()
 
 const client = new Client(argv.endpoint, argv.island)
 
@@ -29,34 +39,29 @@ if (command === 'put-fixtures') {
 }
 
 async function putFixtures () {
-  await client.putSchema('doc', {
+  const schema = {
     properties: {
-      title: { type: 'string' },
-      body: { type: 'string' }
+      title: { type: 'string', title: 'Title' },
+      body: { type: 'string', title: 'Body' },
+      date: { type: 'string', format: 'date-time', title: 'Published' }
     }
-  })
-  const id = await client.put({
+  }
+  const record = {
     schema: 'doc',
     value: {
       title: 'Hello world',
-      body: 'This is a Sonar demo'
+      body: 'This is another Sonar demo',
+      date: new Date()
     }
-  })
-  console.log('PUT', id)
+  }
+  const res = await client.putSchema('doc', schema)
+  console.log('putSchema', res)
+  const id = await client.put(record)
+  console.log('put', id)
 }
 
-async function search () {
-  const results = await client.search(args[0])
+async function search (query) {
+  const results = await client.search(query)
   console.log(results)
 }
 
-function usage () {
-  console.log(`sonar [options] COMMAND
-Options:
- --endpoint, -e: Endpoint URL
-
-Commands:
-  put-fixtures:  Put development fixtures
-`)
-  process.exit(1)
-}
