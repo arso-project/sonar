@@ -4,59 +4,83 @@ import SearchPage from './Search'
 import ReactJson from 'react-json-view'
 import { formatRelative } from 'date-fns'
 
+import Record from '../components/Record'
+
 import client from '../lib/client'
 import errors from '../lib/error'
 
-export default function EntityPage (props) {
-  const { id } = useParams()
-  const [records, setRecords] = useState(null)
+async function fetchRecordData (id) {
+  const records = await client.get({ id })
+  const schemaNames = new Set(records.map(r => r.schema))
+  const schemas = {}
+  await Promise.all([...schemaNames].map(async name => {
+    const schema = await client.getSchema(name)
+    schemas[name] = schema
+  }))
+  return { records, schemas }
+}
+
+function useRecordData (id) {
+  const [data, setData] = useState(null)
 
   useEffect(() => {
     let mounted = true
-    client.get({ id })
-      .then(results => mounted && setRecords(results))
+    fetchRecordData(id)
+      .then(({ records, schemas }) => {
+        if (!mounted) return
+        setData({ records, schemas })
+      })
       .catch(error => errors.push(error))
     return () => (mounted = false)
   }, [id])
 
+  return data
+}
+
+export default function EntityPage (props) {
+  const { id } = useParams()
+  const data = useRecordData(id)
+
+  if (!data) return <em>Loading</em>
+
+  const { records, schemas } = data
+
   return (
     <div className='sonar-entity'>
       <div>
-        <SearchPage />
-      </div>
-      <div>
-        {records && records.length && <Entity records={records} />}
+        {records && records.length && <RecordGroup records={records} schemas={schemas} />}
       </div>
     </div>
   )
 }
 
-export function Entity (props) {
-  const { records } = props
+export function RecordGroup (props) {
+  const { records, schemas } = props
   if (!records) return null
   return (
     <div className='sonar-search__list'>
-      {records.map((row, i) => (
-        <Record key={i} row={row} />
+      {records.map((record, i) => (
+        <RecordView key={i} record={record} schema={schemas[record.schema]} />
       ))}
     </div>
   )
 }
 
-function Record (props) {
-  const { row } = props
-  const { value, id, schema, source, meta } = row
+function RecordView (props) {
+  const { record, schema } = props
+  const { value, id, schema: schemaName, source, meta } = record
   const [raw, setRaw] = useState(false)
   return (
     <div className='sonar-search__item'>
       {value.title && <h3>{value.title}</h3>}
       <div>
+        <Record record={record} schema={schema} />
         <button onClick={e => setRaw(raw => !raw)}>
           {raw ? 'Hide JSON' : 'Show JSON'}
         </button>
         {raw && (
           <ReactJson
-            src={row.value}
+            src={record.value}
             name={null}
             displayDataTypes={false}
             displayObjectSize={false}
@@ -69,7 +93,7 @@ function Record (props) {
       <div className='sonar-search__meta'>
         <dl>
           <dt>ID</dt><dd>{id}</dd>
-          <dt>Schema</dt><dd>{formatSchema(schema)}</dd>
+          <dt>Schema</dt><dd>{formatSchema(schemaName)}</dd>
           <dt>Source</dt><dd>{formatSource(source)}</dd>
           <dt>Created</dt><dd>{formatDate(meta.ctime)}</dd>
           <dt>Modified</dt><dd>{formatDate(meta.mtime)}</dd>

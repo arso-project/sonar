@@ -28,6 +28,6 @@ function useErrorLog () {
   useEffect(() => {
     const unwatch = errorLogger.watch(log => setState([...log]))
     return unwatch
-  })
+  }, [])
   return state
 }
