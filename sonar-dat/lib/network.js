@@ -13,6 +13,7 @@ module.exports = class Network {
       this.replicating[island.key] = island
       replicateLocal(island)
       replicateHyperswarm(island)
+      console.log('replicating: ' + island.key.toString('hex'))
     })
   }
 
@@ -21,30 +22,30 @@ module.exports = class Network {
   }
 }
 
-function replicateLocal (store) {
-  // const name = 'archipel-' + store.discoveryKey.toString('hex')
+function replicateLocal (island) {
+  // const name = 'archipel-' + island.discoveryKey.toString('hex')
   const name = 'archipel-replication'
   localSocketStream(name, (err, stream) => {
     if (err) return console.error('cannot setup local replication: ', err)
-    const repl = store.replicate({ encrypt: false, live: true })
+    const repl = island.replicate({ encrypt: false, live: true })
     repl.pipe(stream).pipe(repl)
   })
 }
 
-function replicateHyperswarm (store) {
-  const swarm = hyperswarm(store.multidrive.primaryDrive, {
+function replicateHyperswarm (island) {
+  const swarm = hyperswarm(island.multidrive.primaryDrive, {
     live: true,
     announce: true,
     lookup: true
   })
   swarm.on('join', dkey => log.debug('Joining swarm for %s', dkey.toString('hex')))
   swarm.on('connection', peer => log.info('New peer'))
-  store.sources(drives => {
+  island.sources(drives => {
     for (const drive of drives) {
       swarm.join(drive.discoveryKey)
     }
   })
-  store.on('source', drive => {
+  island.on('source', drive => {
     swarm.join(drive.discoveryKey)
   })
 }

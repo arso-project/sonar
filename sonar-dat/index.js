@@ -21,13 +21,14 @@ class IslandManager {
 
     this.islands = {}
     this.ready = thunky(this._ready.bind(this))
+    this.ready()
   }
 
   _ready (cb) {
     this.config.load((err, config) => {
       if (err) return cb(err)
       if (!config.islands) return cb()
-      for (const info of config.islands) {
+      for (const info of Object.values(config.islands)) {
         if (info.share) {
           const island = this._open(info.key)
           this.network.add(island)
@@ -47,30 +48,50 @@ class IslandManager {
     })
   }
 
-  get (keyOrName, cb) {
+  get (keyOrName, opts, cb) {
+    if (!cb && typeof opts === 'function') return this.get(keyOrName, {}, opts)
+
+    if (this.islands[keyOrName]) return finish(null, this.islands[keyOrName])
+
     if (isKey(keyOrName)) {
-      const island = this._open(keyOrName)
-      island.ready(err => cb(err, island))
+      const key = hex(keyOrName)
+      this.config.load((err, config) => {
+        if (err) return cb(err)
+        const island = this._open(keyOrName)
+        if (!config.islands || !config.islands[key]) {
+          this._saveIsland({ key }, err => finish(err, island))
+        } else finish(null, island)
+      })
     } else {
       this._islandByName(keyOrName, (err, info) => {
         if (err) return cb(err)
-        if (!info) return cb(new Error('Not found.'))
+        // if (!info) return cb(new Error('Not found.'))
+        if (!info) return this.create(keyOrName, cb)
         const island = this._open(info.key)
-        island.ready(err => cb(err, island))
+        finish(null, island)
       })
+    }
+
+    function finish (err, island) {
+      if (err) return cb(err)
+      island.ready(err => cb(err, island))
     }
   }
 
   share (key) {
+    key = hex(key)
     if (!this.islands[key]) return
     this.network.add(this.islands[key])
     this.config.update(config => {
+      console.log('KEY', key)
+      console.log('config', config)
       config.islands[key].share = true
       return config
     })
   }
 
   unshare (key) {
+    key = hex(key)
     if (!this.islands[key]) return
     this.network.remove(this.islands[key])
     this.config.update(config => {
@@ -160,5 +181,5 @@ function hex (key) {
 function isKey (key) {
   if (!(key instanceof Buffer || typeof key === 'string')) return false
   const length = Buffer.from(key, 'hex').length
-  return length === 64
+  return length === 32
 }

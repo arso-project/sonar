@@ -24,6 +24,9 @@ module.exports = function apiRoutes (fastify, opts, done) {
   fastify.get('/:key/files', handlers.files)
   fastify.get('/:key/files/*', handlers.files)
 
+  // Add source
+  fastify.put('/:key/_source', handlers.putSource)
+
   // TODO: Create record with id / Replace record
   // TODO: Batch insertion of records
 
@@ -108,6 +111,18 @@ function createApiHandlers (islands) {
             res.send({ msg: 'Schema set' })
           })
         }
+      })
+    },
+
+    putSource (req, res) {
+      const { key } = req.params
+      const { key: sourceKey } = req.body
+      islands.get(key, (err, island) => {
+        if (err) return res.code(404).send({ error: 'Island not found', key: key })
+        island.addSource(sourceKey, (err) => {
+          if (err) return res.code(500).send({ error: err.message })
+          return res.send({ msg: 'Source added' })
+        })
       })
     },
 
