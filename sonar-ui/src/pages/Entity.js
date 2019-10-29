@@ -1,16 +1,15 @@
 import React, { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
+import SearchPage from './Search'
+import ReactJson from 'react-json-view'
+import { formatRelative } from 'date-fns'
 
 import client from '../lib/client'
 import errors from '../lib/error'
 
-// import makeGlobalStateHook from '../hooks/make-global-state-hook'
-// const useGlobalState = makeGlobalStateHook('search')
-
 export default function EntityPage (props) {
   const { id } = useParams()
   const [records, setRecords] = useState(null)
-  console.log('id', id)
 
   useEffect(() => {
     let mounted = true
@@ -22,7 +21,12 @@ export default function EntityPage (props) {
 
   return (
     <div className='sonar-entity'>
-      {records && records.length && <Entity records={records} />}
+      <div>
+        <SearchPage />
+      </div>
+      <div>
+        {records && records.length && <Entity records={records} />}
+      </div>
     </div>
   )
 }
@@ -40,23 +44,44 @@ export function Entity (props) {
 }
 
 function Record (props) {
-  const { value, id, schema, source } = props.row
+  const { row } = props
+  const { value, id, schema, source, meta } = row
+  const [raw, setRaw] = useState(false)
   return (
     <div className='sonar-search__item'>
       {value.title && <h3>{value.title}</h3>}
+      <div>
+        <button onClick={e => setRaw(raw => !raw)}>
+          {raw ? 'Hide JSON' : 'Show JSON'}
+        </button>
+        {raw && (
+          <ReactJson
+            src={row.value}
+            name={null}
+            displayDataTypes={false}
+            displayObjectSize={false}
+            enableClipboard={false}
+            collapseStringsAfterLength={40}
+            collapsed={1}
+          />
+        )}
+      </div>
       <div className='sonar-search__meta'>
         <dl>
           <dt>ID</dt><dd>{id}</dd>
           <dt>Schema</dt><dd>{formatSchema(schema)}</dd>
           <dt>Source</dt><dd>{formatSource(source)}</dd>
+          <dt>Created</dt><dd>{formatDate(meta.ctime)}</dd>
+          <dt>Modified</dt><dd>{formatDate(meta.mtime)}</dd>
         </dl>
       </div>
-      <div
-        className='sonar-search__snippet'
-        dangerouslySetInnerHTML={{ __html: value.snippet }}
-      />
     </div>
   )
+}
+
+function formatDate (ts) {
+  const date = new Date(ts)
+  return formatRelative(date, Date.now())
 }
 
 // TODO: This is likely too hacky. Propably we'll want

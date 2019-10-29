@@ -64,7 +64,6 @@ export default function Filebrowser (props) {
   )
 
   function onFileClick (file, e) {
-    console.log('clicked', file)
     if (file.directory) {
       e.preventDefault()
       setPath(path + '/' + file.name)
