@@ -4,10 +4,8 @@ module.exports = class QueryBuilder {
     // FIXME: This should not be necessary
     this.query = {
       query: {
-        bool : {
-          must: [],
-          must_not: []
-        }
+        bool : {},
+        phrase : {}
       }
     }
   }
@@ -15,6 +13,10 @@ module.exports = class QueryBuilder {
   bool (boolType, queries) {
     this.query['query']['bool'][boolType] = queries
     return this
+  }
+
+  phrase (field, terms) {
+    this.query['query']['phrase'][field] = { terms }
   }
 
   limit (limit) {

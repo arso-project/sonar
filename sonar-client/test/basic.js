@@ -42,7 +42,7 @@ group('basics', test => {
     t.equal(results[0].value.title, 'hello world', 'toshi query worked')
   })
 
-  test('query builder', async t => {
+  test('querybuilder: simple bool search', async t => {
     const query = new QueryBuilder('doc')
     query
       .bool('must', [query.term('title', 'hello')])
@@ -60,6 +60,14 @@ group('basics', test => {
   // TODO: Test exact query
   // TODO: Test fuzzy query
   // TODO: Test phrase query
+  test('querybuilder: phrase search', async t => {
+    const query = new QueryBuilder('doc')
+    query.phrase('title', ['hello', 'moon'])
+    //console.log(query.getQuery())
+    let results = await client.search({ limit: 10, query: { phrase: { title: { terms: ['hello moon'] } } } })
+    t.equal(results.length, 1, 'should return one result')
+    t.equal(results[0].value.title, 'hello moon', 'phrase search worked')
+  })
 
 
 })

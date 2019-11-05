@@ -48,6 +48,7 @@ module.exports = class SonarClient {
     } else if (query instanceof QueryBuilder) {
       query = query.getQuery()
     }
+    console.log(query)
     return this._call('POST', '/' + this.islandKey + '/_search', query)
   }
 
