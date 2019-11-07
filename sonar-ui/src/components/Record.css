@@ -1,0 +1,26 @@
+.sonar-record__field {
+  display: flex;
+  border-bottom: 1px dotted var(--color-border);
+  padding-bottom: 1rem;
+  margin-bottom: 1rem;
+}
+.sonar-record__field-label {
+  width: 12rem;
+  text-align: right;
+  margin-right: 1rem;
+  color: var(--color-text-secondary);
+}
+
+.sonar-record__meta {
+  > dl {
+    display: flex;
+    flex-wrap: true;
+    > div {
+      margin-right: 2rem;
+    }
+    dt {
+      font-size: var(--font-size-s);
+      color: var(--color-text-secondary);
+    }
+  }
+}

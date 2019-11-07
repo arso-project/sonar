@@ -1,5 +1,6 @@
 class Config {
-  constructor () {
+  constructor (prefix) {
+    this.prefix = prefix
     this.config = {}
   }
 

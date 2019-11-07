@@ -1,12 +1,35 @@
 import React, { useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, NavLink } from 'react-router-dom'
 
 import makeGlobalStateHook from '../hooks/make-global-state-hook'
 
 import client from '../lib/client'
 import errors from '../lib/error'
 
-const useGlobalState = makeGlobalStateHook('search')
+import { RecordLabelDisplay } from '../components/Record'
+
+export const useGlobalState = makeGlobalStateHook('search')
+
+export function useSearchResults () {
+  const [results, setResults] = useGlobalState('results', null)
+  return results
+}
+
+export function SearchResultList (props) {
+  const results = useSearchResults()
+  if (!results) return null
+  return (
+    <ul className='sonar-search-result-list'>
+      {results.map((record, i) => (
+        <li key={i}>
+          <NavLink to={recordPath(record.id)}>
+            <RecordLabelDisplay record={record} />
+          </NavLink>
+        </li>
+      ))}
+    </ul>
+  )
+}
 
 export default function SearchPage (props) {
   const [search, setSearch] = useGlobalState('search', '')
@@ -68,8 +91,12 @@ function SearchResult (props) {
 
   function entityLink () {
     const title = value.title || id
-    return <Link to={'/entity/' + id}>{title}</Link>
+    return <Link to={recordPath(id)}>{title}</Link>
   }
+}
+
+function recordPath (id) {
+  return '/record/' + id
 }
 
 // TODO: This is likely too hacky. Propably we'll want

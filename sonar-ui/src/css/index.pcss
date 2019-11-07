@@ -10,6 +10,14 @@
   --color-border: hsl(var(--hue-primary), 7%, 80%);
 
   --sidebar-width: 16rem;
+
+  --font-size-base: 16px;
+  --font-size-l: 1.25rem; /* 20px */
+  --font-size-xl: 1.5rem; /* 24px */
+  --font-size-2xl: 2rem;  /* 32px */
+  --font-size-3xl: 3rem;  /* 48px */
+  --font-size-s: .875rem; /* 14px */
+  --font-size-xs: .75rem; /* 12px */
 }
 
 html {
@@ -46,17 +54,15 @@ body {
 }
 
 .sonar-status {
-  --font-size: .875rem;
   grid-area: footer;
   background: white;
   color: var(--color-text-secondary);
   overflow: hidden;
   display: flex;
   z-index: 1;
-  font-size: 1rem;
   height: 2rem;
   border-top: 1px solid var(--color-bg-app);
-  font-size: .875rem;
+  font-size: var(--font-size-small);
   > div {
     &:not(:last-child) {
       margin-right: 2rem;
@@ -98,7 +104,7 @@ body {
   grid-area: sidebar;
   z-index: 1;
   h2 {
-    font-size: 1.5rem;
+    font-size: var(--font-size-xl);
     font-weight: 400;
     color: hsl(var(--hue-secondary), 100%, 70%);
     margin-bottom: 1rem;
@@ -111,7 +117,7 @@ body {
     font-weight: 400;
     text-decoration: none;
     color: #000;
-    font-size: 1.5rem;
+    font-size: var(--font-size-xl);
     &:focus {
       color: var(--color-primary);
       outline: none;
@@ -133,7 +139,7 @@ body {
 
   p {
     max-width: 40rem;
-    font-size: 2rem;
+    font-size: var(--font-size-xl);
     color: var(--color-text-secondary);
     margin: 0 auto;
   }
@@ -339,6 +345,9 @@ body {
   }
 }
 
-.sonar-entity {
+.sonar-record-page {
   display: flex;
+  .sonar-search-result-list {
+    width: 20rem;
+  }
 }
