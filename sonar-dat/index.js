@@ -59,13 +59,12 @@ class IslandManager {
         if (err) return cb(err)
         const island = this._open(keyOrName)
         if (!config.islands || !config.islands[key]) {
-          this._saveIsland({ key }, err => finish(err, island))
+          this._saveIsland({ key, name: opts.name }, err => finish(err, island))
         } else finish(null, island)
       })
     } else {
       this._islandByName(keyOrName, (err, info) => {
         if (err) return cb(err)
-        // if (!info) return cb(new Error('Not found.'))
         if (!info) return this.create(keyOrName, cb)
         const island = this._open(info.key)
         finish(null, island)
@@ -78,13 +77,17 @@ class IslandManager {
     }
   }
 
+  list (cb) {
+    this.config.load((err, config) => {
+      err ? cb(err) : cb(null, config.islands)
+    })
+  }
+
   share (key) {
     key = hex(key)
     if (!this.islands[key]) return
     this.network.add(this.islands[key])
     this.config.update(config => {
-      console.log('KEY', key)
-      console.log('config', config)
       config.islands[key].share = true
       return config
     })
@@ -101,20 +104,20 @@ class IslandManager {
   }
 
   close () {
-    for (let island of Object.values(this.islands)) {
+    for (const island of Object.values(this.islands)) {
       island.close()
     }
+    this.network.close()
   }
 
-  _saveIsland (opts, cb) {
-    let { key, name } = opts
+  _saveIsland (info, cb) {
+    let { key, name } = info
     key = hex(key)
-    this.config.load((err, config) => {
-      if (err) return cb(err)
+    this.config.update(config => {
       config.islands = config.islands || {}
       config.islands[key] = { name, key }
-      this.config.save(config, cb)
-    })
+      return config
+    }, cb)
   }
 
   _islandByName (name, cb) {
