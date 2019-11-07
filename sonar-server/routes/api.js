@@ -4,25 +4,29 @@ const collect = require('collect-stream')
 module.exports = function apiRoutes (fastify, opts, done) {
   const handlers = createApiHandlers(opts.islands)
 
+  // Info
+  fastify.get('/_info', handlers.info)
   // Create island
   fastify.put('/_create/:name', handlers.createIsland)
   // Create record
-  fastify.post('/:key/:schema', handlers.put)
+  fastify.post('/:key/db/:schema', handlers.put)
   // Update record
-  fastify.put('/:key/:schema/:id', handlers.put)
+  fastify.put('/:key/db/:schema/:id', handlers.put)
   // Get record
-  fastify.get('/:key/:id', handlers.get)
-  fastify.get('/:key/:schema/:id', handlers.get)
+  fastify.get('/:key/db/:id', handlers.get)
+  fastify.get('/:key/db/:schema/:id', handlers.get)
   // Search/Query
   fastify.post('/:key/_search', handlers.search)
   // Get schema
-  fastify.get('/:key/:schema/_schema', handlers.getSchema)
+  fastify.get('/:key/schema/:schema', handlers.getSchema)
   // Put schema
-  fastify.put('/:key/:schema/_schema', handlers.putSchema)
+  fastify.put('/:key/schema/:schema', handlers.putSchema)
 
   // Get files
-  fastify.get('/:key/files', handlers.files)
-  fastify.get('/:key/files/*', handlers.files)
+  fastify.get('/:key/fs', handlers.files)
+  fastify.get('/:key/fs/*', handlers.files)
+  // Put files.
+  fastify.put('/:key/fs/*', handlers.files)
 
   // Add source
   fastify.put('/:key/_source', handlers.putSource)
@@ -35,6 +39,12 @@ module.exports = function apiRoutes (fastify, opts, done) {
 
 function createApiHandlers (islands) {
   return {
+    info (req, res) {
+      islands.list((err, islands) => {
+        if (err) return res.code(500).send({ error: 'Could not fetch info' })
+        res.send({ islands })
+      })
+    },
     createIsland (req, res) {
       const { name } = req.params
       islands.create(name, (err, island) => {
@@ -74,7 +84,7 @@ function createApiHandlers (islands) {
             res.send(record)
           })
         } else {
-          const queryStream = island.api.entities.allWithId({ id })
+          const queryStream = island.api.entities.byId(id)
           const getStream = island.createGetStream()
           const resultStream = queryStream.pipe(getStream)
           collect(resultStream, (err, results) => {

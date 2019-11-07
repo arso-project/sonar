@@ -12,6 +12,10 @@ module.exports = function createServer (opts) {
   const storagePath = opts.storage || '../.data'
   const islands = new IslandManager(storagePath)
 
+  fastify.addContentTypeParser('*', function (req, done) {
+    done()
+  })
+
   fastify.register(fastifyCors, {
     origin: '*'
   })

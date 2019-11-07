@@ -1,52 +1,78 @@
 const axios = require('axios')
 
 module.exports = class SonarClient {
-  constructor (baseUrl, islandKey) {
+  constructor (baseUrl, island) {
     this.baseUrl = baseUrl
-    this.islandKey = islandKey
+    this.island = island
   }
 
-  create (name) {
-    return this._call('PUT', '/_create/' + name)
+  async info () {
+    return this._request({
+      method: 'GET',
+      path: ['_info']
+    })
   }
 
-  getSchema (schemaName) {
+  async createIsland (name) {
+    return this._request({
+      method: 'PUT',
+      path: ['_create', name],
+      data: {}
+    })
+  }
+
+  async getSchema (schemaName) {
     schemaName = schemaName.replace('/', '-')
-    return this._call('GET', '/' + this.islandKey + '/' + schemaName + '/_schema')
+    return this._request({
+      path: [this.island, 'schema', schemaName]
+    })
   }
 
-  putSchema (schemaName, schema) {
-    return this._call('PUT', '/' + this.islandKey + '/' + schemaName + '/_schema', schema)
+  async putSchema (schemaName, schema) {
+    return this._request({
+      method: 'PUT',
+      path: [this.island, 'schema', schemaName],
+      data: schema
+    })
   }
 
-  get ({ schema, id }) {
+  async get ({ schema, id }) {
+    let path
     if (schema) {
-      return this._call('GET', '/' + this.islandKey + '/' + schema + '/' + id)
+      path = [this.island, 'db', schema, id]
     } else {
-      return this._call('GET', '/' + this.islandKey + '/' + id)
+      path = [this.island, 'db', id]
     }
+    return this._request({ path })
   }
 
-  put (record) {
+  async put (record) {
     const { schema, id, value } = record
+    const path = [this.island, 'db', schema]
+    let method = 'POST'
     if (id) {
-      return this._call('PUT', '/' + this.islandKey + '/' + schema + '/' + id, value)
-    } else {
-      return this._call('POST', '/' + this.islandKey + '/' + schema, value)
+      method = 'PUT'
+      path.push(id)
     }
+    return this._request({ path, method, data: value })
   }
 
-  search (query) {
+  async search (query) {
     if (typeof query === 'string') {
       query = JSON.stringify(query)
     }
-    return this._call('POST', '/' + this.islandKey + '/_search', query)
+    return this._request({
+      method: 'POST',
+      path: [this.island, '_search'],
+      data: query
+    })
   }
 
   async readdir (path) {
     const self = this
-    if (path.charAt(0) === '/') path = path.substring(1)
-    let files = await this._call('GET', '/' + this.islandKey + '/files/' + path)
+    path = path || '/'
+    if (path.length > 2 && path.charAt(0) === '/') path = path.substring(1)
+    let files = await this._request({ path: [this.island, 'fs', path] })
     if (files && files.length) {
       files = files.map(file => {
         file.link = makeLink(file)
@@ -56,19 +82,59 @@ module.exports = class SonarClient {
     return files
 
     function makeLink (file) {
-      return `${self.baseUrl}/${self.islandKey}/files/${file.path}`
+      return `${self.baseUrl}/${self.island}/fs/${file.path}`
     }
   }
 
-  async _call (method, url, data) {
-    if (data === undefined) data = {}
-    const fullUrl = this.baseUrl + url
-    const result = await axios({
-      method,
-      url: fullUrl,
-      data,
-      headers: { 'Content-Type': 'application/json' }
+  async writeFile (path, file) {
+    if (path.startsWith('/')) path = path.substring(1)
+    return this._request({
+      path: [this.island, 'fs', path],
+      data: file,
+      method: 'PUT',
+      binary: true
     })
+  }
+
+  async readFile (path) {
+    if (path.startsWith('/')) path = path.substring(1)
+    return this._request({
+      path: [this.island, 'fs', path],
+      binary: true,
+      responseType: 'stream'
+    })
+  }
+
+  async statFile (path) {
+    if (path.startsWith('/')) path = path.substring(1)
+    return this._request({
+      path: [this.island, 'fs', path]
+    })
+  }
+
+  _url (path) {
+    if (Array.isArray(path)) path = path.join('/')
+    return this.baseUrl + '/' + path
+  }
+
+  async _request (opts) {
+    const axiosOpts = {
+      method: opts.method || 'GET',
+      url: opts.url || this._url(opts.path),
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      // axios has a very weird bug that it REMOVES the
+      // Content-Type header if data is empty...
+      data: opts.data || {},
+      responseType: opts.responseType
+    }
+
+    if (opts.binary) {
+      axiosOpts.headers['content-type'] = 'application/octet-stream'
+      axiosOpts.responseType = opts.responseType
+    }
+    const result = await axios.request(axiosOpts)
     return result.data
   }
 }

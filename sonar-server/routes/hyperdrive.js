@@ -1,18 +1,11 @@
 const hyperdriveHttp = require('hyperdrive-http')
 const p = require('path')
+const mkdirp = require('mkdirp')
+const { Transform } = require('stream')
+const pretty = require('pretty-bytes')
+const speedometer = require('speedometer')
 
-module.exports = { hyperdriveHandler, hyperdriveRoutes }
-
-function hyperdriveRoutes (fastify, opts, done) {
-  const islands = opts.islands
-
-  fastify.get('/:key/*', (req, res) => {
-    const { key, '*': wildcard } = req.params
-    hyperdriveHandler(islands, key, wildcard, req, res)
-  })
-
-  done()
-}
+module.exports = { hyperdriveHandler }
 
 function hyperdriveHandler (islands, name, path, req, res) {
   islands.get(name, (err, island) => {
@@ -21,26 +14,42 @@ function hyperdriveHandler (islands, name, path, req, res) {
     // to get a drive instance.
     island.writer((err, drive) => {
       if (err) return res.code(404).send('Not found')
-
-      // If Content-Type: application/json was requested,
-      // return stat/readdir info in JSON.
-      if (req.headers['content-type'] === 'application/json') {
-        fastifyHyperdriveHttpJson(drive, path, req, res)
-      // Otherwise, serve files.
-      } else {
-        const handler = hyperdriveHttp(drive)
-        // "Downgrade" from fastify to node core http req/res objects
-        const rawReq = req.req
-        rawReq.url = path
-        handler(rawReq, res.res)
-      }
+      ondrive(drive, path, req, res)
     })
   })
 }
 
-function fastifyHyperdriveHttpJson (drive, path, req, res) {
+function ondrive (drive, path, req, res) {
+  const method = req.method || req.req.method
+  if (method === 'PUT') {
+    onput(drive, path, req, res)
+  } else if (method === 'GET') {
+    // If Content-Type: application/json was requested,
+    // return stat/readdir info in JSON.
+    if (req.headers['content-type'] === 'application/json') {
+      ongetjson(drive, path, req, res)
+    // Otherwise, serve files.
+    } else {
+      ongetfile(drive, path, req, res)
+    }
+  } else {
+    onerror(res, 'Invalid method', 405)
+  }
+}
+
+function ongetfile (drive, path, req, res) {
+  const handler = hyperdriveHttp(drive)
+  // "Downgrade" from fastify to node core http req/res objects
+  // ondrive(drive, path, req.req, res.res)
+  req = req.req
+  res = res.res
+  req.url = path
+  handler(req, res)
+}
+
+function ongetjson (drive, path, req, res) {
   drive.stat(path, (err, stat) => {
-    if (err) return onerror(res, 404, err)
+    if (err) return onerror(res, err, 404)
     if (stat.isDirectory()) {
       ondirectory(path, send)
     } else {
@@ -76,18 +85,65 @@ function fastifyHyperdriveHttpJson (drive, path, req, res) {
   }
 
   function send (err, data) {
-    if (err) return onerror(res, 500, err)
-    res.send(data)
-  }
-
-  function onerror (res, status, err) {
-    res.code(status)
-    let error = null
-    if (err instanceof Error) {
-      error = err.message
-    } else if (typeof err === 'string') {
-      error = err
+    if (err) return onerror(res, err, 500)
+    else {
+      res.send(data)
     }
-    send(null, { error })
   }
 }
+
+function onerror (res, msg, code) {
+  code = code || 500
+  if (msg instanceof Error) msg = msg.message
+  msg = String(msg)
+  res.code(code).send({ error: msg })
+  // res.statusCode = code
+  // res.setHeader('Content-Type', 'application/json')
+  // res.end(JSON.stringify({ error: msg }))
+}
+
+function onput (drive, path, req, res) {
+  if (!drive.writable) return onerror(res, 'Drive is not writable', 403)
+  mkdirp(p.dirname(path), { fs: drive }, err => {
+    if (err && err.code !== 'EEXISTS') return onerror(res, 'Cannot create directory', 500)
+    const ws = drive.createWriteStream(path)
+    req.req.pipe(transform()).pipe(ws).on('finish', () => {
+      res.statusCode = 200
+      res.send()
+    })
+  })
+
+  function transform () {
+    const speedo = speedometer()
+    let total = 0
+    let speed
+    let interval = setInterval(() => {
+      if (speed) console.log(`${pretty(speed)}/s`)
+    }, 1000)
+    return new Transform({
+      transform (chunk, enc, next) {
+        total += chunk.length
+        speed = speedo(chunk.length)
+        this.push(chunk)
+        next()
+      },
+      flush (cb) {
+        console.log(`total: ${pretty(total)}`)
+        clearInterval(interval)
+        cb()
+      }
+    })
+  }
+}
+
+// function hyperdriveRoutes (fastify, opts, done) {
+//   const islands = opts.islands
+
+//   fastify.get('/:key/*', (req, res) => {
+//     const { key, '*': wildcard } = req.params
+//     hyperdriveHandler(islands, key, wildcard, req, res)
+//   })
+
+//   done()
+// }
+
