@@ -11,7 +11,7 @@ async function makeClient (opts = {}) {
   let client = new SonarClient(`http://localhost:${opts.port}/api`, opts.island)
   return [client, cleanup]
   function cleanup () {
-    // client.close()
+    client.close()
     return _cleanup()
   }
 }

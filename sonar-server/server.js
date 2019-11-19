@@ -1,6 +1,6 @@
 const { IslandManager } = require('@arso-project/sonar-dat')
 const Fastify = require('fastify')
-
+const fastifyWs = require('fastify-websocket')
 const fastifyCors = require('fastify-cors')
 
 const apiRoutes = require('./routes/api')
@@ -19,6 +19,8 @@ module.exports = function createServer (opts) {
   fastify.register(fastifyCors, {
     origin: '*'
   })
+  fastify.register(fastifyWs)
+
   fastify.register(apiRoutes, { islands, prefix: 'api' })
 
   fastify.addHook('onClose', (instance, done) => {

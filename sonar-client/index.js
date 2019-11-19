@@ -1,9 +1,20 @@
 const axios = require('axios')
+const randombytes = require('randombytes')
+const Socket = require('simple-websocket')
+const { CommandProtocol } = require('./lib/command-protocol')
 
 module.exports = class SonarClient {
-  constructor (baseUrl, island) {
+  constructor (baseUrl, island, opts = {}) {
     this.baseUrl = baseUrl
-    this.island = island
+    this.island = island || 'default'
+
+    this.id = opts.id || randombytes(16).toString('hex')
+    this.name = opts.name || null
+    this._sockets = []
+  }
+
+  close () {
+    this._sockets.forEach(s => s.destroy())
   }
 
   async info () {
@@ -137,4 +148,22 @@ module.exports = class SonarClient {
     const result = await axios.request(axiosOpts)
     return result.data
   }
+
+  _socket (opts) {
+    if (Array.isArray(opts)) opts = { path: opts }
+    const url = opts.url || this._url(opts.path)
+    const socket = new Socket(url)
+    this._sockets.push(socket)
+    return socket
+  }
+
+  createCommandStream (opts = {}) {
+    const { oncommand, commands, name = 'sonar-client' } = opts
+    const socket = this._socket([this.island, 'commands'])
+    const proto = new CommandProtocol(true, { socket, oncommand, commands, name })
+    // proto.hello()
+    // if (hello) proto.command('hello', hello)
+    return proto
+  }
 }
+

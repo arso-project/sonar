@@ -1,5 +1,6 @@
 const { hyperdriveHandler } = require('./hyperdrive')
 const collect = require('collect-stream')
+const { CommandProtocol, CommandRouter } = require('@arso-project/sonar-client/lib/command-protocol')
 
 module.exports = function apiRoutes (fastify, opts, done) {
   const handlers = createApiHandlers(opts.islands)
@@ -30,6 +31,8 @@ module.exports = function apiRoutes (fastify, opts, done) {
 
   // Add source
   fastify.put('/:key/_source', handlers.putSource)
+
+  fastify.get('/:key/commands', { websocket: true }, handlers.createCommandStream)
 
   // TODO: Create record with id / Replace record
   // TODO: Batch insertion of records
@@ -156,6 +159,24 @@ function createApiHandlers (islands) {
         const resultStream = island.api.search.query(query)
         replyStream(res, resultStream)
       })
+    },
+
+    createCommandStream (socket, req, params) {
+      const { key } = params
+      if (!this.router) {
+        this.router = new CommandRouter({ name: 'server' })
+        this.router.service('host', {
+          commands: {
+            echo: {
+              oncall (args, ch) { 
+                ch.reply(args.toUpperCase())
+              },
+              help: 'echo echoo'
+            }
+          }
+        })
+      }
+      this.router.connection(false, socket)
     }
   }
 }
