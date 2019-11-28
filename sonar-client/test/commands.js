@@ -13,9 +13,9 @@ tape('commands', async t => {
     commands: {
       ping: {
         oncall (args, channel) {
-          t.equal(args, 'client2')
+          t.equal(args, 'client2', 'args match')
           channel.once('data', d => {
-            t.equal(d.toString(), 'hi from 2')
+            t.equal(d.toString(), 'hi from 2', 'data matches')
             channel.reply('pong from 1')
           })
         }
@@ -25,11 +25,11 @@ tape('commands', async t => {
   const commands2 = client2.createCommandStream()
   setTimeout(() => {
     const ch = commands2.call('@pinger ping', 'client2', (err, res, channel) => {
-      console.log('remote cmds on 2', commands2.remoteCommands())
+      console.log('remote cmds on 2', commands2.remoteManifest)
       t.equal(res, 'pong from 1')
       close()
     })
-    ch.write('hi from 2')
+    ch.io.write(Buffer.from('hi from 2'))
   }, 100)
   async function close () {
     client2.close()

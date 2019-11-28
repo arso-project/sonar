@@ -1,12 +1,15 @@
 const axios = require('axios')
 const randombytes = require('randombytes')
 const Socket = require('simple-websocket')
-const { CommandProtocol } = require('./lib/command-protocol')
+const { Endpoint } = require('simple-rpc-protocol')
+
+const DEFAULT_BASE_URL = 'http://localhost:9191/api'
+const DEFAULT_ISLAND = 'default'
 
 module.exports = class SonarClient {
   constructor (baseUrl, island, opts = {}) {
-    this.baseUrl = baseUrl
-    this.island = island || 'default'
+    this.baseUrl = baseUrl || DEFAULT_BASE_URL
+    this.island = island || DEFAULT_ISLAND
 
     this.id = opts.id || randombytes(16).toString('hex')
     this.name = opts.name || null
@@ -158,9 +161,10 @@ module.exports = class SonarClient {
   }
 
   createCommandStream (opts = {}) {
-    const { oncommand, commands, name = 'sonar-client' } = opts
-    const socket = this._socket([this.island, 'commands'])
-    const proto = new CommandProtocol(true, { socket, oncommand, commands, name })
+    const { commands, name = 'sonar-client' } = opts
+    const stream = this._socket([this.island, 'commands'])
+    const proto = new Endpoint({ stream, commands, name })
+    proto.announce()
     // proto.hello()
     // if (hello) proto.command('hello', hello)
     return proto

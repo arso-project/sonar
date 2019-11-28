@@ -1,6 +1,7 @@
 const { hyperdriveHandler } = require('./hyperdrive')
 const collect = require('collect-stream')
-const { CommandProtocol, CommandRouter } = require('@arso-project/sonar-client/lib/command-protocol')
+// const { CommandProtocol, CommandRouter } = require('@arso-project/sonar-client/lib/command-protocol')
+const { Router } = require('simple-rpc-protocol')
 
 module.exports = function apiRoutes (fastify, opts, done) {
   const handlers = createApiHandlers(opts.islands)
@@ -164,19 +165,17 @@ function createApiHandlers (islands) {
     createCommandStream (socket, req, params) {
       const { key } = params
       if (!this.router) {
-        this.router = new CommandRouter({ name: 'server' })
+        this.router = new Router({ name: 'server' })
         this.router.service('host', {
-          commands: {
-            echo: {
-              oncall (args, ch) { 
-                ch.reply(args.toUpperCase())
-              },
-              help: 'echo echoo'
-            }
+          echo: {
+            oncall (args, ch) {
+              ch.reply(args.toUpperCase())
+            },
+            help: 'echo echoo'
           }
         })
       }
-      this.router.connection(false, socket)
+      this.router.connection(socket)
     }
   }
 }

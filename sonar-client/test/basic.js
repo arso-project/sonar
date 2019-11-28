@@ -1,4 +1,3 @@
-// const { group } = require('tape-plus')
 const test = require('tape')
 require('axios-debug-log')
 

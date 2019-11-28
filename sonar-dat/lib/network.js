@@ -31,7 +31,7 @@ module.exports = class Network {
   }
 
   close () {
-    this.hyperswarm.close()
+    this.hyperswarm.destroy()
     this.localswarm.close()
   }
 
