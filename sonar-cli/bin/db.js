@@ -32,6 +32,11 @@ exports.builder = function (yargs) {
       },
       handler: put
     })
+    .command({
+      command: 'put-schema [name]',
+      describe: 'put schema from stdin',
+      handler: putSchema
+    })
 }
 
 async function get (argv) {
@@ -51,6 +56,21 @@ async function put (argv) {
       const record = { schema, id, value }
       const result = await client.put(record)
       console.log(result.id)
+    } catch (e) {
+      console.error(e.message)
+    }
+  })
+}
+
+async function putSchema (argv) {
+  const client = makeClient(argv)
+  const { name } = argv
+  collect(process.stdin, async (err, buf) => {
+    if (err) return console.error(err)
+    try {
+      const value = JSON.parse(buf.toString())
+      const result = await client.putSchema(name, value)
+      console.log(result)
     } catch (e) {
       console.error(e.message)
     }
