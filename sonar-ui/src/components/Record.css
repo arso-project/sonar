@@ -1,9 +1,14 @@
+.sonar-record {
+  margin-bottom: 1rem;
+}
+
 .sonar-record__field {
   display: flex;
   border-bottom: 1px dotted var(--color-border);
   padding-bottom: 1rem;
   margin-bottom: 1rem;
 }
+
 .sonar-record__field-label {
   width: 12rem;
   text-align: right;
@@ -11,16 +16,48 @@
   color: var(--color-text-secondary);
 }
 
+.sonar-record__footer {
+  display: flex;
+  font-size: var(--font-size-xs);
+  background: var(--color-bg-taint);
+  border-radius: 20px;
+  padding: 0 1rem;
+  margin: 0 0 1rem 0;
+}
+
+.sonar-record__selector {
+  padding: .5rem;
+  padding-left: 0;
+  input {
+  }
+}
+
 .sonar-record__meta {
   > dl {
     display: flex;
     flex-wrap: true;
+    color: var(--color-text-secondary);
     > div {
       margin-right: 2rem;
     }
     dt {
-      font-size: var(--font-size-s);
-      color: var(--color-text-secondary);
+      font-style: italic;
+      /* color: var(--color-text-secondary); */
+    }
+    dd {
+      /* font-weight: bold; */
     }
   }
+}
+
+.sonar-record__array {
+  li {
+    list-style-type: disc;
+    display: block;
+  }
+}
+
+.sonar-record__raw {
+  width: 100%;
+  height: auto;
 }

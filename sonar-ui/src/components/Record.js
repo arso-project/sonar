@@ -8,6 +8,7 @@ function findWidget (fieldSchema) {
   const { type, format } = fieldSchema
   if (type === 'string' && format === 'date-time') return DateViewer
   if (type === 'string') return TextViewer
+  if (type === 'array') return ArrayViewer
   return () => <em>No viewer available for {type}</em>
 }
 
@@ -15,7 +16,8 @@ function getDisplays () {
   return [
     { id: 'fields', name: 'Fields', component: RecordFieldDisplay },
     { id: 'json', name: 'JSON', component: RecordJsonDisplay },
-    { id: 'label', name: 'Label', component: RecordLabelDisplay }
+    { id: 'label', name: 'Label', component: RecordLabelDisplay },
+    { id: 'raw', name: 'Raw', component: RecordRawDisplay }
   ]
 }
 
@@ -23,7 +25,7 @@ export function RecordGroup (props) {
   const { records, schemas } = props
   if (!records) return null
   return (
-    <div className=''>
+    <div className='sonar-record__group'>
       {records.map((record, i) => (
         <Record key={i} record={record} schema={schemas[record.schema]} />
       ))}
@@ -48,15 +50,19 @@ export function Record (props) {
 
   return (
     <div className='sonar-record'>
-      {selector}
+      <div className='sonar-record__footer'>
+        <div className='sonar-record__selector'>
+          {selector}
+        </div>
+        <RecordMeta record={record} schema={schema} />
+      </div>
       <Display record={record} schema={schema} />
-      <RecordMeta record={record} schema={schema} />
     </div>
   )
 }
 
 export function RecordLabelDisplay (props) {
-  const { record, schema } = props
+  const { record } = props
   return (
     <span>{record.value.title || record.id}</span>
   )
@@ -74,6 +80,15 @@ export function RecordJsonDisplay (props) {
       collapseStringsAfterLength={40}
       collapsed={1}
     />
+  )
+}
+
+export function RecordRawDisplay (props) {
+  const { record } = props
+  return (
+    <pre className='sonar-record__raw'>
+      {JSON.stringify(record, null, 2)}
+    </pre>
   )
 }
 
@@ -107,6 +122,20 @@ function FieldViewer (props) {
         <Viewer value={value} fieldSchema={fieldSchema} />
       </div>
     </div>
+  )
+}
+
+function ArrayViewer (props) {
+  const { value, fieldSchema } = props
+  const Viewer = findWidget(fieldSchema.items)
+  return (
+    <ul className='sonar-record__array'>
+      {value.map((value, i) => (
+        <li key={i}>
+          <Viewer value={value} fieldSchema={fieldSchema.items} />
+        </li>
+      ))}
+    </ul>
   )
 }
 
