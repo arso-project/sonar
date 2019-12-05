@@ -1,6 +1,6 @@
 {
   "name": "@arso-project/sonar-server",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "",
   "main": "server.js",
   "scripts": {
@@ -11,7 +11,8 @@
   "author": "",
   "license": "GPL-3.0",
   "dependencies": {
-    "@arso-project/sonar-dat": "^0.0.0",
+    "@arso-project/sonar-dat": "*",
+    "@arso-project/sonar-cli": "*",
     "collect-stream": "^1.2.1",
     "fastify": "^2.9.0",
     "fastify-cors": "^2.1.3",
