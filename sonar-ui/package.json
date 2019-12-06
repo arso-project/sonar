@@ -18,6 +18,7 @@
     "inter-ui": "^3.10.0",
     "pretty-bytes": "^5.3.0",
     "react": "^16.10.2",
+    "react-data-grid": "^6.1.0",
     "react-dom": "^16.10.2",
     "react-json-view": "^1.19.1",
     "react-router": "^5.1.2",

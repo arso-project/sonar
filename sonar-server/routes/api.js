@@ -17,6 +17,7 @@ module.exports = function apiRoutes (fastify, opts, done) {
   fastify.get('/:key/db/:schema/:id', handlers.get)
   // Search/Query
   fastify.post('/:key/_search', handlers.search)
+  fastify.post('/:key/_query', handlers.query)
   // Get schema
   fastify.get('/:key/schema/:schema', handlers.getSchema)
   // Put schema
@@ -92,6 +93,23 @@ function createApiHandlers (islands) {
             res.send(results)
           })
         }
+      })
+    },
+
+    query (req, res) {
+      const key = req.params.key
+      const { schema, id, source } = req.body
+      islands.get(key, (err, island) => {
+        if (err) {
+          res.code(500).send({ error: 'Could not open island', key: key })
+        }
+        const queryStream = island.api.entities.get({ schema, id, source })
+        const getStream = island.createGetStream()
+        const resultStream = queryStream.pipe(getStream)
+        collect(resultStream, (err, results) => {
+          if (err) return res.code(404).send()
+          res.send(results)
+        })
       })
     },
 

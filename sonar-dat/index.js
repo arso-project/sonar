@@ -39,6 +39,14 @@ class IslandManager {
   }
 
   create (name, cb) {
+    this._islandByName(name, (err, info) => {
+      if (err) return cb(err)
+      if (info) return cb(new Error('island exists'))
+      this._create(name, cb)
+    })
+  }
+
+  _create (name, cb) {
     const keyPair = crypto.keyPair()
     const key = keyPair.publicKey
     const island = this._open(key, { keyPair, name })
@@ -51,7 +59,7 @@ class IslandManager {
   get (keyOrName, opts, cb) {
     if (!cb && typeof opts === 'function') return this.get(keyOrName, {}, opts)
 
-    if (this.islands[keyOrName]) return finish(null, this.islands[keyOrName])
+    if (this.islands[keyOrName]) return cb(null, this.islands[keyOrName])
 
     if (isKey(keyOrName)) {
       const key = hex(keyOrName)
@@ -59,21 +67,18 @@ class IslandManager {
         if (err) return cb(err)
         const island = this._open(keyOrName)
         if (!config.islands || !config.islands[key]) {
-          this._saveIsland({ key, name: opts.name }, err => finish(err, island))
-        } else finish(null, island)
+          this._saveIsland({ key, name: opts.name }, err => cb(err, island))
+        } else {
+          cb(null, island)
+        }
       })
     } else {
       this._islandByName(keyOrName, (err, info) => {
         if (err) return cb(err)
-        if (!info) return this.create(keyOrName, cb)
+        if (!info && opts.create) return this._create(keyOrName, cb)
         const island = this._open(info.key)
-        finish(null, island)
+        cb(null, island)
       })
-    }
-
-    function finish (err, island) {
-      if (err) return cb(err)
-      island.ready(err => cb(err, island))
     }
   }
 

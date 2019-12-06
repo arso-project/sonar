@@ -1,14 +1,16 @@
 import React, { useState } from 'react'
 import { format, formatRelative } from 'date-fns'
 import ReactJson from 'react-json-view'
+import { Link } from 'react-router-dom'
 
 import './Record.css'
 
-function findWidget (fieldSchema) {
+export function findWidget (fieldSchema) {
   const { type, format } = fieldSchema
   if (type === 'string' && format === 'date-time') return DateViewer
-  if (type === 'string') return TextViewer
+  if (type === 'string' || type === 'integer' || type === 'number') return TextViewer
   if (type === 'array') return ArrayViewer
+  if (type === 'object') return ObjectViewer
   return () => <em>No viewer available for {type}</em>
 }
 
@@ -19,6 +21,22 @@ function getDisplays () {
     { id: 'label', name: 'Label', component: RecordLabelDisplay },
     { id: 'raw', name: 'Raw', component: RecordRawDisplay }
   ]
+}
+
+export function RecordLink (props) {
+  let { record, schema, children } = props
+  const { id } = record
+  children = children || (
+    <RecordLabelDisplay record={record} schema={schema} />
+  )
+  return (
+    <Link to={recordPath(id)}>
+      {children}
+    </Link>
+  )
+  function recordPath (id) {
+    return '/record/' + id
+  }
 }
 
 export function RecordGroup (props) {
@@ -109,6 +127,20 @@ export function RecordFieldDisplay (props) {
   )
 }
 
+function ObjectViewer (props) {
+  const { value, fieldSchema } = props
+  return (
+    <div>
+      {Object.entries(fieldSchema.properties).map(([key, fieldSchema], i) => {
+        if (typeof value[key] === 'undefined') return null
+        return (
+          <FieldViewer key={i} fieldSchema={fieldSchema} value={value[key]} />
+        )
+      })}
+    </div>
+  )
+}
+
 function FieldViewer (props) {
   const { fieldSchema, value } = props
   const Viewer = findWidget(fieldSchema)
@@ -141,7 +173,7 @@ function ArrayViewer (props) {
 
 function TextViewer (props) {
   const { value } = props
-  return <strong>{value}</strong>
+  return value
 }
 
 function DateViewer (props) {

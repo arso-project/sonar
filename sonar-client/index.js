@@ -57,6 +57,14 @@ module.exports = class SonarClient {
     return this._request({ path, method, data: value })
   }
 
+  async query (query) {
+    return this._request({
+      method: 'POST',
+      path: [this.island, '_query'],
+      data: query
+    })
+  }
+
   async search (query) {
     if (typeof query === 'string') {
       query = JSON.stringify(query)
