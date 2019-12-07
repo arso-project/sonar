@@ -9,6 +9,7 @@ export function findWidget (fieldSchema) {
   const { type, format } = fieldSchema
   if (type === 'string' && format === 'date-time') return DateViewer
   if (type === 'string' || type === 'integer' || type === 'number') return TextViewer
+  if (type === 'boolean') return BooleanViewer
   if (type === 'array') return ArrayViewer
   if (type === 'object') return ObjectViewer
   return () => <em>No viewer available for {type}</em>
@@ -113,14 +114,15 @@ export function RecordRawDisplay (props) {
 export function RecordFieldDisplay (props) {
   const { record, schema } = props
 
-  if (!schema) return <NoSchemaError record={record} />
+  if (!schema) return <NoSchemaError record={record} message='Schema not found' />
+  if (!schema.properties) return <NoSchemaError record={record} message='Invalid schema' />
 
   return (
     <div>
       {Object.entries(schema.properties).map(([key, fieldSchema], i) => {
         if (typeof record.value[key] === 'undefined') return null
         return (
-          <FieldViewer key={i} fieldSchema={fieldSchema} value={record.value[key]} />
+          <FieldViewer key={i} fieldSchema={fieldSchema} value={record.value[key]} fieldName={key} />
         )
       })}
     </div>
@@ -134,7 +136,7 @@ function ObjectViewer (props) {
       {Object.entries(fieldSchema.properties).map(([key, fieldSchema], i) => {
         if (typeof value[key] === 'undefined') return null
         return (
-          <FieldViewer key={i} fieldSchema={fieldSchema} value={value[key]} />
+          <FieldViewer key={i} fieldSchema={fieldSchema} value={value[key]} fieldName={key} />
         )
       })}
     </div>
@@ -142,9 +144,8 @@ function ObjectViewer (props) {
 }
 
 function FieldViewer (props) {
-  const { fieldSchema, value } = props
+  const { fieldSchema, fieldName, value } = props
   const Viewer = findWidget(fieldSchema)
-  // console.log('field', fieldSchema, value, Viewer)
   return (
     <div className='sonar-record__field'>
       <div className='sonar-record__field-label'>
@@ -159,6 +160,7 @@ function FieldViewer (props) {
 
 function ArrayViewer (props) {
   const { value, fieldSchema } = props
+  if (!value) return <InvalidValueError value={value} fieldSchema={fieldSchema} />
   const Viewer = findWidget(fieldSchema.items)
   return (
     <ul className='sonar-record__array'>
@@ -176,6 +178,11 @@ function TextViewer (props) {
   return value
 }
 
+function BooleanViewer (props) {
+  const { value } = props
+  return value ? 'true' : 'false'
+}
+
 function DateViewer (props) {
   const { value } = props
   const date = new Date(value)
@@ -188,7 +195,6 @@ function DateViewer (props) {
 function RecordMeta (props) {
   const { record, schema } = props
   const { id, source, meta, schema: schemaName } = record
-
   return (
     <div className='sonar-record__meta'>
       <dl>
@@ -214,10 +220,19 @@ function RecordMeta (props) {
 
 function NoSchemaError (props) {
   const { record } = props
-  const { id, schema } = record
+  const { id, schema, message } = record
   return (
     <div>
-      Cannot display record <strong>{id}</strong>: Schema <code>{schema}</code> not found.
+      Cannot display record <strong>{id}</strong> (schema <code>{schema}</code>): {message}. 
+    </div>
+  )
+}
+
+function InvalidValueError (props) {
+  const { fieldSchema, value } = props
+  return (
+    <div>
+      Invalid value.
     </div>
   )
 }
