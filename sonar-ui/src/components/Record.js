@@ -131,6 +131,7 @@ export function RecordFieldDisplay (props) {
 
 function ObjectViewer (props) {
   const { value, fieldSchema } = props
+  if (!value) return 'no object'
   return (
     <div>
       {Object.entries(fieldSchema.properties).map(([key, fieldSchema], i) => {
