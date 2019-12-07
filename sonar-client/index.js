@@ -22,13 +22,14 @@ module.exports = class SonarClient {
   }
 
   async getSchema (schemaName) {
-    schemaName = schemaName.replace('/', '-')
+    schemaName = this.expandSchema(schemaName)
     return this._request({
       path: [this.island, 'schema', schemaName]
     })
   }
 
   async putSchema (schemaName, schema) {
+    schemaName = this.expandSchema(schemaName)
     return this._request({
       method: 'PUT',
       path: [this.island, 'schema', schemaName],
@@ -38,8 +39,8 @@ module.exports = class SonarClient {
 
   async get ({ schema, id }) {
     let path
+    schema = this.expandSchema(schema)
     if (schema) {
-      schema = encodeURIComponent(schema)
       path = [this.island, 'db', schema, id]
     } else {
       path = [this.island, 'db', id]
@@ -48,7 +49,8 @@ module.exports = class SonarClient {
   }
 
   async put (record) {
-    const { schema, id, value } = record
+    let { schema, id, value } = record
+    schema = this.expandSchema(schema)
     const path = [this.island, 'db', schema]
     let method = 'POST'
     if (id) {
@@ -145,5 +147,11 @@ module.exports = class SonarClient {
     }
     const result = await axios.request(axiosOpts)
     return result.data
+  }
+
+  expandSchema (schema) {
+    if (!schema) return
+    if (schema.indexOf('/') !== -1) return schema
+    return '_/' + schema
   }
 }
