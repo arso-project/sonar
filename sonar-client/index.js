@@ -39,6 +39,7 @@ module.exports = class SonarClient {
   async get ({ schema, id }) {
     let path
     if (schema) {
+      schema = encodeURIComponent(schema)
       path = [this.island, 'db', schema, id]
     } else {
       path = [this.island, 'db', id]

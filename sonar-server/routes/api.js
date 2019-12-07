@@ -70,7 +70,9 @@ function createApiHandlers (islands) {
     },
 
     get (req, res) {
-      const { key, schema, id } = req.params
+      let { key, schema, id } = req.params
+      // if (schema) schema = decodeURIComponent(schema)
+      // if (id) id = decodeURIComponent(id)
       islands.get(key, (err, island) => {
         if (err) return res.code(404).send({ error: 'Island not found' })
 
