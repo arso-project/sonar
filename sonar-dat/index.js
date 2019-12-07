@@ -76,6 +76,7 @@ class IslandManager {
       this._islandByName(keyOrName, (err, info) => {
         if (err) return cb(err)
         if (!info && opts.create) return this._create(keyOrName, cb)
+        if (!info) return cb(new Error('Island does not exist'))
         const island = this._open(info.key)
         cb(null, island)
       })
