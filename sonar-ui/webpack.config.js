@@ -9,6 +9,7 @@ const config = {
   entry: ['./src/index.js'],
   mode: isDev ? 'development' : 'production',
   watch: argv.watch || argv.serve,
+  devtool: isDev ? 'eval-source-map' : 'none',
   module: {
     rules: [
       {

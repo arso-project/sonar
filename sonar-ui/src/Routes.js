@@ -6,6 +6,7 @@ import Config from './pages/Config'
 import Search from './pages/Search'
 import Filebrowser from './pages/Filebrowser'
 import RecordPage from './pages/Record'
+import TablesPage from './pages/Tables'
 
 export default function Pageroutes () {
   return (
@@ -15,6 +16,7 @@ export default function Pageroutes () {
       <Route path='/config'><Config /></Route>
       <Route path='/filebrowser'><Filebrowser /></Route>
       <Route path='/record/:id'><RecordPage /></Route>
+      <Route path='/tables'><TablesPage /></Route>
     </Switch>
   )
 }

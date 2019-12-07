@@ -32,6 +32,21 @@ exports.builder = function (yargs) {
       },
       handler: put
     })
+    .command({
+      command: 'put-schema [name]',
+      describe: 'put schema from stdin',
+      handler: putSchema
+    })
+    .command({
+      command: 'get-schema [name]',
+      describe: 'get schemas',
+      handler: getSchema
+    })
+    .command({
+      command: 'list-schemas',
+      describe: 'list schemas',
+      handler: listSchemas
+    })
 }
 
 async function get (argv) {
@@ -44,15 +59,46 @@ async function get (argv) {
 async function put (argv) {
   const client = makeClient(argv)
   const { schema, id } = argv
-  collect(process.stdin, async (err, buf) => {
-    if (err) return console.error(err)
-    try {
-      const value = JSON.parse(buf.toString())
-      const record = { schema, id, value }
-      const result = await client.put(record)
-      console.log(result.id)
-    } catch (e) {
-      console.error(e.message)
-    }
+  const value = await collectJson(process.stdin)
+  const record = { schema, id, value }
+  const result = await client.put(record)
+  console.log(result.id)
+}
+
+async function putSchema (argv) {
+  const client = makeClient(argv)
+  const { name } = argv
+  const value = await collectJson(process.stdin)
+  const result = await client.putSchema(name, value)
+  console.log(result)
+}
+
+async function getSchema (argv) {
+  const client = makeClient(argv)
+  const { name } = argv
+  const result = await client.getSchema(name)
+  console.log(result)
+}
+
+async function listSchemas (argv) {
+  const client = makeClient(argv)
+  const result = await client.query({ schema: 'core/schema' })
+  // console.log(result)
+  if (!result) return console.error('No schemas')
+  console.log(result.map(r => r.id).join('\n'))
+}
+
+function collectJson () {
+  return new Promise((resolve, reject) => {
+    collect(process.stdin, async (err, buf) => {
+      if (err) return console.error(err)
+      try {
+        const value = JSON.parse(buf.toString())
+        resolve(value)
+      } catch (e) {
+        console.error(e.message)
+        reject(e)
+      }
+    })
   })
 }

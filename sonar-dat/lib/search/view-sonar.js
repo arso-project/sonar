@@ -17,10 +17,6 @@ function sonarView (level, island, opts) {
     batchSize: 500,
     map,
     api: {
-      manifest: {
-        info: 'promise',
-        query: 'streaming'
-      },
       close: () => manager.close(),
       info (kcore, args, cb) {
         manager.getInfo()

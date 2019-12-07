@@ -7,6 +7,7 @@ async function prepare () {
   const port = 21212
   const island = 'foo'
   let [client, cleanup] = await makeClient({ port, island })
+  await client.createIsland(island)
   await client.put({ schema: 'doc', value: { title: 'hello world' } })
   await client.put({ schema: 'doc', value: { title: 'hello moon' } })
   await new Promise(resolve => setTimeout(resolve, 300))

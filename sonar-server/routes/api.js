@@ -10,18 +10,19 @@ module.exports = function apiRoutes (fastify, opts, done) {
   // Create island
   fastify.put('/_create/:name', handlers.createIsland)
   // Create record
-  fastify.post('/:key/db/:schema', handlers.put)
+  fastify.post('/:key/db/:schemans/:schemaname', handlers.put)
   // Update record
-  fastify.put('/:key/db/:schema/:id', handlers.put)
+  fastify.put('/:key/db/:schemans/:schemaname/:id', handlers.put)
   // Get record
   fastify.get('/:key/db/:id', handlers.get)
-  fastify.get('/:key/db/:schema/:id', handlers.get)
+  fastify.get('/:key/db/:schemans/:schemaname/:id', handlers.get)
   // Search/Query
   fastify.post('/:key/_search', handlers.search)
+  fastify.post('/:key/_query', handlers.query)
   // Get schema
-  fastify.get('/:key/schema/:schema', handlers.getSchema)
+  fastify.get('/:key/schema/:schemans/:schemaname', handlers.getSchema)
   // Put schema
-  fastify.put('/:key/schema/:schema', handlers.putSchema)
+  fastify.put('/:key/schema/:schemans/:schemaname', handlers.putSchema)
 
   // Get files
   fastify.get('/:key/fs', handlers.files)
@@ -70,11 +71,13 @@ function createApiHandlers (islands) {
     },
 
     put (req, res) {
-      const { key, schema, id } = req.params
+      console.log('HERE', req.params)
+      const { key, id } = req.params
       const value = req.body
 
       islands.get(key, (err, island) => {
         if (err) return res.code(404).send({ error: 'Island not found' })
+        const schema = expandSchema(island, req.params)
         island.put({ schema, id, value }, (err, id) => {
           if (err) return res.code(500).send({ error: 'Could not create record' })
           res.send({ id })
@@ -83,9 +86,12 @@ function createApiHandlers (islands) {
     },
 
     get (req, res) {
-      const { key, schema, id } = req.params
+      let { key, id } = req.params
+      // if (schema) schema = decodeURIComponent(schema)
+      // if (id) id = decodeURIComponent(id)
       islands.get(key, (err, island) => {
         if (err) return res.code(404).send({ error: 'Island not found' })
+        const schema = expandSchema(island, req.params)
 
         // TODO: This uses two different APIs, which is of course not right.
         // With schema and id, it uses HyperContentDB.get(), which looks
@@ -95,6 +101,7 @@ function createApiHandlers (islands) {
         // used. Has to be fixed in hyper-content-db.
         if (schema) {
           island.get({ schema, id }, (err, record) => {
+            if (err) return res.code(404).send()
             res.send(record)
           })
         } else {
@@ -109,26 +116,39 @@ function createApiHandlers (islands) {
       })
     },
 
-    getSchema (req, res) {
+    query (req, res) {
       const key = req.params.key
-      let schema = req.params.schema
-      // TODO: Settle the routing/naming for schemas.
-      schema = schema.replace('-', '/')
+      const { schema, id, source } = req.body
       islands.get(key, (err, island) => {
         if (err) {
           res.code(500).send({ error: 'Could not open island', key: key })
-        } else {
-          island.getSchema(schema, (err, schemaValue) => {
-            if (err) return res.code(404).send({ error_code: 404 })
-            res.send(schemaValue)
-          })
         }
+        const queryStream = island.api.entities.get({ schema, id, source })
+        const getStream = island.createGetStream()
+        const resultStream = queryStream.pipe(getStream)
+        collect(resultStream, (err, results) => {
+          if (err) return res.code(404).send()
+          res.send(results)
+        })
+      })
+    },
+
+    getSchema (req, res) {
+      const { key } = req.params
+      islands.get(key, (err, island) => {
+        if (err) return res.code(500).send({ error: 'Could not open island', key: key })
+        let schema = expandSchema(island, req.params)
+        island.getSchema(schema, (err, schemaValue) => {
+          if (err) return res.code(404).send({ error_code: 404 })
+          res.send(schemaValue)
+        })
       })
     },
 
     putSchema (req, res) {
-      const { key, schema } = req.params
+      let { key } = req.params
       islands.get(key, (err, island) => {
+        let schema = expandSchema(island, req.params)
         if (err) {
           res.code(500).send({ error: 'Could not put schema', key })
         } else {
@@ -173,6 +193,13 @@ function createApiHandlers (islands) {
     },
 
   }
+}
+
+function expandSchema (island, { schemans, schemaname }) {
+  if (!schemans || !schemaname) return null
+  if (schemans === '_') schemans = island.key.toString('hex')
+  const schema = schemans + '/' + schemaname
+  return schema
 }
 
 function replyStream(res, stream) {

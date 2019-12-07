@@ -1,13 +1,17 @@
 import React, { useState } from 'react'
 import { format, formatRelative } from 'date-fns'
 import ReactJson from 'react-json-view'
+import { Link } from 'react-router-dom'
 
 import './Record.css'
 
-function findWidget (fieldSchema) {
+export function findWidget (fieldSchema) {
   const { type, format } = fieldSchema
   if (type === 'string' && format === 'date-time') return DateViewer
-  if (type === 'string') return TextViewer
+  if (type === 'string' || type === 'integer' || type === 'number') return TextViewer
+  if (type === 'boolean') return BooleanViewer
+  if (type === 'array') return ArrayViewer
+  if (type === 'object') return ObjectViewer
   return () => <em>No viewer available for {type}</em>
 }
 
@@ -15,15 +19,32 @@ function getDisplays () {
   return [
     { id: 'fields', name: 'Fields', component: RecordFieldDisplay },
     { id: 'json', name: 'JSON', component: RecordJsonDisplay },
-    { id: 'label', name: 'Label', component: RecordLabelDisplay }
+    { id: 'label', name: 'Label', component: RecordLabelDisplay },
+    { id: 'raw', name: 'Raw', component: RecordRawDisplay }
   ]
+}
+
+export function RecordLink (props) {
+  let { record, schema, children } = props
+  const { id } = record
+  children = children || (
+    <RecordLabelDisplay record={record} schema={schema} />
+  )
+  return (
+    <Link to={recordPath(id)}>
+      {children}
+    </Link>
+  )
+  function recordPath (id) {
+    return '/record/' + id
+  }
 }
 
 export function RecordGroup (props) {
   const { records, schemas } = props
   if (!records) return null
   return (
-    <div className=''>
+    <div className='sonar-record__group'>
       {records.map((record, i) => (
         <Record key={i} record={record} schema={schemas[record.schema]} />
       ))}
@@ -48,15 +69,19 @@ export function Record (props) {
 
   return (
     <div className='sonar-record'>
-      {selector}
+      <div className='sonar-record__footer'>
+        <div className='sonar-record__selector'>
+          {selector}
+        </div>
+        <RecordMeta record={record} schema={schema} />
+      </div>
       <Display record={record} schema={schema} />
-      <RecordMeta record={record} schema={schema} />
     </div>
   )
 }
 
 export function RecordLabelDisplay (props) {
-  const { record, schema } = props
+  const { record } = props
   return (
     <span>{record.value.title || record.id}</span>
   )
@@ -77,17 +102,42 @@ export function RecordJsonDisplay (props) {
   )
 }
 
+export function RecordRawDisplay (props) {
+  const { record } = props
+  return (
+    <pre className='sonar-record__raw'>
+      {JSON.stringify(record, null, 2)}
+    </pre>
+  )
+}
+
 export function RecordFieldDisplay (props) {
   const { record, schema } = props
 
-  if (!schema) return <NoSchemaError record={record} />
+  if (!schema) return <NoSchemaError record={record} message='Schema not found' />
+  if (!schema.properties) return <NoSchemaError record={record} message='Invalid schema' />
 
   return (
     <div>
       {Object.entries(schema.properties).map(([key, fieldSchema], i) => {
         if (typeof record.value[key] === 'undefined') return null
         return (
-          <FieldViewer key={i} fieldSchema={fieldSchema} value={record.value[key]} />
+          <FieldViewer key={i} fieldSchema={fieldSchema} value={record.value[key]} fieldName={key} />
+        )
+      })}
+    </div>
+  )
+}
+
+function ObjectViewer (props) {
+  const { value, fieldSchema } = props
+  if (!value) return 'no object'
+  return (
+    <div>
+      {Object.entries(fieldSchema.properties).map(([key, fieldSchema], i) => {
+        if (typeof value[key] === 'undefined') return null
+        return (
+          <FieldViewer key={i} fieldSchema={fieldSchema} value={value[key]} fieldName={key} />
         )
       })}
     </div>
@@ -95,9 +145,8 @@ export function RecordFieldDisplay (props) {
 }
 
 function FieldViewer (props) {
-  const { fieldSchema, value } = props
+  const { fieldSchema, fieldName, value } = props
   const Viewer = findWidget(fieldSchema)
-  // console.log('field', fieldSchema, value, Viewer)
   return (
     <div className='sonar-record__field'>
       <div className='sonar-record__field-label'>
@@ -110,9 +159,29 @@ function FieldViewer (props) {
   )
 }
 
+function ArrayViewer (props) {
+  const { value, fieldSchema } = props
+  if (!value) return <InvalidValueError value={value} fieldSchema={fieldSchema} />
+  const Viewer = findWidget(fieldSchema.items)
+  return (
+    <ul className='sonar-record__array'>
+      {value.map((value, i) => (
+        <li key={i}>
+          <Viewer value={value} fieldSchema={fieldSchema.items} />
+        </li>
+      ))}
+    </ul>
+  )
+}
+
 function TextViewer (props) {
   const { value } = props
-  return <strong>{value}</strong>
+  return value
+}
+
+function BooleanViewer (props) {
+  const { value } = props
+  return value ? 'true' : 'false'
 }
 
 function DateViewer (props) {
@@ -127,7 +196,6 @@ function DateViewer (props) {
 function RecordMeta (props) {
   const { record, schema } = props
   const { id, source, meta, schema: schemaName } = record
-
   return (
     <div className='sonar-record__meta'>
       <dl>
@@ -153,10 +221,19 @@ function RecordMeta (props) {
 
 function NoSchemaError (props) {
   const { record } = props
-  const { id, schema } = record
+  const { id, schema, message } = record
   return (
     <div>
-      Cannot display record <strong>{id}</strong>: Schema <code>{schema}</code> not found.
+      Cannot display record <strong>{id}</strong> (schema <code>{schema}</code>): {message}. 
+    </div>
+  )
+}
+
+function InvalidValueError (props) {
+  const { fieldSchema, value } = props
+  return (
+    <div>
+      Invalid value.
     </div>
   )
 }

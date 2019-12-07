@@ -20,9 +20,9 @@ module.exports = class Network {
       const hdkey = dkey.toString('hex')
       if (this.replicating[hdkey]) return
       this.replicating[hdkey] = island
-      this.hyperswarm.join(island.discoveryKey)
-      this.localswarm.join(island.discoveryKey)
-      console.log('add', hdkey)
+      this.hyperswarm.join(dkey)
+      this.localswarm.join(dkey)
+      console.log('swarming: ' + hdkey)
     })
   }
 
@@ -37,10 +37,10 @@ module.exports = class Network {
 
   _onconnection (socket, details) {
     const isInitiator = !!details.client
+    console.log('onconnection', isInitiator, dkey ? dkey.toString('hex') : null)
     // const proto = new Protocol(isInitiator)
     var stream = null
     const dkey = details.peer ? details.peer.topic : null
-    console.log('onconnection', isInitiator, dkey ? dkey.toString('hex') : null)
     if (isInitiator) {
       const island = this.replicating[dkey.toString('hex')]
       if (!island) {
