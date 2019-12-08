@@ -20,7 +20,7 @@ function hyperdriveHandler (islands, name, path, req, res) {
 }
 
 function ondrive (drive, path, req, res) {
-  const method = req.method || req.req.method
+  const method = req.method
   if (method === 'PUT') {
     onput(drive, path, req, res)
   } else if (method === 'GET') {
@@ -39,10 +39,6 @@ function ondrive (drive, path, req, res) {
 
 function ongetfile (drive, path, req, res) {
   const handler = hyperdriveHttp(drive)
-  // "Downgrade" from fastify to node core http req/res objects
-  // ondrive(drive, path, req.req, res.res)
-  req = req.req
-  res = res.res
   req.url = path
   handler(req, res)
 }
@@ -107,9 +103,9 @@ function onput (drive, path, req, res) {
   mkdirp(p.dirname(path), { fs: drive }, err => {
     if (err && err.code !== 'EEXISTS') return onerror(res, 'Cannot create directory', 500)
     const ws = drive.createWriteStream(path)
-    req.req.pipe(transform()).pipe(ws).on('finish', () => {
+    req.pipe(transform()).pipe(ws).on('finish', () => {
       res.statusCode = 200
-      res.send()
+      res.send('ok')
     })
   })
 
