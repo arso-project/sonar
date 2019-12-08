@@ -1,13 +1,57 @@
-# Sonar 📡
+<h1 align="center">sonar</h1>
+<div align="center">
+ <strong>
+   A p2p database and search engine running on top of the dat stack.
+ </strong>
+</div>
+<div align="center">
+  <h3>
+    <a href="https://https://arso-project.github.io/sonar-book/">
+      Book
+    </a>
+    <span> | </span>
+    <a href="https://github.com/async-rs/async-std/releases">
+      Website
+    </a>
+    <span> | </span>
+    <a href="https://async.rs/contribute">
+      Contributing
+    </a>
+  </h3>
+</div>
+<br />
 
-**Sonar** is a p2p database and search engine running on top of the dat stack.
 
-## Getting started
+The **[Sonar book](https://https://arso-project.github.io/sonar-book/)** has more documentation (soon).
 
-To get started, clone this repository and then:
+## Installation
+
+(this is pre-alpha!)
 
 ```sh
-# install dev dependencies
+npm install -g @arso-project/sonar-server
+sonar help
+sonar server start
+sonar ui serve
+```
+
+## Contributing
+
+Sonar is a young open source project and all kinds of contributions are welcome. We're in the process of writing up more documentation and overviews of how things work and come together (in a [book](https://github.com/arso-project/sonar-book)). 
+
+If in doubt, talk to us! For example on IRC in #dat on freenode (or in the browser through [gitter](https://gitter.im/datproject/discussions).
+
+More on this project on [arso.xyz](https://arso.xyz).
+
+## Development
+
+First clone this repository. The repo is structured as a monorepo of different packages (that are interdependent at several points). 
+
+Then, to get things running:
+
+
+```sh
+# install dev dependencies (lerna)
 npm install
 # let lerna install the dependencies of all modules
 npm run bootstrap
@@ -28,9 +72,9 @@ Then, you can:
 * open the web UI on [http://localhost:9191](http://localhost:9191).
 * use the CLI:
   ```sh
-  cd sonar-cli
-  node cli
-  node cli fs ls
+  cd sonar-server
+  node bin
+  node bin fs ls
   # etc.
   # the cli has a built-in help that should list the available commands
   ```
