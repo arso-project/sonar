@@ -4,6 +4,7 @@ const HtmlWebpackPlugin = require('html-webpack-plugin')
 const { WebpackPluginServe } = require('webpack-plugin-serve')
 
 const isDev = argv.watch || argv.serve || process.env.NODE_ENV === 'development'
+const output = isDev ? p.join(__dirname, 'build') : p.join(__dirname, 'dist')
 
 const config = {
   entry: ['./src/index.js'],
@@ -42,7 +43,7 @@ const config = {
     ]
   },
   output: {
-    path: p.join(__dirname, 'build'),
+    path: output,
     publicPath: '/',
     filename: 'bundle.js'
   },

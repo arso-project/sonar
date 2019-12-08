@@ -6,7 +6,8 @@
   "scripts": {
     "build": "wp",
     "start": "wp --serve",
-    "test": "echo \"Error: no test specified\" && exit 0"
+    "test": "echo \"Error: no test specified\" && exit 0",
+    "prepublish": "npm run build"
   },
   "keywords": [],
   "author": "",
@@ -17,7 +18,9 @@
     "@arso-project/sonar-ui": "^0.1.0",
     "css-reset-and-normalize": "^2.1.0",
     "date-fns": "^2.4.1",
+    "express": "^4.17.1",
     "inter-ui": "^3.10.0",
+    "open": "^7.0.0",
     "pretty-bytes": "^5.3.0",
     "react": "^16.10.2",
     "react-data-grid": "^6.1.0",
