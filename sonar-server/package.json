@@ -1,6 +1,6 @@
 {
   "name": "@arso-project/sonar-server",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "",
   "main": "server.js",
   "bin": {
@@ -14,10 +14,10 @@
   "author": "",
   "license": "GPL-3.0",
   "dependencies": {
-    "@arso-project/sonar-cli": "^0.1.1",
-    "@arso-project/sonar-client": "^0.1.2",
-    "@arso-project/sonar-dat": "^0.1.1",
-    "@arso-project/sonar-ui": "^0.1.2",
+    "@arso-project/sonar-cli": "^0.1.3",
+    "@arso-project/sonar-client": "^0.1.3",
+    "@arso-project/sonar-dat": "^0.1.3",
+    "@arso-project/sonar-ui": "^0.1.3",
     "async-exit-hook": "^2.0.1",
     "body-parser": "^1.19.0",
     "collect-stream": "^1.2.1",
