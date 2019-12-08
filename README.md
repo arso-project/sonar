@@ -6,6 +6,8 @@
 </div>
 <br />
 
+**Early stage WIP! Not yet stable in any way!**
+
 The **[Sonar book](https://https://arso-project.github.io/sonar-book/)** has more documentation (soon).
 
 ## Installation
