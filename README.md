@@ -4,23 +4,7 @@
    A p2p database and search engine running on top of the dat stack.
  </strong>
 </div>
-<div align="center">
-  <h3>
-    <a href="https://https://arso-project.github.io/sonar-book/">
-      Book
-    </a>
-    <span> | </span>
-    <a href="https://github.com/async-rs/async-std/releases">
-      Website
-    </a>
-    <span> | </span>
-    <a href="https://async.rs/contribute">
-      Contributing
-    </a>
-  </h3>
-</div>
 <br />
-
 
 The **[Sonar book](https://https://arso-project.github.io/sonar-book/)** has more documentation (soon).
 
