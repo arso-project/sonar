@@ -2,6 +2,8 @@
 
 const { exec } = require('child_process')
 const cli = require('@arso-project/sonar-cli')
+const express = require('express')
+const p = require('path')
 const open = require('open')
 
 const command = {
@@ -36,9 +38,9 @@ const command = {
           }
         },
         handler: argv => {
-          const express = require('express')
           const app = express()
-          app.use(express.static('./dist'))
+          const path = p.join(__dirname, 'dist')
+          app.use(express.static(path))
           const { port, hostname } = argv
           app.listen(port, hostname, (err) => {
             if (err) return console.error(err)
