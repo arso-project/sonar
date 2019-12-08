@@ -2,6 +2,7 @@ const leveldb = require('level')
 const hypercontent = require('hyper-content-db')
 const mkdirp = require('mkdirp')
 const p = require('path')
+const os = require('os')
 // const corestore = require('corestore')
 // const sublevel = require('subleveldown')
 const crypto = require('hypercore-crypto')
@@ -12,15 +13,18 @@ const sonarView = require('./lib/search/view-sonar')
 const ConfigHandler = require('./lib/config')
 const Network = require('./lib/network')
 
-class IslandManager {
-  constructor (basePath) {
-    this.basePath = basePath
+const ISLAND_NAME_REGEX = /^[a-zA-Z0-9-_]{3,32}$/
+
+class IslandStore {
+  constructor (storage) {
+    storage = storage || p.join(os.homedir(), '.sonar')
+    this.storagePath = p.resolve(storage)
     this.network = new Network()
 
-    const configPath = p.join(basePath, 'config.json')
+    const configPath = p.join(this.storagePath, 'config.json')
     this.config = new ConfigHandler(configPath)
 
-    debug('islands storage path: ' + this.basePath)
+    debug('islands storage path: ' + this.storagePath)
 
     this.islands = {}
     this.ready = thunky(this._ready.bind(this))
@@ -41,17 +45,22 @@ class IslandManager {
     })
   }
 
-  create (name, cb) {
+  create (name, key, cb) {
+    if (typeof key === 'function') return this.create(name, null, key)
+    if (!name || !name.match(ISLAND_NAME_REGEX)) return cb(new Error('Invalid island name'))
     this._islandByName(name, (err, info) => {
       if (err) return cb(err)
       if (info) return cb(new Error('island exists'))
-      this._create(name, cb)
+      this._create({ name }, cb)
     })
   }
 
-  _create (name, cb) {
-    const keyPair = crypto.keyPair()
-    const key = keyPair.publicKey
+  _create ({ name, key }, cb) {
+    let keyPair
+    if (!key) {
+      keyPair = crypto.keyPair()
+      key = keyPair.publicKey
+    }
     const island = this._open(key, { keyPair, name })
     island.ready(err => {
       if (err) return cb(err)
@@ -62,23 +71,20 @@ class IslandManager {
   get (keyOrName, opts, cb) {
     if (!cb && typeof opts === 'function') return this.get(keyOrName, {}, opts)
 
-    if (this.islands[keyOrName]) return cb(null, this.islands[keyOrName])
-
     if (isKey(keyOrName)) {
       const key = hex(keyOrName)
-      this.config.load((err, config) => {
+      this._islandByKey(key, (err, info) => {
         if (err) return cb(err)
-        const island = this._open(keyOrName)
-        if (!config.islands || !config.islands[key]) {
-          this._saveIsland({ key, name: opts.name }, err => cb(err, island))
-        } else {
-          cb(null, island)
-        }
+        if (!info && opts.create) return this._create({ key }, cb)
+        if (!info) return cb(new Error('Island does not exist'))
+        const island = this._open(info.key)
+        cb(null, island)
       })
     } else {
+      const name = keyOrName
       this._islandByName(keyOrName, (err, info) => {
         if (err) return cb(err)
-        if (!info && opts.create) return this._create(keyOrName, cb)
+        if (!info && opts.create) return this._create({ name }, cb)
         if (!info) return cb(new Error('Island does not exist'))
         const island = this._open(info.key)
         cb(null, island)
@@ -146,14 +152,14 @@ class IslandManager {
   }
 
   _open (key, opts) {
-    if (typeof opts === 'function') return this.open(key, {}, opts)
+    if (typeof opts === 'function') return this._open(key, {}, opts)
     key = hex(key)
 
     if (this.islands[key]) return this.islands[key]
 
-    const basePath = p.join(this.basePath, key)
+    const storagePath = p.join(this.storagePath, 'island', key)
+    const island = openIsland(storagePath, key)
 
-    const island = openIsland(basePath, key)
     this.islands[key] = island
     return island
   }
@@ -183,7 +189,7 @@ function openIsland (basePath, key, opts = {}) {
 
 module.exports = {
   openIsland,
-  IslandManager
+  IslandStore
 }
 
 function hex (key) {
@@ -192,6 +198,6 @@ function hex (key) {
 
 function isKey (key) {
   if (!(key instanceof Buffer || typeof key === 'string')) return false
-  const length = Buffer.from(key, 'hex').length
-  return length === 32
+  if (typeof key === 'string') key = Buffer.from(key, 'hex')
+  return key.length === 32
 }

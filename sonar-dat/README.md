@@ -5,11 +5,11 @@ Integrates the Sonar search index with [hyper-content-db](https://github.com/ars
 ## Example
 
 ```js
-const { IslandManager } = require('sonar-dat')
+const { IslandStore } = require('sonar-dat')
 
-const manager = new IslandManager('/tmp/database')
+const store = new IslandStore('/tmp/database')
 
-manager.create('my-db', (err, island) => {
+store.create('my-db', (err, island) => {
   // Put json records.
   // See hyper-content-db docs for more
   island.put({ schema: 'testdoc', value: { title: 'Hello!' })

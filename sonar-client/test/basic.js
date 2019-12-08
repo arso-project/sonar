@@ -3,11 +3,12 @@ require('axios-debug-log')
 
 const { makeClient } = require('./util/server')
 
-async function prepare () {
+async function prepare (t) {
   const port = 21212
   const island = 'foo'
   let [client, cleanup] = await makeClient({ port, island })
   await client.createIsland(island)
+  // const key = res.key
   await client.put({ schema: 'doc', value: { title: 'hello world' } })
   await client.put({ schema: 'doc', value: { title: 'hello moon' } })
   await new Promise(resolve => setTimeout(resolve, 300))
@@ -15,19 +16,24 @@ async function prepare () {
 }
 
 test('basic query', async t => {
-  const [client, cleanup] = await prepare()
-  let results = await client.search('hello')
-  t.equal(results.length, 2, 'hello search')
-  results = await client.search('world')
-  t.equal(results.length, 1, 'world search')
-  results = await client.search('moon')
-  t.equal(results.length, 1, 'moon search')
-  await cleanup()
-  t.end()
+  try {
+    const [client, cleanup] = await prepare(t)
+    let results = await client.search('hello')
+    t.equal(results.length, 2, 'hello search')
+    results = await client.search('world')
+    t.equal(results.length, 1, 'world search')
+    results = await client.search('moon')
+    t.equal(results.length, 1, 'moon search')
+    await cleanup()
+    t.end()
+  } catch (err) {
+    console.log(err.toString())
+    t.error(err)
+  }
 })
 
 test('toshi query', async t => {
-  const [client, cleanup] = await prepare()
+  const [client, cleanup] = await prepare(t)
   let results = await client.search({
     query: { bool: { must: [ { term: { title: 'hello' } } ], must_not: [ { term: { title: 'moon' } } ] } }, limit: 10 }
   )

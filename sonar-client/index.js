@@ -162,8 +162,13 @@ module.exports = class SonarClient {
       axiosOpts.headers['content-type'] = 'application/octet-stream'
       axiosOpts.responseType = opts.responseType
     }
-    const result = await axios.request(axiosOpts)
-    return result.data
+    try {
+      const result = await axios.request(axiosOpts)
+      return result.data
+    } catch (err) {
+      const wrappedErr = enhanceAxiosError(err)
+      throw wrappedErr
+    }
   }
 
   _socket (opts) {
@@ -191,3 +196,12 @@ module.exports = class SonarClient {
   }
 }
 
+function enhanceAxiosError (err) {
+  let msg
+  if (err && err.response && typeof err.response.data === 'object' && err.response.data.error) {
+    msg = err.response.data.error
+  }
+  err.remoteError = msg
+  if (msg) err.message = err.message + ` (reason: ${msg})`
+  return err
+}

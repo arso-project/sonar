@@ -2,14 +2,14 @@ const tape = require('tape')
 const tmp = require('temporary-directory')
 const { stepper } = require('./lib/util')
 
-const { IslandManager } = require('..')
+const { IslandStore } = require('..')
 const { makeTantivySchema, mergeSchemas, addSchemaProperty } = require('../lib/search/schema')
 const getExampleSchemas = require('../lib/search/example_schemas')
 
 tape('basic', t => {
   tmp((err, dir, cleanup) => {
     t.error(err, 'tempdir ok')
-    const islands = new IslandManager(dir)
+    const islands = new IslandStore(dir)
 
     islands.create('first', (err, island) => {
       t.error(err, 'island created')

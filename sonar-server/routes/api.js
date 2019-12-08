@@ -74,7 +74,6 @@ function createApiHandlers (islands) {
     },
 
     put (req, res) {
-      console.log('HERE', req.params)
       const { key, id } = req.params
       const value = req.body
 

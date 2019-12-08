@@ -1,4 +1,4 @@
-const { IslandManager } = require('@arso-project/sonar-dat')
+const { IslandStore } = require('@arso-project/sonar-dat')
 const bodyParser = require('body-parser')
 const onexit = require('async-exit-hook')
 const express = require('express')
@@ -7,13 +7,13 @@ const expressWebSocket = require('express-ws')
 
 module.exports = function SonarServer (opts) {
   const config = {
-    data: opts.storage || '../.data',
+    storage: opts.storage,
     port: opts.port || 9191
   }
 
   const api = {
     config,
-    islands: new IslandManager(config.data)
+    islands: new IslandStore(config.storage)
   }
 
   const app = express()
