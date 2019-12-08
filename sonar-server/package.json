@@ -3,14 +3,18 @@
   "version": "0.1.0",
   "description": "",
   "main": "server.js",
+  "bin": {
+    "sonar": "bin.js"
+  },
   "scripts": {
-    "test": "echo \"No test specified\"",
-    "start": "node bin.js | pino-pretty"
+    "start": "node bin.js server start",
+    "dev:server": "DEBUG=* node bin.js server start"
   },
   "keywords": [],
   "author": "",
   "license": "GPL-3.0",
   "dependencies": {
+    "@arso-project/sonar-cli": "*",
     "@arso-project/sonar-client": "*",
     "@arso-project/sonar-dat": "*",
     "@arso-project/sonar-ui": "*",
@@ -26,7 +30,8 @@
     "speedometer": "^1.1.0",
     "websocket-stream": "^5.5.0"
   },
-  "devDependencies": {
-    "pino-pretty": "^3.2.0"
+  "build": {
+    "appId": "org.arso.sonar",
+    "nodeVersion": "current"
   }
 }

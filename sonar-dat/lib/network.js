@@ -30,9 +30,10 @@ module.exports = class Network {
     // TODO.
   }
 
-  close () {
-    this.hyperswarm.destroy()
-    this.localswarm.close()
+  close (cb = noop) {
+    this.hyperswarm.destroy(() => {
+      this.localswarm.close(cb)
+    })
   }
 
   _onconnection (socket, details) {
@@ -94,3 +95,5 @@ module.exports = class Network {
     // pump(proto, stream, proto)
   }
 }
+
+function noop () {}

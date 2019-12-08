@@ -6,6 +6,7 @@ const p = require('path')
 // const sublevel = require('subleveldown')
 const crypto = require('hypercore-crypto')
 const thunky = require('thunky')
+const debug = require('debug')('sonar-dat')
 
 const sonarView = require('./lib/search/view-sonar')
 const ConfigHandler = require('./lib/config')
@@ -18,6 +19,8 @@ class IslandManager {
 
     const configPath = p.join(basePath, 'config.json')
     this.config = new ConfigHandler(configPath)
+
+    debug('islands storage path: ' + this.basePath)
 
     this.islands = {}
     this.ready = thunky(this._ready.bind(this))
@@ -109,11 +112,11 @@ class IslandManager {
     })
   }
 
-  close () {
+  close (cb) {
     for (const island of Object.values(this.islands)) {
       island.close()
     }
-    this.network.close()
+    this.network.close(cb)
   }
 
   _saveIsland (info, cb) {

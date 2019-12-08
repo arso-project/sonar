@@ -2,6 +2,7 @@ const axios = require('axios')
 const randombytes = require('randombytes')
 const Socket = require('simple-websocket')
 const { Endpoint } = require('simple-rpc-protocol')
+const debug = require('debug')('sonar-client')
 
 const DEFAULT_BASE_URL = 'http://localhost:9191/api'
 const DEFAULT_ISLAND = 'default'
@@ -146,6 +147,7 @@ module.exports = class SonarClient {
     const axiosOpts = {
       method: opts.method || 'GET',
       url: opts.url || this._url(opts.path),
+      maxRedirects: 0,
       headers: {
         'Content-Type': 'application/json'
       },
@@ -154,6 +156,7 @@ module.exports = class SonarClient {
       data: opts.data || {},
       responseType: opts.responseType
     }
+    debug('request', axiosOpts)
 
     if (opts.binary) {
       axiosOpts.headers['content-type'] = 'application/octet-stream'

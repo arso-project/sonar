@@ -25,15 +25,15 @@ function makeServer (opts = {}) {
       opts.port = opts.port || 21212
       // opts.logger = false
 
-      const server = createServer(opts)
-      server.listen(opts.port, (err) => {
+      const app = createServer(opts)
+      app.start({ port: opts.port }, (err) => {
         if (err) reject(err)
         resolve(shutdown)
 
         function shutdown () {
           return new Promise((resolve, reject) => {
-            server.close((err) => {
-              if (err) console.error('Error closing server.')
+            app.close((err) => {
+              if (err) console.error('Error closing app.')
               cleanup(err => {
                 if (err) reject(err)
                 else resolve()

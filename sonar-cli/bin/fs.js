@@ -12,7 +12,7 @@ exports.builder = function (yargs) {
     .command({
       command: 'read <path>',
       describe: 'read file to stdout',
-      handler: readfile
+      handler: readfile,
     })
     .command({
       command: 'write <path>',
@@ -54,7 +54,6 @@ async function readfile (argv) {
 }
 
 async function writefile (argv) {
-  console.log(argv)
   const client = makeClient(argv)
   const path = argv.path
   const res = await client.writeFile(path, process.stdin)

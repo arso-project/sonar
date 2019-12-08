@@ -13,6 +13,8 @@
   "license": "GPL-3.0",
   "dependencies": {
     "@arso-project/sonar-client": "^0.1.0",
+    "@arso-project/sonar-cli": "^0.1.0",
+    "@arso-project/sonar-ui": "^0.1.0",
     "css-reset-and-normalize": "^2.1.0",
     "date-fns": "^2.4.1",
     "inter-ui": "^3.10.0",
