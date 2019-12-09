@@ -13,7 +13,7 @@ module.exports = class SonarClient {
     debug('create client', { endpoint, island, opts })
     this.endpoint = endpoint || DEFAULT_BASE_URL
     this.island = island || DEFAULT_ISLAND
-    this.token = opts.token || ''
+    // this.token = opts.token || ''
 
     this.id = opts.id || randombytes(16).toString('hex')
     this.name = opts.name || null
@@ -152,8 +152,8 @@ module.exports = class SonarClient {
       url: opts.url || this._url(opts.path),
       maxRedirects: 0,
       headers: {
-        'Content-Type': 'application/json',
-        [TOKEN_HEADER]: this.token
+        'Content-Type': 'application/json'
+        // [TOKEN_HEADER]: this.token
       },
       // axios has a very weird bug that it REMOVES the
       // Content-Type header if data is empty...
