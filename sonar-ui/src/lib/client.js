@@ -4,7 +4,8 @@ import config from './config'
 
 const endpoint = config.get('endpoint')
 const island = config.get('island')
+const token = config.get('token')
 
-const client = new Client(endpoint, island)
+const client = new Client(endpoint, island, { token })
 window.__sonarClient = client
 export default client

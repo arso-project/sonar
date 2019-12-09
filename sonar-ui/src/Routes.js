@@ -14,6 +14,7 @@ export default function Pageroutes () {
       <Route exact path='/'><Start /></Route>
       <Route path='/search'><Search /></Route>
       <Route path='/config'><Config /></Route>
+      <Route path='/token/:token'><Config /></Route>
       <Route path='/filebrowser'><Filebrowser /></Route>
       <Route path='/record/:id'><RecordPage /></Route>
       <Route path='/tables'><TablesPage /></Route>
