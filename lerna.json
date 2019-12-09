@@ -3,10 +3,12 @@
     "*",
     "bots/*"
   ],
-  "version": "0.1.3",
+  "version": "0.1.4",
   "command": {
     "bootstrap": {
-      "npmClientArgs": ["--no-package-lock"]
+      "npmClientArgs": [
+        "--no-package-lock"
+      ]
     }
   }
 }
