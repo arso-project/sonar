@@ -1,4 +1,5 @@
 const fs = require('fs')
+const p = require('path')
 const chalk = require('chalk')
 const makeClient = require('../client')
 const pretty = require('pretty-bytes')
@@ -60,8 +61,24 @@ async function writefile (argv) {
   console.log(res)
 }
 
-function importfile (argv) {
-  console.log(argv)
+async function importfile (argv) {
+  const client = makeClient(argv)
+  const path = p.resolve(argv.path)
+  const prefix = argv.prefix || '/import'
+  const res = await pify(fs.stat, path, onstat)
+  console.log(res)
+
+  async function onstat (err, stat) {
+    if (err) throw err
+    const filename = p.basename(path)
+    const dst = p.join(prefix, filename)
+    console.log(`source: ${argv.path}`)
+    console.log(`target: ${dst}`)
+    console.log(`size:   ${pretty(stat.size)}`)
+    const rs = fs.createReadStream(path)
+    const res = await client.writeFile(dst, rs)
+    return res
+  }
 }
 
 function formatStat (files, opts = {}) {
@@ -99,4 +116,19 @@ function parseStat (s) {
   const { Stats } = require('fs')
   return new Stats(s.dev, s.mode, s.nlink, s.uid, s.gid, s.rdev, s.blksize,
     s.ino, s.size, s.blocks, s.atime, s.mtime, s.ctime)
+}
+
+function pify (fn, ...args) {
+  const cb = args.pop()
+  return new Promise((resolve, reject) => {
+    fn(...args, onresult)
+    async function onresult (err, ...args) {
+      try {
+        const res = await cb(err, ...args)
+        resolve(res)
+      } catch (err) {
+        reject(err)
+      }
+    }
+  })
 }

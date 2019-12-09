@@ -37,11 +37,26 @@ class IslandStore {
       if (!config.islands) return cb()
       for (const info of Object.values(config.islands)) {
         if (info.share) {
-          const island = this._open(info.key)
+          const island = this._open(info.key, info)
           this.network.add(island)
         }
       }
       cb()
+    })
+  }
+
+  status (cb) {
+    this.config.load((err, config) => {
+      if (err) return cb(err)
+      this.network.status((err, networkStatus) => {
+        if (err) return cb(err)
+        cb(null, {
+          storage: this.storagePath,
+          islands: config.islands,
+          // config: config,
+          network: networkStatus
+        })
+      })
     })
   }
 
@@ -62,9 +77,15 @@ class IslandStore {
       key = keyPair.publicKey
     }
     const island = this._open(key, { keyPair, name })
+    island.name = name
     island.ready(err => {
       if (err) return cb(err)
-      this._saveIsland({ key, name }, err => cb(err, island))
+      const info = {
+        key,
+        name,
+        share: true
+      }
+      this._saveIsland(info, err => cb(err, island))
     })
   }
 
@@ -77,7 +98,7 @@ class IslandStore {
         if (err) return cb(err)
         if (!info && opts.create) return this._create({ key }, cb)
         if (!info) return cb(new Error('Island does not exist'))
-        const island = this._open(info.key)
+        const island = this._open(info.key, info)
         cb(null, island)
       })
     } else {
@@ -86,7 +107,7 @@ class IslandStore {
         if (err) return cb(err)
         if (!info && opts.create) return this._create({ name }, cb)
         if (!info) return cb(new Error('Island does not exist'))
-        const island = this._open(info.key)
+        const island = this._open(info.key, info)
         cb(null, island)
       })
     }
@@ -158,7 +179,7 @@ class IslandStore {
     if (this.islands[key]) return this.islands[key]
 
     const storagePath = p.join(this.storagePath, 'island', key)
-    const island = openIsland(storagePath, key)
+    const island = openIsland(storagePath, key, opts)
 
     this.islands[key] = island
     return island
@@ -183,6 +204,8 @@ function openIsland (basePath, key, opts = {}) {
   })
 
   island.useRecordView('search', sonarView, { storage: paths.sonar })
+
+  if (opts.name) island.localname = opts.name
 
   return island
 }

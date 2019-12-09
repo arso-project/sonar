@@ -65,6 +65,14 @@ function serve (argv) {
   const path = p.join(__dirname, 'dist')
   app.use(express.static(path))
 
+  const { port, hostname } = argv
+  app.listen(port, hostname, (err) => {
+    if (err) return console.error(err)
+    const link = `http://${hostname}:${port}`
+    console.log(`UI ready on ${link}`)
+    if (argv.open) open(link)
+  })
+
   // const TOKEN_HEADER = 'x-sonar-access-token'
   // const token = crypto.randomBytes(16).toString('hex')
   // const endpoint = argv.endpoint || 'http://localhost:9191/api'
@@ -88,12 +96,4 @@ function serve (argv) {
   //   })
   //   console.log(`Link with API access:\n${link}/#/token/${token}`)
   // }
-
-  const { port, hostname } = argv
-  app.listen(port, hostname, (err) => {
-    if (err) return console.error(err)
-    const link = `http://${hostname}:${port}`
-    console.log(`UI listening on ${link}`)
-    if (argv.open) open(link)
-  })
 }
