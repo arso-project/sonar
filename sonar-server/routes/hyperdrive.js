@@ -4,23 +4,34 @@ const mkdirp = require('mkdirp')
 const { Transform } = require('stream')
 const pretty = require('pretty-bytes')
 const speedometer = require('speedometer')
+const debug = require('debug')('sonar-server:fs')
 
-module.exports = { hyperdriveHandler }
+module.exports = { hyperdriveMiddleware }
 
-function hyperdriveHandler (islands, name, path, req, res) {
-  islands.get(name, (err, island) => {
-    if (err) return res.status(404).send('Not found')
-    // TODO: Clearer API method in hyper-content-db
-    // to get a drive instance.
-    island.writer((err, drive) => {
-      if (err) return res.status(404).send('Not found')
+function hyperdriveMiddleware (islands) {
+  return function (req, res, next) {
+    const { key, 0: path = '/' } = req.params
+    getDrive(key, (err, drive) => {
+      if (err) return res.status(404).send('Island not found')
       ondrive(drive, path, req, res)
     })
-  })
+  }
+
+  // TODO: Clearer API method in hyper-content-db
+  // to get a drive instance.
+  function getDrive (key, cb) {
+    islands.get(key, (err, island) => {
+      if (err) return cb(err)
+      island.writer((err, drive) => {
+        cb(err, drive)
+      })
+    })
+  }
 }
 
 function ondrive (drive, path, req, res) {
   const method = req.method
+  // return next()
   if (method === 'PUT') {
     onput(drive, path, req, res)
   } else if (method === 'GET') {
@@ -100,6 +111,7 @@ function onerror (res, msg, code) {
 
 function onput (drive, path, req, res) {
   if (!drive.writable) return onerror(res, 'Drive is not writable', 403)
+  debug('put', path)
   mkdirp(p.dirname(path), { fs: drive }, err => {
     if (err && err.code !== 'EEXISTS') return onerror(res, 'Cannot create directory', 500)
     const ws = drive.createWriteStream(path)
@@ -114,7 +126,7 @@ function onput (drive, path, req, res) {
     let total = 0
     let speed
     let interval = setInterval(() => {
-      if (speed) console.log(`${pretty(speed)}/s`)
+      if (speed) debug(`${pretty(speed)}/s`)
     }, 1000)
     return new Transform({
       transform (chunk, enc, next) {
@@ -124,7 +136,7 @@ function onput (drive, path, req, res) {
         next()
       },
       flush (cb) {
-        console.log(`total: ${pretty(total)}`)
+        debug(`total: ${pretty(total)}`)
         clearInterval(interval)
         cb()
       }

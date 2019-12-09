@@ -21,6 +21,7 @@
     "async-exit-hook": "^2.0.1",
     "body-parser": "^1.19.0",
     "collect-stream": "^1.2.1",
+    "cors": "^2.8.5",
     "express": "^4.17.1",
     "express-ws": "^4.0.0",
     "hyperdrive-http": "^4.4.0",

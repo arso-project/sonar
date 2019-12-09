@@ -1,13 +1,22 @@
-const { hyperdriveHandler } = require('./hyperdrive')
+// const { hyperdriveHandler } = require('./hyperdrive')
+const { hyperdriveMiddleware } = require('./hyperdrive')
 const collect = require('collect-stream')
 const { Router } = require('simple-rpc-protocol')
 const express = require('express')
 const websocketStream = require('websocket-stream/stream')
 
 module.exports = function apiRoutes (api) {
-  const handlers = createApiHandlers(api.islands)
   const router = express.Router()
 
+  // Hyperdrive actions (get and put)
+  router.use('/:key/fs/*', hyperdriveMiddleware(api.islands))
+  router.use('/:key/fs', hyperdriveMiddleware(api.islands))
+  // router.use('/:key/fs//', hyperdriveMiddleware(api.islands))
+  // Create command stream (websocket)
+  router.ws('/:key/commands', createCommandHandler(api.islands))
+
+  // Other actions
+  const handlers = createApiHandlers(api.islands)
   // Info
   router.get('/_info', handlers.info)
   // Create island
@@ -26,17 +35,8 @@ module.exports = function apiRoutes (api) {
   router.get('/:key/schema/:schemans/:schemaname', handlers.getSchema)
   // Put schema
   router.put('/:key/schema/:schemans/:schemaname', handlers.putSchema)
-
-  // Get files
-  router.get('/:key/fs', handlers.files)
-  router.get('/:key/fs/*', handlers.files)
-  // Put files.
-  router.put('/:key/fs/*', handlers.files)
-
-  // Add source
+  // Put source
   router.put('/:key/_source', handlers.putSource)
-
-  router.ws('/:key/commands', createCommandHandler(api.islands))
 
   return router
 }
@@ -57,10 +57,10 @@ function createCommandHandler (islands) {
 
 function createApiHandlers (islands) {
   return {
-    info (req, res) {
-      islands.list((err, islands) => {
-        if (err) return res.status(500).send({ error: 'Could not fetch info' })
-        res.send({ islands })
+    info (req, res, next) {
+      islands.status((err, status) => {
+        if (err) return next(err)
+        res.send(status)
       })
     },
     createIsland (req, res) {
@@ -174,11 +174,11 @@ function createApiHandlers (islands) {
       })
     },
 
-    files (req, res) {
-      let { key, 0: path } = req.params
-      path = path || ''
-      hyperdriveHandler(islands, key, path, req, res)
-    },
+    // files (req, res) {
+    //   let { key, 0: path } = req.params
+    //   path = path || ''
+    //   hyperdriveHandler(islands, key, path, req, res)
+    // },
 
     search (req, res) {
       const { key, schema } = req.params
