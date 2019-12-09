@@ -9,11 +9,11 @@ module.exports = { hyperdriveHandler }
 
 function hyperdriveHandler (islands, name, path, req, res) {
   islands.get(name, (err, island) => {
-    if (err) return res.code(404).send('Not found')
+    if (err) return res.status(404).send('Not found')
     // TODO: Clearer API method in hyper-content-db
     // to get a drive instance.
     island.writer((err, drive) => {
-      if (err) return res.code(404).send('Not found')
+      if (err) return res.status(404).send('Not found')
       ondrive(drive, path, req, res)
     })
   })
@@ -92,7 +92,7 @@ function onerror (res, msg, code) {
   code = code || 500
   if (msg instanceof Error) msg = msg.message
   msg = String(msg)
-  res.code(code).send({ error: msg })
+  res.status(code).send({ error: msg })
   // res.statusCode = code
   // res.setHeader('Content-Type', 'application/json')
   // res.end(JSON.stringify({ error: msg }))
