@@ -11,7 +11,7 @@ module.exports = function apiRoutes (api) {
   // Hyperdrive actions (get and put)
   router.use('/:key/fs/*', hyperdriveMiddleware(api.islands))
   router.use('/:key/fs', hyperdriveMiddleware(api.islands))
-  // router.use('/:key/fs//', hyperdriveMiddleware(api.islands))
+
   // Create command stream (websocket)
   router.ws('/:key/commands', createCommandHandler(api.islands))
 
