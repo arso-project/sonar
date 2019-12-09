@@ -6,7 +6,7 @@ exports.describe = 'manage islands'
 exports.builder = function (yargs) {
   yargs
     .command({
-      command: 'create <name>',
+      command: 'create <name> [key]',
       describe: 'create a new island',
       handler: create
     })
@@ -20,7 +20,8 @@ exports.builder = function (yargs) {
 async function create (argv) {
   const client = makeClient(argv)
   const name = argv.name
-  const result = await client.createIsland(name)
+  const key = argv.key
+  const result = await client.createIsland(name, key)
   console.log(result)
 }
 

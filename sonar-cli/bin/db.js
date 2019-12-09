@@ -28,6 +28,10 @@ exports.builder = function (yargs) {
           alias: 's',
           describe: 'schema',
           required: true
+        },
+        data: {
+          alias: 'd',
+          describe: 'data (if not passed STDIN is used)'
         }
       },
       handler: put
@@ -58,9 +62,11 @@ async function get (argv) {
 
 async function put (argv) {
   const client = makeClient(argv)
-  const { schema, id } = argv
-  const value = await collectJson(process.stdin)
-  const record = { schema, id, value }
+  let { schema, id, data } = argv
+  if (!data) {
+    data = await collectJson(process.stdin)
+  }
+  const record = { schema, id, value: data }
   const result = await client.put(record)
   console.log(result.id)
 }

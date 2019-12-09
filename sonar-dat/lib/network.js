@@ -9,6 +9,7 @@ module.exports = class Network {
   constructor (opts = {}) {
     this.opts = opts
     this.replicating = {}
+    this.peers = {}
     this.hyperswarm = hyperswarm({ announceLocalAddress: !!opts.announceLocalAddress })
     this.localswarm = localswarm()
     this.hyperswarm.on('connection', this._onconnection.bind(this))

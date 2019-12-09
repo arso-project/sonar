@@ -31,11 +31,12 @@ module.exports = class SonarClient {
     })
   }
 
-  async createIsland (name) {
+  async createIsland (name, key) {
+    const path = ['_create', name]
+    if (key) path.push(key)
     return this._request({
       method: 'PUT',
-      path: ['_create', name],
-      data: {}
+      path
     })
   }
 
@@ -152,7 +153,7 @@ module.exports = class SonarClient {
       url: opts.url || this._url(opts.path),
       maxRedirects: 0,
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
         // [TOKEN_HEADER]: this.token
       },
       // axios has a very weird bug that it REMOVES the

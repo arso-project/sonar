@@ -63,10 +63,12 @@ class IslandStore {
   create (name, key, cb) {
     if (typeof key === 'function') return this.create(name, null, key)
     if (!name || !name.match(ISLAND_NAME_REGEX)) return cb(new Error('Invalid island name'))
+    // TODO: Validate key.
+    if (key) key = Buffer.from(key, 'hex')
     this._islandByName(name, (err, info) => {
       if (err) return cb(err)
       if (info) return cb(new Error('island exists'))
-      this._create({ name }, cb)
+      this._create({ name, key }, cb)
     })
   }
 
@@ -86,6 +88,7 @@ class IslandStore {
         share: true
       }
       this._saveIsland(info, err => cb(err, island))
+      if (info.share) this.share(island.key)
     })
   }
 

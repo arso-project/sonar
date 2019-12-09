@@ -21,6 +21,7 @@ module.exports = function apiRoutes (api) {
   router.get('/_info', handlers.info)
   // Create island
   router.put('/_create/:name', handlers.createIsland)
+  router.put('/_create/:name/:key', handlers.createIsland)
   // Create record
   router.post('/:key/db/:schemans/:schemaname', handlers.put)
   // Update record
@@ -64,8 +65,8 @@ function createApiHandlers (islands) {
       })
     },
     createIsland (req, res) {
-      const { name } = req.params
-      islands.create(name, (err, island) => {
+      const { name, key } = req.params
+      islands.create(name, key, (err, island) => {
         if (err) return res.status(500).send({ error: 'Could not create island' })
         res.send({
           key: island.key.toString('hex')
