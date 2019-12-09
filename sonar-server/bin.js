@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 
-const cli = require('@arso-project/sonar-cli')
-const args = cli.commandDir('bin').demandCommand()
+const args = require('@arso-project/sonar-cli')
+args.commandDir('bin')
+// optional includes
 try {
-  args.builder(require('@arso-project/sonar-ui/bin.js'))
+  args.command(require('@arso-project/sonar-ui/bin.js'))
 } catch (e) {}
-if (require.main === module) args.argv
+if (require.main === module) args.demandCommand().argv
 else module.exports = args
