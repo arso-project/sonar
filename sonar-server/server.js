@@ -4,6 +4,7 @@ const onexit = require('async-exit-hook')
 const express = require('express')
 const cors = require('cors')
 const expressWebSocket = require('express-ws')
+const debug = require('debug')('sonar-server')
 // const websocketStream = require('websocket-stream/stream')
 
 module.exports = function SonarServer (opts) {
@@ -47,6 +48,16 @@ module.exports = function SonarServer (opts) {
   })
 
   app.use('/api', require('./routes/api')(api))
+
+  // Error handling
+  app.use(function (err, req, res, next) {
+    debug(err)
+    const result = {
+      error: err.message
+    }
+    if (!err.statusCode) err.statusCode = 500
+    res.status(err.statusCode).json(result)
+  })
 
   app.start = function (opts, cb) {
     if (typeof opts === 'function') return app.start(null, opts)
