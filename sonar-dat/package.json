@@ -13,6 +13,7 @@
     "@arso-project/sonar-tantivy": "^0.2.2",
     "async-exit-hook": "^2.0.1",
     "hyper-content-db": "github:arso-project/hyper-content-db#kappa5",
+    "kappa-record-db": "^0.1.0",
     "hypercore-crypto": "^1.0.0",
     "hyperdrive": "github:mafintosh/hyperdrive#hypercore-8",
     "hyperswarm": "^2.2.1",
