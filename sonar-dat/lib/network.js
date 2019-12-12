@@ -1,50 +1,101 @@
-const localSocketStream = require('./local-socket-stream.js')
-const hyperswarm = require('@hyperswarm/replicator')
+const localswarm = require('simple-local-swarm')
+const hyperswarm = require('hyperswarm')
+const Protocol = require('hypercore-protocol')
 const log = require('./log')
+const debug = require('debug')('sonar-dat:network')
+const pump = require('pump')
 
 module.exports = class Network {
-  constructor (opts) {
+  constructor (opts = {}) {
     this.opts = opts
     this.replicating = {}
+    this.peers = {}
+    this.hyperswarm = hyperswarm({ announceLocalAddress: !!opts.announceLocalAddress })
+    this.localswarm = localswarm()
+    this.hyperswarm.on('connection', this._onconnection.bind(this))
+    this.localswarm.on('connection', this._onconnection.bind(this))
+  }
+
+  status (cb) {
+    const shared = Object.values(this.replicating).map(island => ({
+      dkey: island.discoveryKey.toString('hex'),
+      key: island.key.toString('hex'),
+      name: island.localname,
+      peers: this.peers[island.discoveryKey.toString('hex')].length
+    }))
+    cb(null, {
+      shared
+    })
   }
 
   add (island) {
     island.ready(() => {
-      this.replicating[island.key] = island
-      replicateLocal(island)
-      replicateHyperswarm(island)
+      const dkey = island.discoveryKey
+      const hdkey = dkey.toString('hex')
+      if (this.replicating[hdkey]) return
+      this.replicating[hdkey] = island
+      this.peers[hdkey] = []
+      this.hyperswarm.join(dkey)
+      this.localswarm.join(dkey)
+      debug('swarming: ' + hdkey)
     })
   }
 
   remove (island) {
     // TODO.
   }
-}
 
-function replicateLocal (store) {
-  // const name = 'archipel-' + store.discoveryKey.toString('hex')
-  const name = 'archipel-replication'
-  localSocketStream(name, (err, stream) => {
-    if (err) return console.error('cannot setup local replication: ', err)
-    const repl = store.replicate({ encrypt: false, live: true })
-    repl.pipe(stream).pipe(repl)
-  })
-}
+  close (cb = noop) {
+    this.hyperswarm.destroy(() => {
+      this.localswarm.close(cb)
+    })
+  }
 
-function replicateHyperswarm (store) {
-  const swarm = hyperswarm(store.multidrive.primaryDrive, {
-    live: true,
-    announce: true,
-    lookup: true
-  })
-  swarm.on('join', dkey => log.debug('Joining swarm for %s', dkey.toString('hex')))
-  swarm.on('connection', peer => log.info('New peer'))
-  store.sources(drives => {
-    for (const drive of drives) {
-      swarm.join(drive.discoveryKey)
+  _onpeer ({ stream, discoveryKey }) {
+    this.peers[discoveryKey] = this.peers[discoveryKey] || []
+    this.peers[discoveryKey].push(stream)
+  }
+
+  _onconnection (socket, details) {
+    const isInitiator = !!details.client
+    // const proto = new Protocol(isInitiator)
+    var stream = null
+    const dkey = details.peer ? details.peer.topic : null
+    debug('onconnection', isInitiator, dkey ? dkey.toString('hex') : null)
+    if (isInitiator) {
+      const hdkey = dkey.toString('hex')
+      const island = this.replicating[hdkey]
+      if (!island) {
+        debug('invalid discovery key')
+        socket.destroy()
+        return
+      }
+      debug('start replication!')
+      stream = island.corestore.replicate(true, dkey)
+      this._onpeer({ stream, discoveryKey: hdkey, island })
+    } else {
+      stream = new Protocol(false)
+      stream.once('discovery-key', dkey => {
+        debug('ondiscoverykey', dkey.toString('hex'))
+        const hdkey = dkey.toString('hex')
+        const island = this.replicating[hdkey]
+        if (!island) {
+          debug('invalid discovery key')
+        } else {
+          debug('start replication!')
+          island.corestore.replicate(false, dkey, { stream })
+          this._onpeer({ stream, discoveryKey: hdkey, island })
+        }
+      })
     }
-  })
-  store.on('source', drive => {
-    swarm.join(drive.discoveryKey)
-  })
+    pump(stream, socket, stream)
+    socket.on('error', err => {
+      debug('socket error', err)
+    })
+    stream.on('error', err => {
+      debug('proto error', err)
+    })
+  }
 }
+
+function noop () {}

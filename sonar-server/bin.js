@@ -1,20 +1,10 @@
-const minimist = require('minimist')
+#!/usr/bin/env node
 
-const createServer = require('.')
-
-const argv = minimist(process.argv.slice(2), {
-  alias: {
-    p: 'port',
-    s: 'storage',
-    k: 'key'
-  }
-})
-
-const opts = {
-  port: argv.port || 9191,
-  storage: argv.storage || './.data',
-  key: argv.key || null
-}
-
-const server = createServer(opts)
-server.listen(opts.port)
+const args = require('@arso-project/sonar-cli')
+args.commandDir('bin')
+// optional includes
+try {
+  args.command(require('@arso-project/sonar-ui/bin.js'))
+} catch (e) {}
+if (require.main === module) args.demandCommand().argv
+else module.exports = args

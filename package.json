@@ -7,9 +7,14 @@
   "scripts": {
     "install": "lerna bootstrap",
     "bootstrap": "lerna bootstrap",
-    "test": "lerna run test"
+    "test": "lerna run test",
+    "start": "lerna run start --parallel --no-progress"
   },
+  "workspaces": [
+    "*"
+  ],
   "license": "GPL-3.0",
+  "private": true,
   "devDependencies": {
     "lerna": "^3.16.5"
   }
