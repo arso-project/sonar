@@ -72,12 +72,16 @@ module.exports = class Island {
     this.db.putSchema(name, schema, cb)
   }
 
-  getSchemas () {
-    return this.db.getSchemas()
+  getSchemas (cb) {
+    const schemas = this.db.getSchemas()
+    if (cb) cb(null, schemas)
+    else return schemas
   }
 
-  getSchema () {
-    return this.db.getSchema()
+  getSchema (name, cb) {
+    const schema = this.db.getSchema(name)
+    if (cb) cb(schema ? null : new Error('Schema not found'), schema)
+    else return schema
   }
 
   putSource (key, cb) {
