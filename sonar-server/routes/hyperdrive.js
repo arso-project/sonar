@@ -22,7 +22,7 @@ function hyperdriveMiddleware (islands) {
   function getDrive (key, cb) {
     islands.get(key, (err, island) => {
       if (err) return cb(err)
-      island.writer((err, drive) => {
+      island.localDrive((err, drive) => {
         cb(err, drive)
       })
     })

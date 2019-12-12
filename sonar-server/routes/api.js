@@ -71,25 +71,25 @@ function createApiHandlers (islands) {
         res.send(status)
       })
     },
-    createIsland (req, res) {
+    createIsland (req, res, next) {
       const { name, key } = req.params
       islands.create(name, key, (err, island) => {
-        if (err) return res.status(500).send({ error: 'Could not create island' })
+        if (err) return next(err)
         res.send({
           key: island.key.toString('hex')
         })
       })
     },
 
-    put (req, res) {
+    put (req, res, next) {
       const { key, id } = req.params
       const value = req.body
 
       islands.get(key, (err, island) => {
-        if (err) return res.status(404).send({ error: 'Island not found' })
+        if (err) return next(err)
         const schema = expandSchema(island, req.params)
         island.put({ schema, id, value }, (err, id) => {
-          if (err) return res.status(500).send({ error: 'Could not create record' })
+          if (err) return next(err)
           res.send({ id })
         })
       })
@@ -97,32 +97,14 @@ function createApiHandlers (islands) {
 
     get (req, res) {
       let { key, id } = req.params
-      // if (schema) schema = decodeURIComponent(schema)
-      // if (id) id = decodeURIComponent(id)
       islands.get(key, (err, island) => {
         if (err) return res.status(404).send({ error: 'Island not found' })
         const schema = expandSchema(island, req.params)
-
-        // TODO: This uses two different APIs, which is of course not right.
-        // With schema and id, it uses HyperContentDB.get(), which looks
-        // up records by filepath. Without schema, it uses entities view's
-        // allWithId method, which is not only badly named but also should
-        // just expose a .get method. It's also faster so that should be
-        // used. Has to be fixed in hyper-content-db.
-        if (schema) {
-          island.get({ schema, id }, (err, record) => {
-            if (err) return res.status(404).send()
-            res.send(record)
-          })
-        } else {
-          const queryStream = island.api.entities.byId(id)
-          const getStream = island.createGetStream()
-          const resultStream = queryStream.pipe(getStream)
-          collect(resultStream, (err, results) => {
-            if (err) return res.status(404).send()
-            res.send(results)
-          })
-        }
+        island.get({ schema, id }, (err, records) => {
+          if (err) log(err)
+          if (err) return res.status(500).send()
+          res.send(records)
+        })
       })
     },
 
@@ -131,14 +113,22 @@ function createApiHandlers (islands) {
       const { schema, id, source } = req.body
       islands.get(key, (err, island) => {
         if (err) return res.status(404).send({ error: 'Island not found' })
-        const queryStream = island.api.entities.get({ schema, id, source })
-        const getStream = island.createGetStream()
-        const resultStream = queryStream.pipe(getStream)
-        collect(resultStream, (err, results) => {
-          if (err) return res.status(404).send()
-          res.send(results)
+        island.get({ schema, id, source }, (err, records) => {
+          if (err) log(err)
+          if (err) return res.status(500).send()
+          res.send(records)
         })
       })
+      // islands.get(key, (err, island) => {
+      //   if (err) return res.status(404).send({ error: 'Island not found' })
+      //   const queryStream = island.api.entities.get({ schema, id, source })
+      //   const getStream = island.createGetStream()
+      //   const resultStream = queryStream.pipe(getStream)
+      //   collect(resultStream, (err, results) => {
+      //     if (err) return res.status(404).send()
+      //     res.send(results)
+      //   })
+      // })
     },
 
     getSchema (req, res) {
@@ -175,7 +165,7 @@ function createApiHandlers (islands) {
       const { key: sourceKey } = req.body
       islands.get(key, (err, island) => {
         if (err) return res.status(404).send({ error: 'Island not found', key: key })
-        island.addSource(sourceKey, (err) => {
+        island.putSource(sourceKey, (err) => {
           if (err) return res.status(500).send({ error: err.message })
           return res.send({ msg: 'Source added' })
         })
@@ -194,7 +184,7 @@ function createApiHandlers (islands) {
       islands.get(key, (err, island) => {
         if (err) return res.status(500).send({ error: 'Could not open island', key: key })
         // Query can either be a string (tantivy query) or an object (toshi json query)
-        const resultStream = island.api.search.query(query)
+        const resultStream = island.db.api.search.query(query)
         replyStream(res, resultStream)
       })
     }
