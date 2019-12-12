@@ -31,6 +31,9 @@
     "speedometer": "^1.1.0",
     "websocket-stream": "^5.5.0"
   },
+  "devDependencies": {
+    "trace-console-log": "^1.0.0"
+  },
   "build": {
     "appId": "org.arso.sonar",
     "nodeVersion": "current"
