@@ -4,6 +4,8 @@ const collect = require('collect-stream')
 const { Router } = require('simple-rpc-protocol')
 const express = require('express')
 const websocketStream = require('websocket-stream/stream')
+const debug = require('debug')
+const log = debug('sonar:server')
 
 module.exports = function apiRoutes (api) {
   const router = express.Router()
@@ -44,13 +46,18 @@ module.exports = function apiRoutes (api) {
 
 function createCommandHandler (islands) {
   const router = new Router({ name: 'server' })
+  // router.command('ping', (args, channel) => {
+  //   channel.reply('pong')
+  //   channel.end()
+  // })
+  router.on('error', log)
   return function createCommandStream (ws, req) {
     // const { key } = req.params
     const stream = websocketStream(ws, {
       binary: true
     })
     stream.on('error', err => {
-      console.error('command socket error', err)
+      log(err)
     })
     router.connection(stream)
   }

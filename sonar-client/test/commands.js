@@ -4,9 +4,9 @@ const SonarClient = require('..')
 
 const { makeClient } = require('./util/server')
 
-tape('commands', async t => {
+tape.only('commands', async t => {
   let [client1, cleanup] = await makeClient()
-  const client2 = new SonarClient(client1.baseUrl)
+  const client2 = new SonarClient(client1.endpoint)
 
   client1.createCommandStream({
     name: 'pinger',
