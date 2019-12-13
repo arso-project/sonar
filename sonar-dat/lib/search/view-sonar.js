@@ -13,10 +13,16 @@ function sonarView (level, island, opts) {
   island.on('close', () => manager.close())
 
   return {
+    version: 1,
     batch: true,
     batchSize: 500,
     map,
+    close: (cb) => manager.close(cb),
     api: {
+      manifest: {
+        info: 'promise',
+        query: 'streaming'
+      },
       close: () => manager.close(),
       info (kcore, args, cb) {
         manager.getInfo()
@@ -33,6 +39,8 @@ function sonarView (level, island, opts) {
   async function map (msgs, next) {
     const time = clock()
     await manager.ready()
+
+    const schemas = island.getSchemas()
 
     const docs = {
       textdump: []
@@ -62,7 +70,7 @@ function sonarView (level, island, opts) {
     next()
 
     async function pushToTexdump (msg) {
-      const { schema: schemaName, id, value, source } = msg
+      const { schema: schemaName, id, value, key: source } = msg
       const body = objectToString(value)
       let title = ''
       if (value.title) title = objectToString(value.title)
@@ -72,8 +80,9 @@ function sonarView (level, island, opts) {
     }
 
     async function pushToNamedIndex (msg) {
-      const { schema: schemaName, id, value, source } = msg
-      const schema = await loadSchema(schemaName, msg)
+      const { schema: schemaName, id, value, key: source } = msg
+      // const schema = await loadSchema(schemaName, msg)
+      const schema = schemas[schemaName]
       if (!schema) return
 
       await manager.make(schemaName, schema)

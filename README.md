@@ -69,7 +69,7 @@ Then, you can:
 
 This repo includes several modules. Currently, they are not yet published on npm individually.
 
-* **[sonar-dat](sonar-dat/README.md)** connects a [hyper-content-db](https://github.com/arso-project/hyper-content-db) with a search index through [sonar-tantivy](https://github.com/arso-project/sonar-tantivy). We call these things *islands*.
+* **[sonar-dat](sonar-dat/README.md)** connects a [kappa-record-db](https://github.com/arso-project/kappa-record-db) with a search index through [sonar-tantivy](https://github.com/arso-project/sonar-tantivy). We call these things *islands*.
 
 * **[sonar-server](sonar-server/README.md)** this is where everything comes together. manages islands (databases), listens for connections in the p2p network, and starts an HTTP server on localhost to interact with databases, files and search indexes.
 

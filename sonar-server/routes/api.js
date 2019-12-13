@@ -10,36 +10,53 @@ const log = debug('sonar:server')
 module.exports = function apiRoutes (api) {
   const router = express.Router()
 
-  // Hyperdrive actions (get and put)
-  router.use('/:key/fs/*', hyperdriveMiddleware(api.islands))
-  router.use('/:key/fs', hyperdriveMiddleware(api.islands))
+  // Top level actions
+  const deviceHandlers = createDeviceHandlers(api.islands)
+  const handlers = createIslandHandlers(api.islands)
 
-  // Create command stream (websocket)
-  router.ws('/:key/commands', createCommandHandler(api.islands))
-
-  // Other actions
-  const handlers = createApiHandlers(api.islands)
   // Info
-  router.get('/_info', handlers.info)
+  router.get('/_info', deviceHandlers.info)
   // Create island
-  router.put('/_create/:name', handlers.createIsland)
-  router.put('/_create/:name/:key', handlers.createIsland)
+  router.put('/_create/:name', deviceHandlers.createIsland)
+  router.put('/_create/:name/:key', deviceHandlers.createIsland)
+
+  // Hyperdrive actions (get and put)
+  router.use('/:island/fs/*', hyperdriveMiddleware(api.islands))
+  router.use('/:island/fs', hyperdriveMiddleware(api.islands))
+
+  const islandRouter = express.Router()
+  // Create command stream (websocket)
+  const commandHandler = createCommandHandler(api.islands)
+  islandRouter.ws('/commands', commandHandler)
+
   // Create record
-  router.post('/:key/db/:schemans/:schemaname', handlers.put)
+  islandRouter.post('/db/:schemans/:schemaname', handlers.put)
   // Update record
-  router.put('/:key/db/:schemans/:schemaname/:id', handlers.put)
+  islandRouter.put('/db/:schemans/:schemaname/:id', handlers.put)
   // Get record
-  router.get('/:key/db/:id', handlers.get)
-  router.get('/:key/db/:schemans/:schemaname/:id', handlers.get)
+  islandRouter.get('/db/:schemans/:schemaname/:id', handlers.get)
+  islandRouter.get('/db/:id', handlers.get)
   // Search/Query
-  router.post('/:key/_search', handlers.search)
-  router.post('/:key/_query', handlers.query)
+  islandRouter.post('/_search', handlers.search)
+  islandRouter.post('/_query', handlers.query)
   // Get schema
-  router.get('/:key/schema/:schemans/:schemaname', handlers.getSchema)
+  islandRouter.get('/schema/:schemans/:schemaname', handlers.getSchema)
   // Put schema
-  router.put('/:key/schema/:schemans/:schemaname', handlers.putSchema)
+  islandRouter.put('/schema/:schemans/:schemaname', handlers.putSchema)
   // Put source
-  router.put('/:key/_source', handlers.putSource)
+  // TODO: This route should have the same pattern as the others.
+  islandRouter.put('/_source', handlers.putSource)
+
+  // Load island if in path.
+  router.use('/:island', function (req, res, next) {
+    const { island } = req.params
+    if (!island) return next()
+    api.islands.get(island, (err, island) => {
+      if (err) return next(err)
+      req.island = island
+      next()
+    })
+  }, islandRouter)
 
   return router
 }
@@ -63,7 +80,7 @@ function createCommandHandler (islands) {
   }
 }
 
-function createApiHandlers (islands) {
+function createDeviceHandlers (islands) {
   return {
     info (req, res, next) {
       islands.status((err, status) => {
@@ -71,132 +88,90 @@ function createApiHandlers (islands) {
         res.send(status)
       })
     },
-    createIsland (req, res) {
+    createIsland (req, res, next) {
       const { name, key } = req.params
       islands.create(name, key, (err, island) => {
-        if (err) return res.status(500).send({ error: 'Could not create island' })
+        if (err) return next(err)
         res.send({
           key: island.key.toString('hex')
         })
       })
-    },
+    }
+  }
+}
 
-    put (req, res) {
-      const { key, id } = req.params
+// These handlers all expect a req.island property.
+function createIslandHandlers () {
+  return {
+    put (req, res, next) {
+      const { id } = req.params
       const value = req.body
-
-      islands.get(key, (err, island) => {
-        if (err) return res.status(404).send({ error: 'Island not found' })
-        const schema = expandSchema(island, req.params)
-        island.put({ schema, id, value }, (err, id) => {
-          if (err) return res.status(500).send({ error: 'Could not create record' })
-          res.send({ id })
-        })
+      const schema = expandSchema(req.island, req.params)
+      req.island.put({ schema, id, value }, (err, id) => {
+        if (err) return next(err)
+        res.send({ id })
       })
     },
 
-    get (req, res) {
-      let { key, id } = req.params
-      // if (schema) schema = decodeURIComponent(schema)
-      // if (id) id = decodeURIComponent(id)
-      islands.get(key, (err, island) => {
-        if (err) return res.status(404).send({ error: 'Island not found' })
-        const schema = expandSchema(island, req.params)
-
-        // TODO: This uses two different APIs, which is of course not right.
-        // With schema and id, it uses HyperContentDB.get(), which looks
-        // up records by filepath. Without schema, it uses entities view's
-        // allWithId method, which is not only badly named but also should
-        // just expose a .get method. It's also faster so that should be
-        // used. Has to be fixed in hyper-content-db.
-        if (schema) {
-          island.get({ schema, id }, (err, record) => {
-            if (err) return res.status(404).send()
-            res.send(record)
-          })
-        } else {
-          const queryStream = island.api.entities.byId(id)
-          const getStream = island.createGetStream()
-          const resultStream = queryStream.pipe(getStream)
-          collect(resultStream, (err, results) => {
-            if (err) return res.status(404).send()
-            res.send(results)
-          })
-        }
+    get (req, res, next) {
+      let { id } = req.params
+      const schema = expandSchema(req.island, req.params)
+      req.island.get({ schema, id }, (err, records) => {
+        if (err) return next(err)
+        res.send(records)
       })
     },
 
+    // TODO: This should be something different than get
+    // and intead drive different kinds of queries.
     query (req, res, next) {
-      const key = req.params.key
       const { schema, id, source } = req.body
-      islands.get(key, (err, island) => {
-        if (err) return res.status(404).send({ error: 'Island not found' })
-        const queryStream = island.api.entities.get({ schema, id, source })
-        const getStream = island.createGetStream()
-        const resultStream = queryStream.pipe(getStream)
-        collect(resultStream, (err, results) => {
-          if (err) return res.status(404).send()
-          res.send(results)
-        })
+      req.island.get({ schema, id, source }, (err, records) => {
+        if (err) return next(err)
+        res.send(records)
       })
     },
 
-    getSchema (req, res) {
-      const { key } = req.params
-      islands.get(key, (err, island) => {
-        if (err) return res.status(500).send({ error: 'Could not open island', key: key })
-        let schema = expandSchema(island, req.params)
-        island.getSchema(schema, (err, schemaValue) => {
-          if (err) return res.status(404).send({ error_code: 404 })
-          res.send(schemaValue)
-        })
-      })
-    },
-
-    putSchema (req, res) {
-      let { key } = req.params
-      islands.get(key, (err, island) => {
-        let schema = expandSchema(island, req.params)
+    getSchema (req, res, next) {
+      let schema = expandSchema(req.island, req.params)
+      req.island.getSchema(schema, (err, schemaValue) => {
         if (err) {
-          res.status(500).send({ error: 'Could not put schema', key })
-        } else {
-          island.putSchema(schema, req.body, (err) => {
-            if (err) return res.status(400).send({ error_code: 400 })
-            island.getSchema(schema, (err, result) => {
-              res.send({ schema })
-            })
-          })
+          err.statusCode = 404
+          return next(err)
         }
+        res.send(schemaValue)
       })
     },
 
-    putSource (req, res) {
-      const { key } = req.params
-      const { key: sourceKey } = req.body
-      islands.get(key, (err, island) => {
-        if (err) return res.status(404).send({ error: 'Island not found', key: key })
-        island.addSource(sourceKey, (err) => {
-          if (err) return res.status(500).send({ error: err.message })
-          return res.send({ msg: 'Source added' })
+    putSchema (req, res, next) {
+      let schema = expandSchema(req.island, req.params)
+      const island = req.island
+      island.putSchema(schema, req.body, (err) => {
+        if (err) {
+          err.statusCode = 400
+          return next(err)
+        }
+        island.getSchema(schema, (err, result) => {
+          if (err) return next(err)
+          res.send({ schema })
         })
       })
     },
 
-    // files (req, res) {
-    //   let { key, 0: path } = req.params
-    //   path = path || ''
-    //   hyperdriveHandler(islands, key, path, req, res)
-    // },
-
-    search (req, res) {
-      const { key, schema } = req.params
-      const query = req.body
-      islands.get(key, (err, island) => {
-        if (err) return res.status(500).send({ error: 'Could not open island', key: key })
-        // Query can either be a string (tantivy query) or an object (toshi json query)
-        const resultStream = island.api.search.query(query)
-        replyStream(res, resultStream)
+    putSource (req, res, next) {
+      const { key: sourceKey } = req.body
+      req.island.putSource(sourceKey, (err) => {
+        if (err) return next(err)
+        return res.send({ msg: 'ok' })
       })
+    },
+
+    search (req, res, next) {
+      const query = req.body
+      const island = req.island
+      // Query can either be a string (tantivy query) or an object (toshi json query)
+      const resultStream = island.db.api.search.query(query)
+      replyStream(res, resultStream)
     }
   }
 }

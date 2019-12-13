@@ -11,7 +11,6 @@ async function loadSchemas () {
 }
 
 async function loadData ({ schema }) {
-  console.log('load', schema)
   return client.query({ schema })
 }
 
@@ -25,7 +24,7 @@ export default function TablesPage (props) {
 
   useEffect(() => {
     if (!schema) return
-    loadData({ schema: schema.value.name })
+    loadData({ schema: schema.id })
       .then(records => {
         const rows = formatRows(records)
         setRows(rows)
@@ -124,7 +123,7 @@ function ColumnSelect (props) {
       <form>
         {fields.map(([key, schema]) => {
           return (
-            <div>
+            <div key={key}>
               <input type='checkbox' value={key} key={key} name={key} defaultChecked={selected.indexOf(key) !== -1} onChange={onChange} />
               <label htmlFor={key}>{schema.title}</label>
             </div>

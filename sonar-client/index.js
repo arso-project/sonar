@@ -202,6 +202,12 @@ module.exports = class SonarClient {
 }
 
 function enhanceAxiosError (err) {
+  const log = {}
+  const { request, response } = err
+  if (request) log.request = { method: request.method, path: request.path }
+  if (response) log.response = { status: response.status, statusText: response.statusText, headers: response.headers, data: response.data }
+  debug(log)
+
   let msg
   if (err && err.response && typeof err.response.data === 'object' && err.response.data.error) {
     msg = err.response.data.error
