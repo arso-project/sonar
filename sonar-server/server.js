@@ -72,7 +72,10 @@ module.exports = function SonarServer (opts) {
   }
 
   onexit((cb) => {
-    app.close(cb)
+    api.islands.close((err) => {
+      if (err) debug('Error closing island store', err)
+      app.close(cb)
+    })
   })
 
   return app

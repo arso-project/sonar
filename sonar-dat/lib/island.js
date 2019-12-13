@@ -93,6 +93,6 @@ module.exports = class Island {
   }
 
   close (cb) {
-    if (cb) cb()
+    this.db.close(cb)
   }
 }

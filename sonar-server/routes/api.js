@@ -10,7 +10,6 @@ const log = debug('sonar:server')
 module.exports = function apiRoutes (api) {
   const router = express.Router()
 
-
   // Top level actions
   const deviceHandlers = createDeviceHandlers(api.islands)
   const handlers = createIslandHandlers(api.islands)
@@ -27,7 +26,8 @@ module.exports = function apiRoutes (api) {
 
   const islandRouter = express.Router()
   // Create command stream (websocket)
-  islandRouter.ws('/:island/commands', createCommandHandler(api.islands))
+  const commandHandler = createCommandHandler(api.islands)
+  islandRouter.ws('/commands', commandHandler)
 
   // Create record
   islandRouter.post('/db/:schemans/:schemaname', handlers.put)

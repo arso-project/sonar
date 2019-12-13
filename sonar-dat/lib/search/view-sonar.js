@@ -17,6 +17,7 @@ function sonarView (level, island, opts) {
     batch: true,
     batchSize: 500,
     map,
+    close: (cb) => manager.close(cb),
     api: {
       manifest: {
         info: 'promise',
