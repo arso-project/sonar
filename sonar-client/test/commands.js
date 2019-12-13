@@ -1,10 +1,10 @@
 require('axios-debug-log')
-const tape = require('tape')
+const test = require('tape')
 const SonarClient = require('..')
 
 const { makeClient } = require('./util/server')
 
-tape('commands', async t => {
+test('commands', async t => {
   let [client1, cleanup] = await makeClient()
   await client1.createIsland('default')
   const client2 = new SonarClient(client1.endpoint)
