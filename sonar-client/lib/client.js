@@ -3,7 +3,7 @@ const randombytes = require('randombytes')
 const Socket = require('simple-websocket')
 const { Endpoint } = require('simple-rpc-protocol')
 const debug = require('debug')('sonar-client')
-const QueryBuilder = require('./querybuilder')
+const SearchQueryBuilder = require('./searchquerybuilder')
 
 const DEFAULT_BASE_URL = 'http://localhost:9191/api'
 const DEFAULT_ISLAND = 'default'
@@ -91,7 +91,7 @@ module.exports = class SonarClient {
   async search (query) {
     if (typeof query === 'string') {
       query = JSON.stringify(query)
-    } else if (query instanceof QueryBuilder) {
+    } else if (query instanceof SearchQueryBuilder) {
       query = query.getQuery()
     }
     return this._request({

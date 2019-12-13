@@ -1,4 +1,4 @@
-module.exports = class QueryBuilder {
+module.exports = class SearchQueryBuilder {
   constructor (schema) {
     this.schema = schema
     // FIXME: This should not be necessary

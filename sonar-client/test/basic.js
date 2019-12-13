@@ -1,7 +1,7 @@
 const test = require('tape')
 require('axios-debug-log')
 
-const {QueryBuilder} = require('..')
+const {SearchQueryBuilder} = require('..')
 const {makeClient} = require('./util/server')
 
 async function prepare(t) {
@@ -36,7 +36,7 @@ test('basic query', async t => {
 test('querybuilder: simple bool search', async t => {
   try {
     const [client, cleanup] = await prepare(t)
-    const query = new QueryBuilder('doc')
+    const query = new SearchQueryBuilder('doc')
     query
       .bool('must', [query.term('title', 'hello')])
       .bool('must_not', [query.term('title', 'moon')])
@@ -62,7 +62,7 @@ test('querybuilder: simple bool search', async t => {
 test('querybuilder: phrase search', async t => {
   try {
     const [client, cleanup] = await prepare(t)
-    const query = new QueryBuilder('doc')
+    const query = new SearchQueryBuilder('doc')
     query.phrase('title', ['hello', 'moon'])
     let results = await client.search(query)
     t.equal(results.length, 1, 'should return one result')
