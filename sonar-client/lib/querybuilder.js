@@ -4,18 +4,22 @@ module.exports = class QueryBuilder {
     // FIXME: This should not be necessary
     this.query = {
       query: {
-        bool : {},
-        phrase : {}
       }
     }
   }
 
   bool (boolType, queries) {
+    if (!this.query['query'].hasOwnProperty('bool')) {
+      this.query['query']['bool'] = {};
+    }
     this.query['query']['bool'][boolType] = queries
     return this
   }
 
   phrase (field, terms) {
+    if (!this.query['query'].hasOwnProperty('phrase')) {
+      this.query['query']['phrase'] = {};
+    }
     this.query['query']['phrase'][field] = { terms }
   }
 
