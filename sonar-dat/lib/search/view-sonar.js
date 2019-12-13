@@ -30,6 +30,7 @@ function sonarView (level, island, opts) {
           .catch(err => cb(err))
       },
       query (kcore, query, indexName) {
+        console.log('QUERY', query)
         const resultStream = doQuery(manager, query, indexName)
         return resultStream
       }

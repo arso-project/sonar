@@ -10,7 +10,9 @@
     "test": "lerna run test",
     "start": "lerna run start --parallel --no-progress"
   },
-  "workspaces": ["*"],
+  "workspaces": [
+    "*"
+  ],
   "license": "GPL-3.0",
   "private": true,
   "devDependencies": {

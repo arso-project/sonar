@@ -1,6 +1,6 @@
 const createServer = require('@arso-project/sonar-server')
 const tmp = require('temporary-directory')
-const SonarClient = require('../..')
+const SonarClient = require('../../lib/client')
 
 module.exports = {
   makeServer, makeClient
