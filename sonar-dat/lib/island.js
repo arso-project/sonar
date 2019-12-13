@@ -88,6 +88,13 @@ module.exports = class Island {
     this.db.putSourc(key, cb)
   }
 
+  query (name, args, cb) {
+    if (!this.db.view[name] || !this.db.view[name].query) {
+      return cb(new Error('Invalid view: ' + name))
+    }
+    return this.db.view[name].query(args, cb)
+  }
+
   localDrive (cb) {
     cb(null, this.fs.localwriter)
   }
