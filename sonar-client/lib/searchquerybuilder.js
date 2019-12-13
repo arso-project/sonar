@@ -1,30 +1,27 @@
 module.exports = class SearchQueryBuilder {
   constructor (schema) {
     this.schema = schema
-    // FIXME: This should not be necessary
-    this.query = {
-      query: {
-      }
-    }
+    this.query = {}
   }
 
   bool (boolType, queries) {
-    if (!this.query['query'].hasOwnProperty('bool')) {
-      this.query['query']['bool'] = {}
+    if (!this.query.hasOwnProperty('bool')) {
+      this.query.bool = {}
     }
-    this.query['query']['bool'][boolType] = queries
+    this.query.bool[boolType] = queries
     return this
   }
 
   phrase (field, terms) {
-    if (!this.query['query'].hasOwnProperty('phrase')) {
-      this.query['query']['phrase'] = {}
+    if (!this.query.hasOwnProperty('phrase')) {
+      this.query.phrase = {}
     }
-    this.query['query']['phrase'][field] = { terms }
+    this.query.phrase[field] = { terms }
+    return this
   }
 
   limit (limit) {
-    this.query['limit'] = limit
+    this.limit = limit
     return this
   }
 
@@ -33,13 +30,6 @@ module.exports = class SearchQueryBuilder {
   }
 
   getQuery () {
-    return this.query
+    return { query: this.query, limit: this.limit }
   }
-  // get query () {
-  // return this.query
-  // }
-
-  // set query (value) {
-  // this.query = value
-  // }
 }
