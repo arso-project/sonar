@@ -157,7 +157,7 @@ module.exports = class SonarClient {
       url: opts.url || this._url(opts.path),
       maxRedirects: 0,
       headers: {
-        'Content-Type': 'application/json',
+        'Content-Type': 'application/json'
         // [TOKEN_HEADER]: this.token
       },
       // axios has a very weird bug that it REMOVES the

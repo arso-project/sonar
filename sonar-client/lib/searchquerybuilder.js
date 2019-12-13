@@ -10,7 +10,7 @@ module.exports = class SearchQueryBuilder {
 
   bool (boolType, queries) {
     if (!this.query['query'].hasOwnProperty('bool')) {
-      this.query['query']['bool'] = {};
+      this.query['query']['bool'] = {}
     }
     this.query['query']['bool'][boolType] = queries
     return this
@@ -18,7 +18,7 @@ module.exports = class SearchQueryBuilder {
 
   phrase (field, terms) {
     if (!this.query['query'].hasOwnProperty('phrase')) {
-      this.query['query']['phrase'] = {};
+      this.query['query']['phrase'] = {}
     }
     this.query['query']['phrase'][field] = { terms }
   }
@@ -29,18 +29,17 @@ module.exports = class SearchQueryBuilder {
   }
 
   term (field, value) {
-    return {term: { [field]: value }}
+    return { term: { [field]: value } }
   }
 
   getQuery () {
     return this.query
   }
-  //get query () {
-    //return this.query
-  //}
+  // get query () {
+  // return this.query
+  // }
 
-  //set query (value) {
-    //this.query = value
-  //}
-
+  // set query (value) {
+  // this.query = value
+  // }
 }

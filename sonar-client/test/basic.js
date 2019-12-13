@@ -1,17 +1,17 @@
 const test = require('tape')
 require('axios-debug-log')
 
-const {SearchQueryBuilder} = require('..')
-const {makeClient} = require('./util/server')
+const { SearchQueryBuilder } = require('..')
+const { makeClient } = require('./util/server')
 
-async function prepare(t) {
+async function prepare (t) {
   const port = 21212
   const island = 'foo'
-  let [client, cleanup] = await makeClient({port, island})
+  let [client, cleanup] = await makeClient({ port, island })
   await client.createIsland(island)
   // const key = res.key
-  await client.put({schema: 'doc', value: {title: 'hello world'}})
-  await client.put({schema: 'doc', value: {title: 'hello moon'}})
+  await client.put({ schema: 'doc', value: { title: 'hello world' } })
+  await client.put({ schema: 'doc', value: { title: 'hello moon' } })
   await new Promise(resolve => setTimeout(resolve, 500))
   return [client, cleanup]
 }
@@ -75,12 +75,11 @@ test('querybuilder: phrase search', async t => {
   }
 })
 
-
 test('toshi query', async t => {
   try {
     const [client, cleanup] = await prepare(t)
     let results = await client.search({
-      query: {bool: {must: [{term: {title: 'hello'}}], must_not: [{term: {title: 'moon'}}]}}, limit: 10
+      query: { bool: { must: [{ term: { title: 'hello' } }], must_not: [{ term: { title: 'moon' } }] } }, limit: 10
     })
     t.equal(results.length, 1, 'should return one result')
     t.equal(results[0].value.title, 'hello world', 'toshi query worked')
