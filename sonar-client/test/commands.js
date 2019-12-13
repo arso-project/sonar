@@ -1,6 +1,6 @@
 require('axios-debug-log')
 const tape = require('tape')
-const SonarClient = require('..')
+const { SonarClient } = require('..')
 
 const { makeClient } = require('./util/server')
 
