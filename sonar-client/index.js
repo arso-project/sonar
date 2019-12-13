@@ -1,4 +1,7 @@
+const SonarClient = require('./lib/client')
+const SearchQueryBuilder = require('./lib/searchquerybuilder')
+
 module.exports = {
-  SonarClient: require('./lib/client'),
-  SearchQueryBuilder: require('./lib/searchquerybuilder')
+  SonarClient,
+  SearchQueryBuilder
 }

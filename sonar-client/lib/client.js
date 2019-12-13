@@ -3,11 +3,11 @@ const randombytes = require('randombytes')
 const Socket = require('simple-websocket')
 const { Endpoint } = require('simple-rpc-protocol')
 const debug = require('debug')('sonar-client')
-const SearchQueryBuilder = require('./searchquerybuilder')
 
 const DEFAULT_BASE_URL = 'http://localhost:9191/api'
 const DEFAULT_ISLAND = 'default'
-const TOKEN_HEADER = 'x-sonar-access-token'
+// const TOKEN_HEADER = 'x-sonar-access-token'
+const SearchQueryBuilder = require('./searchquerybuilder.js')
 
 module.exports = class SonarClient {
   constructor (endpoint, island, opts = {}) {
@@ -94,6 +94,7 @@ module.exports = class SonarClient {
     } else if (query instanceof SearchQueryBuilder) {
       query = query.getQuery()
     }
+    console.log('client', query)
     return this._request({
       method: 'POST',
       path: [this.island, '_search'],
@@ -205,6 +206,12 @@ module.exports = class SonarClient {
 }
 
 function enhanceAxiosError (err) {
+  const log = {}
+  const { request, response } = err
+  if (request) log.request = { method: request.method, path: request.path }
+  if (response) log.response = { status: response.status, statusText: response.statusText, headers: response.headers, data: response.data }
+  debug(log)
+
   let msg
   if (err && err.response && typeof err.response.data === 'object' && err.response.data.error) {
     msg = err.response.data.error

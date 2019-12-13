@@ -6,9 +6,11 @@ const { makeClient } = require('./util/server')
 
 test('commands', async t => {
   let [client1, cleanup] = await makeClient()
+  await client1.createIsland('default')
   const client2 = new SonarClient(client1.endpoint)
 
-  client1.createCommandStream({
+  // A client with a command
+  const endpoint1 = client1.createCommandStream({
     name: 'pinger',
     commands: {
       ping: {
@@ -22,10 +24,12 @@ test('commands', async t => {
       }
     }
   })
+
   const commands2 = client2.createCommandStream()
+
   setTimeout(() => {
     const ch = commands2.call('@pinger ping', 'client2', (err, res, channel) => {
-      console.log('remote cmds on 2', commands2.remoteManifest)
+      t.error(err)
       t.equal(res, 'pong from 1')
       close()
     })
@@ -33,9 +37,7 @@ test('commands', async t => {
   }, 100)
   async function close () {
     client2.close()
-    console.log('now close')
     await cleanup()
-    console.log('clean')
     t.end()
   }
 })

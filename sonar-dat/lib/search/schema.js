@@ -67,30 +67,32 @@ function makeTantivySchema (schema, opts = {}) {
     prefix = schema.title + ':'
   }
   const tschema = []
-  for (const [name, prop] of Object.entries(schema.properties)) {
-    if (prop.type === 'string') {
-      tschema.push({
-        name: prefix + name,
-        type: 'text',
-        options: {
-          indexing: {
-            record: 'position',
-            tokenizer: 'en_stem'
-          },
-          stored: true
-        }
-      })
-    }
-    if (prop.type === 'date') {
-      tschema.push({
-        name: prefix + name,
-        type: 'date',
-        options: {
-          indexed: true,
-          fast: 'multi',
-          stored: true
-        }
-      })
+  if (schema.properties) {
+    for (const [name, prop] of Object.entries(schema.properties)) {
+      if (prop.type === 'string') {
+        tschema.push({
+          name: prefix + name,
+          type: 'text',
+          options: {
+            indexing: {
+              record: 'position',
+              tokenizer: 'en_stem'
+            },
+            stored: true
+          }
+        })
+      }
+      if (prop.type === 'date') {
+        tschema.push({
+          name: prefix + name,
+          type: 'date',
+          options: {
+            indexed: true,
+            fast: 'multi',
+            stored: true
+          }
+        })
+      }
     }
   }
 

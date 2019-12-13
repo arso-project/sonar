@@ -195,7 +195,7 @@ function DateViewer (props) {
 
 function RecordMeta (props) {
   const { record, schema } = props
-  const { id, source, meta, schema: schemaName } = record
+  const { id, key, timestamp, schema: schemaName } = record
   return (
     <div className='sonar-record__meta'>
       <dl>
@@ -206,13 +206,10 @@ function RecordMeta (props) {
           <dt>ID</dt><dd>{id}</dd>
         </div>
         <div>
-          <dt>Source</dt><dd>{formatSource(source)}</dd>
+          <dt>Source</dt><dd>{formatSource(key)}</dd>
         </div>
         <div>
-          <dt>Created</dt><dd>{formatDate(meta.ctime)}</dd>
-        </div>
-        <div>
-          <dt>Modified</dt><dd>{formatDate(meta.mtime)}</dd>
+          <dt>Created</dt><dd>{formatDate(timestamp)}</dd>
         </div>
       </dl>
     </div>
@@ -224,7 +221,7 @@ function NoSchemaError (props) {
   const { id, schema, message } = record
   return (
     <div>
-      Cannot display record <strong>{id}</strong> (schema <code>{schema}</code>): {message}. 
+      Cannot display record <strong>{id}</strong> (schema <code>{schema}</code>): {message}.
     </div>
   )
 }
