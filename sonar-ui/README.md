@@ -11,11 +11,4 @@ cd sonar-ui
 npm start
 ```
 
-This opens a dev server on `http://localhost:55555`. In another terminal, start `sonar-server`:
-
-```
-cd sonar-server
-npm start
-```
-
-This starts the Sonar server listening on `http://localhost:9191`. Now open your browser at `http://localhost:55555`.
+This opens a dev server on `http://localhost:55555`. It needs a running [sonar-server](../sonar-server/README.md) to work.

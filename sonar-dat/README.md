@@ -1,24 +1,30 @@
 # sonar-dat
 
-Integrates the Sonar search index with [hyper-content-db](https://github.com/arso-project/hyper-content-db), a document database for [hyperdrives](https://github.com/mafintosh/hyperdrive).
+The core. Manages *islands*, where each island is a [kappa-record-db](https://github.com/arso-project/kappa-record-db)and associated hyperdrives.
+
+* Adds a full-text search engine to a kappa-record-db (through [sonar-tantivy](https://github.com/arso-project/sonar-tantivy)
+* Adds a simple file system per island (as [hyperdrives](https://github.com/mafintosh/hyperdrive)
+* Includes an `IslandStore` to manage several islands
+* Includes a networking module to share islands over [hyperswarm](https://github.com/hyperswarm/hyperswarm)
 
 ## Example
 
-```js
+```javascript
 const { IslandStore } = require('sonar-dat')
 
 const store = new IslandStore('/tmp/database')
 
 store.create('my-db', (err, island) => {
+  // Create a schema.
+  island.putSchema('doc', { 
+    properties: { title: { type: 'string' } }
+  })
+
   // Put json records.
-  // See hyper-content-db docs for more
-  island.put({ schema: 'testdoc', value: { title: 'Hello!' })
+  island.put({ schema: 'doc', value: { title: 'Hello!' })
 
-  // Query the index.
-  island.api.search.query({ query: 'Hello!' })
-
-  // Publish a database.
-  manager.share(island.key)
+  // Make a query.
+  island.query('search', 'hello')
 })
 
 ```

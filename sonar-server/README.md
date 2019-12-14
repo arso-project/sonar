@@ -1,27 +1,9 @@
 # Sonar-server
 
-## API
+A HTTP server with a REST style API for Sonar.
 
-### Create island
+## Usage
 
-`curl -XPUT http://localhost:9191/_create/<islandName>`
+`node bin.js server start` start the server. If installed globally, this is the same as `sonar server start`. The server listens on port 9191 by default, and only on localhost (not exposed publicly).
 
-### Add record
-
-`curl -H "Content-Type: application/json" -XPOST http://localhost:9191/<key>/<schemaName> -d '{"name": "Test doc"}'`
-
-### Get record
-
-`curl http://localhost:9191/<key>/<schemaName>/<id>`
-
-### Set schema
-
-`curl -H "Content-Type: application/json" -XPUT http://localhost:9191/<key>/<schemaName>/_schema -d '{"properties": {"name": {"type": "text", "index": true }}}'`
-
-### Get schema
-
-`curl http://localhost:9191/<key>/<schemaName>/_schema`
-
-### Search
-
-`curl http://localhost:9191/54d722bf355f5182931a59a9375dd0cd84883fae5acdfc4d568ace8d42c82fca/doc/_search -d '"test"' -H "Content-Type: application/json"`
+The server is only intended to be run on localhost, and not for being reachable over public networks. There's no authentication built in yet. We'll add token based authentication soon.
