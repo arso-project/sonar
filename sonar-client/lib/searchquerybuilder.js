@@ -25,8 +25,13 @@ module.exports = class SearchQueryBuilder {
     return this
   }
 
-  term (field, value) {
-    return { term: { [field]: value } }
+  term (field, term) {
+    if (!this.query.hasOwnProperty('term')) {
+      this.query.term = {}
+    }
+    this.query.term[field] = term
+    return this
+    //return { term: { [field]: value } }
   }
 
   getQuery () {
