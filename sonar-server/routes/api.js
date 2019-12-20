@@ -49,9 +49,6 @@ module.exports = function apiRoutes (api) {
   // TODO: This route should have the same pattern as the others.
   islandRouter.put('/_source', handlers.putSource)
 
-  islandRouter.put('/_subscription/:name', handlers.createSubscription)
-  islandRouter.get('/_subscription/:name', handlers.readSubscription)
-
   // Load island if in path.
   router.use('/:island', function (req, res, next) {
     const { island } = req.params
