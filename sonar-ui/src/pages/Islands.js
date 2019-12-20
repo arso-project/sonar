@@ -58,6 +58,9 @@ export default function IslandPage (props) {
       <h2>Clone Island</h2>
       <form onSubmit={onCreate}>
         <div className='sonar-config__row'>
+          <label htmlFor='name'>Local name</label>
+          <input name='name' type='text' />
+          <br />
           <label htmlFor='key'>Key</label>
           <input name='key' type='text' />
           <button type='submit'>OK</button>
@@ -71,6 +74,7 @@ export default function IslandPage (props) {
     // Key may be empty
     let { name, key } = formData(e.currentTarget)
     if (!key || key === '') key = undefined
+    if (!name) return setMessage(<strong>Name may not be empty</strong>)
     try {
       const result = await client.createIsland(name, key)
       console.log('result', result)
