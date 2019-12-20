@@ -14,6 +14,8 @@ module.exports = class Network {
     this.localswarm = localswarm()
     this.hyperswarm.on('connection', this._onconnection.bind(this))
     this.localswarm.on('connection', this._onconnection.bind(this))
+    // This always emits when the remote closes, so do nothing for now.
+    this.localswarm.on('error', () => {})
   }
 
   status (cb) {
@@ -46,8 +48,9 @@ module.exports = class Network {
   }
 
   close (cb = noop) {
+    Object.values(this.peers).forEach(peer => peer.stream && peer.stream.destroy())
     this.hyperswarm.destroy(() => {
-      this.localswarm.close(cb)
+      this.localswarm.close(() => cb())
     })
   }
 
