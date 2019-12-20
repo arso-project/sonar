@@ -80,6 +80,12 @@ module.exports = class SonarClient {
     return this._request({ path, method, data: value })
   }
 
+  async getSchemas () {
+    return this._request({
+      path: [this.island, 'schema']
+    })
+  }
+
   async query (query) {
     return this._request({
       method: 'POST',

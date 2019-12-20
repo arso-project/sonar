@@ -39,6 +39,8 @@ module.exports = function apiRoutes (api) {
   // Search/Query
   islandRouter.post('/_search', handlers.search)
   islandRouter.post('/_query', handlers.query)
+  // List schemas
+  islandRouter.get('/schema', handlers.getSchemas)
   // Get schema
   islandRouter.get('/schema/:schemans/:schemaname', handlers.getSchema)
   // Put schema
@@ -130,6 +132,11 @@ function createIslandHandlers () {
         if (err) return next(err)
         res.send(records)
       })
+    },
+
+    getSchemas (req, res, next) {
+      const schemas = req.island.getSchemas()
+      res.send(schemas)
     },
 
     getSchema (req, res, next) {

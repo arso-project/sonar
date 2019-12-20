@@ -22,7 +22,7 @@ function prepare (t, cb) {
   })
 }
 
-tape.only('basic', t => {
+tape('basic', t => {
   prepare(t, (err, islands, cleanup) => {
     t.error(err, 'tempdir ok')
     islands.create('first', (err, island) => {

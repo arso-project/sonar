@@ -7,7 +7,8 @@ import { findWidget, RecordLink } from '../../components/Record'
 import makeGlobalStateHook from '../../hooks/make-global-state-hook'
 
 async function loadSchemas () {
-  return client.query({ schema: 'core/schema' })
+  const schemas = await client.getSchemas()
+  return Object.values(schemas)
 }
 
 async function loadData ({ schema }) {
@@ -20,17 +21,17 @@ export default function TablesPage (props) {
   const [rows, setRows] = useGlobalState('rows', null)
   const [schema, setSchema] = useGlobalState('schema', null)
   const [columns, setColumns] = useGlobalState('columns', null)
-  const schemaid = schema ? schema.id : null
+  const schemaname = schema ? schema.name : null
 
   useEffect(() => {
     if (!schema) return
-    loadData({ schema: schema.id })
+    loadData({ schema: schemaname })
       .then(records => {
         const rows = formatRows(records)
         setRows(rows)
       })
       .catch(error => errors.push(error))
-  }, [schemaid])
+  }, [schemaname])
 
   // const rows = useMemo(() => {
   //   if (!records) return null
@@ -58,8 +59,6 @@ export default function TablesPage (props) {
     return rows[i]
   }
 
-  console.log('render! cols', columns)
-
   return (
     <div>
       <SchemaSelect onSchema={setSchema} schema={schema} />
@@ -79,16 +78,16 @@ export default function TablesPage (props) {
   )
 }
 
-function ContextMenu (props) {
-  const [visible, setVisible] = useState(false)
-  const { children, title, icon } = props
-  return (
-    <div className='sonar-context-menu'>
-      <div className='sonar-context-menu__title'>{title}</div>
-      <div className='sonar-context-menu__menu'>{children}</div>
-    </div>
-  )
-}
+// function ContextMenu (props) {
+//   const [visible, setVisible] = useState(false)
+//   const { children, title, icon } = props
+//   return (
+//     <div className='sonar-context-menu'>
+//       <div className='sonar-context-menu__title'>{title}</div>
+//       <div className='sonar-context-menu__menu'>{children}</div>
+//     </div>
+//   )
+// }
 
 function formatRows (records) {
   const rows = []
@@ -97,7 +96,6 @@ function formatRows (records) {
     row._record = record
     row._id = record.id
     for (let [key, value] of Object.entries(record.value)) {
-      // row[key] = JSON.stringify(value)
       row[key] = value
     }
     rows.push(row)
@@ -107,25 +105,23 @@ function formatRows (records) {
 
 function ColumnSelect (props) {
   const { schema, columns = {}, onColumns } = props
+  // TODO: Cache?
+  const allColumns = [...defaultColumns(), ...schemaColumns(schema)]
+  const selected = columns ? columns.map(c => c.key) : ['_actions', '_id']
 
-  const fields = Object.entries(schema.value.properties)
-
-  // const [selected, setSelected] = useGlobalState('selectedcolumns', {})
-  const selected = columns ? columns.map(c => c.key) : []
-
-  // useEffect(() => {
-  //   const columns = buildColumns(schema, selected)
-  //   onColumns(columns)
-  // }, [schema, selected])
+  useEffect(() => {
+    updateColumns(selected)
+  }, [])
 
   return (
     <div>
       <form>
-        {fields.map(([key, schema]) => {
+        {allColumns.map((column) => {
+          const { key, name } = column
           return (
             <div key={key}>
               <input type='checkbox' value={key} key={key} name={key} defaultChecked={selected.indexOf(key) !== -1} onChange={onChange} />
-              <label htmlFor={key}>{schema.title}</label>
+              <label htmlFor={key}>{name}</label>
             </div>
           )
         })}
@@ -138,44 +134,49 @@ function ColumnSelect (props) {
     let next
     if (checked) next = [...selected, name]
     else next = selected.filter(c => c !== name)
-    console.log('onchange', selected, next)
-    const columns = buildColumns(schema, next)
-    onColumns(columns)
-    // const nextSelected
-    // setSelected(selected => {
-    //   return { ...selected, [name]: checked }
-    // })
+    updateColumns(next)
   }
 
-  function buildColumns (schema, selected) {
-    let fields = Object.entries(schema.value.properties)
-    fields = fields.filter(([key, value]) => selected.indexOf(key) !== -1)
-    const columns = defaultColumns()
-    for (let [key, fieldSchema] of fields) {
-      columns.push(fieldColumn(key, fieldSchema))
-    }
-
-    for (const column of columns) {
-      column.editable = false
-      column.resizable = true
-    }
-    return columns
+  function updateColumns (selected) {
+    const selectedColumns = allColumns.filter(col => selected.indexOf(col.key) !== -1)
+    onColumns(selectedColumns)
   }
+}
+
+function schemaColumns (schema) {
+  return Object.entries(schema.properties).map(([key, fieldSchema]) => {
+    return fieldColumn(key, fieldSchema)
+  })
 }
 
 function defaultColumns () {
   return [
     {
       key: '_actions',
-      editable: false,
+      name: 'Actions',
       formatter: ActionsFormatter
     },
     {
       key: '_id',
-      name: 'ID',
-      editable: false
+      name: 'ID'
     }
   ]
+}
+
+function fieldColumn (key, fieldSchema) {
+  const Widget = findWidget(fieldSchema)
+  return {
+    key,
+    name: fieldSchema.title,
+    sortable: true,
+    editable: false,
+    resizable: true,
+    // onCellSelected,
+    formatter: (props) => {
+      const { value } = props
+      return <Widget value={value} fieldSchema={fieldSchema} />
+    }
+  }
 }
 
 function ActionsFormatter (props) {
@@ -185,24 +186,6 @@ function ActionsFormatter (props) {
     <RecordLink record={record}>Open</RecordLink>
   )
 }
-
-function fieldColumn (key, fieldSchema) {
-  return {
-    key,
-    name: fieldSchema.title,
-    sortable: true,
-    // onCellSelected,
-    formatter: (props) => {
-      const { value } = props
-      const Widget = findWidget(fieldSchema)
-      return <Widget value={value} fieldSchema={fieldSchema} />
-    }
-  }
-}
-
-// function Grid (props) {
-//   const { schema } = props
-// }
 
 function SchemaSelect (props) {
   const { onSchema, schema } = props
@@ -215,26 +198,26 @@ function SchemaSelect (props) {
 
   if (schemas === null) return <Loading />
   if (!schemas) return <div>No schemas</div>
-  let selected = schema ? schema.id : '__default__'
+  let selected = schema ? schema.name : '__default__'
 
   return (
     <div>
       <select onChange={onSelect} value={selected}>
         <option disabled value='__default__'> -- select schema -- </option>
         {schemas.map(schema => (
-          <option key={schema.id} value={schema.id}>{schemaName(schema)}</option>
+          <option key={schema.name} value={schema.name}>{schemaName(schema)}</option>
         ))}
       </select>
     </div>
   )
 
   function schemaName (schema) {
-    return schema.value.title || schema.id
+    return schema.title || schema.name
   }
 
   function onSelect (e) {
-    const id = e.target.value
-    const schema = schemas.filter(s => s.id === id)[0]
+    const name = e.target.value
+    const schema = schemas.filter(s => s.name === name)[0]
     onSchema(schema)
   }
 }
