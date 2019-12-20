@@ -30,20 +30,22 @@ export default function IslandPage (props) {
   return (
     <div className='sonar-islands'>
       <h2>Islands</h2>
-      <ul className='sonar-islands--list'>
-        {Object.values(islands).map((island, i) => (
-          <li key={i}>
-            <h3 onClick={e => onSelectIsland(island)} className={cls(island)}>
-              {island.name}
-            </h3>
-            <div><Key k={island.key} /></div>
-            <label>
-                Share:
-              <input type='checkbox' checked={island.share} disabled />
-            </label>
-          </li>
-        ))}
-      </ul>
+      { islands && (
+        <ul className='sonar-islands--list'>
+          {Object.values(islands).map((island, i) => (
+            <li key={i}>
+              <h3 onClick={e => onSelectIsland(island)} className={cls(island)}>
+                {island.name}
+              </h3>
+              <div><Key k={island.key} /></div>
+              <label>
+                  Share:
+                <input type='checkbox' checked={island.share} disabled />
+              </label>
+            </li>
+          ))}
+        </ul>
+      )}
       <h2>Create Island</h2>
       {message}
       <form onSubmit={onCreate}>
