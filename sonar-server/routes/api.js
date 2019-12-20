@@ -179,6 +179,21 @@ function createIslandHandlers () {
       // Query can either be a string (tantivy query) or an object (toshi json query)
       const resultStream = island.db.api.search.query(query)
       replyStream(res, resultStream)
+    },
+
+    createSubscription (req, res, next) {
+      const { island, body } = req
+      const { name } = req.params
+      island.createSubscription(name, body)
+      res.send({ name })
+    },
+
+    readSubscription (req, res, next) {
+      const { island, params: { name } } = req
+      island.readSubscription(name, (err, results) => {
+        if (err) return next(err)
+        res.send(results)
+      })
     }
   }
 }

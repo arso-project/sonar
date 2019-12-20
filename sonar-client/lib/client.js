@@ -152,6 +152,20 @@ module.exports = class SonarClient {
     })
   }
 
+  async createSubscription (name, props) {
+    return this._request({
+      method: 'PUT',
+      path: [this.island, '_subscription', name],
+      data: props
+    })
+  }
+
+  async readSubscription (name) {
+    return this._request({
+      path: [this.island, '_subscription', name]
+    })
+  }
+
   _url (path) {
     if (Array.isArray(path)) path = path.join('/')
     return this.endpoint + '/' + path

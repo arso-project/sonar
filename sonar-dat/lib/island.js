@@ -102,4 +102,40 @@ module.exports = class Island {
   close (cb) {
     this.db.close(cb)
   }
+
+  createSubscription (name, filter) {
+    this._subscriptions = this._subscriptions || {}
+    if (this._subscriptions[name]) return
+    this._subscriptions[name] = { filter, state: -1 }
+  }
+
+  readSubscription (name, cb) {
+    const self = this
+    const { filter = {}, state } = this._subscriptions[name]
+    const count = 50
+    let start = state + 1
+    this.db.indexer.pull(start, start + count, (result) => {
+      let results = []
+      if (!result) return finish()
+      let { messages, head, seq } = result
+      let pending = messages.length + 1
+      messages.forEach(msg => this.db.loadRecord(msg.key, msg.seq, done))
+      done()
+      function done (err, msg) {
+        if (err) return finish(err)
+        if (msg) results.push(msg)
+        if (--pending === 0) finish(null, { results, seq })
+      }
+      function finish (err, data) {
+        if (err || !data) return cb(err, [])
+        let { results, seq } = data
+        results = results.filter(msg => {
+          if (filter.schema && filter.schema !== msg.schema) return false
+          return true
+        })
+        if (seq) self._subscriptions[name].state = seq
+        cb(null, results)
+      }
+    })
+  }
 }
