@@ -6,6 +6,8 @@ import errors from '../../lib/error'
 import { findWidget, RecordLink } from '../../components/Record'
 import makeGlobalStateHook from '../../hooks/make-global-state-hook'
 
+import './tables.css'
+
 async function loadSchemas () {
   const schemas = await client.getSchemas()
   return Object.values(schemas)
@@ -21,6 +23,7 @@ export default function TablesPage (props) {
   const [rows, setRows] = useGlobalState('rows', null)
   const [schema, setSchema] = useGlobalState('schema', null)
   const [columns, setColumns] = useGlobalState('columns', null)
+  const [count, setCount] = useGlobalState('count', 100)
   const schemaname = schema ? schema.name : null
 
   useEffect(() => {
@@ -52,7 +55,6 @@ export default function TablesPage (props) {
 
   function onCellSelected (cell) {
     const row = getRow(cell.rowIdx)
-    console.log(row)
   }
 
   function getRow (i) {
@@ -63,13 +65,19 @@ export default function TablesPage (props) {
     <div>
       <SchemaSelect onSchema={setSchema} schema={schema} />
       { schema && (
-        <ColumnSelect schema={schema} columns={columns} onColumns={setColumns} />
+        <div>
+          <ColumnSelect schema={schema} columns={columns} onColumns={setColumns} />
+          <div>
+            Count:
+            <input type='number' value={count} onChange={e => setCount(e.target.value)} />
+          </div>
+        </div>
       )}
       { columns && rows && (
         <ReactDataGrid
           columns={columns}
           rowGetter={getRow}
-          rowsCount={30}
+          rowsCount={count}
           onGridRowsUpdated={onGridRowsUpdated}
           onCellSelected={onCellSelected}
         />
@@ -114,14 +122,18 @@ function ColumnSelect (props) {
   }, [])
 
   return (
-    <div>
+    <div className='sonar-tables--column-select'>
       <form>
         {allColumns.map((column) => {
           const { key, name } = column
+          const checked = selected.indexOf(key) !== -1
+          const cls = checked ? 'checked' : ''
           return (
-            <div key={key}>
-              <input type='checkbox' value={key} key={key} name={key} defaultChecked={selected.indexOf(key) !== -1} onChange={onChange} />
-              <label htmlFor={key}>{name}</label>
+            <div key={key} className={cls}>
+              <label>
+                <input type='checkbox' value={key} key={key} name={key} defaultChecked={checked} onChange={onChange} />
+                {name}
+              </label>
             </div>
           )
         })}
@@ -154,11 +166,15 @@ function defaultColumns () {
     {
       key: '_actions',
       name: 'Actions',
-      formatter: ActionsFormatter
+      formatter: ActionsFormatter,
+      resizable: true,
+      editable: false
     },
     {
       key: '_id',
-      name: 'ID'
+      name: 'ID',
+      resizable: true,
+      editable: false
     }
   ]
 }
