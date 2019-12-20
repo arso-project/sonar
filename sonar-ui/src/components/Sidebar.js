@@ -11,6 +11,7 @@ export default function Sidebar (props) {
         <li><NavLink to='/filebrowser'>Filebrowser</NavLink></li>
         <li><NavLink to='/tables'>Tables</NavLink></li>
         <li><NavLink to='/config'>Config</NavLink></li>
+        <li><NavLink to='/islands'>Islands</NavLink></li>
       </ul>
     </div>
   )

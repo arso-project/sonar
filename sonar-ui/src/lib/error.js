@@ -8,9 +8,10 @@ export class ErrorStore {
     const timestamp = Date.now()
     const message = error instanceof Error ? error.message : error
     const info = { error, meta, timestamp, message }
-    this.errors.push(info)
+    const ret = this.errors.push(info)
     console.error('Error: %o (meta %o)', error, meta)
     this.watchers.forEach(fn => fn(this.errors))
+    return ret
   }
 
   watch (fn) {

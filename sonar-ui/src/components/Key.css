@@ -1,0 +1,9 @@
+.sonar-key {
+  cursor: pointer;
+  background: rgba(0,0,0,0.1);
+  border-radius: 12px;
+  padding: .25em .5em;
+  &:hover {
+    background: rgba(0,150,100,0.1);
+  }
+}
