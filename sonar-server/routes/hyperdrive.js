@@ -10,8 +10,9 @@ module.exports = { hyperdriveMiddleware }
 
 function hyperdriveMiddleware (islands) {
   return function (req, res, next) {
-    const { key, 0: path = '/' } = req.params
-    getDrive(key, (err, drive) => {
+    const { island } = req
+    const path = req.params['0']
+    getDrive(island, (err, drive) => {
       if (err) return res.status(404).send('Island not found')
       ondrive(drive, path, req, res)
     })
@@ -19,12 +20,9 @@ function hyperdriveMiddleware (islands) {
 
   // TODO: Clearer API method in hyper-content-db
   // to get a drive instance.
-  function getDrive (key, cb) {
-    islands.get(key, (err, island) => {
-      if (err) return cb(err)
-      island.localDrive((err, drive) => {
-        cb(err, drive)
-      })
+  function getDrive (island, cb) {
+    island.localDrive((err, drive) => {
+      cb(err, drive)
     })
   }
 }

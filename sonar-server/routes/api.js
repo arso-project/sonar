@@ -20,14 +20,14 @@ module.exports = function apiRoutes (api) {
   router.put('/_create/:name', deviceHandlers.createIsland)
   router.put('/_create/:name/:key', deviceHandlers.createIsland)
 
-  // Hyperdrive actions (get and put)
-  router.use('/:island/fs/*', hyperdriveMiddleware(api.islands))
-  router.use('/:island/fs', hyperdriveMiddleware(api.islands))
-
   const islandRouter = express.Router()
   // Create command stream (websocket)
   const commandHandler = createCommandHandler(api.islands)
   islandRouter.ws('/commands', commandHandler)
+
+  // Hyperdrive actions (get and put)
+  islandRouter.use('/fs/*', hyperdriveMiddleware(api.islands))
+  islandRouter.use('/fs', hyperdriveMiddleware(api.islands))
 
   // Create record
   islandRouter.post('/db/:schemans/:schemaname', handlers.put)
@@ -48,6 +48,9 @@ module.exports = function apiRoutes (api) {
   // Put source
   // TODO: This route should have the same pattern as the others.
   islandRouter.put('/_source', handlers.putSource)
+
+  islandRouter.put('/_subscription/:name', handlers.createSubscription)
+  islandRouter.get('/_subscription/:name', handlers.readSubscription)
 
   // Load island if in path.
   router.use('/:island', function (req, res, next) {
