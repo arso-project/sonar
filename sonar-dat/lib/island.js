@@ -85,7 +85,7 @@ module.exports = class Island {
   }
 
   putSource (key, cb) {
-    this.db.putSourc(key, cb)
+    this.db.putSource(key, cb)
   }
 
   query (name, args, cb) {
