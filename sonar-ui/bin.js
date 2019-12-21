@@ -1,12 +1,15 @@
 #!/usr/bin/env node
 
-const { exec } = require('child_process')
+const { spawn } = require('child_process')
 const cli = require('@arso-project/sonar-cli')
 const express = require('express')
 const p = require('path')
 const open = require('open')
 // const httpProxy = require('http-proxy')
 // const crypto = require('crypto')
+
+const WP_BIN = require.resolve('webpack-nano/bin/wp.js')
+const WP_CONFIG = require.resolve('./webpack.config.js')
 
 const command = {
   command: 'ui [dev|serve]',
@@ -52,12 +55,15 @@ if (require.main === module) args.demandCommand().argv
 else module.exports = args
 
 function dev (argv) {
-  const cmd = exec('npm start', {
+  console.log('Starting UI in dev mode')
+  console.log('Webpack config: ' + WP_CONFIG)
+  const cmd = spawn('node', [WP_BIN, '--config', WP_CONFIG, '--serve'], {
     stdio: 'inherit',
-    cwd: __dirname
+    cwd: __dirname,
+    env: process.env
   })
-  cmd.stdout.pipe(process.stdout)
-  cmd.stderr.pipe(process.stderr)
+  // cmd.stdout.pipe(process.stdout)
+  // cmd.stderr.pipe(process.stderr)
 }
 
 function serve (argv) {

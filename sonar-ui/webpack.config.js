@@ -11,6 +11,8 @@ const config = {
   mode: isDev ? 'development' : 'production',
   watch: argv.watch || argv.serve,
   devtool: isDev ? 'eval-source-map' : 'none',
+  // stats: 'minimal',
+  stats: 'minimal',
   module: {
     rules: [
       {
@@ -56,12 +58,16 @@ const config = {
 }
 
 if (argv.serve) {
+  const ramdisk = !!argv.ramdisk || !!process.env.WP_RAM
   config.plugins.push(
     new WebpackPluginServe({
       host: 'localhost',
       static: ['./build'],
-      open: true,
-      liveReload: true
+      open: false,
+      liveReload: true,
+      historyFallback: true,
+      progress: 'minimal',
+      ramdisk: ramdisk
     })
   )
   config.entry.push(

@@ -39,7 +39,8 @@ function start (argv) {
   spawn('node', [path, 'ui', cmd], {
     env: {
       ...process.env,
-      DEBUG: ''
+      DEBUG: '',
+      FORCE_COLOR: 2
     },
     stdio: 'inherit'
   })
