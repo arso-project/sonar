@@ -184,8 +184,11 @@ module.exports = class IslandStore {
 
     const storagePath = p.join(this.storagePath, 'island', key)
     const namespacedCorestore = this.corestore.namespace(key)
-    opts.corestore = namespacedCorestore
-    const island = new Island(storagePath, key, opts)
+    const islandOpts = {
+      ...opts,
+      corestore: namespacedCorestore
+    }
+    const island = new Island(storagePath, key, islandOpts)
 
     this.islands[key] = island
     // else island.ready(() => (this.islands[hex(island.key)] = island))
