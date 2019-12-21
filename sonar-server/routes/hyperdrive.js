@@ -126,7 +126,7 @@ function onput (drive, path, req, res) {
   if (!drive.writable) return onerror(res, 'Drive is not writable', 403)
   debug('put', path)
   mkdirp(drive, p.dirname(path), err => {
-    if (err && err.code !== 'EEXISTS') return onerror(res, 'Cannot create directory', 500)
+    if (err) return onerror(res, 'Cannot create directory', 500)
     const ws = drive.createWriteStream(path)
     req.pipe(transform()).pipe(ws).on('finish', () => {
       res.statusCode = 200
