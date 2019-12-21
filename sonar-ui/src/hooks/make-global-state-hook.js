@@ -36,8 +36,16 @@ export default function makeGlobalStateHook (name) {
     return [state.get(key), setState]
 
     function setState (nextState) {
-      state.set(key, nextState)
-      _setState(nextState)
+      if (typeof nextState === 'function') {
+        _setState(oldState => {
+          const newState = nextState(oldState)
+          state.set(key, newState)
+          return newState
+        })
+      } else {
+        state.set(key, nextState)
+        _setState(nextState)
+      }
     }
   }
 }

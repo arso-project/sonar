@@ -21,6 +21,8 @@ const useGlobalState = makeGlobalStateHook('tables')
 
 export default function TablesPage (props) {
   const [rows, setRows] = useGlobalState('rows', null)
+  // TODO: useGlobalState has some bug that breaks table sorting.
+  // const [rows, setRows] = useState(null)
   const [schema, setSchema] = useGlobalState('schema', null)
   const [columns, setColumns] = useGlobalState('columns', null)
   const [count, setCount] = useGlobalState('count', 100)
@@ -68,7 +70,7 @@ export default function TablesPage (props) {
         <div>
           <ColumnSelect schema={schema} columns={columns} onColumns={setColumns} />
           <div>
-            Count:
+            Display:
             <input type='number' value={count} onChange={e => setCount(e.target.value)} />
           </div>
         </div>
@@ -80,22 +82,29 @@ export default function TablesPage (props) {
           rowsCount={count}
           onGridRowsUpdated={onGridRowsUpdated}
           onCellSelected={onCellSelected}
+          onGridSort={(sortColumn, sortDirection) =>
+            setRows(sortRows(sortColumn, sortDirection))
+          }
         />
       )}
     </div>
   )
 }
 
-// function ContextMenu (props) {
-//   const [visible, setVisible] = useState(false)
-//   const { children, title, icon } = props
-//   return (
-//     <div className='sonar-context-menu'>
-//       <div className='sonar-context-menu__title'>{title}</div>
-//       <div className='sonar-context-menu__menu'>{children}</div>
-//     </div>
-//   )
-// }
+function sortRows (col, sortDirection) {
+  return function (rows) {
+    if (sortDirection === 'NONE') return rows
+    rows = [...rows]
+    rows.sort((a, b) => {
+      if (sortDirection === 'ASC') {
+        return a[col] > b[col] ? 1 : -1
+      } else if (sortDirection === 'DESC') {
+        return a[col] < b[col] ? 1 : -1
+      }
+    })
+    return rows
+  }
+}
 
 function formatRows (records) {
   const rows = []
