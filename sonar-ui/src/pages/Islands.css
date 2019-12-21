@@ -1,8 +1,8 @@
 .sonar-islands {
   h2 {
-    font-size: 2rem;
-    border-bottom: 1px solid var(--color-border);
-    margin: 1em 0;
+    font-size: 1.5rem;
+    margin: 1rem 0;
+    color: var(--color-secondary);
   }
   h3 {
     font-size: 1.5rem;
@@ -10,6 +10,7 @@
 
 }
 .sonar-islands--list {
+  margin-bottom: 1rem;
   > li {
     display: flex;
     border-bottom: 1px solid var(--color-border);
@@ -21,6 +22,10 @@
     > h3 {
       flex: 1;
       cursor: pointer;
+      &:hover {
+        background-color: rgba(0,0,0,0.1);
+        border-radius: 12px;
+      }
       &.selected {
         color: var(--color-primary);
         font-weight: bold;

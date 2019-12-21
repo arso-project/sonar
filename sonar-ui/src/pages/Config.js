@@ -6,7 +6,6 @@ import { formData } from '../lib/form'
 export default function ConfigPage (props) {
   let { token } = useParams()
   const endpoint = config.get('endpoint', 'http://localhost:9191/api')
-  const island = config.get('island', 'default')
   token = token || config.get('token', '')
   return (
     <div className='sonar-config'>
@@ -20,10 +19,6 @@ export default function ConfigPage (props) {
           <input name='token' type='text' placeholder='API access token' defaultValue={token} />
         </div>
         <div className='sonar-config__row'>
-          <label htmlFor='island'>Island</label>
-          <input name='island' type='text' placeholder='Database' defaultValue={island} />
-        </div>
-        <div className='sonar-config__row'>
           <button type='submit'>Save</button>
         </div>
       </form>
@@ -34,7 +29,6 @@ export default function ConfigPage (props) {
     e.preventDefault()
     const data = formData(e.currentTarget)
     config.set('endpoint', data.endpoint)
-    config.set('island', data.island)
     config.set('token', data.token)
     // After config change reload page to re-initialize client.
     // TODO: Maybe support changing the client at runtime and

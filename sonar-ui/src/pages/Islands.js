@@ -21,6 +21,7 @@ export default function IslandPage (props) {
 
   if (!info && !error) return <Loading />
   if (error) return <Error error={error} />
+  console.log('info', info)
 
   const { islands } = info
   const selectedIsland = config.get('island')
@@ -28,7 +29,7 @@ export default function IslandPage (props) {
 
   // let { } = useParams()
   return (
-    <div className='sonar-islands'>
+    <div className='sonar-islands sonar-config'>
       <h2>Islands</h2>
       { islands && (
         <ul className='sonar-islands--list'>
@@ -60,9 +61,12 @@ export default function IslandPage (props) {
         <div className='sonar-config__row'>
           <label htmlFor='name'>Local name</label>
           <input name='name' type='text' />
-          <br />
+        </div>
+        <div className='sonar-config__row'>
           <label htmlFor='key'>Key</label>
           <input name='key' type='text' />
+        </div>
+        <div className='sonar-config__row'>
           <button type='submit'>OK</button>
         </div>
       </form>
