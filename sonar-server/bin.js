@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
 const args = require('@arso-project/sonar-cli')
-const command = require('./bin/start.js')
-args.command(command)
+args.command(require('./bin/start.js'))
+args.command(require('./bin/server-start.js'))
 // optional includes
 try {
   args.command(require('@arso-project/sonar-ui/bin.js'))
