@@ -11,7 +11,15 @@ module.exports = class Network {
     this.opts = opts
     this.replicating = {}
     this.peers = {}
-    this.hyperswarm = hyperswarm({ announceLocalAddress: !!opts.announceLocalAddress })
+    this.hyperswarm = hyperswarm({
+      announceLocalAddress: !!opts.announceLocalAddress,
+      // ephemeral: true // TODO: set to false for long running processes
+      validatePeer (peer) {
+        debug('validate peer', peer)
+        return true
+      }
+      // multiplex: false // TODO: enable connection deduplication
+    })
     this.localswarm = localswarm()
     this.hyperswarm.on('connection', this._onconnection.bind(this))
     this.localswarm.on('connection', this._onconnection.bind(this))
@@ -38,7 +46,10 @@ module.exports = class Network {
       if (this.replicating[hdkey]) return
       this.replicating[hdkey] = island
       this.peers[hdkey] = []
-      this.hyperswarm.join(dkey)
+      this.hyperswarm.join(dkey, {
+        lookup: true,
+        announce: true // TODO: Maybe not always announce?
+      })
       this.localswarm.join(dkey)
       debug('swarming: ' + island.name + ' ' + pretty(hdkey))
     })
