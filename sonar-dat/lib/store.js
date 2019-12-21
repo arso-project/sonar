@@ -15,7 +15,9 @@ module.exports = class IslandStore {
   constructor (storage) {
     storage = storage || p.join(os.homedir(), '.sonar')
     this.storagePath = p.resolve(storage)
-    this.network = new Network()
+    this.network = new Network({
+      announceLocalAddress: true
+    })
 
     const configPath = p.join(this.storagePath, 'config.json')
     this.config = new Config(configPath)
