@@ -1,6 +1,6 @@
 const hyperdriveHttp = require('hyperdrive-http')
 const p = require('path')
-const mkdirp = require('mkdirp')
+// const mkdirp = require('mkdirp')
 const { Transform } = require('stream')
 const pretty = require('pretty-bytes')
 const speedometer = require('speedometer')
@@ -107,10 +107,25 @@ function onerror (res, msg, code) {
   // res.end(JSON.stringify({ error: msg }))
 }
 
+function mkdirp (fs, path, cb) {
+  const parts = path.split('/').filter(x => x)
+  const cur = []
+  next()
+  function next () {
+    cur.push(parts.shift())
+    fs.mkdir(cur.join('/'), done)
+  }
+  function done (err) {
+    if (err && err.code !== 'EEXISTS') return cb(err)
+    if (!parts.length) return cb()
+    else process.nextTick(next)
+  }
+}
+
 function onput (drive, path, req, res) {
   if (!drive.writable) return onerror(res, 'Drive is not writable', 403)
   debug('put', path)
-  mkdirp(p.dirname(path), { fs: drive }, err => {
+  mkdirp(drive, p.dirname(path), err => {
     if (err && err.code !== 'EEXISTS') return onerror(res, 'Cannot create directory', 500)
     const ws = drive.createWriteStream(path)
     req.pipe(transform()).pipe(ws).on('finish', () => {
