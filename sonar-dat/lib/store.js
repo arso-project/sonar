@@ -3,6 +3,7 @@ const os = require('os')
 const crypto = require('hypercore-crypto')
 const thunky = require('thunky')
 const debug = require('debug')('sonar-dat')
+const Corestore = require('corestore')
 
 const Config = require('./config')
 const Network = require('./network')
@@ -19,6 +20,8 @@ module.exports = class IslandStore {
     const configPath = p.join(this.storagePath, 'config.json')
     this.config = new Config(configPath)
 
+    this.corestore = new Corestore(p.join(this.storagePath, 'corestore'))
+
     debug('islands storage path: ' + this.storagePath)
 
     this.islands = {}
@@ -27,16 +30,18 @@ module.exports = class IslandStore {
   }
 
   _ready (cb) {
-    this.config.load((err, config) => {
-      if (err) return cb(err)
-      if (!config.islands) return cb()
-      for (const info of Object.values(config.islands)) {
-        if (info.share) {
-          const island = this._open(info.key, info)
-          this.network.add(island)
+    this.corestore.ready(() => {
+      this.config.load((err, config) => {
+        if (err) return cb(err)
+        if (!config.islands) return cb()
+        for (const info of Object.values(config.islands)) {
+          if (info.share) {
+            const island = this._open(info.key, info)
+            this.network.add(island)
+          }
         }
-      }
-      cb()
+        cb()
+      })
     })
   }
 
@@ -68,17 +73,11 @@ module.exports = class IslandStore {
   }
 
   _create ({ name, key }, cb) {
-    let keyPair
-    if (!key) {
-      keyPair = crypto.keyPair()
-      key = keyPair.publicKey
-    }
-    const island = this._open(key, { keyPair, name })
-    island.name = name
+    const island = this._open(key || null, { name })
     island.ready(err => {
       if (err) return cb(err)
       const info = {
-        key,
+        key: hex(island.key),
         name,
         share: true
       }
@@ -97,7 +96,7 @@ module.exports = class IslandStore {
         if (!info && opts.create) return this._create({ key }, cb)
         if (!info) return cb(new Error('Island does not exist'))
         const island = this._open(info.key, info)
-        cb(null, island)
+        island.ready(() => cb(null, island))
       })
     } else {
       const name = keyOrName
@@ -106,7 +105,7 @@ module.exports = class IslandStore {
         if (!info && opts.create) return this._create({ name }, cb)
         if (!info) return cb(new Error('Island does not exist'))
         const island = this._open(info.key, info)
-        cb(null, island)
+        island.ready(() => cb(null, island))
       })
     }
   }
@@ -172,14 +171,24 @@ module.exports = class IslandStore {
 
   _open (key, opts) {
     if (typeof opts === 'function') return this._open(key, {}, opts)
-    key = hex(key)
 
+    // No key means create a new island. We need the key for the storage path,
+    // so first create a new writable feed.
+    if (!key) {
+      const feed = this.corestore.get()
+      key = feed.key
+    }
+
+    key = hex(key)
     if (this.islands[key]) return this.islands[key]
 
     const storagePath = p.join(this.storagePath, 'island', key)
+    const namespacedCorestore = this.corestore.namespace(key)
+    opts.corestore = namespacedCorestore
     const island = new Island(storagePath, key, opts)
 
     this.islands[key] = island
+    // else island.ready(() => (this.islands[hex(island.key)] = island))
     return island
   }
 }

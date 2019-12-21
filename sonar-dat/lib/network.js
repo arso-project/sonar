@@ -4,6 +4,7 @@ const Protocol = require('hypercore-protocol')
 const log = require('./log')
 const debug = require('debug')('sonar-dat:network')
 const pump = require('pump')
+const pretty = require('pretty-hash')
 
 module.exports = class Network {
   constructor (opts = {}) {
@@ -22,7 +23,7 @@ module.exports = class Network {
     const shared = Object.values(this.replicating).map(island => ({
       dkey: island.discoveryKey.toString('hex'),
       key: island.key.toString('hex'),
-      name: island.localname,
+      name: island.name,
       peers: this.peers[island.discoveryKey.toString('hex')].length
     }))
     cb(null, {
@@ -39,7 +40,7 @@ module.exports = class Network {
       this.peers[hdkey] = []
       this.hyperswarm.join(dkey)
       this.localswarm.join(dkey)
-      debug('swarming: ' + hdkey)
+      debug('swarming: ' + island.name + ' ' + pretty(hdkey))
     })
   }
 
@@ -55,6 +56,7 @@ module.exports = class Network {
   }
 
   _onpeer ({ stream, discoveryKey }) {
+    stream.on('error', err => debug('error', err))
     this.peers[discoveryKey] = this.peers[discoveryKey] || []
     this.peers[discoveryKey].push(stream)
   }
@@ -73,8 +75,8 @@ module.exports = class Network {
         socket.destroy()
         return
       }
-      debug('start replication!')
-      stream = island.corestore.replicate(true, dkey)
+      debug('start replication [init: true]!')
+      stream = island.replicate(true)
       this._onpeer({ stream, discoveryKey: hdkey, island })
     } else {
       stream = new Protocol(false)
@@ -85,8 +87,8 @@ module.exports = class Network {
         if (!island) {
           debug('invalid discovery key')
         } else {
-          debug('start replication!')
-          island.corestore.replicate(false, dkey, { stream })
+          debug('start replication [init: false]')
+          island.replicate(false, { stream })
           this._onpeer({ stream, discoveryKey: hdkey, island })
         }
       })

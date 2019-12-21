@@ -4,8 +4,8 @@ const p = require('path')
 const crypto = require('hypercore-crypto')
 const thunky = require('thunky')
 const sub = require('subleveldown')
+const debug = require('debug')('sonar:db')
 
-const Corestore = require('corestore')
 const Database = require('kappa-record-db')
 const Fs = require('./fs')
 
@@ -29,12 +29,14 @@ module.exports = class Island {
       fs: sub(level, 'f')
     }
 
-    this.corestore = new Corestore(paths.corestore)
+    this.corestore = opts.corestore
+
     this.db = new Database({
       key,
       corestore: this.corestore,
       db: this._level.db,
-      validate: false
+      validate: false,
+      name: opts.name
     })
 
     this.fs = new Fs({
@@ -44,20 +46,24 @@ module.exports = class Island {
 
     this.db.useRecordView('search', sonarView, { storage: paths.tantivy })
 
-    if (opts.name) this.localname = opts.name
-
-    this.key = key
-    this.discoveryKey = crypto.discoveryKey(this.key)
+    if (opts.name) this.name = opts.name
 
     this.ready = thunky(this._ready.bind(this))
   }
 
   _ready (cb) {
     this.db.ready(() => {
+      this.key = this.db.key
+      this.discoveryKey = this.db.discoveryKey
       this.fs.ready(() => {
+        debug('ready', this.db)
         cb()
       })
     })
+  }
+
+  replicate (isInitator, opts) {
+    return this.corestore.replicate(isInitator, opts)
   }
 
   put (record, cb) {
