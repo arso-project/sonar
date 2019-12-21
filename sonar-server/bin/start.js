@@ -1,4 +1,4 @@
-const SonarServer = require('..')
+const SonarServer = require('../server.js')
 const { printLogo } = require('@arso-project/sonar-cli/util/logo.js')
 
 exports.command = 'server <command>'
@@ -35,9 +35,9 @@ exports.builder = function (yargs) {
 
 function start (argv) {
   const opts = {
-    port: argv.port || 9191,
-    host: argv.host || 'localhost',
-    storage: argv.storage || './.data',
+    port: argv.port,
+    host: argv.host,
+    storage: argv.storage
   }
 
   printLogo()

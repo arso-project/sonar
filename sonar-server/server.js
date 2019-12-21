@@ -5,12 +5,17 @@ const express = require('express')
 const cors = require('cors')
 const expressWebSocket = require('express-ws')
 const debug = require('debug')('sonar-server')
+const p = require('path')
+const os = require('os')
 // const websocketStream = require('websocket-stream/stream')
+
+const DEFAULT_STORAGE = p.join(os.homedir(), '.sonar')
+const DEFAULT_PORT = 9191
 
 module.exports = function SonarServer (opts) {
   const config = {
-    storage: opts.storage,
-    port: opts.port || 9191
+    storage: opts.storage || DEFAULT_STORAGE,
+    port: opts.port || DEFAULT_PORT
   }
 
   const api = {
