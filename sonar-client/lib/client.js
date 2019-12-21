@@ -57,6 +57,14 @@ module.exports = class SonarClient {
     })
   }
 
+  async putSource (key, info) {
+    return this._request({
+      method: 'PUT',
+      path: [this.island, 'source', key],
+      data: info
+    })
+  }
+
   async get ({ schema, id }) {
     let path
     schema = this.expandSchema(schema)

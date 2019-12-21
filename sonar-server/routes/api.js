@@ -47,7 +47,7 @@ module.exports = function apiRoutes (api) {
   islandRouter.put('/schema/:schemans/:schemaname', handlers.putSchema)
   // Put source
   // TODO: This route should have the same pattern as the others.
-  islandRouter.put('/_source', handlers.putSource)
+  islandRouter.put('/source/:key', handlers.putSource)
 
   // Load island if in path.
   router.use('/:island', function (req, res, next) {
@@ -166,8 +166,9 @@ function createIslandHandlers () {
     },
 
     putSource (req, res, next) {
-      const { key: sourceKey } = req.body
-      req.island.putSource(sourceKey, (err) => {
+      const { key } = req.params
+      const info = req.body
+      req.island.putSource(key, info, (err) => {
         if (err) return next(err)
         return res.send({ msg: 'ok' })
       })

@@ -15,6 +15,11 @@ exports.builder = function (yargs) {
       describe: 'list islands',
       handler: list
     })
+    .command({
+      command: 'add-source <name> <key>',
+      describe: 'add a source to the island',
+      handler: addSource
+    })
 }
 
 async function create (argv) {
@@ -22,6 +27,14 @@ async function create (argv) {
   const name = argv.name
   const key = argv.key
   const result = await client.createIsland(name, key)
+  console.log(result)
+}
+
+async function addSource (argv) {
+  const client = makeClient(argv)
+  const { key, name } = argv
+  const info = { name }
+  const result = await client.putSource(key, info)
   console.log(result)
 }
 

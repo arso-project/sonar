@@ -90,8 +90,8 @@ module.exports = class Island {
     else return schema
   }
 
-  putSource (key, cb) {
-    this.db.putSource(key, cb)
+  putSource (key, info, cb) {
+    this.db.putSource(key, info, cb)
   }
 
   query (name, args, cb) {

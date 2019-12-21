@@ -96,7 +96,7 @@ module.exports = class IslandStore {
       this._islandByKey(key, (err, info) => {
         if (err) return cb(err)
         if (!info && opts.create) return this._create({ key }, cb)
-        if (!info) return cb(new Error('Island does not exist'))
+        if (!info) return cb(new Error(`island ${keyOrName} does not exist.`))
         const island = this._open(info.key, info)
         island.ready(() => cb(null, island))
       })
@@ -105,7 +105,7 @@ module.exports = class IslandStore {
       this._islandByName(keyOrName, (err, info) => {
         if (err) return cb(err)
         if (!info && opts.create) return this._create({ name }, cb)
-        if (!info) return cb(new Error('Island does not exist'))
+        if (!info) return cb(new Error(`island ${keyOrName} does not exist.`))
         const island = this._open(info.key, info)
         island.ready(() => cb(null, island))
       })
