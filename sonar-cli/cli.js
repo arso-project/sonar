@@ -6,7 +6,13 @@ const { printLogo } = require('./util/logo')
 
 const args = yargs
   .usage('sonar <command>')
-  .commandDir('bin')
+  // .commandDir('bin')
+  .command(require('./bin/command.js'))
+  .command(require('./bin/db.js'))
+  .command(require('./bin/fs.js'))
+  .command(require('./bin/island.js'))
+  .command(require('./bin/search.js'))
+  .command(require('./bin/status.js'))
   .options({
     endpoint: {
       alias: 'e',
