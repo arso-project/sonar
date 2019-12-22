@@ -3,6 +3,7 @@ const mkdirp = require('mkdirp')
 const p = require('path')
 const crypto = require('hypercore-crypto')
 const thunky = require('thunky')
+const pretty = require('pretty-hash')
 const sub = require('subleveldown')
 const debug = require('debug')('sonar:db')
 
@@ -13,6 +14,7 @@ const sonarView = require('./search/view-sonar')
 
 module.exports = class Island {
   constructor (storage, key, opts) {
+    const self = this
     const paths = {
       level: p.join(storage, 'level'),
       corestore: p.join(storage, 'corestore'),
@@ -30,18 +32,47 @@ module.exports = class Island {
     }
 
     this.corestore = opts.corestore
+    debug('open island name %s alias %s key %s', opts.name, opts.alias, pretty(key))
 
     this.db = new Database({
       key,
       corestore: this.corestore,
       db: this._level.db,
       validate: false,
-      name: opts.name
+      name: opts.name,
+      alias: opts.alias
     })
 
     this.fs = new Fs({
       corestore: this.corestore,
-      db: this._level.fs
+      db: this._level.fs,
+      oninit (localkey, info) {
+        self.db.putSource(localkey, {
+          type: 'hyperdrive',
+          alias: opts.alias
+        }, (err) => {
+          if (err) debug('error adding local hyperdrive as source', err)
+        })
+      },
+      resolveAlias (alias, cb) {
+        self.query('records', { schema: 'core/source' }, (err, records) => {
+          if (err) return cb(err)
+          const aliases = records
+            .filter(r => r.value.type === 'hyperdrive')
+            .filter(r => r.value.alias === alias)
+            .map(r => [r.value.alias, r.value.key])
+
+          if (aliases.length > 1) {
+            // TODO: Support named aliases (like foo-1, foo-2)
+            return cb(new Error('alias is ambigous, use keys'))
+          }
+          if (!aliases.length) {
+            return cb(new Error('alias not found'))
+          }
+
+          cb(null, aliases[0].key)
+        })
+      }
     })
 
     this.db.useRecordView('search', sonarView, { storage: paths.tantivy })
@@ -95,10 +126,11 @@ module.exports = class Island {
   }
 
   query (name, args, cb) {
-    if (!this.db.view[name] || !this.db.view[name].query) {
-      return cb(new Error('Invalid view: ' + name))
-    }
-    return this.db.view[name].query(args, cb)
+    return this.db.query(name, args, cb)
+  }
+
+  drive (key, cb) {
+    this.fs.get(key, cb)
   }
 
   localDrive (cb) {

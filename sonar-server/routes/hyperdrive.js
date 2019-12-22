@@ -3,70 +3,59 @@ const p = require('path')
 // const mkdirp = require('mkdirp')
 const { Transform } = require('stream')
 const pretty = require('pretty-bytes')
+const express = require('express')
 const speedometer = require('speedometer')
 const debug = require('debug')('sonar-server:fs')
 
-module.exports = { hyperdriveMiddleware }
+module.exports = function hyperdriveMiddleware (islands) {
+  const router = express.Router()
 
-function hyperdriveMiddleware (islands) {
-  return function (req, res, next) {
-    const { island } = req
-    const path = req.params['0']
-    getDrive(island, (err, drive) => {
-      if (err) return res.status(404).send('Island not found')
-      ondrive(drive, path, req, res)
+  router.use('/:drive', function (req, res, next) {
+    req.island.drive(req.params.drive, (err, drive) => {
+      if (err) return next(err)
+      req.drive = drive
+      next()
     })
-  }
+  })
+  router.get('/:drive/*', onget)
+  router.put('/:drive/*', onput)
+  router.get('/:drive', onget)
 
-  // TODO: Clearer API method in hyper-content-db
-  // to get a drive instance.
-  function getDrive (island, cb) {
-    island.localDrive((err, drive) => {
-      cb(err, drive)
-    })
-  }
+  return router
 }
 
-function ondrive (drive, path, req, res) {
-  const method = req.method
-  // return next()
-  if (method === 'PUT') {
-    onput(drive, path, req, res)
-  } else if (method === 'GET') {
-    // If Content-Type: application/json was requested,
-    // return stat/readdir info in JSON.
-    if (req.headers['content-type'] === 'application/json') {
-      ongetjson(drive, path, req, res)
-    // Otherwise, serve files.
-    } else {
-      ongetfile(drive, path, req, res)
-    }
+function onget (req, res, next) {
+  const path = req.params['0'] || '/'
+  if (req.headers['content-type'] === 'application/json') {
+    ongetjson(req.drive, path, req, res, next)
+  // Otherwise, serve files.
   } else {
-    onerror(res, 'Invalid method', 405)
+    ongetfile(req.drive, path, req, res, next)
   }
 }
 
-function ongetfile (drive, path, req, res) {
+function ongetfile (drive, path, req, res, next) {
   const handler = hyperdriveHttp(drive)
   req.url = path
   handler(req, res)
 }
 
-function ongetjson (drive, path, req, res) {
+function ongetjson (drive, path, req, res, next) {
   drive.stat(path, (err, stat) => {
-    if (err) return onerror(res, err, 404)
+    if (err) return next(err)
     if (stat.isDirectory()) {
-      ondirectory(path, send)
+      ondirectory(path)
     } else {
-      send(null, stat)
+      res.send(stat)
     }
   })
 
-  function ondirectory (path, cb) {
+  function ondirectory (path) {
     let pending
     const results = []
     drive.readdir(path, (err, list) => {
-      if (err || !list.length) return cb(err, results)
+      if (err) return next(err)
+      if (!list.length) return res.send([])
       pending = list.length
       list.forEach(path => stat(path))
     })
@@ -84,49 +73,20 @@ function ongetjson (drive, path, req, res) {
           stat = { ...stat }
           results.push(stat)
         }
-        if (--pending === 0) cb(null, results)
+        if (--pending === 0) res.send(results)
       })
     }
   }
-
-  function send (err, data) {
-    if (err) return onerror(res, err, 500)
-    else {
-      res.send(data)
-    }
-  }
 }
 
-function onerror (res, msg, code) {
-  code = code || 500
-  if (msg instanceof Error) msg = msg.message
-  msg = String(msg)
-  res.status(code).send({ error: msg })
-  // res.statusCode = code
-  // res.setHeader('Content-Type', 'application/json')
-  // res.end(JSON.stringify({ error: msg }))
-}
-
-function mkdirp (fs, path, cb) {
-  const parts = path.split('/').filter(x => x)
-  const cur = []
-  next()
-  function next () {
-    cur.push(parts.shift())
-    fs.mkdir(cur.join('/'), done)
-  }
-  function done (err) {
-    if (err && err.code !== 'EEXISTS') return cb(err)
-    if (!parts.length) return cb()
-    else process.nextTick(next)
-  }
-}
-
-function onput (drive, path, req, res) {
-  if (!drive.writable) return onerror(res, 'Drive is not writable', 403)
+function onput (req, res, next) {
+  const drive = req.drive
+  const path = req.params['0']
+  if (!path) return next(new StatusError('path is required', 404))
+  if (!drive.writable) return next(new StatusError('Drive is not writable', 403))
   debug('put', path)
   mkdirp(drive, p.dirname(path), err => {
-    if (err) return onerror(res, 'Cannot create directory', 500)
+    if (err && err.code !== 'EEXIST') return next(err)
     const ws = drive.createWriteStream(path)
     req.pipe(transform()).pipe(ws).on('finish', () => {
       res.statusCode = 200
@@ -154,6 +114,27 @@ function onput (drive, path, req, res) {
         cb()
       }
     })
+  }
+}
+
+function StatusError (msg, code) {
+  const error = Error(msg)
+  error.statusCode = code
+  return error
+}
+
+function mkdirp (fs, path, cb) {
+  const parts = path.split('/').filter(x => x)
+  const cur = []
+  next()
+  function next () {
+    cur.push(parts.shift())
+    fs.mkdir(cur.join('/'), done)
+  }
+  function done (err) {
+    if (err && err.code !== 'EEXISTS') return cb(err)
+    if (!parts.length) return cb()
+    else process.nextTick(next)
   }
 }
 

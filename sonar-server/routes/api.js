@@ -1,5 +1,5 @@
 // const { hyperdriveHandler } = require('./hyperdrive')
-const { hyperdriveMiddleware } = require('./hyperdrive')
+const hyperdriveMiddleware = require('./hyperdrive')
 const collect = require('collect-stream')
 const { Router } = require('simple-rpc-protocol')
 const express = require('express')
@@ -13,20 +13,18 @@ module.exports = function apiRoutes (api) {
   // Top level actions
   const deviceHandlers = createDeviceHandlers(api.islands)
   const handlers = createIslandHandlers(api.islands)
+  const commandHandler = createCommandHandler(api.islands)
 
   // Info
   router.get('/_info', deviceHandlers.info)
   // Create island
   router.put('/_create/:name', deviceHandlers.createIsland)
-  router.put('/_create/:name/:key', deviceHandlers.createIsland)
 
   const islandRouter = express.Router()
   // Create command stream (websocket)
-  const commandHandler = createCommandHandler(api.islands)
   islandRouter.ws('/commands', commandHandler)
 
   // Hyperdrive actions (get and put)
-  islandRouter.use('/fs/*', hyperdriveMiddleware(api.islands))
   islandRouter.use('/fs', hyperdriveMiddleware(api.islands))
 
   // Create record
@@ -48,6 +46,14 @@ module.exports = function apiRoutes (api) {
   // Put source
   // TODO: This route should have the same pattern as the others.
   islandRouter.put('/source/:key', handlers.putSource)
+
+  islandRouter.get('/fs-info', function (req, res, next) {
+    req.island.query('records', { schema: 'core/source' }, (err, records) => {
+      if (err) return next(err)
+      const drives = records.filter(record => record.value.type === 'hyperdrive')
+      res.send(drives)
+    })
+  })
 
   // Load island if in path.
   router.use('/:island', function (req, res, next) {
@@ -91,8 +97,9 @@ function createDeviceHandlers (islands) {
       })
     },
     createIsland (req, res, next) {
-      const { name, key } = req.params
-      islands.create(name, key, (err, island) => {
+      const { name } = req.params
+      const { key, alias } = req.body
+      islands.create(name, { key, alias }, (err, island) => {
         if (err) return next(err)
         res.send({
           key: island.key.toString('hex')

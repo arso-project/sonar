@@ -35,6 +35,7 @@ module.exports = class IslandStore {
     this.corestore.ready(() => {
       this.config.load((err, config) => {
         if (err) return cb(err)
+        debug('config loaded', this.config.path)
         if (!config.islands) return cb()
         for (const info of Object.values(config.islands)) {
           if (info.share) {
@@ -62,25 +63,31 @@ module.exports = class IslandStore {
     })
   }
 
-  create (name, key, cb) {
-    if (typeof key === 'function') return this.create(name, null, key)
+  create (name, opts = {}, cb) {
+    if (typeof opts === 'function') {
+      cb = opts
+      opts = {}
+    }
+    let { key, alias } = opts
     if (!name || !name.match(ISLAND_NAME_REGEX)) return cb(new Error('Invalid island name'))
     // TODO: Validate key.
     if (key) key = Buffer.from(key, 'hex')
     this._islandByName(name, (err, info) => {
       if (err) return cb(err)
       if (info) return cb(new Error('island exists'))
-      this._create({ name, key }, cb)
+      this._create(name, { key, alias }, cb)
     })
   }
 
-  _create ({ name, key }, cb) {
-    const island = this._open(key || null, { name })
+  _create (name, { key, alias }, cb = noop) {
+    const island = this._open(key || null, { name, alias })
     island.ready(err => {
       if (err) return cb(err)
       const info = {
         key: hex(island.key),
         name,
+        alias,
+        // TODO: Add opt to not share island when creating
         share: true
       }
       this._saveIsland(info, err => cb(err, island))
@@ -95,16 +102,13 @@ module.exports = class IslandStore {
       const key = hex(keyOrName)
       this._islandByKey(key, (err, info) => {
         if (err) return cb(err)
-        if (!info && opts.create) return this._create({ key }, cb)
         if (!info) return cb(new Error(`island ${keyOrName} does not exist.`))
         const island = this._open(info.key, info)
         island.ready(() => cb(null, island))
       })
     } else {
-      const name = keyOrName
       this._islandByName(keyOrName, (err, info) => {
         if (err) return cb(err)
-        if (!info && opts.create) return this._create({ name }, cb)
         if (!info) return cb(new Error(`island ${keyOrName} does not exist.`))
         const island = this._open(info.key, info)
         island.ready(() => cb(null, island))
@@ -142,7 +146,9 @@ module.exports = class IslandStore {
     for (const island of Object.values(this.islands)) {
       island.close()
     }
-    this.network.close(cb)
+    this.config.close(() => {
+      this.network.close(cb)
+    })
   }
 
   _saveIsland (info, cb) {
@@ -207,3 +213,5 @@ function isKey (key) {
   if (typeof key === 'string') key = Buffer.from(key, 'hex')
   return key.length === 32
 }
+
+function noop () {}

@@ -32,12 +32,13 @@ module.exports = class SonarClient {
     })
   }
 
-  async createIsland (name, key) {
+  async createIsland (name, opts) {
     const path = ['_create', name]
-    if (key) path.push(key)
+    // opts = { key, alias }
     return this._request({
       method: 'PUT',
-      path
+      path,
+      data: opts
     })
   }
 
@@ -113,6 +114,13 @@ module.exports = class SonarClient {
       method: 'POST',
       path: [this.island, '_search'],
       data: query
+    })
+  }
+
+  async getDrives () {
+    return this._request({
+      method: 'GET',
+      path: [this.island, 'fs-info']
     })
   }
 

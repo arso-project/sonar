@@ -58,12 +58,12 @@ module.exports = function SonarServer (opts) {
 
   // Error handling
   app.use(function (err, req, res, next) {
-    debug(err)
+    debug('request produced error', err)
     const result = {
       error: err.message
     }
     if (!err.statusCode) err.statusCode = 500
-    res.status(err.statusCode).json(result)
+    res.status(err.statusCode).send(result)
   })
 
   app.start = function (opts, cb) {
