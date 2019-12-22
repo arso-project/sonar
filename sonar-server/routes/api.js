@@ -184,9 +184,17 @@ function createIslandHandlers () {
     search (req, res, next) {
       const query = req.body
       const island = req.island
+      // TODO: Enable loading of records.
+      // TODO: Loading kills the server, that should not be.
+      // There's a schema mismatch somewhere.
+      island.query('search', query, { load: false }, (err, results) => {
+        console.log('Q', query, err, results)
+        if (err) return next(err)
+        res.send(results)
+      })
       // Query can either be a string (tantivy query) or an object (toshi json query)
-      const resultStream = island.db.api.search.query(query)
-      replyStream(res, resultStream)
+      // const resultStream = island.db.api.search.query(query)
+      // replyStream(res, resultStream)
     }
   }
 }

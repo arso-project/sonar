@@ -126,6 +126,24 @@ function commonFields (prefix) {
       }
     },
     {
+      name: prefix + 'seq',
+      // type: 'u64',
+      // options: {
+      //   indexed: true,
+      //   fast: 'single',
+      //   stored: true
+      // }
+      // TODO: Use integer!
+      type: 'text',
+      options: {
+        indexing: {
+          record: 'basic',
+          tokenizer: 'default'
+        },
+        stored: true
+      }
+    },
+    {
       name: prefix + 'schema',
       type: 'text',
       options: {

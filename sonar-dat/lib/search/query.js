@@ -5,7 +5,7 @@ const { clock } = require('../log')
 
 module.exports = function doQuery (indexManager, query, indexName) {
   indexName = indexName || 'textdump'
-  const resultStream = executeQuery(indexManager, indexName, query)
+  const resultStream = executeQuery(indexManager, query, indexName)
   const transform = transformResults()
 
   resultStream.on('error', err => transform.destroy(err))
@@ -13,7 +13,7 @@ module.exports = function doQuery (indexManager, query, indexName) {
   return resultStream.pipe(transform)
 }
 
-function executeQuery (indexManager, indexName, query) {
+function executeQuery (indexManager, query, indexName) {
   const snippetField = 'body'
   const stream = new Readable({
     objectMode: true,
@@ -35,9 +35,7 @@ function executeQuery (indexManager, indexName, query) {
         results = results.docs
       }
 
-      results.forEach(result => {
-        stream.push(result)
-      })
+      results.forEach(result => stream.push(result))
       stream.push(null)
       log.debug('query "%s" on %s: %d results [time: %s]', query, index, results.length, time())
     } catch (err) {
@@ -58,7 +56,12 @@ function transformResults () {
       // schema: 'arso.xyz/SearchResult',
       schema: row.doc.schema && row.doc.schema[0],
       id: row.doc.id && row.doc.id[0],
-      source: row.doc.source && row.doc.source[0]
+      source: row.doc.source && row.doc.source[0],
+      seq: row.doc.seq && row.doc.seq[0],
+      meta: {
+        snippet: row.snippet,
+        score: row.score
+      }
     }
     this.push(record)
     next()

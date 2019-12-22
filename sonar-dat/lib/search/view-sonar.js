@@ -19,19 +19,14 @@ function sonarView (level, island, opts) {
     map,
     close: (cb) => manager.close(cb),
     api: {
-      manifest: {
-        info: 'promise',
-        query: 'streaming'
-      },
       close: () => manager.close(),
       info (kcore, args, cb) {
         manager.getInfo()
           .then(info => cb(null, info))
           .catch(err => cb(err))
       },
-      query (kcore, query, indexName) {
-        console.log('QUERY', query)
-        const resultStream = doQuery(manager, query, indexName)
+      query (kcore, query, opts = {}) {
+        const resultStream = doQuery(manager, query, opts.indexName)
         return resultStream
       }
     }
@@ -71,17 +66,17 @@ function sonarView (level, island, opts) {
     next()
 
     async function pushToTexdump (msg) {
-      const { schema: schemaName, id, value, key: source } = msg
+      const { schema: schemaName, id, value, key: source, seq } = msg
       const body = objectToString(value)
       let title = ''
       if (value.title) title = objectToString(value.title)
       else if (value.label) title = objectToString(value.label)
 
-      docs.textdump.push({ body, title, id, source, schema: schemaName })
+      docs.textdump.push({ body, title, id, source, seq, schema: schemaName })
     }
 
     async function pushToNamedIndex (msg) {
-      const { schema: schemaName, id, value, key: source } = msg
+      const { schema: schemaName, id, value, key: source, seq } = msg
       // const schema = await loadSchema(schemaName, msg)
       const schema = schemas[schemaName]
       if (!schema) return
@@ -98,6 +93,7 @@ function sonarView (level, island, opts) {
 
       doc.id = id
       doc.source = source
+      doc.seq = seq
       doc.schema = schemaName
       // console.log('index', schema, doc)
 

@@ -10,7 +10,9 @@ function prepare (t, cb) {
   tmp((err, dir, tmpCleanup) => {
     if (err) return cb(err)
     const islands = new IslandStore(dir)
-    return cb(null, islands, cleanup)
+    islands.ready(() => {
+      cb(null, islands, cleanup)
+    })
     function cleanup (cb) {
       islands.close(() => {
         tmpCleanup(err => {
@@ -43,16 +45,17 @@ tape('basic', t => {
           })
         },
         // TODO: Remove timeout!
-        cb => setTimeout(cb, 100),
+        // cb => setTimeout(cb, 100),
+        cb => setImmediate(() => island.db.kappa.ready('search', cb)),
         cb => {
-          query(island, 'hello', (err, res) => {
-            t.equal(res.length, 2)
+          island.query('search', 'hello', { load: false }, (err, res) => {
+            t.equal(res.length, 2, 'hello search')
             cb(err)
           })
         },
         cb => {
-          query(island, 'moon', (err, res) => {
-            t.equal(res.length, 1)
+          island.query('search', 'moon', { load: false }, (err, res) => {
+            t.equal(res.length, 1, 'moon search')
             cb(err)
           })
         },
@@ -93,17 +96,3 @@ tape('schema_addProperty', t => {
   t.deepEqual(testProp, schema.properties.foo)
   t.end()
 })
-
-function query (island, query, cb) {
-  const results = []
-  island.db.kappa.ready(() => {
-    const rs = island.query('search', query)
-    rs.on('data', row => {
-      results.push(row)
-    })
-    rs.on('error', err => cb(err))
-    rs.on('end', () => {
-      cb(null, results)
-    })
-  })
-}

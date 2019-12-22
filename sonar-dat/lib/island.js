@@ -125,8 +125,8 @@ module.exports = class Island {
     this.db.putSource(key, info, cb)
   }
 
-  query (name, args, cb) {
-    return this.db.query(name, args, cb)
+  query (name, args, opts, cb) {
+    return this.db.query(name, args, opts, cb)
   }
 
   drive (key, cb) {
