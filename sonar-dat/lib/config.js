@@ -1,9 +1,11 @@
 const fs = require('fs')
+const mutex = require('mutexify')
 
 module.exports = class ConfigLoader {
   constructor (path) {
     this.path = path
     this.config = null
+    this.lock = mutex()
   }
 
   load (cb) {
@@ -28,10 +30,19 @@ module.exports = class ConfigLoader {
     }
   }
 
+  close (cb) {
+    this.lock(release => release(cb))
+  }
+
   save (config, cb) {
-    this.config = config
-    const json = JSON.stringify(this.config)
-    fs.writeFile(this.path, Buffer.from(json), cb)
+    this.lock(release => {
+      this.config = config
+      const json = JSON.stringify(this.config)
+      fs.writeFile(this.path, Buffer.from(json), (err, res) => {
+        release()
+        cb(err, res)
+      })
+    })
   }
 
   update (fn, cb) {
