@@ -57,6 +57,7 @@ export default function TablesPage (props) {
 
   function onCellSelected (cell) {
     const row = getRow(cell.rowIdx)
+    console.log(row)
   }
 
   function getRow (i) {

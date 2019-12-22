@@ -3,7 +3,7 @@
   "version": "0.1.4",
   "description": "",
   "main": "bin.js",
-  "browser": "build/bundle.js",
+  "browser": "dist/bundle.js",
   "scripts": {
     "build": "wp",
     "start": "wp --serve",
