@@ -28,6 +28,8 @@ module.exports = function SonarServer (opts) {
   const app = express()
   expressWebSocket(app)
 
+  app.api = api
+
   app.use(bodyParser.urlencoded({ extended: true }))
   app.use(bodyParser.json({
     // Currently, the _search route accepts json encoded strings.
@@ -68,6 +70,7 @@ module.exports = function SonarServer (opts) {
 
   app.start = function (opts, cb) {
     if (typeof opts === 'function') return app.start(null, opts)
+    api.islands.ready()
     opts = opts || {}
     app._port = opts.port || config.port
     app._host = opts.host || config.host

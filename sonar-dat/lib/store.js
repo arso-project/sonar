@@ -27,6 +27,7 @@ module.exports = class IslandStore {
     debug('islands storage path: ' + this.storagePath)
 
     this.islands = {}
+    this.opened = false
     this.ready = thunky(this._ready.bind(this))
     this.ready()
   }
@@ -43,6 +44,7 @@ module.exports = class IslandStore {
             this.network.add(island)
           }
         }
+        this.opened = true
         cb()
       })
     })

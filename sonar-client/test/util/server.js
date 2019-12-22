@@ -28,7 +28,10 @@ function makeServer (opts = {}) {
       const app = createServer(opts)
       app.start({ port: opts.port }, (err) => {
         if (err) reject(err)
-        resolve(shutdown)
+        app.api.islands.ready((err) => {
+          if (err) return reject(err)
+          resolve(shutdown)
+        })
 
         function shutdown () {
           return new Promise((resolve, reject) => {
