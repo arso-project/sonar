@@ -11,9 +11,14 @@ exports.describe = 'file system'
 exports.builder = function (yargs) {
   yargs
     .command({
+      command: '$0',
+      describe: 'the default command',
+      handler: info
+    })
+    .command({
       command: 'read <path>',
       describe: 'read file to stdout',
-      handler: readfile,
+      handler: readfile
     })
     .command({
       command: 'write <path>',
@@ -37,6 +42,12 @@ exports.builder = function (yargs) {
       describe: 'import a file or folder',
       handler: importfile
     })
+}
+
+async function info (argv) {
+  const client = makeClient(argv)
+  const list = await client.getDrives()
+  console.log(list)
 }
 
 async function ls (argv) {

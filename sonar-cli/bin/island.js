@@ -8,6 +8,12 @@ exports.builder = function (yargs) {
     .command({
       command: 'create <name> [key]',
       describe: 'create a new island',
+      builder: {
+        alias: {
+          alias: 'a',
+          describe: 'your alias (stored in your feed)'
+        }
+      },
       handler: create
     })
     .command({
@@ -26,7 +32,8 @@ async function create (argv) {
   const client = makeClient(argv)
   const name = argv.name
   const key = argv.key
-  const result = await client.createIsland(name, key)
+  const alias = argv.alias
+  const result = await client.createIsland(name, key, alias)
   console.log(result)
 }
 

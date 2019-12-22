@@ -80,7 +80,7 @@ export default function IslandPage (props) {
     if (!key || key === '') key = undefined
     if (!name) return setMessage(<strong>Name may not be empty</strong>)
     try {
-      const result = await client.createIsland(name, key)
+      const result = await client.createIsland(name, { key })
       console.log('result', result)
       setMessage(<strong>Success!</strong>)
     } catch (err) {
