@@ -7,7 +7,7 @@
   "scripts": {
     "install": "lerna bootstrap",
     "bootstrap": "lerna bootstrap",
-    "test": "lerna run test",
+    "test": "tape */test/*.js",
     "start": "./sonar start",
     "dev": "DEBUG=* ./sonar start --dev"
   },
@@ -17,6 +17,9 @@
   "license": "GPL-3.0",
   "private": true,
   "devDependencies": {
-    "lerna": "^3.16.5"
+    "lerna": "^3.16.5",
+    "tap-spec": "^5.0.0",
+    "tape": "^4.12.1",
+    "tape-plus": "^1.0.0"
   }
 }
