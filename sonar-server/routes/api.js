@@ -188,7 +188,7 @@ function createIslandHandlers () {
       // TODO: Loading kills the server, that should not be.
       // There's a schema mismatch somewhere.
       island.query('search', query, { load: false }, (err, results) => {
-        console.log('Q', query, err, results)
+        // console.log('Q', query, err, results)
         if (err) return next(err)
         res.send(results)
       })
