@@ -1,14 +1,10 @@
-const Catalog = require('@arso-project/sonar-tantivy')
-const { clock } = require('../log')
-
 const { makeTantivySchema, getTextdumpSchema } = require('./schema')
 
 module.exports = class IndexManager {
-  constructor (storagePath, level, island) {
-    this.storagePath = storagePath
-    this.catalog = new Catalog(storagePath)
+  constructor ({ catalog, level, namespace }) {
+    this.catalog = catalog
     this.level = level
-    this.island = island
+    this.namespace = namespace
 
     this.info = {}
     this.indexes = {}
@@ -59,7 +55,7 @@ module.exports = class IndexManager {
   }
 
   _indexName (name) {
-    return name.replace(/\//g, '.')
+    return this.namespace + '.' + name.replace(/\//g, '.')
   }
 
   async get (name) {

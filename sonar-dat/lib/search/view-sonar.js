@@ -7,13 +7,18 @@ const { clock } = require('../log')
 module.exports = sonarView
 
 function sonarView (level, island, opts) {
-  const manager = new IndexManager(opts.storage, level, island)
+  const manager = new IndexManager({
+    level,
+    namespace: island.key.toString('hex'),
+    catalog: opts.indexCatalog
+  })
+
   const schemas = {}
 
   island.on('close', () => manager.close())
 
   return {
-    version: 1,
+    version: 2,
     batch: true,
     batchSize: 500,
     map,

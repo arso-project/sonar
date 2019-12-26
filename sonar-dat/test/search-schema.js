@@ -2,7 +2,7 @@ const tape = require('tape')
 const { makeTantivySchema, mergeSchemas, addSchemaProperty } = require('../lib/search/schema')
 const getExampleSchemas = require('./lib/example-schemas')
 
-tape('schema merge', t => {
+tape.skip('schema merge', t => {
   const schemas = getExampleSchemas()
 
   const fullSchema = mergeSchemas(schemas)
@@ -15,7 +15,7 @@ tape('schema merge', t => {
   t.end()
 })
 
-tape('schema addProperty', t => {
+tape.skip('schema addProperty', t => {
   const schema = getExampleSchemas()[0]
 
   const property = {
