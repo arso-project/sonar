@@ -22,6 +22,11 @@ const command = {
         handler: dev
       })
       .command({
+        command: 'build',
+        describe: 'build the ui',
+        handler: build
+      })
+      .command({
         command: 'serve',
         describe: 'start sonar ui (dev mode)',
         builder: {
@@ -58,6 +63,18 @@ function dev (argv) {
   console.log('Starting UI in dev mode')
   console.log('Webpack config: ' + WP_CONFIG)
   const cmd = spawn('node', [WP_BIN, '--config', WP_CONFIG, '--serve'], {
+    stdio: 'inherit',
+    cwd: __dirname,
+    env: process.env
+  })
+  // cmd.stdout.pipe(process.stdout)
+  // cmd.stderr.pipe(process.stderr)
+}
+
+function build (argv) {
+  console.log('Building UI')
+  console.log('Webpack config: ' + WP_CONFIG)
+  const cmd = spawn('node', [WP_BIN, '--config', WP_CONFIG], {
     stdio: 'inherit',
     cwd: __dirname,
     env: process.env
