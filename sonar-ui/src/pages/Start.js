@@ -11,7 +11,6 @@ export default function StartPage (props) {
   return (
     <div className='sonar-start'>
       <h1>Hello friend, welcome to Sonar.</h1>
-      <p>Here we could have e.g. an overview of stored islands, or onboarding/help text, network/status info, a picture, ...</p>
     </div>
   )
 }
