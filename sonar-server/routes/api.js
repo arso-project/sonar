@@ -48,10 +48,20 @@ module.exports = function apiRoutes (api) {
   islandRouter.put('/source/:key', handlers.putSource)
 
   islandRouter.get('/fs-info', function (req, res, next) {
-    req.island.query('records', { schema: 'core/source' }, (err, records) => {
+    const { island } = req
+    island.query('records', { schema: 'core/source' }, (err, records) => {
       if (err) return next(err)
-      const drives = records.filter(record => record.value.type === 'hyperdrive')
-      res.send(drives)
+      const drives = records
+        .filter(record => record.value.type === 'hyperdrive')
+        .map(record => record.value)
+      let pending = drives.length
+      drives.forEach(driveInfo => {
+        island.fs.get(driveInfo.key, (err, drive) => {
+          driveInfo.writable = drive.writable
+          if (--pending === 0) res.send(drives)
+        })
+      })
+      // res.send(drives)
     })
   })
 
