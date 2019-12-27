@@ -5,6 +5,9 @@ const makeClient = require('../client')
 const pretty = require('pretty-bytes')
 const table = require('text-table')
 const date = require('date-fns')
+const mime = require('mime-types')
+const crypto = require('crypto')
+const base32 = require('base32')
 
 exports.command = 'fs <command>'
 exports.describe = 'file system'
@@ -75,20 +78,36 @@ async function writefile (argv) {
 async function importfile (argv) {
   const client = makeClient(argv)
   const path = p.resolve(argv.path)
-  const prefix = argv.prefix || '/import'
+  const prefix = argv.prefix || 'import'
+  const info = await client.getDrives()
+  const drivekey = info.filter(f => f.writable)[0].key
+  console.log(drivekey)
   const res = await pify(fs.stat, path, onstat)
   console.log(res)
 
   async function onstat (err, stat) {
     if (err) throw err
     const filename = p.basename(path)
-    const dst = p.join(prefix, filename)
-    console.log(`source: ${argv.path}`)
-    console.log(`target: ${dst}`)
-    console.log(`size:   ${pretty(stat.size)}`)
-    const rs = fs.createReadStream(path)
-    const res = await client.writeFile(dst, rs)
-    return res
+    const id = uuid()
+    const contentPath = `${drivekey}/${prefix}/${id}-${filename}`
+    const contentUrl = `hyperdrive://${contentPath}`
+    const res = await client.put({
+      schema: 'sonar/resource',
+      id,
+      value: {
+        contentUrl,
+        contentSize: stat.size,
+        encodingFormat: mime.lookup(filename),
+        filename
+      }
+    })
+    console.log('RES', res)
+
+    return pify(fs.readFile, path, async (err, buf) => {
+      if (err) throw err
+      await client.writeFile(contentPath, buf)
+      return id
+    })
   }
 }
 
@@ -142,4 +161,8 @@ function pify (fn, ...args) {
       }
     }
   })
+}
+
+function uuid () {
+  return base32.encode(crypto.randomBytes(16))
 }

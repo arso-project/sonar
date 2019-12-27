@@ -12,9 +12,11 @@
   "dependencies": {
     "@arso-project/sonar-client": "^0.1.5",
     "ansi-styles": "^4.1.0",
+    "base32": "^0.0.6",
     "chalk": "^2.4.2",
     "date-fns": "^2.6.0",
     "debug": "^4.1.1",
+    "mime-types": "^2.1.25",
     "minimist": "^1.2.0",
     "pretty-bytes": "^5.3.0",
     "stream-collector": "^1.0.1",

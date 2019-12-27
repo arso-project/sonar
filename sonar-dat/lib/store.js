@@ -181,12 +181,13 @@ module.exports = class IslandStore {
 
   _open (key, opts) {
     if (typeof opts === 'function') return this._open(key, {}, opts)
-
+    let create = false
     // No key means create a new island. We need the key for the storage path,
     // so first create a new writable feed.
     if (!key) {
       const feed = this.corestore.get()
       key = feed.key
+      create = true
     }
 
     key = hex(key)
@@ -202,6 +203,15 @@ module.exports = class IslandStore {
 
     this.islands[key] = island
     // else island.ready(() => (this.islands[hex(island.key)] = island))
+
+    if (create) {
+      island.ready(() => {
+        island.init(() => {
+          // TODO: do anything?
+          debug('init island key %s name %s alias %s', island.key, opts.name, opts.alias)
+        })
+      })
+    }
     return island
   }
 }
