@@ -4,7 +4,14 @@ const HtmlWebpackPlugin = require('html-webpack-plugin')
 const { WebpackPluginServe } = require('webpack-plugin-serve')
 
 const isDev = argv.watch || argv.serve || process.env.NODE_ENV === 'development'
-const output = isDev ? p.join(__dirname, 'build') : p.join(__dirname, 'dist')
+let output = 'dist'
+let ramdisk = false
+if (isDev) {
+  // Optional ramdisk arg to build in a ramdisk (faster!)
+  ramdisk = !!argv.ramdisk || !!process.env.WP_RAM
+  output = ramdisk ? 'build-ramdisk' : 'build'
+}
+output = p.join(__dirname, output)
 
 const config = {
   entry: ['./src/index.js'],
@@ -58,15 +65,15 @@ const config = {
 }
 
 if (argv.serve) {
-  const ramdisk = !!argv.ramdisk || !!process.env.WP_RAM
   config.plugins.push(
     new WebpackPluginServe({
       host: 'localhost',
-      static: ['./build'],
+      static: output,
       open: false,
       liveReload: true,
       historyFallback: true,
-      progress: 'minimal',
+      // progress: 'minimal',
+      progress: false,
       ramdisk: ramdisk
     })
   )
