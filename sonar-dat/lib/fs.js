@@ -74,8 +74,8 @@ module.exports = class SonarFs extends EventEmitter {
 
   resolveAlias (alias, cb) {
     if (Buffer.isBuffer(alias)) return cb(null, alias.toString('hex'))
-    if (!this.handlers.resolveAlias) return cb(new Error('Cannot resolve alias'))
     if (validKey(alias)) return cb(null, alias)
+    if (!this.handlers.resolveAlias) return cb(new Error('Cannot resolve alias'))
     this.handlers.resolveAlias(alias, cb)
   }
 
