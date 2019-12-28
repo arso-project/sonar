@@ -17,8 +17,7 @@ The **[Sonar book](https://arso-project.github.io/sonar-book/)** has more docume
 ```sh
 npm install -g @arso-project/sonar-server
 sonar help
-sonar server start
-sonar ui serve
+./sonar start
 ```
 
 ## Development
@@ -37,12 +36,9 @@ npm run bootstrap
 In the root folder is a symlink `sonar` that leads to `sonar-server/bin.js` which is the main entry point. Through `./sonar` you can start both the UI and the server (they are seperate services at the moment).
 
 ```sh
-# start sonar-server
-./sonar server start
+# start sonar-server and server-ui in dev mode
 
-# open another terminal
-# start sonar-ui in dev mode (will rebuild on code changes)
-./sonar ui dev
+./sonar start --dev
 ```
 
 Then, you can:
