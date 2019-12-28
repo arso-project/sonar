@@ -17,12 +17,12 @@ The **[Sonar book](https://arso-project.github.io/sonar-book/)** has more docume
 ```sh
 npm install -g @arso-project/sonar-server
 sonar help
-./sonar start
+sonar start
 ```
 
 ## Development
 
-First clone this repository. The repo is structured as a monorepo of different packages (that are interdependent at several points). 
+First clone this repository. 
 
 Then, to get things running:
 
@@ -33,7 +33,7 @@ npm install
 npm run bootstrap
 ```
 
-In the root folder is a symlink `sonar` that leads to `sonar-server/bin.js` which is the main entry point. Through `./sonar` you can start both the UI and the server (they are seperate services at the moment).
+In the root folder is a symlink `sonar` that leads to `sonar-server/bin.js` which is the main entry point. Through `./sonar` you can start both the UI and the server.
 
 ```sh
 # start sonar-server and server-ui in dev mode
@@ -61,7 +61,7 @@ More on this project on [arso.xyz](https://arso.xyz).
 
 ## Repo layout
 
-This repo includes several modules. Currently, they are not yet published on npm individually.
+The repo is structured as a monorepo of different packages (that are interdependent at several points). 
 
 * **[sonar-dat](sonar-dat/README.md)** it the core module. It manages *islands*, which are our notion of "a group of feeds*. Each island has a [kappa-record-db](https://github.com/arso-project/kappa-record-db) that's plugged into a search index through [sonar-tantivy](https://github.com/arso-project/sonar-tantivy). Each island has also a list of associated [hyperdrives](https://github.com/mafintosh/hyperdrive).
 
