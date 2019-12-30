@@ -33,7 +33,7 @@ async function create (argv) {
   const name = argv.name
   const key = argv.key
   const alias = argv.alias
-  const result = await client.createIsland(name, key, alias)
+  const result = await client.createIsland(name, { key, alias })
   console.log(result)
 }
 
