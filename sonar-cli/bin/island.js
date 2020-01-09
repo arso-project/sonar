@@ -52,7 +52,9 @@ async function list (argv) {
     return [
       chalk.bold.blueBright(island.name),
       island.key.toString('hex'),
-      'Shared: ' + chalk.bold(island.share ? 'Yes' : 'No')
+      'Shared: ' + chalk.bold(island.share ? 'Yes' : 'No'),
+      'Local key: ' + chalk.bold(island.localKey),
+      'Local drive: ' + chalk.bold(island.localDrive)
     ].join('\n')
   }).join('\n\n')
   console.log(output)
