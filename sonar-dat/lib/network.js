@@ -15,7 +15,7 @@ module.exports = class Network {
       announceLocalAddress: !!opts.announceLocalAddress,
       // ephemeral: true // TODO: set to false for long running processes
       validatePeer (peer) {
-        debug('validate peer', peer)
+        // debug('validate peer', peer)
         return true
       }
       // multiplex: false // TODO: enable connection deduplication
