@@ -58,9 +58,9 @@ module.exports = class Island {
         self.query('records', { schema: 'core/source' }, (err, records) => {
           if (err) return cb(err)
           const aliases = records
-            .filter(r => r.value.type === 'hyperdrive')
-            .filter(r => r.value.alias === alias)
-            .map(r => [r.value.alias, r.value.key])
+            .map(r => r.value)
+            .filter(v => v.type === 'hyperdrive')
+            .filter(v => v.alias === alias)
 
           if (aliases.length > 1) {
             // TODO: Support named aliases (like foo-1, foo-2)
