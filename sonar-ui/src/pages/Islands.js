@@ -9,7 +9,7 @@ import config from '../lib/config'
 
 import client from '../lib/client'
 
-import './Islands.css'
+// import './Islands.css'
 
 async function loadInfo () {
   return client.info()

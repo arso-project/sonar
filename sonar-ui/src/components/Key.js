@@ -1,6 +1,6 @@
 import React from 'react'
 
-import './Key.css'
+// import './Key.css'
 
 export default function Key (props) {
   const { k: key } = props

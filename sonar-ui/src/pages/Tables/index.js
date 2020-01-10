@@ -6,7 +6,7 @@ import errors from '../../lib/error'
 import { findWidget, RecordLink } from '../../components/Record'
 import makeGlobalStateHook from '../../hooks/make-global-state-hook'
 
-import './tables.css'
+// import './tables.css'
 
 async function loadSchemas () {
   const schemas = await client.getSchemas()

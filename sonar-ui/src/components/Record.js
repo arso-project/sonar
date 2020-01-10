@@ -3,7 +3,7 @@ import { format, formatRelative } from 'date-fns'
 import ReactJson from 'react-json-view'
 import { Link } from 'react-router-dom'
 
-import './Record.css'
+// import './Record.css'
 
 export function findWidget (fieldSchema) {
   const { type, format } = fieldSchema

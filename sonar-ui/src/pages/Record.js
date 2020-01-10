@@ -7,7 +7,7 @@ import errors from '../lib/error'
 import { RecordGroup } from '../components/Record'
 import { SearchResultList } from './Search'
 
-import './Record.css'
+// import './Record.css'
 
 export default function RecordPage (props) {
   const { id } = useParams()
