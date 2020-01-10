@@ -127,14 +127,9 @@ async function importfile (argv) {
 
   console.log('created resource: ' + record.id)
   console.log('starting upload (' + pretty(stat.size) + ')')
-  const contentPath = record.value.contentUrl.replace(/^hyperdrive:\/\//, '')
   let readStream = fs.createReadStream(path)
   reportProgress(readStream, { msg: 'Uploading', total: stat.size })
-  await client.writeFile(contentPath, readStream, {
-    metadata: {
-      'sonar.id': record.id
-    }
-  })
+  await client.writeResourceFile(record, readStream)
   console.log('ok')
 }
 

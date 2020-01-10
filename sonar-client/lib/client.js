@@ -4,8 +4,11 @@ const Socket = require('simple-websocket')
 const { Endpoint } = require('simple-rpc-protocol')
 const debug = require('debug')('sonar-client')
 const SearchQueryBuilder = require('./searchquerybuilder.js')
+const parseUrl = require('parse-dat-url')
 
-const { DEFAULT_ENDPOINT, DEFAULT_ISLAND, SCHEMA_RESOURCE, METADATA_ID } = require('./constants')
+const {
+  DEFAULT_ENDPOINT, DEFAULT_ISLAND, SCHEMA_RESOURCE, METADATA_ID, HYPERDRIVE_SCHEME
+} = require('./constants')
 
 module.exports = class SonarClient {
   constructor (endpoint, island, opts = {}) {
@@ -83,6 +86,18 @@ module.exports = class SonarClient {
     return writableDrives[0].key
   }
 
+  async writeResourceFile (record, file, opts) {
+    if (record.schema !== SCHEMA_RESOURCE) throw new Error('record is not a resource')
+    const fileUrl = this.parseHyperdriveUrl(record.value.contentUrl)
+    if (!fileUrl) throw new Error('resource has invalid contentUrl')
+    const path = fileUrl.host + '/' + fileUrl.path
+    return this.writeFile(path, file, {
+      metadata: {
+        'sonar.id': record.id
+      }
+    })
+  }
+
   async createResource (value, opts = {}) {
     let { filename, prefix } = value
     if (!filename) throw new Error('Filename is required')
@@ -95,7 +110,7 @@ module.exports = class SonarClient {
 
     const drivekey = await this._localDriveKey()
     const fullpath = `${drivekey}/${filepath}`
-    const contentUrl = 'hyperdrive://' + fullpath
+    const contentUrl = `${HYPERDRIVE_SCHEME}//${fullpath}`
 
     let id
     // TODO: Check for resources also/instead?
@@ -129,6 +144,12 @@ module.exports = class SonarClient {
     const records = await this.get({ id: res.id, schema: SCHEMA_RESOURCE }, { waitForSync: true })
     if (!records.length) throw new Error('error loading created resource')
     return records[0]
+  }
+
+  parseHyperdriveUrl (link) {
+    const url = parseUrl(link)
+    if (url.protocol !== HYPERDRIVE_SCHEME) return false
+    return url
   }
 
   async get ({ schema, id }, opts) {
