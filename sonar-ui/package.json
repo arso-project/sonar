@@ -16,9 +16,14 @@
   "dependencies": {
     "@arso-project/sonar-cli": "^0.2.1",
     "@arso-project/sonar-client": "^0.2.1",
+    "@chakra-ui/core": "^0.5.2",
+    "@emotion/core": "^10.0.27",
+    "@emotion/styled": "^10.0.27",
+    "emotion-theming": "^10.0.27",
     "express": "^4.17.1",
     "http-proxy": "^1.18.0",
-    "open": "^7.0.0"
+    "open": "^7.0.0",
+    "web-api-hooks": "^2.2.2"
   },
   "devDependencies": {
     "@babel/core": "^7.6.4",
