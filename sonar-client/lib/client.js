@@ -9,6 +9,12 @@ const { DEFAULT_ENDPOINT, DEFAULT_ISLAND, SCHEMA_RESOURCE, METADATA_ID } = requi
 
 module.exports = class SonarClient {
   constructor (endpoint, island, opts = {}) {
+    if (typeof endpoint === 'object') {
+      opts = endpoint
+      endpoint = opts.endpoint
+      island = opts.island
+    }
+
     debug('create client', { endpoint, island, opts })
     this.endpoint = endpoint || DEFAULT_ENDPOINT
     this.island = island || DEFAULT_ISLAND
