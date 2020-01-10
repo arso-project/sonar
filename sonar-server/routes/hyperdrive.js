@@ -46,6 +46,7 @@ function ongetjson (drive, path, req, res, next) {
     if (stat.isDirectory()) {
       ondirectory(path)
     } else {
+      stat = cleanStat(stat, { path: p.dirname(path), name: p.basename(path) })
       res.send(stat)
     }
   })
@@ -65,12 +66,7 @@ function ongetjson (drive, path, req, res, next) {
       drive.stat(fullpath, (err, stat) => {
         // TODO: Handle errors?
         if (!err && stat) {
-          stat.path = fullpath
-          stat.name = name
-          stat.directory = stat.isDirectory()
-          // Safeguard: Convert Stat to regular object.
-          // TODO: Possibly filter out some keys.
-          stat = { ...stat }
+          stat = cleanStat(stat, { path: fullpath, name })
           results.push(stat)
         }
         if (--pending === 0) res.send(results)
@@ -79,15 +75,47 @@ function ongetjson (drive, path, req, res, next) {
   }
 }
 
+function cleanStat (stat, opts = {}) {
+  const { path, name } = opts
+  // Safeguard: Convert Stat to regular object.
+  // TODO: Possibly filter out some keys.
+  // TODO: Here we assume all metadata entries are strings.
+  // TODO: Filter metadata.
+  const metadata = {}
+  for (const [key, value] of Object.entries(stat.metadata)) {
+    metadata[key] = value.toString()
+  }
+  return {
+    ...stat,
+    path,
+    name,
+    directory: stat.isDirectory(),
+    metadata
+
+  }
+  return stat
+}
+
 function onput (req, res, next) {
   const drive = req.drive
   const path = req.params['0']
+  const opts = {}
+
+  if (req.query.metadata) {
+    try {
+      opts.metadata = JSON.parse(req.query.metadata)
+    } catch (err) {
+      return next(new Error('invalid metadata JSON'))
+    }
+  }
+
   if (!path) return next(new StatusError('path is required', 404))
-  if (!drive.writable) return next(new StatusError('Drive is not writable', 403))
+  if (!drive.writable) return next(new StatusError('drive is not writable', 403))
+
   debug('put', path)
   mkdirp(drive, p.dirname(path), err => {
     if (err && err.code !== 'EEXIST') return next(err)
-    const ws = drive.createWriteStream(path)
+    const ws = drive.createWriteStream(path, opts)
     req.pipe(transform()).pipe(ws).on('finish', () => {
       res.statusCode = 200
       res.send('ok')

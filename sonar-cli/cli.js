@@ -4,6 +4,9 @@ const yargs = require('yargs')
 const debug = require('debug')('sonar-cli')
 const { printLogo } = require('./util/logo')
 
+const DEFAULT_ENDPOINT = 'http://localhost:9191/api'
+const DEFAULT_ISLAND = 'default'
+
 const args = yargs
   .usage('sonar <command>')
   // .commandDir('bin')
@@ -17,12 +20,12 @@ const args = yargs
     endpoint: {
       alias: 'e',
       describe: 'api endpoint url',
-      default: 'http://localhost:9191/api'
+      default: process.env.SONAR_ENDPOINT || DEFAULT_ENDPOINT
     },
     island: {
       alias: 'i',
       describe: 'island key or name',
-      default: 'default'
+      default: process.env.SONAR_ISLAND || DEFAULT_ISLAND
     }
   })
   .help()

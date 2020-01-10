@@ -55,9 +55,18 @@ module.exports = class IslandStore {
       if (err) return cb(err)
       this.network.status((err, networkStatus) => {
         if (err) return cb(err)
+        const islands = {}
+        Object.values(config.islands).forEach(island => {
+          const { key } = island
+          if (this.islands[key]) {
+            island.localKey = this.islands[key].db.localKey.toString('hex')
+            island.localDrive = this.islands[key].fs.localwriter.key.toString('hex')
+          }
+          islands[island.key] = island
+        })
         cb(null, {
           storage: this.storagePath,
-          islands: config.islands,
+          islands,
           // config: config,
           network: networkStatus
         })
@@ -71,7 +80,11 @@ module.exports = class IslandStore {
       opts = {}
     }
     let { key, alias } = opts
-    if (!name || !name.match(ISLAND_NAME_REGEX)) return cb(new Error('Invalid island name'))
+    if (!name || !name.match(ISLAND_NAME_REGEX)) return cb(new Error('invalid island name'))
+    if (!key && !alias) alias = name
+    if (!alias) return cb(new Error('alias is required'))
+    if (!alias.match(ISLAND_NAME_REGEX)) return cb(new Error('invalid alias'))
+
     // TODO: Validate key.
     if (key) key = Buffer.from(key, 'hex')
     this._islandByName(name, (err, info) => {
@@ -181,12 +194,13 @@ module.exports = class IslandStore {
 
   _open (key, opts) {
     if (typeof opts === 'function') return this._open(key, {}, opts)
-
+    let create = false
     // No key means create a new island. We need the key for the storage path,
     // so first create a new writable feed.
     if (!key) {
       const feed = this.corestore.get()
       key = feed.key
+      create = true
     }
 
     key = hex(key)
@@ -202,6 +216,15 @@ module.exports = class IslandStore {
 
     this.islands[key] = island
     // else island.ready(() => (this.islands[hex(island.key)] = island))
+
+    if (create) {
+      island.ready(() => {
+        island.init(() => {
+          // TODO: do anything?
+          debug('init island key %s name %s alias %s', island.key, opts.name, opts.alias)
+        })
+      })
+    }
     return island
   }
 }

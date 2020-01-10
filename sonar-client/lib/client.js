@@ -3,16 +3,14 @@ const randombytes = require('randombytes')
 const Socket = require('simple-websocket')
 const { Endpoint } = require('simple-rpc-protocol')
 const debug = require('debug')('sonar-client')
-
-const DEFAULT_BASE_URL = 'http://localhost:9191/api'
-const DEFAULT_ISLAND = 'default'
-// const TOKEN_HEADER = 'x-sonar-access-token'
 const SearchQueryBuilder = require('./searchquerybuilder.js')
+
+const { DEFAULT_ENDPOINT, DEFAULT_ISLAND, SCHEMA_RESOURCE, METADATA_ID } = require('./constants')
 
 module.exports = class SonarClient {
   constructor (endpoint, island, opts = {}) {
     debug('create client', { endpoint, island, opts })
-    this.endpoint = endpoint || DEFAULT_BASE_URL
+    this.endpoint = endpoint || DEFAULT_ENDPOINT
     this.island = island || DEFAULT_ISLAND
     // this.token = opts.token || ''
 
@@ -23,6 +21,11 @@ module.exports = class SonarClient {
 
   close () {
     this._sockets.forEach(s => s.destroy())
+  }
+
+  // TODO: Support read-only islands.
+  async isWritable () {
+    return true
   }
 
   async info () {
@@ -66,7 +69,63 @@ module.exports = class SonarClient {
     })
   }
 
-  async get ({ schema, id }) {
+  async _localDriveKey () {
+    // TODO: Don't refetch this info each time.
+    const info = await this.getDrives()
+    const writableDrives = info.filter(f => f.writable)
+    if (!writableDrives.length) throw new Error('No writable drive')
+    return writableDrives[0].key
+  }
+
+  async createResource (value, opts = {}) {
+    let { filename, prefix } = value
+    if (!filename) throw new Error('Filename is required')
+    if (filename.indexOf('/') !== -1) throw new Error('Invalid filename')
+    if (opts.scoped) throw new Error('Scoped option is not supported')
+
+    let filepath
+    if (prefix) filepath = [prefix, filename].join('/')
+    else filepath = filename
+
+    const drivekey = await this._localDriveKey()
+    const fullpath = `${drivekey}/${filepath}`
+    const contentUrl = 'hyperdrive://' + fullpath
+
+    let id
+    // TODO: Check for resources also/instead?
+    // This checks only the local drive.
+    try {
+      var existing = await this.statFile(fullpath)
+    } catch (err) {}
+
+    if (existing) {
+      id = existing.metadata[METADATA_ID]
+      if (!id) {
+        if (!opts.force) throw new Error('file exists and has no resource attached. set fore to overwrite.')
+      } else {
+        // TODO: Preserve fields from an old resource?
+        // const oldResource = await this.get({ id: existing.metadata[METADATA_ID] })
+        if (!opts.update) throw new Error(`file exists, with resource ${id}. set update to overwrite.`)
+      }
+    }
+
+    const res = await this.put({
+      schema: SCHEMA_RESOURCE,
+      id,
+      value: {
+        ...value,
+        contentUrl,
+        filename
+      }
+    })
+    // TODO: This should get by keyseq. Or put should just return the
+    // putted record.
+    const records = await this.get({ id: res.id, schema: SCHEMA_RESOURCE }, { waitForSync: true })
+    if (!records.length) throw new Error('error loading created resource')
+    return records[0]
+  }
+
+  async get ({ schema, id }, opts) {
     let path
     schema = this.expandSchema(schema)
     if (schema) {
@@ -74,7 +133,7 @@ module.exports = class SonarClient {
     } else {
       path = [this.island, 'db', id]
     }
-    return this._request({ path })
+    return this._request({ path, params: opts })
   }
 
   async put (record) {
@@ -95,11 +154,12 @@ module.exports = class SonarClient {
     })
   }
 
-  async query (query) {
+  async query (query, opts) {
     return this._request({
       method: 'POST',
       path: [this.island, '_query'],
-      data: query
+      data: query,
+      params: opts
     })
   }
 
@@ -109,7 +169,6 @@ module.exports = class SonarClient {
     } else if (query instanceof SearchQueryBuilder) {
       query = query.getQuery()
     }
-    console.log('client', query)
     return this._request({
       method: 'POST',
       path: [this.island, '_search'],
@@ -142,11 +201,13 @@ module.exports = class SonarClient {
     }
   }
 
-  async writeFile (path, file) {
+  async writeFile (path, file, opts) {
+    if (!path || !path.length) throw new Error('path is required')
     if (path.startsWith('/')) path = path.substring(1)
     return this._request({
       path: [this.island, 'fs', path],
       data: file,
+      params: opts,
       method: 'PUT',
       binary: true
     })
@@ -185,7 +246,8 @@ module.exports = class SonarClient {
       // axios has a very weird bug that it REMOVES the
       // Content-Type header if data is empty...
       data: opts.data || {},
-      responseType: opts.responseType
+      responseType: opts.responseType,
+      params: opts.params
     }
     debug('request', axiosOpts)
 
