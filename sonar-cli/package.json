@@ -1,6 +1,6 @@
 {
   "name": "@arso-project/sonar-cli",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "",
   "main": "cli.js",
   "scripts": {
@@ -10,7 +10,7 @@
   "author": "",
   "license": "GPL-3.0",
   "dependencies": {
-    "@arso-project/sonar-client": "^0.2.0",
+    "@arso-project/sonar-client": "^0.2.1",
     "ansi-styles": "^4.1.0",
     "base32": "^0.0.6",
     "chalk": "^2.4.2",
