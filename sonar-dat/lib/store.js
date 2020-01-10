@@ -80,7 +80,11 @@ module.exports = class IslandStore {
       opts = {}
     }
     let { key, alias } = opts
-    if (!name || !name.match(ISLAND_NAME_REGEX)) return cb(new Error('Invalid island name'))
+    if (!name || !name.match(ISLAND_NAME_REGEX)) return cb(new Error('invalid island name'))
+    if (!key && !alias) alias = name
+    if (!alias) return cb(new Error('alias is required'))
+    if (!alias.match(ISLAND_NAME_REGEX)) return cb(new Error('invalid alias'))
+
     // TODO: Validate key.
     if (key) key = Buffer.from(key, 'hex')
     this._islandByName(name, (err, info) => {

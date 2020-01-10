@@ -118,8 +118,8 @@ module.exports = class Island {
     this.db.put(record, cb)
   }
 
-  get (req, cb) {
-    this.db.get(req, cb)
+  get (req, opts, cb) {
+    this.db.get(req, opts, cb)
   }
 
   putSchema (name, schema, cb) {

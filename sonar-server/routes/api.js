@@ -135,7 +135,8 @@ function createIslandHandlers () {
     get (req, res, next) {
       let { id } = req.params
       const schema = expandSchema(req.island, req.params)
-      req.island.get({ schema, id }, (err, records) => {
+      const opts = req.query || {}
+      req.island.get({ schema, id }, opts, (err, records) => {
         if (err) return next(err)
         res.send(records)
       })
@@ -145,7 +146,8 @@ function createIslandHandlers () {
     // and intead drive different kinds of queries.
     query (req, res, next) {
       const { schema, id, source } = req.body
-      req.island.get({ schema, id, source }, (err, records) => {
+      const opts = req.query || {}
+      req.island.get({ schema, id, source }, opts, (err, records) => {
         if (err) return next(err)
         res.send(records)
       })
