@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useMemo } from 'react'
-import ReactDataGrid from 'react-data-grid'
+// import ReactDataGrid from 'react-data-grid'
 import client from '../../lib/client'
 // import './styles.css'
 import errors from '../../lib/error'
 import { findWidget, RecordLink } from '../../components/Record'
 import makeGlobalStateHook from '../../hooks/make-global-state-hook'
+
+import Table from './Table'
 
 // import './tables.css'
 import {
@@ -88,6 +90,7 @@ export default function TablesPage (props) {
   function getRow (i) {
     return rows[i]
   }
+  console.log(columns)
 
   return (
     <div>
@@ -102,15 +105,16 @@ export default function TablesPage (props) {
         </div>
       )}
       { columns && rows && (
-        <ReactDataGrid
-          columns={columns}
-          rowGetter={getRow}
-          rowsCount={count}
-          onGridRowsUpdated={onGridRowsUpdated}
-          onCellSelected={onCellSelected}
-          onGridSort={(sortColumn, sortDirection) =>
-            setRows(sortRows(sortColumn, sortDirection))
-          }
+        <Table
+          columns={columns.map(c => ({
+            Header: c.name,
+            Cell: (props) => {
+              const { cell: { value, row } } = props
+              return c.formatter ? c.formatter({ value, row: row.original }) : String(value)
+            },
+            accessor: c.key
+          }))}
+          rows={rows}
         />
       )}
     </div>
