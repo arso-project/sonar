@@ -1,7 +1,9 @@
 import React from 'react'
 import { HashRouter as Router } from 'react-router-dom'
+import { hot } from 'react-hot-loader/root'
 
 import Sidebar from './components/Sidebar'
+import MobileNav from './components/MobileNav'
 import Status from './components/Status'
 import Routes from './Routes'
 
@@ -19,13 +21,15 @@ import {
   useColorMode
 } from '@chakra-ui/core'
 
-export default function App (props) {
+function App (props) {
   return (
     <Wrappers>
       <Page />
     </Wrappers>
   )
 }
+
+export default hot(App)
 
 function Wrappers (props) {
   return (
@@ -107,6 +111,7 @@ function Header (props) {
           onClick={toggleColorMode}
           icon={colorMode === 'light' ? 'moon' : 'sun'}
         />
+        <MobileNav />
       </Flex>
     </Box>
   )
