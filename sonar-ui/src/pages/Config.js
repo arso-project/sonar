@@ -3,6 +3,15 @@ import config from '../lib/config'
 import { useParams } from 'react-router-dom'
 import { formData } from '../lib/form'
 
+import {
+  Box,
+  Flex,
+  Input,
+  Button
+} from '@chakra-ui/core'
+
+import FormField from '../components/FormField'
+
 export default function ConfigPage (props) {
   let { token } = useParams()
   const endpoint = config.get('endpoint', 'http://localhost:9191/api')
@@ -10,17 +19,9 @@ export default function ConfigPage (props) {
   return (
     <div className='sonar-config'>
       <form onSubmit={onSubmit}>
-        <div className='sonar-config__row'>
-          <label htmlFor='endpoint'>API endpoint</label>
-          <input name='endpoint' type='text' placeholder='Endpoint' defaultValue={endpoint} />
-        </div>
-        <div className='sonar-config__row'>
-          <label htmlFor='token'>API access token</label>
-          <input name='token' type='text' placeholder='API access token' defaultValue={token} />
-        </div>
-        <div className='sonar-config__row'>
-          <button type='submit'>Save</button>
-        </div>
+        <FormField name='endpoint' title='API endpoint' defaultValue={endpoint} />
+        <FormField name='token' title='API access token' defaultValue={token} />
+        <Button type='submit' variantColor='teal'>Save</Button>
       </form>
     </div>
   )
@@ -36,3 +37,4 @@ export default function ConfigPage (props) {
     window.location.reload()
   }
 }
+

@@ -1,27 +1,73 @@
-import React from 'react'
-import { NavLink } from 'react-router-dom'
+import React, { Fragment } from 'react'
+import NavLink from '../components/NavLink'
+
+import {
+  Box,
+  Heading,
+  List
+} from '@chakra-ui/core'
 
 import config from '../lib/config'
 
 const island = config.get('island')
 
+export function SidebarContent (props) {
+  return (
+    <Fragment>
+      <List>
+        <NavLink exact to='/'>Start</NavLink>
+        <NavLink to='/config'>Config</NavLink>
+        <NavLink to='/islands'>Islands</NavLink>
+        {island && (
+          <Fragment>
+            <MenuHeading>{island.substring(0, 6)}</MenuHeading>
+            <NavLink to='/search'>Search</NavLink>
+            <NavLink to='/filebrowser'>Filebrowser</NavLink>
+            <NavLink to='/tables'>Tables</NavLink>
+          </Fragment>
+        )}
+      </List>
+    </Fragment>
+  )
+}
+
+function MenuHeading (props) {
+  return (
+    <Heading
+      fontSize='s'
+      color='teal.300'
+      letterSpacing='wide'
+      my={2}
+      {...props}
+    />
+  )
+}
+
 export default function Sidebar (props) {
   return (
-    <div className='sonar-sidebar'>
-      <h2>Sonar</h2>
-      <ul>
-        <li><NavLink exact to='/'>Start</NavLink></li>
-        <li><NavLink to='/config'>Config</NavLink></li>
-        <li><NavLink to='/islands'>Islands</NavLink></li>
-        {island && (
-          <>
-            <li className='sonar-sidebar--seperator'><h2>{island.substring(0, 6)}</h2></li>
-            <li><NavLink to='/search'>Search</NavLink></li>
-            <li><NavLink to='/filebrowser'>Filebrowser</NavLink></li>
-            <li><NavLink to='/tables'>Tables</NavLink></li>
-          </>
-        )}
-      </ul>
-    </div>
+    <SideNavContainer {...props}>
+      <Box
+        position='relative'
+        overflowY='auto'
+        p={4}
+      >
+        <SidebarContent />
+      </Box>
+    </SideNavContainer>
+  )
+}
+
+function SideNavContainer (props) {
+  return (
+    <Box
+      position='fixed'
+      left='0'
+      width='100%'
+      height='100%'
+      top='0'
+      right='0'
+      borderRightWidth='1px'
+      {...props}
+    />
   )
 }

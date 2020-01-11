@@ -1,6 +1,15 @@
 import React, { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 
+import {
+  Box,
+  Flex,
+  Text,
+  List,
+  Input,
+  Heading
+} from '@chakra-ui/core'
+
 import client from '../lib/client'
 import errors from '../lib/error'
 
@@ -19,10 +28,14 @@ export default function RecordPage (props) {
   const { records, schemas } = data
 
   return (
-    <div className='sonar-record-page'>
-      <SearchResultList />
-      <RecordGroup records={records} schemas={schemas} />
-    </div>
+    <Flex>
+      <Box display={['none', 'block']} flexShrink='0' flexBasis={[0, '8rem', '12rem']} mr={[0, '2rem']} flex='0'>
+        <SearchResultList />
+      </Box>
+      <Box flex='1'>
+        <RecordGroup records={records} schemas={schemas} />
+      </Box>
+    </Flex>
   )
 }
 

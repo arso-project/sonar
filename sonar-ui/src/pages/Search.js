@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react'
-import { Link, NavLink } from 'react-router-dom'
+import { Link } from 'react-router-dom'
+import NavLink from '../components/NavLink'
 
 import makeGlobalStateHook from '../hooks/make-global-state-hook'
 
@@ -7,6 +8,16 @@ import client from '../lib/client'
 import errors from '../lib/error'
 
 import { RecordLabelDisplay } from '../components/Record'
+import { MetaItem, MetaItems } from '../components/MetaItem'
+
+import {
+  Box,
+  Flex,
+  Text,
+  List,
+  Input,
+  Heading
+} from '@chakra-ui/core'
 
 export const useGlobalState = makeGlobalStateHook('search')
 
@@ -17,35 +28,42 @@ export function useSearchResults () {
 
 export function SearchResultList (props) {
   const results = useSearchResults()
-  if (!results) return null
   return (
-    <ul className='sonar-search-result-list'>
-      {results.map((record, i) => (
-        <li key={i}>
+    <Box fontSize='sm'>
+      <SearchInput size='sm' />
+      {results && results.map((record, i) => (
+        <Box key={i} borderBottomWidth='1px' p={1} my={1}>
           <NavLink to={recordPath(record.id)}>
             <RecordLabelDisplay record={record} />
           </NavLink>
-        </li>
+        </Box>
       ))}
-    </ul>
+    </Box>
   )
 }
 
 export default function SearchPage (props) {
+  const results = useSearchResults()
+  return (
+    <Box>
+      <SearchInput />
+      <SearchResults results={results} />
+    </Box>
+  )
+}
+
+export function SearchInput (props) {
   const [search, setSearch] = useGlobalState('search', '')
   const [results, setResults] = useGlobalState('results', null)
   return (
-    <div className='sonar-search'>
-      <div className='sonar-search__input'>
-        <input
-          type='text'
-          value={search}
-          onChange={onInputChange}
-          placeholder='Type here to search'
-        />
-      </div>
-      <SearchResults results={results} />
-    </div>
+      <Input
+        type='text'
+        value={search}
+        onChange={onInputChange}
+        placeholder='Type here to search'
+        mb='4'
+        {...props}
+      />
   )
 
   function onInputChange (e) {
@@ -73,20 +91,18 @@ export function SearchResults (props) {
 function SearchResult (props) {
   const { value, id, schema, source } = props.row
   return (
-    <div className='sonar-search__item'>
-      <h3>{entityLink()}</h3>
-      <div className='sonar-search__meta'>
-        <dl>
-          <dt>ID</dt><dd>{id}</dd>
-          <dt>Schema</dt><dd>{formatSchema(schema)}</dd>
-          <dt>Source</dt><dd>{formatSource(source)}</dd>
-        </dl>
-      </div>
+    <Box mb='4'>
+      <Heading fontSize='md' color='pink.500'>{entityLink()}</Heading>
+      <MetaItems>
+        <MetaItem name='ID' value={id} />
+        <MetaItem name='Schema' value={formatSchema(schema)} />
+        <MetaItem name='Source' value={formatSource(source)} />
+      </MetaItems>
       <div
         className='sonar-search__snippet'
         dangerouslySetInnerHTML={{ __html: value.snippet }}
       />
-    </div>
+    </Box>
   )
 
   function entityLink () {

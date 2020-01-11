@@ -18,7 +18,6 @@ const config = {
   mode: isDev ? 'development' : 'production',
   watch: argv.watch || argv.serve,
   devtool: isDev ? 'eval-source-map' : 'none',
-  // stats: 'minimal',
   stats: 'minimal',
   module: {
     rules: [
@@ -62,6 +61,11 @@ const config = {
       // template: './index.html'
     })
   ]
+}
+
+if (process.env.WEBPACK_ANALYZE) {
+  const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer')
+  config.plugins.push(new BundleAnalyzerPlugin())
 }
 
 if (argv.serve) {

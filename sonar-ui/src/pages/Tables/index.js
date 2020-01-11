@@ -7,6 +7,31 @@ import { findWidget, RecordLink } from '../../components/Record'
 import makeGlobalStateHook from '../../hooks/make-global-state-hook'
 
 // import './tables.css'
+import {
+  Select,
+  Box,
+  Flex,
+  Link,
+  Checkbox,
+  CheckboxGroup,
+  Input,
+  Heading,
+  Switch,
+  PseudoBox,
+  Button,
+  FormControl,
+  FormLabel,
+  FormErrorMessage,
+  FormHelperText,
+  Menu,
+  MenuButton,
+  MenuList,
+  MenuItem,
+  MenuGroup,
+  MenuDivider,
+  MenuOptionGroup,
+  MenuItemOption
+} from '@chakra-ui/core'
 
 async function loadSchemas () {
   const schemas = await client.getSchemas()
@@ -132,32 +157,19 @@ function ColumnSelect (props) {
   }, [])
 
   return (
-    <div className='sonar-tables--column-select'>
-      <form>
+    <Box p={2}>
+      <CheckboxGroup defaultValue={selected} isInline onChange={updateColumns}>
         {allColumns.map((column) => {
           const { key, name } = column
           const checked = selected.indexOf(key) !== -1
           const cls = checked ? 'checked' : ''
           return (
-            <div key={key} className={cls}>
-              <label>
-                <input type='checkbox' value={key} key={key} name={key} defaultChecked={checked} onChange={onChange} />
-                {name}
-              </label>
-            </div>
+            <Checkbox key={key} value={key}>{name}</Checkbox>
           )
         })}
-      </form>
-    </div>
+      </CheckboxGroup>
+    </Box>
   )
-
-  function onChange (e) {
-    const { name, checked } = e.target
-    let next
-    if (checked) next = [...selected, name]
-    else next = selected.filter(c => c !== name)
-    updateColumns(next)
-  }
 
   function updateColumns (selected) {
     const selectedColumns = allColumns.filter(col => selected.indexOf(col.key) !== -1)
@@ -224,28 +236,50 @@ function SchemaSelect (props) {
 
   if (schemas === null) return <Loading />
   if (!schemas) return <div>No schemas</div>
-  let selected = schema ? schema.name : '__default__'
+  let selected = schema ? schema.name : false
 
+  const menuItems = schemas.map(schema => ({ key: schema.name, value: schemaName(schema) }))
   return (
-    <div>
-      <select onChange={onSelect} value={selected}>
-        <option disabled value='__default__'> -- select schema -- </option>
-        {schemas.map(schema => (
-          <option key={schema.name} value={schema.name}>{schemaName(schema)}</option>
-        ))}
-      </select>
-    </div>
+    <SchemaMenu onChange={onSelect} value={selected} items={menuItems} />
   )
+  // return (
+  //   <div>
+  //     <Select onChange={onSelect} value={selected} placeholder='-- select schema --'>
+  //       {schemas.map(schema => (
+  //         <option key={schema.name} value={schema.name}>{schemaName(schema)}</option>
+  //       ))}
+  //     </Select>
+  //   </div>
+  // )
 
   function schemaName (schema) {
     return schema.title || schema.name
   }
 
-  function onSelect (e) {
-    const name = e.target.value
+  function onSelect (name) {
     const schema = schemas.filter(s => s.name === name)[0]
     onSchema(schema)
   }
+}
+
+function SchemaMenu (props) {
+  const { items, onChange, value } = props
+  console.log(items, value)
+  const title = value ? items.find(el => el.key === value).value : 'Select schema'
+  return (
+    <Menu>
+      <MenuButton as={Button} size='sm' rightIcon='chevron-down'>
+        {title}
+      </MenuButton>
+      <MenuList>
+        <MenuOptionGroup type='radio' onChange={onChange} value={value}>
+          {items.map(item => (
+            <MenuItemOption key={item.key} value={item.key}>{item.value}</MenuItemOption>
+          ))}
+        </MenuOptionGroup>
+      </MenuList>
+    </Menu>
+  )
 }
 
 function Loading () {

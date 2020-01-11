@@ -23,7 +23,9 @@
     "express": "^4.17.1",
     "http-proxy": "^1.18.0",
     "open": "^7.0.0",
-    "web-api-hooks": "^2.2.2"
+    "react-json-tree": "^0.11.2",
+    "web-api-hooks": "^2.2.2",
+    "webpack-bundle-analyzer": "^3.6.0"
   },
   "devDependencies": {
     "@babel/core": "^7.6.4",
