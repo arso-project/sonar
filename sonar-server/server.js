@@ -11,13 +11,13 @@ const os = require('os')
 
 const DEFAULT_STORAGE = p.join(os.homedir(), '.sonar')
 const DEFAULT_PORT = 9191
-const DEFAULT_HOST = 'localhost'
+const DEFAULT_HOSTNAME = 'localhost'
 
 module.exports = function SonarServer (opts) {
   const config = {
     storage: opts.storage || DEFAULT_STORAGE,
     port: opts.port || DEFAULT_PORT,
-    host: opts.host || DEFAULT_HOST
+    hostname: opts.hostname || DEFAULT_HOSTNAME
   }
 
   const api = {
@@ -73,7 +73,7 @@ module.exports = function SonarServer (opts) {
     api.islands.ready()
     opts = opts || {}
     app._port = opts.port || config.port
-    app._host = opts.host || config.host
+    app._host = opts.hostname || config.hostname
     app.server = app.listen(app._port, app._host, cb)
   }
 

@@ -36,7 +36,7 @@ exports.builder = function (yargs) {
 function start (argv) {
   const opts = {
     port: argv.port,
-    host: argv.host,
+    hostname: argv.hostname,
     storage: argv.storage
   }
 
