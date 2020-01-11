@@ -25,7 +25,12 @@ const config = {
         test: /\.(js|jsx)$/,
         exclude: /node_modules/,
         use: [
-          'babel-loader'
+          {
+            loader: 'babel-loader',
+            options: {
+              // plugins: [isDev && require.resolve('react-refresh/babel')].filter(Boolean)
+            }
+          }
         ]
       }
       // {
@@ -74,13 +79,15 @@ if (argv.serve) {
       host: 'localhost',
       static: output,
       open: false,
-      liveReload: true,
+      // liveReload: true,
+      hmr: true,
       historyFallback: true,
       // progress: 'minimal',
       progress: false,
       ramdisk: ramdisk
     })
   )
+  // config.plugins.push(new ReactRefreshWebpackPlugin())
   config.entry.push(
     'webpack-plugin-serve/client'
   )
