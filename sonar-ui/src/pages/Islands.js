@@ -14,6 +14,7 @@ import {
   FormLabel,
   FormErrorMessage,
   FormHelperText,
+  useColorMode,
   useToast
 } from '@chakra-ui/core'
 import { formData } from '../lib/form'
@@ -33,17 +34,18 @@ async function loadInfo () {
 }
 
 export default function IslandPage (props) {
+  const { colorMode } = useColorMode()
   const { data: info, error, reload } = useAsync(loadInfo)
 
   if (!info && !error) return <Loading />
   if (error) return <Error error={error} />
-  console.log('info', info)
 
   const { islands } = info
   const selectedIsland = config.get('island')
-  const cls = island => island.key === selectedIsland ? 'selected' : ''
+  const selectedBg = { dark: 'gray.700', light: 'gray.100' }
 
   // let { } = useParams()
+  // _hover={{ bg: 'gray.50' }}
   return (
     <Box>
       <Heading color='teal.400'>Islands</Heading>
@@ -56,8 +58,7 @@ export default function IslandPage (props) {
               display={{ md: 'flex' }}
               justify='center'
               p={1}
-              bg={island.key === selectedIsland ? 'pink.50' : undefined}
-              _hover={{ bg: 'gray.50' }}
+              bg={island.key === selectedIsland ? selectedBg[colorMode] : undefined}
             >
               <Flex w={['100%', '50%']}>
                 <Link

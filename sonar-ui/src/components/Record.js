@@ -189,11 +189,12 @@ function FieldViewer (props) {
 function ArrayViewer (props) {
   const { value, fieldSchema } = props
   if (!value) return <InvalidValueError value={value} fieldSchema={fieldSchema} />
+  if (!Array.isArray(value)) return <InvalidValueError value={value} fieldSchena={fieldSchema} message='Not an array' />
   const Viewer = findWidget(fieldSchema.items)
   return (
     <List>
       {value.map((value, i) => (
-        <Box as='li'>
+        <Box as='li' key={i}>
           <Viewer value={value} fieldSchema={fieldSchema.items} />
         </Box>
       ))}
@@ -214,7 +215,9 @@ function BooleanViewer (props) {
 
 function DateViewer (props) {
   const { value } = props
+  if (!value) return <InvalidValueError />
   const date = new Date(value)
+  if (!date) return <InvalidValueError />
   const formatted = format(date, 'dd.MM.yyyy HH:mm')
   return (
     <span className='sonar-viewer-date'>{formatted}</span>

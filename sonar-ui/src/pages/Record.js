@@ -28,11 +28,11 @@ export default function RecordPage (props) {
   const { records, schemas } = data
 
   return (
-    <Flex>
-      <Box display={['none', 'block']} flexShrink='0' flexBasis={[0, '8rem', '12rem']} mr={[0, '2rem']} flex='0'>
+    <Flex width='100%'>
+      <Box display={['none', 'block']} flexShrink='0' width={[0, '8rem', '12rem']} mr={[0, '2rem']}>
         <SearchResultList />
       </Box>
-      <Box flex='1'>
+      <Box flex='1' overflow='auto'>
         <RecordGroup records={records} schemas={schemas} />
       </Box>
     </Flex>

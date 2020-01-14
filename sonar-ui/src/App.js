@@ -58,11 +58,8 @@ function Layout (props) {
     <Box>
       <Header height='2rem' />
       <Sidebar mt='2rem' display={['none', null, 'block']} maxWidth='12rem' width='full' />
-      <Box pl={[0, null, '12rem']} mt='2rem'>
-        <Box as='main' mx='auto' px='4' py='4' mb='2'>
-          {children}
-          <Footer />
-        </Box>
+      <Box as='main' id='sonar-main' ml={[0, null, '12rem']} mt='2rem' minHeight='calc(100vh - 2rem)' display='flex' p={4}>
+        {children}
       </Box>
     </Box>
   )
