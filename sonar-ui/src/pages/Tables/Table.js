@@ -1,4 +1,4 @@
-import React, { useRef, useMemo, forwardRef, useState } from 'react'
+import React, { Fragment, useRef, useMemo, forwardRef, useCallback, useState, useReducer } from 'react'
 import { debounce } from 'lodash'
 import {
   useTable,
@@ -11,7 +11,7 @@ import {
 } from 'react-table'
 import { FixedSizeList } from 'react-window'
 import useSize from '../../hooks/use-size'
-import FocusLock from 'react-focus-lock'
+import FocusLock, { AutoFocusInside } from 'react-focus-lock'
 import {
   useColorMode,
   Badge,
@@ -51,16 +51,13 @@ import {
 import {
   // FaSortUp,
   // FaSortDown,
-  FaSortAmountDown,
-  FaSortAmountUp,
+  FaSortAlphaDown,
+  FaSortAlphaUp,
   FaFilter,
+  FaWindowClose,
   FaTable,
   FaSort
 } from 'react-icons/fa'
-import {
-  MdClose
-  // MdViewColumn
-} from 'react-icons/md'
 
 const TBORDER = 'gray.300'
 
@@ -94,12 +91,12 @@ function Row (props) {
 }
 
 function ColumnHeader (props) {
-  const { column } = props
+  const { column, dispatch } = props
   const headerProps = column.getHeaderProps()
   const sortIcon = column.isSorted
     ? column.isSortedDesc
-      ? FaSortAmountDown
-      : FaSortAmountUp
+      ? FaSortAlphaUp
+      : FaSortAlphaDown
     : null
 
   const { colorMode } = useColorMode()
@@ -122,7 +119,7 @@ function ColumnHeader (props) {
         <Box flex='1' mr={2}>{column.render('Header')}</Box>
         { column.isSorted && <HeaderColumnIcon icon={sortIcon} /> }
         { column.filterValue && <HeaderColumnIcon icon={FaFilter} /> }
-        <ColumnHeaderMenu column={column} />
+        <ColumnHeaderMenu column={column} dispatch={dispatch} />
       </Box>
       <PseudoBox
         position='absolute'
@@ -145,27 +142,33 @@ function HeaderColumnIcon (props) {
 }
 
 function ColumnHeaderMenu (props) {
-  const { column } = props
-  const { toggleSortBy } = column
+  const { column, dispatch } = props
+  const { toggleSortBy, toggleHidden } = column
   const ascActive = !!(column.isSorted && !column.isSortedDesc)
   const descActive = !!(column.isSorted && column.isSortedDesc)
   return (
     <Menu closeOnSelect={false}>
       <MenuButton as={IconButton} size='xs' icon='chevron-down' />
       <MenuList>
-        <HeaderMenuItem icon={FaSortAmountUp} active={ascActive} onClick={() => toggleSortBy(false)}>
+        <HeaderMenuItem icon={FaSortAlphaDown} active={ascActive} onClick={() => toggleSortBy(false)}>
           Sort ascending
         </HeaderMenuItem>
-        <HeaderMenuItem icon={FaSortAmountDown} active={descActive} onClick={() => toggleSortBy(true)}>
+        <HeaderMenuItem icon={FaSortAlphaUp} active={descActive} onClick={() => toggleSortBy(true)}>
           Sort descending
         </HeaderMenuItem>
-        <HeaderMenuItem icon={MdClose} onClick={() => column.toggleHidden()}>
+        <HeaderMenuItem icon={FaFilter} onClick={onFilterClick}>
+          Filter
+        </HeaderMenuItem>
+        <HeaderMenuItem icon={FaWindowClose} onClick={() => toggleHidden()}>
           Hide column
         </HeaderMenuItem>
-        <HeaderMenuItem icon={FaFilter} onClick={() => {}}>Filter</HeaderMenuItem>
       </MenuList>
     </Menu>
   )
+
+  function onFilterClick (e) {
+    dispatch({ type: 'filter.add', data: column.id })
+  }
 }
 
 function HeaderMenuItem (props) {
@@ -181,7 +184,7 @@ function HeaderMenuItem (props) {
 
 // Define a default UI for filtering
 const DefaultColumnFilter = forwardRef((props, ref) => {
-  const { column: { filterValue, preFilteredRows, setFilter } } = props
+  const { column: { filterValue, preFilteredRows, setFilter }, ...other } = props
   const count = preFilteredRows.length
   const debouncedSetFilter = useMemo(() => {
     return debounce(setFilter, 100)
@@ -192,6 +195,7 @@ const DefaultColumnFilter = forwardRef((props, ref) => {
 
   return (
     <Input
+      {...other}
       defaultValue={filterValue || ''}
       onChange={onChange}
       placeholder={`Search ${count} records...`}
@@ -240,6 +244,8 @@ function Table (props) {
   const cellHeight = 32
   const headerHeight = cellHeight
 
+  const [uiState, dispatchUi] = useReducer(uiReducer, { addfilters: [], pane: {} })
+
   // TODO: Cache header better?
   // const header = <RenderHeader />
   const RenderHeader = React.useCallback(function RenderHeader (props) {
@@ -247,7 +253,9 @@ function Table (props) {
       <div className='thead'>
         {headerGroups.map(headerGroup => (
           <div {...headerGroup.getHeaderGroupProps()} className='tr'>
-            {headerGroup.headers.map(column => <ColumnHeader key={column.id} column={column} />)}
+            {headerGroup.headers.map(column => (
+              <ColumnHeader key={column.id} column={column} dispatch={dispatchUi} />
+            ))}
           </div>
         ))}
       </div>
@@ -300,8 +308,8 @@ function Table (props) {
   }), [totalColumnsWidth])
 
   return (
-    <Flex direction='column' flex={1} overflowX='auto' {...getTableProps()}>
-      <TableMeta columns={flatColumns} />
+    <Flex direction='column' flex={1} {...getTableProps()}>
+      <TableMeta columns={flatColumns} uiState={uiState} dispatch={dispatchUi} />
       <AutoSizeList
         itemCount={rows.length}
         itemSize={cellHeight}
@@ -312,6 +320,27 @@ function Table (props) {
       </AutoSizeList>
     </Flex>
   )
+}
+
+function uiReducer (state, action) {
+  const x = (nextState) => ({ ...state, ...nextState })
+  switch (action.type) {
+    case 'filter.add':
+      const addfilters = state.addfilters
+      if (addfilters.indexOf(action.data) !== -1) return state
+      return x({
+        addfilters: [...state.addfilters, action.data],
+        pane: { ...state.pane, filter: true }
+      })
+    case 'pane.open':
+      return x({ pane: { ...state.pane, [action.name]: true } })
+    case 'pane.close':
+      return x({ pane: { ...state.pane, [action.name]: false } })
+    case 'pane.toggle':
+      let current = state.pane[action.name]
+      return x({ pane: { ...state.pane, [action.name]: !current } })
+  }
+  return state
 }
 
 const AutoSizeList = forwardRef((props, ref) => {
@@ -333,23 +362,30 @@ const AutoSizeList = forwardRef((props, ref) => {
 })
 
 function TableMeta (props) {
-  const { columns } = props
+  const { columns, uiState, dispatch } = props
   const visible = columns.map(c => c.getToggleHiddenProps()).filter(x => x.checked).length
-  // const { colorMode } = useColorMode()
-  // const bg = { light: 'gray.100', dark: 'gray.700' }
-  // const bg = { light: undefined, dark: undefined }
   const filters = columns.filter(c => c.filterValue !== undefined).length
   const sorts = columns.filter(c => c.isSorted).length
 
+  const togglePane = useCallback((name, state) => {
+    let action
+    if (state === undefined) action = 'toggle'
+    else if (state) action = 'open'
+    else action = 'close'
+    const type = 'pane.' + action
+    dispatch({ type, name })
+  }, [])
+
+  const shared = { state: uiState.pane, toggle: togglePane }
   return (
-    <Flex mt={2}>
-      <SimplePopover header='Columns' badge={visible} icon={FaTable}>
+    <Flex my={2}>
+      <SimplePopover {...shared} header='Columns' badge={visible} icon={FaTable} name='cols'>
         <TableColumns columns={columns} />
       </SimplePopover>
-      <SimplePopover header='Filter' badge={filters} icon={FaFilter}>
-        <TableFilter columns={columns} />
+      <SimplePopover {...shared} header='Filter' badge={filters} icon={FaFilter} name='filter'>
+        <TableFilter columns={columns} addfilters={uiState.addfilters} dispatch={dispatch} />
       </SimplePopover>
-      <SimplePopover header='Sort' badge={sorts} icon={FaSort}>
+      <SimplePopover {...shared} header='Sort' badge={sorts} icon={FaSort} name='sort'>
         <TableSort columns={columns} />
       </SimplePopover>
     </Flex>
@@ -357,53 +393,72 @@ function TableMeta (props) {
 }
 
 function SimplePopover (props) {
-  const { children, icon, header, badge } = props
+  const { children, icon, header, badge, name, state, toggle } = props
   const initialFocusRef = useRef()
+
+  const popoverProps = {
+    initialFocusRef,
+    returnFocusOnClose: false,
+    closeOnBlur: false,
+    placement: 'bottom'
+  }
+
+  // TODO: Make the controlled mode optional again.
+  // e.g. if state and toggle is unset, default to uncontrolled mode.
+  const isOpen = state[name]
+  popoverProps.isOpen = !!isOpen
+  popoverProps.onClose = () => toggle(name, false)
+  const triggerOnClick = e => toggle(name)
+
   return (
-    <Popover
-      initialFocusRef={initialFocusRef}
-      closeOnBlur
-      placement='bottom'
-    >
-      {({ isOpen, onClose }) => (
-        <React.Fragment>
-          <PopoverTrigger>
-            <Button
-              leftIcon={icon}
-              bg={isOpen ? 'orange.300' : undefined}
-              _hover={{ bg: isOpen ? 'orange.500' : 'gray.200' }}
-              size='sm'
-              mr={[2, 4]}
-            >
-              {header}
-              {badge !== undefined && (
-                <Badge fontSize='sm' ml={2} variantColor={badge ? 'orange' : undefined}>{badge}</Badge>
-              )}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent zIndex={4} maxWidth='40rem' bg='gray.50'>
-            <PopoverArrow bg='gray.50' />
-            <PopoverCloseButton />
-            <PopoverBody>
-              <FocusLock returnFocus persistentFocus={false}>
-                <Box>
-                  {children}
-                </Box>
-              </FocusLock>
-            </PopoverBody>
-          </PopoverContent>
-        </React.Fragment>
-      )}
-    </Popover>
+    <Fragment>
+      <Button
+        leftIcon={icon}
+        bg={isOpen ? 'orange.300' : undefined}
+        _hover={{ bg: isOpen ? 'orange.500' : 'gray.200' }}
+        size='sm'
+        mr={[2, 4]}
+        onClick={triggerOnClick}
+      >
+        {header}
+        {badge !== undefined && (
+          <Badge fontSize='sm' ml={2} variantColor={badge ? 'orange' : undefined}>{badge}</Badge>
+        )}
+      </Button>
+      <Popover {...popoverProps}>
+        <PopoverTrigger>
+          <div style={{ position: 'relative', left: '-50px' }} />
+        </PopoverTrigger>
+        <PopoverContent zIndex={4} maxWidth='40rem' bg='gray.50'>
+          <PopoverArrow bg='gray.50' />
+          <PopoverCloseButton />
+          <PopoverBody>
+            <FocusLock returnFocus persistentFocus={false}>
+              <Box>
+                {children}
+              </Box>
+            </FocusLock>
+          </PopoverBody>
+        </PopoverContent>
+      </Popover>
+    </Fragment>
   )
 }
 
 function TableFilter (props) {
-  const { columns } = props
-  const [newfilters, setNewfilters] = useState([])
+  const { columns, addfilters, dispatch } = props
+  // const [newfilters, setNewfilters] = useState([])
   const filters = columns.filter(c => c.filterValue !== undefined)
-  newfilters.forEach(c => (filters.indexOf(c) === -1 && filters.push(c)))
-  const canFilters = columns.filter(c => c.filterValue === undefined && c.canFilter)
+  let autofocus = false
+  addfilters
+    .map(id => columns.find(c => c.id === id))
+    .filter(c => filters.indexOf(c) === -1)
+    .forEach(c => {
+      filters.push(c)
+      if (!autofocus) autofocus = c.id
+    })
+
+  const canFilters = columns.filter(c => c.filterValue === undefined && c.canFilter && filters.indexOf(c) === -1)
   let list
   if (!filters.length) {
     list = (
@@ -411,11 +466,13 @@ function TableFilter (props) {
     )
   } else {
     list = filters.map(column => {
+      let form = column.render('Filter')
+      if (autofocus === column.id) form = <AutoFocusInside>{form}</AutoFocusInside>
       return (
-        <FormControl as={Flex} key={column.id}>
+        <Flex key={column.id} mb={2} align='center'>
           <FormLabel width='20rem' fontWeight='bold'>{column.render('Header')}</FormLabel>
-          {column.render('Filter')}
-        </FormControl>
+          <Box flex={1}>{form}</Box>
+        </Flex>
       )
     })
   }
@@ -423,8 +480,7 @@ function TableFilter (props) {
     <Box>
       {list}
       <Box>
-      Create a filter
-        <Select onChange={e => addFilter(e.target.value)}>
+        <Select placeholder='Select a field to filter on' onChange={e => addFilter(e.target.value)}>
           {canFilters.map(c => <option key={c.id} value={c.id}>{c.render('Header')}</option>)}
         </Select>
       </Box>
@@ -434,7 +490,8 @@ function TableFilter (props) {
   function addFilter (id) {
     let col = columns.filter(c => c.id === id)[0]
     if (!col) return
-    setNewfilters(f => [...f, col])
+    dispatch({ type: 'filter.add', data: id })
+    // setNewfilters(f => [...f, col])
   }
 }
 
@@ -443,10 +500,12 @@ function TableSort (props) {
   const sorted = columns.filter(c => c.isSorted)
   return (
     <Box>
+      {!sorted.length && 'No sorts active.'}
       {sorted.map(c => (
         <Flex>
-          <Box w='20rem' flexGrow='0' p='2'>{c.render('Header')}</Box>
-          <Box p='2'>{c.isSorted ? 'desc' : 'asc'}</Box>
+          <Box w='20rem' flexGrow='0' p='2' fontWeight='bold'>{c.render('Header')}</Box>
+          <Box p='2'>{c.isSortedDesc ? 'desc' : 'asc'}</Box>
+          <Button onClick={e => c.clearSortBy()}>Remove</Button>
         </Flex>
       ))}
     </Box>
