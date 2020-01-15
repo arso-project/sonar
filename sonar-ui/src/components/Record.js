@@ -75,10 +75,11 @@ export function RecordGroup (props) {
 
 function DisplayMenu (props) {
   const { displays, onChange, value } = props
+  const active = displays.find(d => d.id === value)
   return (
     <Menu>
       <MenuButton as={Button} rightIcon='chevron-down'>
-        Display
+        {active.name}
       </MenuButton>
       <MenuList>
         <MenuOptionGroup type='radio' onChange={onChange} value={value}>
@@ -100,7 +101,7 @@ export function Record (props) {
   const Display = display.component
 
   return (
-    <div className='sonar-record'>
+    <div className='sonar-record' flex={1}>
       <Box display={['block', 'flex']}>
         <RecordMeta record={record} schema={schema} />
         <Box flex={1} />
