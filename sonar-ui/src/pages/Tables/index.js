@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import client from '../../lib/client'
 import errors from '../../lib/error'
 import { findWidget, RecordLink } from '../../components/Record'
@@ -44,6 +44,11 @@ export default function TablesPage (props) {
   const rows = useMemo(() => buildRowsFromRecords(records), [records])
   const columns = useMemo(() => buildColumnsFromSchema(schema), [schema])
 
+  const PreviewWrapper = useCallback(function PreviewWrapper (props) {
+    const { row } = props
+    return <Preview record={row} schema={schema} />
+  }, [schema])
+
   return (
     <Flex direction='column' width='100%'>
       <SchemaSelect onSchema={setSchema} schema={schema} flex={0} />
@@ -51,7 +56,7 @@ export default function TablesPage (props) {
         <Table
           columns={columns}
           rows={rows}
-          Preview={Preview}
+          Preview={PreviewWrapper}
         />
       )}
     </Flex>

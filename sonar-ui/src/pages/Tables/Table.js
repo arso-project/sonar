@@ -28,6 +28,7 @@ import {
   IconButton,
   Select,
   Input,
+  Switch,
   // Slider,
   // SliderTrack,
   // SliderFilledTrack,
@@ -60,6 +61,9 @@ import {
   FaTable,
   FaSort
 } from 'react-icons/fa'
+import {
+  IoMdEye
+} from 'react-icons/io'
 
 const debug = Debug('sonar:table')
 const TBORDER = 'gray.300'
@@ -274,7 +278,7 @@ function Table (props) {
   const cellHeight = 32
   const headerHeight = cellHeight
 
-  const [uiState, dispatchUi] = useReducer(uiReducer, { addfilters: [], pane: {} })
+  const [uiState, dispatchUi] = useReducer(uiReducer, { addfilters: [], pane: { preview: true } })
 
   // TODO: Cache header better?
   // const header = <RenderHeader />
@@ -367,19 +371,21 @@ function Table (props) {
     )
   }), [totalColumnsWidth, selectedFlatRows, rows])
 
-  const tableMeta = useMemo(() => {
-    return <TableMeta columns={flatColumns} uiState={uiState} dispatch={dispatchUi} />
-  }, [flatColumns, uiState, table.rows, table.flatHeaders])
-
   const renderedPreview = useMemo(() => {
+    if (!uiState.pane.preview) return null
     if (!Preview || selectedFlatRows.length !== 1) return null
     let row = selectedFlatRows[0]
     return (
-      <Box flexBasis='50%'>
+      <FlexContainer flexBasis='50%'>
         <Preview row={row.original} />
-      </Box>
+      </FlexContainer>
     )
-  }, [Preview, selectedFlatRows])
+  }, [Preview, selectedFlatRows, uiState.pane.preview])
+
+  // TODO: previewActive should likely be part of uiState
+  const tableMeta = useMemo(() => {
+    return <TableMeta columns={flatColumns} uiState={uiState} dispatch={dispatchUi} previewActive={!!renderedPreview} />
+  }, [flatColumns, uiState, table.rows, table.flatHeaders, !!renderedPreview])
 
   debug('render table: rows %o, cols %o, selected %o', data.length, selectedFlatRows.length)
   return (
@@ -439,12 +445,25 @@ const AutoSizeList = forwardRef((props, ref) => {
   )
 })
 
+function FlexContainer (props) {
+  const { children } = props
+  const containerRef = useRef(null)
+  const [width, height] = useSize(containerRef)
+  return (
+    <Box ref={containerRef} position='relative' flex='1'>
+      <Flex position='absolute' height={height} width={width} overflow='auto' {...props}>
+        {children}
+      </Flex>
+    </Box>
+  )
+}
+
 function TableMeta (props) {
-  const { columns, uiState, dispatch } = props
+  const { columns, uiState, dispatch, previewActive } = props
   const visible = columns.map(c => c.getToggleHiddenProps()).filter(x => x.checked).length
   const filters = columns.filter(c => c.filterValue !== undefined).length
   const sorts = columns.filter(c => c.isSorted).length
-  debug('render meta')
+  debug('render meta: uistate %o', uiState)
 
   const togglePane = useCallback((name, state) => {
     let action
@@ -456,6 +475,7 @@ function TableMeta (props) {
   }, [])
 
   const shared = { state: uiState.pane, toggle: togglePane }
+  const showPreview = uiState.pane.preview
   return (
     <Flex my={2}>
       <SimplePopover {...shared} header='Columns' badge={visible} icon={FaTable} name='cols'>
@@ -467,7 +487,41 @@ function TableMeta (props) {
       <SimplePopover {...shared} header='Sort' badge={sorts} icon={FaSortAlphaDown} name='sort'>
         <TableSort columns={columns} />
       </SimplePopover>
+      <TableMetaButton ml={4} onClick={onTogglePreview} icon={IoMdEye} isOpen={showPreview}>
+        { showPreview && 'Preview on select' }
+        { !showPreview && 'No preview' }
+      </TableMetaButton>
     </Flex>
+  )
+  function onTogglePreview (e) {
+    console.log('dispatch!')
+    dispatch({ type: 'pane.toggle', name: 'preview' })
+  }
+}
+
+// A switch for the preview toggle?
+// <Flex justify='center' align='center' bg='gray.100' rounded>
+//   <FormLabel fontSize='sm' htmlFor='email-alerts'>Show preview?</FormLabel>
+//   <Switch id='email-alerts' isChecked={showPreview} onChange={onTogglePreview} />
+// </Flex>
+
+function TableMetaButton (props) {
+  const { icon, isOpen, children, badge, ...other } = props
+  // TODO: add isActive prop for aria
+  return (
+    <Button
+      leftIcon={icon}
+      bg={isOpen ? 'yellow.300' : undefined}
+      _hover={{ bg: isOpen ? 'yellow.400' : 'gray.200' }}
+      size='sm'
+      mr={[2, 4]}
+      {...other}
+    >
+      {children}
+      {badge !== undefined && (
+        <Badge fontSize='sm' ml={2} variantColor={badge ? 'orange' : undefined}>{badge}</Badge>
+      )}
+    </Button>
   )
 }
 
@@ -491,19 +545,9 @@ function SimplePopover (props) {
 
   return (
     <Fragment>
-      <Button
-        leftIcon={icon}
-        bg={isOpen ? 'orange.300' : undefined}
-        _hover={{ bg: isOpen ? 'orange.500' : 'gray.200' }}
-        size='sm'
-        mr={[2, 4]}
-        onClick={triggerOnClick}
-      >
+      <TableMetaButton icon={icon} isOpen={isOpen} onClick={triggerOnClick} badge={badge}>
         {header}
-        {badge !== undefined && (
-          <Badge fontSize='sm' ml={2} variantColor={badge ? 'orange' : undefined}>{badge}</Badge>
-        )}
-      </Button>
+      </TableMetaButton>
       <Popover {...popoverProps}>
         <PopoverTrigger>
           <div style={{ position: 'relative', left: '-50px' }} />

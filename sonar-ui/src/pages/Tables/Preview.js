@@ -5,16 +5,17 @@ import {
   Heading
 } from '@chakra-ui/core'
 
+import { Record } from '../../components/Record'
+
 const debug = Debug('sonar:table')
-// import { RecordGroup } from '../../components/Record'
 
 export default function Preview (props) {
   debug('render preview: %o', props)
-  const record = props.row || {}
+  const { record, schema } = props
   return (
     <Box px='4' py='2'>
       <Heading fontSize='2xl' mb='4'>Preview</Heading>
-      {record.id}
+      <Record record={record} schema={schema} />
     </Box>
   )
 }
