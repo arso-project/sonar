@@ -19,14 +19,18 @@
     "@chakra-ui/core": "^0.5.2",
     "@emotion/core": "^10.0.27",
     "@emotion/styled": "^10.0.27",
+    "@juggle/resize-observer": "^3.0.2",
     "emotion-theming": "^10.0.27",
     "express": "^4.17.1",
     "http-proxy": "^1.18.0",
+    "lodash": "^4.17.15",
     "open": "^7.0.0",
+    "react-focus-lock": "^2.2.1",
     "react-icons": "^3.8.0",
     "react-json-tree": "^0.11.2",
-    "web-api-hooks": "^2.2.2",
-    "webpack-bundle-analyzer": "^3.6.0"
+    "react-table": "^7.0.0-rc.15",
+    "react-window": "^1.8.5",
+    "web-api-hooks": "^2.2.2"
   },
   "devDependencies": {
     "@babel/core": "^7.6.4",
@@ -41,7 +45,6 @@
     "inter-ui": "^3.10.0",
     "pretty-bytes": "^5.3.0",
     "react": "^16.10.2",
-    "react-data-grid": "^6.1.0",
     "react-dom": "^16.10.2",
     "react-hot-loader": "^4.12.18",
     "react-router": "^5.1.2",
@@ -49,7 +52,8 @@
     "style-loader": "^1.0.0",
     "webpack": "^4.41.0",
     "webpack-nano": "^0.8.1",
-    "webpack-plugin-serve": "^0.12.1"
+    "webpack-plugin-serve": "^0.12.1",
+    "webpack-bundle-analyzer": "^3.6.0"
   },
   "standard": {
     "env": {
