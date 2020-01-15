@@ -5,6 +5,7 @@ import { findWidget, RecordLink } from '../../components/Record'
 import makeGlobalStateHook from '../../hooks/make-global-state-hook'
 
 import Table from './Table'
+import Preview from './Preview'
 
 import {
   Box,
@@ -22,34 +23,26 @@ async function loadSchemas () {
   return Object.values(schemas)
 }
 
-async function loadData ({ schema }) {
+async function loadRecords ({ schema }) {
   return client.query({ schema })
 }
 
 const useGlobalState = makeGlobalStateHook('tables')
 
-function buildTableData (records, schema) {
-  const rows = buildRowsFromRecords(records)
-  const columns = buildColumnsFromSchema(schema)
-  return { rows, columns }
-}
-
 export default function TablesPage (props) {
-  const [data, setData] = useGlobalState('rows', null)
+  const [records, setRecords] = useGlobalState('records', null)
   const [schema, setSchema] = useGlobalState('schema', null)
   const schemaname = schema ? schema.name : null
 
   useEffect(() => {
     if (!schemaname) return
-    loadData({ schema: schemaname })
-      .then(data => setData(data))
+    loadRecords({ schema: schemaname })
+      .then(records => setRecords(records))
       .catch(error => errors.push(error))
   }, [schemaname])
 
-  const { rows, columns } = useMemo(() => {
-    if (!data || !schema) return { rows: null, columns: null }
-    return buildTableData(data, schema)
-  }, [data, schema])
+  const rows = useMemo(() => buildRowsFromRecords(records), [records])
+  const columns = useMemo(() => buildColumnsFromSchema(schema), [schema])
 
   return (
     <Flex direction='column' width='100%'>
@@ -58,44 +51,42 @@ export default function TablesPage (props) {
         <Table
           columns={columns}
           rows={rows}
+          Preview={Preview}
         />
       )}
     </Flex>
   )
 }
 
+function buildRowsFromRecords (records) {
+  if (!records) return null
+  return [...records]
+}
+
+function buildColumnsFromSchema (schema) {
+  if (!schema) return null
+  const allColumns = [...defaultColumns(), ...schemaColumns(schema)]
+    .map(column => {
+      if (!column.Cell) column.Cell = createCellFormatter(column)
+      if (!column.Header) column.Header = createHeaderFormatter(column)
+      return column
+    })
+  return allColumns
+}
+
 function createCellFormatter (column) {
+  const { Widget, schema } = column
   return function CellFormatter (props) {
     const { cell: { value, row } } = props
-    if (column.formatter) return column.formatter({ value, row: row.original })
+    // TODO: Rethink if we wanna do row.original = record.
+    if (Widget) return <Widget value={value} fieldSchema={schema} record={row.original} />
     return String(value)
   }
 }
 
-function buildRowsFromRecords (records) {
-  const rows = []
-  for (let record of records) {
-    const row = {}
-    row._record = record
-    row._id = record.id
-    for (let [key, value] of Object.entries(record.value)) {
-      row[key] = value
-    }
-    rows.push(row)
-  }
-  return rows
-}
-
-function buildColumnsFromSchema (schema) {
-  const allColumns = [...defaultColumns(), ...schemaColumns(schema)]
-    .map(column => {
-      if (!column.Cell) {
-        column.Cell = createCellFormatter(column)
-      }
-      return column
-    })
-  console.log({ allColumns })
-  return allColumns
+function createHeaderFormatter (column) {
+  const { title, id } = column
+  return title || id
 }
 
 function schemaColumns (schema) {
@@ -104,34 +95,43 @@ function schemaColumns (schema) {
   })
 }
 
+function fieldColumn (key, fieldSchema) {
+  const Widget = findWidget(fieldSchema)
+  return {
+    schema: fieldSchema,
+    title: fieldSchema.title,
+    id: key,
+    accessor: row => row.value[key],
+    Widget
+  }
+}
+
 function defaultColumns () {
   return [
     {
-      Header: 'Actions',
-      formatter: ActionsFormatter,
-      accessor: '_actions'
+      title: 'Actions',
+      Widget: ActionsFormatter,
+      showDefault: true,
+      id: '_actions',
+      disableSortBy: true,
+      disableFilters: true,
+      // TODO: The formatter doesn't use an acessor, it uses the record which is
+      // the full row at the moment.
+      accessor: () => undefined
     },
     {
       Header: 'ID',
-      accessor: '_id'
+      id: 'id',
+      showDefault: true,
+      accessor: 'id'
     }
   ]
 }
 
-function fieldColumn (key, fieldSchema) {
-  const Widget = findWidget(fieldSchema)
-  return {
-    Header: fieldSchema.title,
-    accessor: key,
-    formatter: ({ value, row }) => (
-      <Widget value={value} fieldSchema={fieldSchema} />
-    )
-  }
-}
-
 function ActionsFormatter (props) {
-  const { row } = props
-  const { _id: id, _record: record } = row
+  // const { value, fieldSchema, record } = props
+  // TODO: Rethink if the way we get hold of a "record" here is sound enough.
+  const { record } = props
   return (
     <RecordLink record={record}>Open</RecordLink>
   )
