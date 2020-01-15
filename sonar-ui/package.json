@@ -20,6 +20,7 @@
     "@emotion/core": "^10.0.27",
     "@emotion/styled": "^10.0.27",
     "@juggle/resize-observer": "^3.0.2",
+    "debug": "^4.1.1",
     "emotion-theming": "^10.0.27",
     "express": "^4.17.1",
     "http-proxy": "^1.18.0",
