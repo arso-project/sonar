@@ -1,5 +1,6 @@
-import React, { Fragment, useRef, useMemo, forwardRef, useCallback, useState, useReducer } from 'react'
+import React, { Fragment, useRef, useEffect, useMemo, forwardRef, useCallback, useState, useReducer } from 'react'
 import { debounce } from 'lodash'
+import Debug from 'debug'
 import {
   useTable,
   // useBlockLayout,
@@ -7,7 +8,8 @@ import {
   useSortBy,
   useFilters,
   useAbsoluteLayout,
-  useResizeColumns
+  useResizeColumns,
+  useRowSelect
 } from 'react-table'
 import { FixedSizeList } from 'react-window'
 import useSize from '../../hooks/use-size'
@@ -59,12 +61,13 @@ import {
   FaSort
 } from 'react-icons/fa'
 
+const debug = Debug('sonar:table')
 const TBORDER = 'gray.300'
 
 export default function TableWrapper (props) {
-  const { columns, rows: data } = props
+  const { columns, rows: data, ...other } = props
   return (
-    <Table data={data} columns={columns} />
+    <Table data={data} columns={columns} {...other} />
   )
 }
 
@@ -85,8 +88,19 @@ function Cell (props) {
   )
 }
 function Row (props) {
+  const { isSelected, ...other } = props
+  // TODO: Dark mode
+  const bg = isSelected ? 'yellow.100' : undefined
+  const hover = { bg: isSelected ? 'yellow.200' : 'gray.50' }
   return (
-    <Box {...props} overflow='hidden' borderBottomWidth='1px' borderColor={TBORDER} />
+    <PseudoBox {...other}
+      overflow='hidden'
+      borderBottomWidth='1px'
+      borderColor={TBORDER}
+      bg={bg}
+      _hover={hover}
+      {...other}
+    />
   )
 }
 
@@ -143,26 +157,36 @@ function HeaderColumnIcon (props) {
 
 function ColumnHeaderMenu (props) {
   const { column, dispatch } = props
-  const { toggleSortBy, toggleHidden } = column
-  const ascActive = !!(column.isSorted && !column.isSortedDesc)
-  const descActive = !!(column.isSorted && column.isSortedDesc)
+  const { toggleSortBy, toggleHidden, canSort, canFilter } = column
+  const asc = !!(column.isSorted && !column.isSortedDesc)
+  const desc = !!(column.isSorted && column.isSortedDesc)
+  const list = (
+    <MenuList>
+      {canSort && (
+        <HeaderMenuItem icon={FaSortAlphaDown} active={asc} onClick={() => toggleSortBy(false)}>
+            Sort ascending
+        </HeaderMenuItem>
+      )}
+      {canSort && (
+        <HeaderMenuItem icon={FaSortAlphaUp} active={desc} onClick={() => toggleSortBy(true)}>
+            Sort descending
+        </HeaderMenuItem>
+      )}
+      {canFilter && (
+        <HeaderMenuItem icon={FaFilter} onClick={onFilterClick}>
+            Filter
+        </HeaderMenuItem>
+      )}
+      <HeaderMenuItem icon={FaWindowClose} onClick={() => toggleHidden()}>
+          Hide column
+      </HeaderMenuItem>
+    </MenuList>
+  )
+
   return (
     <Menu closeOnSelect={false}>
       <MenuButton as={IconButton} size='xs' icon='chevron-down' />
-      <MenuList>
-        <HeaderMenuItem icon={FaSortAlphaDown} active={ascActive} onClick={() => toggleSortBy(false)}>
-          Sort ascending
-        </HeaderMenuItem>
-        <HeaderMenuItem icon={FaSortAlphaUp} active={descActive} onClick={() => toggleSortBy(true)}>
-          Sort descending
-        </HeaderMenuItem>
-        <HeaderMenuItem icon={FaFilter} onClick={onFilterClick}>
-          Filter
-        </HeaderMenuItem>
-        <HeaderMenuItem icon={FaWindowClose} onClick={() => toggleHidden()}>
-          Hide column
-        </HeaderMenuItem>
-      </MenuList>
+      {list}
     </Menu>
   )
 
@@ -173,9 +197,10 @@ function ColumnHeaderMenu (props) {
 
 function HeaderMenuItem (props) {
   const { onClick, children, icon, active, ...other } = props
-  const color = active ? 'green.500' : undefined
+  // const color = active ? 'green.600' : undefined
+  const fontWeight = active ? 'bold' : undefined
   return (
-    <MenuItem onClick={e => onClick && onClick()} color={color} {...other} >
+    <MenuItem onClick={e => onClick && onClick()} fontWeight={fontWeight} {...other} >
       <Box as={icon} mr='1' />
       {children}
     </MenuItem>
@@ -208,7 +233,10 @@ function Table (props) {
   const {
     columns,
     data,
-    listRef = React.createRef(null)
+    listRef = React.createRef(null),
+    selectMode = 'single',
+    Preview
+    // onSelect
   } = props
 
   const defaultColumn = React.useMemo(() => ({
@@ -222,13 +250,14 @@ function Table (props) {
       data,
       defaultColumn,
       initialState: {
-        hiddenColumns: columns.map(c => c.accessor).filter(k => !k.startsWith('_'))
+        hiddenColumns: columns.filter(c => !c.showDefault).map(c => c.id)
       }
     },
     useAbsoluteLayout,
     useFilters,
     useSortBy,
-    useResizeColumns
+    useResizeColumns,
+    useRowSelect
   )
   const {
     state: internalTableState,
@@ -238,7 +267,8 @@ function Table (props) {
     rows,
     totalColumnsWidth,
     prepareRow,
-    flatColumns
+    flatColumns,
+    selectedFlatRows
   } = table
 
   const cellHeight = 32
@@ -249,6 +279,7 @@ function Table (props) {
   // TODO: Cache header better?
   // const header = <RenderHeader />
   const RenderHeader = React.useCallback(function RenderHeader (props) {
+    debug('render header')
     return (
       <div className='thead'>
         {headerGroups.map(headerGroup => (
@@ -261,15 +292,30 @@ function Table (props) {
       </div>
     )
   }, [headerGroups, totalColumnsWidth])
+
   const isResizingColumn = internalTableState.columnResizing.isResizingColumn
 
-  const RenderRow = React.useCallback((props) => {
-    let { index, style } = props
+  const RenderRow = React.useCallback(function RenderRow (props) {
+    const { index, style } = props
     const row = rows[index]
+
     prepareRow(row)
+
+    let onRowClick
+    if (selectMode) {
+      onRowClick = function onRowClick (e) {
+        debug('!select', row.id, 'to', !row.isSelected)
+        if (selectMode === 'single') table.toggleAllRowsSelected(false)
+        row.toggleRowSelected()
+      }
+    }
+
+    // debug('render row id %o isSelected %o', row.id, row.isSelected)
     return (
-      <Row {...row.getRowProps({ style })}>
+      <Row {...row.getRowProps({ style, isSelected: row.isSelected, onClick: onRowClick })}>
         {row.cells.map(cell => {
+          // TODO: The rendering while resizing a column still is slow.
+          // We should debounce and animate the inbetweens likely.
           if (isResizingColumn) {
             return (
               <Box {...cell.getCellProps()}
@@ -287,10 +333,24 @@ function Table (props) {
         })}
       </Row>
     )
-  }, [prepareRow, rows, isResizingColumn])
+  // TODO: isResizingColumn maybe shouldn't be in these deps but instead be a property on the row
+  }, [prepareRow, rows, isResizingColumn, selectMode])
 
-  const innerElementType = React.useMemo(() => forwardRef((props, ref) => {
+  // TODO: This does not work and is a wrong pattenr of upcasting state.
+  // const [lastSelected, setLastSelected] = useState(null)
+  // useEffect(() => {
+  //   if (!onSelect) return
+  //   if (lastSelected === selectedFlatRows) return
+  //   if (!selectedFlatRows.length) return onSelect(null)
+  //   const rows = selectedFlatRows.map(row => row.original)
+  //   setLastSelected(selectedFlatRows)
+  //   if (selectMode === 'single') onSelect(rows[0])
+  //   else onSelect(rows)
+  // }, [selectMode, onSelect, selectedFlatRows])
+
+  const innerElementType = useMemo(() => forwardRef((props, ref) => {
     const { style, children, ...other } = props
+    debug('render inner')
     return (
       <React.Fragment>
         <div style={{ top: 0, position: 'sticky', height: headerHeight + 'px', backgroundColor: 'inherit', zIndex: 1000 }}>
@@ -305,19 +365,37 @@ function Table (props) {
         </div>
       </React.Fragment>
     )
-  }), [totalColumnsWidth])
+  }), [totalColumnsWidth, selectedFlatRows, rows])
 
+  const tableMeta = useMemo(() => {
+    return <TableMeta columns={flatColumns} uiState={uiState} dispatch={dispatchUi} />
+  }, [flatColumns, uiState, table.rows, table.flatHeaders])
+
+  const renderedPreview = useMemo(() => {
+    if (!Preview || selectedFlatRows.length !== 1) return null
+    let row = selectedFlatRows[0]
+    return (
+      <Box flexBasis='50%'>
+        <Preview row={row.original} />
+      </Box>
+    )
+  }, [Preview, selectedFlatRows])
+
+  debug('render table: rows %o, cols %o, selected %o', data.length, selectedFlatRows.length)
   return (
     <Flex direction='column' flex={1} {...getTableProps()}>
-      <TableMeta columns={flatColumns} uiState={uiState} dispatch={dispatchUi} />
-      <AutoSizeList
-        itemCount={rows.length}
-        itemSize={cellHeight}
-        innerElementType={innerElementType}
-        ref={listRef}
-      >
-        {RenderRow}
-      </AutoSizeList>
+      {tableMeta}
+      <Flex flex='1'>
+        <AutoSizeList
+          itemCount={rows.length}
+          itemSize={cellHeight}
+          innerElementType={innerElementType}
+          ref={listRef}
+        >
+          {RenderRow}
+        </AutoSizeList>
+        {renderedPreview}
+      </Flex>
     </Flex>
   )
 }
@@ -366,6 +444,7 @@ function TableMeta (props) {
   const visible = columns.map(c => c.getToggleHiddenProps()).filter(x => x.checked).length
   const filters = columns.filter(c => c.filterValue !== undefined).length
   const sorts = columns.filter(c => c.isSorted).length
+  debug('render meta')
 
   const togglePane = useCallback((name, state) => {
     let action
@@ -385,7 +464,7 @@ function TableMeta (props) {
       <SimplePopover {...shared} header='Filter' badge={filters} icon={FaFilter} name='filter'>
         <TableFilter columns={columns} addfilters={uiState.addfilters} dispatch={dispatch} />
       </SimplePopover>
-      <SimplePopover {...shared} header='Sort' badge={sorts} icon={FaSort} name='sort'>
+      <SimplePopover {...shared} header='Sort' badge={sorts} icon={FaSortAlphaDown} name='sort'>
         <TableSort columns={columns} />
       </SimplePopover>
     </Flex>
@@ -502,7 +581,7 @@ function TableSort (props) {
     <Box>
       {!sorted.length && 'No sorts active.'}
       {sorted.map(c => (
-        <Flex>
+        <Flex key={c.id}>
           <Box w='20rem' flexGrow='0' p='2' fontWeight='bold'>{c.render('Header')}</Box>
           <Box p='2'>{c.isSortedDesc ? 'desc' : 'asc'}</Box>
           <Button onClick={e => c.clearSortBy()}>Remove</Button>
