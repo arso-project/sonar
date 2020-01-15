@@ -11,7 +11,7 @@ import {
   useResizeColumns,
   useRowSelect
 } from 'react-table'
-import { FixedSizeList } from 'react-window'
+import { FixedSizeList, VariableSizeGrid } from 'react-window'
 import useSize from '../../hooks/use-size'
 import FocusLock, { AutoFocusInside } from 'react-focus-lock'
 import {
@@ -299,6 +299,29 @@ function Table (props) {
 
   const isResizingColumn = internalTableState.columnResizing.isResizingColumn
 
+  const RenderField = React.useCallback(function RenderField (props) {
+    const { rowIndex, columnIndex, style } = props
+    const row = rows[rowIndex]
+    prepareRow(row)
+    // return <Box style={style}>r {rowIndex} c {columnIndex}</Box>
+    const cell = row.cells[columnIndex]
+
+    if (isResizingColumn) {
+      return (
+        <Box {...cell.getCellProps({ style })}
+          bg={isResizingColumn === cell.column.id ? 'yellow.200' : undefined}
+          h='100%'
+        />
+      )
+    }
+    // TODO: Memoize actual (inner) cell rendering?
+    return (
+      <Cell {...cell.getCellProps({ style })}>
+        {cell.render('Cell')}
+      </Cell>
+    )
+  }, [prepareRow, rows, isResizingColumn, selectMode])
+
   const RenderRow = React.useCallback(function RenderRow (props) {
     const { index, style } = props
     const row = rows[index]
@@ -388,17 +411,24 @@ function Table (props) {
   }, [flatColumns, uiState, table.rows, table.flatHeaders, !!renderedPreview])
 
   debug('render table: rows %o, cols %o, selected %o', data.length, selectedFlatRows.length)
+
+  const visibleColumns = flatColumns.map(c => c.getToggleHiddenProps()).filter(x => x.checked).length
+  // console.log(flatColumns)
   return (
     <Flex direction='column' flex={1} {...getTableProps()}>
       {tableMeta}
       <Flex flex='1'>
         <AutoSizeList
-          itemCount={rows.length}
-          itemSize={cellHeight}
+          rowCount={rows.length}
+          columnCount={visibleColumns}
           innerElementType={innerElementType}
           ref={listRef}
+          estimatedColumnWidth='150'
+          estimatedRowHeight={cellHeight}
+          rowHeight={idx => cellHeight}
+          columnWidth={idx => flatColumns[idx].width || 100}
         >
-          {RenderRow}
+          {RenderField}
         </AutoSizeList>
         {renderedPreview}
       </Flex>
@@ -434,7 +464,7 @@ const AutoSizeList = forwardRef((props, ref) => {
   return (
     <div ref={containerRef} style={containerStyle}>
       <div style={{ overflow: 'visible', position: 'absolute', height: 0, width: 0 }}>
-        <FixedSizeList
+        <VariableSizeGrid
           ref={ref}
           width={width}
           height={height}
