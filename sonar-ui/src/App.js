@@ -8,11 +8,11 @@ import Status from './components/Status'
 import Routes from './Routes'
 
 import theme from './theme'
+import CSSReset from './components/CSSReset'
 
 import {
   ThemeProvider,
   ColorModeProvider,
-  CSSReset,
   Box,
   Flex,
   Heading,
