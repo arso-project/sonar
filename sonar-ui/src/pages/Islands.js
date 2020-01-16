@@ -40,17 +40,20 @@ export default function IslandPage (props) {
   if (!info && !error) return <Loading />
   if (error) return <Error error={error} />
 
-  const { islands } = info
+  const { islands, network } = info
   const selectedIsland = config.get('island')
   const selectedBg = { dark: 'gray.700', light: 'gray.100' }
 
   // let { } = useParams()
   // _hover={{ bg: 'gray.50' }}
   return (
-    <Box>
+    <Flex 
+      flex='1'
+      direction='column'
+    >
       <Heading color='teal.400'>Islands</Heading>
       { islands && (
-        <Box mb={4}>
+        <Flex direction='column' mb={4}>
           {Object.values(islands).map((island, i) => (
             <PseudoBox
               key={i}
@@ -60,41 +63,78 @@ export default function IslandPage (props) {
               p={1}
               bg={island.key === selectedIsland ? selectedBg[colorMode] : undefined}
             >
-              <Flex w={['100%', '50%']}>
-                <Link
-                  fontSize='md'
-                  variant='link'
-                  textAlign='left'
-                  color='pink.500'
-                  fontWeight='700'
-                  onClick={e => onSelectIsland(island)}
+              <Flex
+                flex='1'
+                direction='column'
+              >
+                <Flex direction='row' justify='space-between'>
+                  <Link
+                    fontSize='md'
+                    variant='link'
+                    textAlign='left'
+                    color='pink.500'
+                    fontWeight='700'
+                    onClick={e => onSelectIsland(island)}
+                  >
+                    {island.name}
+                  </Link>
+                <Flex>
+                    <FormLabel p='0' mr='2' htmlFor={island.key + '-share'}>
+                      Share:
+                    </FormLabel>
+                    <Switch
+                      size='sm'
+                      defaultIsChecked={island.share}
+                      id={island.key + '-share'}
+                      onChange={e => handleShareSwitch(e.target.checked, island)}
+                    />
+                </Flex>
+            </Flex>
+                <Flex
+                  direction='row'
+                  justify='space-between'
                 >
-                  {island.name}
-                </Link>
+                  <Box>Key:</Box>
+                  <Key k={island.key} mr='4' />
+                </Flex>
+                <Flex
+                  direction='row'
+                  justify='space-between'
+                >
+                  <Box>Local key:</Box>
+                  <Key k={island.localKey} mr='4' />
+                </Flex>
+            { getNetworkInfo(island.key) && (
+              <Flex
+              direction='row'
+              justify='space-between'
+              >
+              <Box>Peers:</Box>
+              <Box>{getNetworkInfo(island.key).peers}</Box>
               </Flex>
-              <Flex flex='1' />
-              <Flex justify='center'>
-                <Key k={island.key} flex='1' mr='4' />
-                <FormLabel p='0' mr='2' htmlFor={island.key + '-share'}>
-                  Share:
-                </FormLabel>
-                <Switch
-                  size='sm'
-                  defaultIsChecked={island.share}
-                  id={island.key + '-share'}
-                />
+            )
+            }
               </Flex>
             </PseudoBox>
           ))}
-        </Box>
+        </Flex>
       )}
       <CreateIsland onCreate={reload} />
-    </Box>
+    </Flex>
   )
 
   function onSelectIsland (island) {
     config.set('island', island.key)
     window.location.reload()
+  }
+  
+  function getNetworkInfo (key) {
+    return network.shared.find(el => el.key === key)
+  }
+
+  function handleShareSwitch (checked, island) {
+    // TODO: Change sharing for island
+    console.log(e)
   }
 }
 
