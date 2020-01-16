@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 const states = {}
 
@@ -8,6 +8,7 @@ window.__sonarState = states
 class State {
   constructor () {
     this._state = {}
+    this._watchers = {}
   }
 
   get (key) {
@@ -16,10 +17,17 @@ class State {
 
   set (key, state) {
     this._state[key] = state
+    if (this._watchers[key]) this._watchers[key].forEach(fn => fn(state))
   }
 
   empty (key) {
     return typeof this._state[key] === 'undefined'
+  }
+
+  watch (key, fn) {
+    if (!this._watchers[key]) this._watchers[key] = []
+    this._watchers[key].push(fn)
+    return () => (this._watchers[key] = this._watchers[key].filter(x => x !== fn))
   }
 }
 
@@ -32,6 +40,10 @@ export default function makeGlobalStateHook (name) {
   function useGlobalState (key, initialState) {
     if (state.empty(key)) state.set(key, initialState)
     const [_, _setState] = useState(state.get(key))
+    const [i, setI] = useState(0)
+    useEffect(() => {
+      return state.watch(key, () => setI(i => i + 1))
+    }, [key])
 
     return [state.get(key), setState]
 

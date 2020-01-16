@@ -1,168 +1,97 @@
-import React, { useState, useEffect, useMemo } from 'react'
-import ReactDataGrid from 'react-data-grid'
+import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import client from '../../lib/client'
-// import './styles.css'
 import errors from '../../lib/error'
 import { findWidget, RecordLink } from '../../components/Record'
 import makeGlobalStateHook from '../../hooks/make-global-state-hook'
 
-import './tables.css'
+import Table from './Table'
+import Preview from './Preview'
+
+import {
+  Box,
+  Flex,
+  Button,
+  Menu,
+  MenuButton,
+  MenuList,
+  MenuOptionGroup,
+  MenuItemOption
+} from '@chakra-ui/core'
 
 async function loadSchemas () {
   const schemas = await client.getSchemas()
   return Object.values(schemas)
 }
 
-async function loadData ({ schema }) {
+async function loadRecords ({ schema }) {
   return client.query({ schema })
 }
 
 const useGlobalState = makeGlobalStateHook('tables')
 
 export default function TablesPage (props) {
-  const [rows, setRows] = useGlobalState('rows', null)
-  // TODO: useGlobalState has some bug that breaks table sorting.
-  // const [rows, setRows] = useState(null)
+  const [records, setRecords] = useGlobalState('records', null)
   const [schema, setSchema] = useGlobalState('schema', null)
-  const [columns, setColumns] = useGlobalState('columns', null)
-  const [count, setCount] = useGlobalState('count', 100)
   const schemaname = schema ? schema.name : null
 
   useEffect(() => {
-    if (!schema) return
-    loadData({ schema: schemaname })
-      .then(records => {
-        const rows = formatRows(records)
-        setRows(rows)
-      })
+    if (!schemaname) return
+    loadRecords({ schema: schemaname })
+      .then(records => setRecords(records))
       .catch(error => errors.push(error))
   }, [schemaname])
 
-  // const rows = useMemo(() => {
-  //   if (!records) return null
-  //   const rows = formatRows(records)
-  //   return rows
-  // }, [records])
+  const rows = useMemo(() => buildRowsFromRecords(records), [records])
+  const columns = useMemo(() => buildColumnsFromSchema(schema), [schema])
 
-  function onGridRowsUpdated (props) {
-    const { fromRow, toRow, updated } = props
-    setRows(rows => {
-      const slice = rows.slice()
-      for (let i = fromRow; i <= toRow; i++) {
-        slice[i] = { ...rows[i], ...updated }
-      }
-      return rows
-    })
-  }
-
-  function onCellSelected (cell) {
-    const row = getRow(cell.rowIdx)
-    console.log(row)
-  }
-
-  function getRow (i) {
-    return rows[i]
-  }
+  const PreviewWrapper = useCallback(function PreviewWrapper (props) {
+    const { row } = props
+    return <Preview record={row} schema={schema} />
+  }, [schema])
 
   return (
-    <div>
-      <SchemaSelect onSchema={setSchema} schema={schema} />
-      { schema && (
-        <div>
-          <ColumnSelect schema={schema} columns={columns} onColumns={setColumns} />
-          <div>
-            Display:
-            <input type='number' value={count} onChange={e => setCount(e.target.value)} />
-          </div>
-        </div>
-      )}
+    <Flex direction='column' width='100%'>
+      <SchemaSelect onSchema={setSchema} schema={schema} flex={0} />
       { columns && rows && (
-        <ReactDataGrid
+        <Table
           columns={columns}
-          rowGetter={getRow}
-          rowsCount={count}
-          onGridRowsUpdated={onGridRowsUpdated}
-          onCellSelected={onCellSelected}
-          onGridSort={(sortColumn, sortDirection) =>
-            setRows(sortRows(sortColumn, sortDirection))
-          }
+          rows={rows}
+          Preview={PreviewWrapper}
         />
       )}
-    </div>
+    </Flex>
   )
 }
 
-function sortRows (col, sortDirection) {
-  return function (rows) {
-    if (sortDirection === 'NONE') return rows
-    rows = [...rows]
-    rows.sort((a, b) => {
-      if (sortDirection === 'ASC') {
-        return a[col] > b[col] ? 1 : -1
-      } else if (sortDirection === 'DESC') {
-        return a[col] < b[col] ? 1 : -1
-      }
-    })
-    return rows
-  }
+function buildRowsFromRecords (records) {
+  if (!records) return null
+  return [...records]
 }
 
-function formatRows (records) {
-  const rows = []
-  for (let record of records) {
-    const row = {}
-    row._record = record
-    row._id = record.id
-    for (let [key, value] of Object.entries(record.value)) {
-      row[key] = value
-    }
-    rows.push(row)
-  }
-  return rows
-}
-
-function ColumnSelect (props) {
-  const { schema, columns = {}, onColumns } = props
-  // TODO: Cache?
+function buildColumnsFromSchema (schema) {
+  if (!schema) return null
   const allColumns = [...defaultColumns(), ...schemaColumns(schema)]
-  const selected = columns ? columns.map(c => c.key) : ['_actions', '_id']
+    .map(column => {
+      if (!column.Cell) column.Cell = createCellFormatter(column)
+      if (!column.Header) column.Header = createHeaderFormatter(column)
+      return column
+    })
+  return allColumns
+}
 
-  useEffect(() => {
-    updateColumns(selected)
-  }, [])
-
-  return (
-    <div className='sonar-tables--column-select'>
-      <form>
-        {allColumns.map((column) => {
-          const { key, name } = column
-          const checked = selected.indexOf(key) !== -1
-          const cls = checked ? 'checked' : ''
-          return (
-            <div key={key} className={cls}>
-              <label>
-                <input type='checkbox' value={key} key={key} name={key} defaultChecked={checked} onChange={onChange} />
-                {name}
-              </label>
-            </div>
-          )
-        })}
-      </form>
-    </div>
-  )
-
-  function onChange (e) {
-    const { name, checked } = e.target
-    let next
-    if (checked) next = [...selected, name]
-    else next = selected.filter(c => c !== name)
-    updateColumns(next)
+function createCellFormatter (column) {
+  const { Widget, schema } = column
+  return function CellFormatter (props) {
+    const { cell: { value, row } } = props
+    // TODO: Rethink if we wanna do row.original = record.
+    if (Widget) return <Widget value={value} fieldSchema={schema} record={row.original} />
+    return String(value)
   }
+}
 
-  function updateColumns (selected) {
-    const selectedColumns = allColumns.filter(col => selected.indexOf(col.key) !== -1)
-    onColumns(selectedColumns)
-  }
+function createHeaderFormatter (column) {
+  const { title, id } = column
+  return title || id
 }
 
 function schemaColumns (schema) {
@@ -171,50 +100,50 @@ function schemaColumns (schema) {
   })
 }
 
+function fieldColumn (key, fieldSchema) {
+  const Widget = findWidget(fieldSchema)
+  return {
+    schema: fieldSchema,
+    title: fieldSchema.title,
+    id: key,
+    accessor: row => row.value[key],
+    Widget
+  }
+}
+
 function defaultColumns () {
   return [
     {
-      key: '_actions',
-      name: 'Actions',
-      formatter: ActionsFormatter,
-      resizable: true,
-      editable: false
+      title: 'Actions',
+      Widget: ActionsFormatter,
+      showDefault: true,
+      id: '_actions',
+      disableSortBy: true,
+      disableFilters: true,
+      // TODO: The formatter doesn't use an acessor, it uses the record which is
+      // the full row at the moment.
+      accessor: () => undefined
     },
     {
-      key: '_id',
-      name: 'ID',
-      resizable: true,
-      editable: false
+      Header: 'ID',
+      id: 'id',
+      showDefault: true,
+      accessor: 'id'
     }
   ]
 }
 
-function fieldColumn (key, fieldSchema) {
-  const Widget = findWidget(fieldSchema)
-  return {
-    key,
-    name: fieldSchema.title,
-    sortable: true,
-    editable: false,
-    resizable: true,
-    // onCellSelected,
-    formatter: (props) => {
-      const { value } = props
-      return <Widget value={value} fieldSchema={fieldSchema} />
-    }
-  }
-}
-
 function ActionsFormatter (props) {
-  const { row } = props
-  const { _id: id, _record: record } = row
+  // const { value, fieldSchema, record } = props
+  // TODO: Rethink if the way we get hold of a "record" here is sound enough.
+  const { record } = props
   return (
     <RecordLink record={record}>Open</RecordLink>
   )
 }
 
 function SchemaSelect (props) {
-  const { onSchema, schema } = props
+  const { onSchema, schema, ...other } = props
   const [schemas, setSchemas] = useState()
   useEffect(() => {
     loadSchemas()
@@ -224,28 +153,43 @@ function SchemaSelect (props) {
 
   if (schemas === null) return <Loading />
   if (!schemas) return <div>No schemas</div>
-  let selected = schema ? schema.name : '__default__'
+  let selected = schema ? schema.name : false
+
+  const menuItems = schemas.map(schema => ({ key: schema.name, value: schemaName(schema) }))
 
   return (
-    <div>
-      <select onChange={onSelect} value={selected}>
-        <option disabled value='__default__'> -- select schema -- </option>
-        {schemas.map(schema => (
-          <option key={schema.name} value={schema.name}>{schemaName(schema)}</option>
-        ))}
-      </select>
-    </div>
+    <Box {...other}>
+      <SchemaMenu onChange={onSelect} value={selected} items={menuItems} />
+    </Box>
   )
 
   function schemaName (schema) {
     return schema.title || schema.name
   }
 
-  function onSelect (e) {
-    const name = e.target.value
+  function onSelect (name) {
     const schema = schemas.filter(s => s.name === name)[0]
     onSchema(schema)
   }
+}
+
+function SchemaMenu (props) {
+  const { items, onChange, value } = props
+  const title = value ? items.find(el => el.key === value).value : 'Select schema'
+  return (
+    <Menu>
+      <MenuButton as={Button} size='sm' rightIcon='chevron-down'>
+        {title}
+      </MenuButton>
+      <MenuList>
+        <MenuOptionGroup type='radio' onChange={onChange} value={value}>
+          {items.map(item => (
+            <MenuItemOption key={item.key} value={item.key}>{item.value}</MenuItemOption>
+          ))}
+        </MenuOptionGroup>
+      </MenuList>
+    </Menu>
+  )
 }
 
 function Loading () {

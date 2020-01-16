@@ -1,9 +1,30 @@
 import React, { useState } from 'react'
 import { format, formatRelative } from 'date-fns'
-import ReactJson from 'react-json-view'
+import JsonTree from 'react-json-tree'
 import { Link } from 'react-router-dom'
 
-import './Record.css'
+import { MetaItem, MetaItems } from '../components/MetaItem'
+
+import {
+  Box,
+  Select,
+  Flex,
+  Button,
+  Textarea,
+  List,
+  Input,
+  Heading,
+  Menu,
+  MenuButton,
+  MenuList,
+  MenuItem,
+  MenuGroup,
+  MenuDivider,
+  MenuOptionGroup,
+  MenuItemOption
+} from '@chakra-ui/core'
+
+// import './Record.css'
 
 export function findWidget (fieldSchema) {
   const { type, format } = fieldSchema
@@ -44,11 +65,30 @@ export function RecordGroup (props) {
   const { records, schemas } = props
   if (!records) return null
   return (
-    <div className='sonar-record__group'>
+    <Box>
       {records.map((record, i) => (
         <Record key={i} record={record} schema={schemas[record.schema]} />
       ))}
-    </div>
+    </Box>
+  )
+}
+
+function DisplayMenu (props) {
+  const { displays, onChange, value } = props
+  const active = displays.find(d => d.id === value)
+  return (
+    <Menu>
+      <MenuButton as={Button} rightIcon='chevron-down'>
+        {active.name}
+      </MenuButton>
+      <MenuList>
+        <MenuOptionGroup type='radio' onChange={onChange} value={value}>
+          {displays.map(display => (
+            <MenuItemOption key={display.id} value={display.id}>{display.name}</MenuItemOption>
+          ))}
+        </MenuOptionGroup>
+      </MenuList>
+    </Menu>
   )
 }
 
@@ -58,23 +98,15 @@ export function Record (props) {
   const [displayId, setDisplay] = useState('fields')
   const displays = getDisplays()
   const display = displays.find(d => d.id === displayId)
-
-  const selector = (
-    <select value={displayId} onChange={e => setDisplay(e.target.value)}>
-      {displays.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
-    </select>
-  )
-
   const Display = display.component
 
   return (
-    <div className='sonar-record'>
-      <div className='sonar-record__footer'>
-        <div className='sonar-record__selector'>
-          {selector}
-        </div>
+    <div className='sonar-record' flex={1}>
+      <Box display={['block', 'flex']}>
         <RecordMeta record={record} schema={schema} />
-      </div>
+        <Box flex={1} />
+        <DisplayMenu displays={displays} onChange={setDisplay} value={display.id} />
+      </Box>
       <Display record={record} schema={schema} />
     </div>
   )
@@ -90,14 +122,12 @@ export function RecordLabelDisplay (props) {
 export function RecordJsonDisplay (props) {
   const { record } = props
   return (
-    <ReactJson
-      src={record.value}
-      name={null}
-      displayDataTypes={false}
-      displayObjectSize={false}
-      enableClipboard={false}
-      collapseStringsAfterLength={40}
-      collapsed={1}
+    <JsonTree
+      data={record}
+      invertTheme
+      hideRoot
+      theme='bright'
+      shouldExpandNode={(keyName, data, level) => level < 1}
     />
   )
 }
@@ -105,9 +135,9 @@ export function RecordJsonDisplay (props) {
 export function RecordRawDisplay (props) {
   const { record } = props
   return (
-    <pre className='sonar-record__raw'>
+    <Box fontFamily='mono' whiteSpace='pre-wrap'>
       {JSON.stringify(record, null, 2)}
-    </pre>
+    </Box>
   )
 }
 
@@ -118,14 +148,14 @@ export function RecordFieldDisplay (props) {
   if (!schema.properties) return <NoSchemaError record={record} message='Invalid schema' />
 
   return (
-    <div>
+    <Box>
       {Object.entries(schema.properties).map(([key, fieldSchema], i) => {
         if (typeof record.value[key] === 'undefined') return null
         return (
           <FieldViewer key={i} fieldSchema={fieldSchema} value={record.value[key]} fieldName={key} />
         )
       })}
-    </div>
+    </Box>
   )
 }
 
@@ -148,35 +178,35 @@ function FieldViewer (props) {
   const { fieldSchema, fieldName, value } = props
   const Viewer = findWidget(fieldSchema)
   return (
-    <div className='sonar-record__field'>
-      <div className='sonar-record__field-label'>
-        {fieldSchema.title}
-      </div>
-      <div className='sonar-record__field-value'>
+    <Box display={['block', 'flex']} borderBottomWidth='1px' py='2'>
+      <Box flexShrink='0' width={['auto', '12rem']} color='teal.400'>{fieldSchema.title}</Box>
+      <Box flex='1' style={{ overflowWrap: 'anywhere' }}>
         <Viewer value={value} fieldSchema={fieldSchema} />
-      </div>
-    </div>
+      </Box>
+    </Box>
   )
 }
 
 function ArrayViewer (props) {
   const { value, fieldSchema } = props
   if (!value) return <InvalidValueError value={value} fieldSchema={fieldSchema} />
+  if (!Array.isArray(value)) return <InvalidValueError value={value} fieldSchena={fieldSchema} message='Not an array' />
   const Viewer = findWidget(fieldSchema.items)
   return (
-    <ul className='sonar-record__array'>
+    <List>
       {value.map((value, i) => (
-        <li key={i}>
+        <Box as='li' key={i}>
           <Viewer value={value} fieldSchema={fieldSchema.items} />
-        </li>
+        </Box>
       ))}
-    </ul>
+    </List>
   )
 }
 
 function TextViewer (props) {
   const { value } = props
-  return value
+  if (typeof value === 'undefined') return null
+  return String(value)
 }
 
 function BooleanViewer (props) {
@@ -186,7 +216,9 @@ function BooleanViewer (props) {
 
 function DateViewer (props) {
   const { value } = props
+  if (!value) return <InvalidValueError />
   const date = new Date(value)
+  if (!date) return <InvalidValueError />
   const formatted = format(date, 'dd.MM.yyyy HH:mm')
   return (
     <span className='sonar-viewer-date'>{formatted}</span>
@@ -197,22 +229,12 @@ function RecordMeta (props) {
   const { record, schema } = props
   const { id, key, timestamp, schema: schemaName } = record
   return (
-    <div className='sonar-record__meta'>
-      <dl>
-        <div>
-          <dt>Schema</dt><dd>{formatSchema(schemaName)}</dd>
-        </div>
-        <div>
-          <dt>ID</dt><dd>{id}</dd>
-        </div>
-        <div>
-          <dt>Source</dt><dd>{formatSource(key)}</dd>
-        </div>
-        <div>
-          <dt>Created</dt><dd>{formatDate(timestamp)}</dd>
-        </div>
-      </dl>
-    </div>
+    <MetaItems>
+      <MetaItem stacked name='Schema' value={formatSchema(schemaName)} />
+      <MetaItem stacked name='ID' value={id} />
+      <MetaItem stacked name='Source' value={formatSource(key)} />
+      <MetaItem stacked name='Created' value={formatDate(timestamp)} />
+    </MetaItems>
   )
 }
 

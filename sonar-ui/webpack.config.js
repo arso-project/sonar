@@ -18,7 +18,6 @@ const config = {
   mode: isDev ? 'development' : 'production',
   watch: argv.watch || argv.serve,
   devtool: isDev ? 'eval-source-map' : 'none',
-  // stats: 'minimal',
   stats: 'minimal',
   module: {
     rules: [
@@ -26,29 +25,34 @@ const config = {
         test: /\.(js|jsx)$/,
         exclude: /node_modules/,
         use: [
-          'babel-loader'
-        ]
-      },
-      {
-        test: /\.(css|pcss)$/,
-        use: [
-          'style-loader',
-          { loader: 'css-loader', options: { importLoaders: 1 } },
-          'postcss-loader'
-        ]
-      },
-      {
-        test: /\.(woff(2)?|ttf|eot|svg)(\?v=\d+\.\d+\.\d+)?$/,
-        use: [
           {
-            loader: 'file-loader',
+            loader: 'babel-loader',
             options: {
-              name: '[name].[ext]',
-              outputPath: 'fonts/'
+              // plugins: [isDev && require.resolve('react-refresh/babel')].filter(Boolean)
             }
           }
         ]
       }
+      // {
+      //   test: /\.(css|pcss)$/,
+      //   use: [
+      //     'style-loader',
+      //     { loader: 'css-loader', options: { importLoaders: 1 } },
+      //     'postcss-loader'
+      //   ]
+      // },
+      // {
+      //   test: /\.(woff(2)?|ttf|eot|svg)(\?v=\d+\.\d+\.\d+)?$/,
+      //   use: [
+      //     {
+      //       loader: 'file-loader',
+      //       options: {
+      //         name: '[name].[ext]',
+      //         outputPath: 'fonts/'
+      //       }
+      //     }
+      //   ]
+      // }
     ]
   },
   output: {
@@ -58,10 +62,16 @@ const config = {
   },
   plugins: [
     new HtmlWebpackPlugin({
-      title: 'Sonar'
+      title: 'Sonar',
+      meta: { viewport: 'width=device-width, initial-scale=1, shrink-to-fit=no' }
       // template: './index.html'
     })
   ]
+}
+
+if (process.env.WEBPACK_ANALYZE) {
+  const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer')
+  config.plugins.push(new BundleAnalyzerPlugin())
 }
 
 if (argv.serve) {
@@ -70,13 +80,15 @@ if (argv.serve) {
       host: 'localhost',
       static: output,
       open: false,
-      liveReload: true,
+      // liveReload: true,
+      hmr: true,
       historyFallback: true,
       // progress: 'minimal',
       progress: false,
       ramdisk: ramdisk
     })
   )
+  // config.plugins.push(new ReactRefreshWebpackPlugin())
   config.entry.push(
     'webpack-plugin-serve/client'
   )

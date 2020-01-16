@@ -1,14 +1,17 @@
 import React from 'react'
+import {
+  Text
+} from '@chakra-ui/core'
 
-import './Key.css'
+// import './Key.css'
 
 export default function Key (props) {
   const { k: key } = props
   const shortkey = formatKey(key)
   return (
-    <span className='sonar-key' onClick={e => copyToClipboard(key)}>
+    <Text {...props} onClick={e => copyToClipboard(key)}>
       {shortkey}
-    </span>
+    </Text>
   )
 }
 

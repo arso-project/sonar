@@ -1,96 +1,163 @@
 import React, { useState } from 'react'
 // import { useParams } from 'react-router-dom'
+import {
+  Box,
+  Flex,
+  Link,
+  Alert,
+  Input,
+  Heading,
+  Switch,
+  PseudoBox,
+  Button,
+  FormControl,
+  FormLabel,
+  FormErrorMessage,
+  FormHelperText,
+  useColorMode,
+  useToast
+} from '@chakra-ui/core'
 import { formData } from '../lib/form'
 import useAsync from '../hooks/use-async'
 import Error from '../components/Error'
 import Loading from '../components/Loading'
 import Key from '../components/Key'
 import config from '../lib/config'
+import FormField from '../components/FormField'
 
 import client from '../lib/client'
 
-import './Islands.css'
+// import './Islands.css'
 
 async function loadInfo () {
   return client.info()
 }
 
 export default function IslandPage (props) {
+  const { colorMode } = useColorMode()
   const { data: info, error, reload } = useAsync(loadInfo)
-  const [message, setMessage] = useState(null)
 
   if (!info && !error) return <Loading />
   if (error) return <Error error={error} />
-  console.log('info', info)
 
   const { islands } = info
   const selectedIsland = config.get('island')
-  const cls = island => island.key === selectedIsland ? 'selected' : ''
+  const selectedBg = { dark: 'gray.700', light: 'gray.100' }
 
   // let { } = useParams()
+  // _hover={{ bg: 'gray.50' }}
   return (
-    <div className='sonar-islands sonar-config'>
-      <h2>Islands</h2>
+    <Box>
+      <Heading color='teal.400'>Islands</Heading>
       { islands && (
-        <ul className='sonar-islands--list'>
+        <Box mb={4}>
           {Object.values(islands).map((island, i) => (
-            <li key={i}>
-              <h3 onClick={e => onSelectIsland(island)} className={cls(island)}>
-                {island.name}
-              </h3>
-              <div><Key k={island.key} /></div>
-              <label>
+            <PseudoBox
+              key={i}
+              borderBottomWidth='1px'
+              display={{ md: 'flex' }}
+              justify='center'
+              p={1}
+              bg={island.key === selectedIsland ? selectedBg[colorMode] : undefined}
+            >
+              <Flex w={['100%', '50%']}>
+                <Link
+                  fontSize='md'
+                  variant='link'
+                  textAlign='left'
+                  color='pink.500'
+                  fontWeight='700'
+                  onClick={e => onSelectIsland(island)}
+                >
+                  {island.name}
+                </Link>
+              </Flex>
+              <Flex flex='1' />
+              <Flex justify='center'>
+                <Key k={island.key} flex='1' mr='4' />
+                <FormLabel p='0' mr='2' htmlFor={island.key + '-share'}>
                   Share:
-                <input type='checkbox' checked={island.share} disabled />
-              </label>
-            </li>
+                </FormLabel>
+                <Switch
+                  size='sm'
+                  defaultIsChecked={island.share}
+                  id={island.key + '-share'}
+                />
+              </Flex>
+            </PseudoBox>
           ))}
-        </ul>
+        </Box>
       )}
-      <h2>Create Island</h2>
-      {message}
-      <form onSubmit={onCreate}>
-        <div className='sonar-config__row'>
-          <label htmlFor='name'>Name</label>
-          <input name='name' type='text' />
-          <button type='submit'>OK</button>
-        </div>
-      </form>
-      <h2>Clone Island</h2>
-      <form onSubmit={onCreate}>
-        <div className='sonar-config__row'>
-          <label htmlFor='name'>Local name</label>
-          <input name='name' type='text' />
-        </div>
-        <div className='sonar-config__row'>
-          <label htmlFor='key'>Key</label>
-          <input name='key' type='text' />
-        </div>
-        <div className='sonar-config__row'>
-          <button type='submit'>OK</button>
-        </div>
-      </form>
-    </div>
+      <CreateIsland onCreate={reload} />
+    </Box>
+  )
+
+  function onSelectIsland (island) {
+    config.set('island', island.key)
+    window.location.reload()
+  }
+}
+
+function FormHeading (props) {
+  return (
+    <Heading fontSize='md' color='teal.400' {...props} />
+  )
+}
+
+function Form (props) {
+  const { title, children, submitLabel = 'OK', ...other } = props
+  return (
+    <Box as='form' mb='4' p='2' maxWidth='48rem' {...other}>
+      {title && <FormHeading>{title}</FormHeading>}
+      {children}
+      <Button type='submit' variantColor='teal'>OK</Button>
+    </Box>
+  )
+}
+
+function CreateIsland (props) {
+  const [message, setMessage] = useState(null)
+  const [error, setError] = useState(null)
+  const toast = useToast()
+
+  return (
+    <Box>
+      { message && <Alert status='info'>{message}</Alert> }
+      <Form title='Create island' onSubmit={onCreate}>
+        <FormField name='name' title='Name' />
+      </Form>
+      <Form title='Clone island' onSubmit={onCreate}>
+        <FormField name='name' title='Name' />
+        <FormField name='key' title='Key' />
+        <FormField name='alias' title='Alias' />
+      </Form>
+    </Box>
   )
 
   async function onCreate (e) {
     e.preventDefault()
     // Key may be empty
-    let { name, key } = formData(e.currentTarget)
+    let { name, key, alias } = formData(e.currentTarget)
     if (!key || key === '') key = undefined
     if (!name) return setMessage(<strong>Name may not be empty</strong>)
-    try {
-      const result = await client.createIsland(name, { key })
-      console.log('result', result)
-      setMessage(<strong>Success!</strong>)
-    } catch (err) {
-      setMessage(<Error error={err} />)
-    }
-    reload()
-  }
 
-  function onSelectIsland (island) {
-    config.set('island', island.key)
-    window.location.reload()
+    client.createIsland(name, { key, alias })
+      .then(res => {
+        toast({
+          title: 'Island created',
+          status: 'success'
+        })
+        if (props.onCreate) props.onCreate()
+        setMessage(<strong>Success!</strong>)
+      })
+      .catch(err => {
+        console.log('ERR', err)
+        toast({
+          title: 'Error',
+          description: err.remoteError || err.message,
+          status: 'error'
+        })
+        setMessage(<Error error={err} />)
+      })
   }
 }
