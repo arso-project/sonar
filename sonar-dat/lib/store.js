@@ -56,14 +56,16 @@ module.exports = class IslandStore {
       this.network.status((err, networkStatus) => {
         if (err) return cb(err)
         const islands = {}
-        Object.values(config.islands).forEach(island => {
-          const { key } = island
-          if (this.islands[key]) {
-            island.localKey = this.islands[key].db.localKey.toString('hex')
-            island.localDrive = this.islands[key].fs.localwriter.key.toString('hex')
-          }
-          islands[island.key] = island
-        })
+        if (config.islands) {
+          Object.values(config.islands).forEach(island => {
+            const { key } = island
+            if (this.islands[key]) {
+              island.localKey = this.islands[key].db.localKey.toString('hex')
+              island.localDrive = this.islands[key].fs.localwriter.key.toString('hex')
+            }
+            islands[island.key] = island
+          })
+        }
         cb(null, {
           storage: this.storagePath,
           islands,
