@@ -134,7 +134,7 @@ export default function IslandPage (props) {
 
   function handleShareSwitch (checked, island) {
     // TODO: Change sharing for island
-    console.log(e)
+    console.log(checked)
   }
 }
 
@@ -164,7 +164,8 @@ function CreateIsland (props) {
     <Box>
       { message && <Alert status='info'>{message}</Alert> }
       <Form title='Create island' onSubmit={onCreate}>
-        <FormField name='name' title='Name' />
+        <FormField name='name' title='Local Name' />
+        <FormField name='alias' title='Alias' />
       </Form>
       <Form title='Clone island' onSubmit={onCreate}>
         <FormField name='name' title='Name' />
