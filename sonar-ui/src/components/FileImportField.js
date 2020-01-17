@@ -1,5 +1,4 @@
 import React, {useState} from 'react'
-
 import {
   Input,
   FormControl,
@@ -67,7 +66,7 @@ export default function FileImportField (props) {
 
 async function importFile (props) {
     const {filename, prefix} = props
-    console.log(filename, prefix)
+    console.log(prefix + '/' + filename)
     const id = await client.createResource({filename, prefix})
     console.log(id)
 
