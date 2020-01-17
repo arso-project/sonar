@@ -162,7 +162,6 @@ function CreateIsland (props) {
 
   return (
     <Box>
-      { message && <Alert status='info'>{message}</Alert> }
       <Form title='Create island' onSubmit={onCreate}>
         <FormField name='name' title='Local Name' />
         <FormField name='alias' title='Alias' />
