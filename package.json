@@ -21,5 +21,6 @@
     "tap-spec": "^5.0.0",
     "tape": "^4.12.1",
     "tape-plus": "^1.0.0"
-  }
+  },
+  "dependencies": {}
 }
