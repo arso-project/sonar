@@ -105,7 +105,7 @@ function fieldColumn (key, fieldSchema) {
   return {
     schema: fieldSchema,
     title: fieldSchema.title,
-    id: key,
+    id: 'value.' + key,
     accessor: row => row.value[key],
     Widget
   }
@@ -129,6 +129,20 @@ function defaultColumns () {
       id: 'id',
       showDefault: true,
       accessor: 'id'
+    },
+    {
+      Header: 'Source',
+      id: 'key',
+      showDefault: false,
+      accessor: record => {
+        return record.key
+      }
+    },
+    {
+      Header: 'Seq',
+      id: 'seq',
+      showDefault: false,
+      accessor: 'seq'
     }
   ]
 }
