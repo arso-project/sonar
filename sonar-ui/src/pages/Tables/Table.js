@@ -1,6 +1,5 @@
 import React, { Fragment, useRef, useEffect, useMemo, forwardRef, useCallback, useState, useReducer } from 'react'
-import { debounce } from 'lodash'
-import Debug from 'debug'
+// import Debug from 'debug'
 import {
   useTable,
   // useBlockLayout,
@@ -11,15 +10,16 @@ import {
   useResizeColumns,
   useRowSelect
 } from 'react-table'
-import { FixedSizeList } from 'react-window'
+import { VariableSizeGrid } from 'react-window'
 import useSize from '../../hooks/use-size'
+import useDebounce from '../../hooks/use-debounce'
 import FocusLock, { AutoFocusInside } from 'react-focus-lock'
 import {
   useColorMode,
   Badge,
   PseudoBox,
   Box,
-  FormControl,
+  // FormControl,
   FormLabel,
   Checkbox,
   Button,
@@ -28,7 +28,7 @@ import {
   IconButton,
   Select,
   Input,
-  Switch,
+  // Switch,
   // Slider,
   // SliderTrack,
   // SliderFilledTrack,
@@ -58,14 +58,14 @@ import {
   FaSortAlphaUp,
   FaFilter,
   FaWindowClose,
-  FaTable,
-  FaSort
+  // FaSort,
+  FaTable
 } from 'react-icons/fa'
 import {
   IoMdEye
 } from 'react-icons/io'
 
-const debug = Debug('sonar:table')
+// const debug = Debug('sonar:table')
 const TBORDER = 'gray.300'
 
 export default function TableWrapper (props) {
@@ -76,35 +76,25 @@ export default function TableWrapper (props) {
 }
 
 function Cell (props) {
-  const { children, ...other } = props
+  const { children, isRowSelected, ...other } = props
+  const bg = isRowSelected ? 'yellow.100' : undefined
+  const hover = { bg: isRowSelected ? 'yellow.200' : 'gray.50' }
+  const innerStyle = { flex: 1, overflow: 'hidden', display: 'flex', maxWidth: '100%', whiteSpace: 'nowrap' }
   return (
-    <Box
+    <PseudoBox
       {...other}
       borderRightWidth='1px'
+      borderBottomWidth='1px'
       borderColor={TBORDER}
+      bg={bg}
+      _hover={hover}
       display='flex'
       height='100%'
       overflow='hidden'
       p='1'
     >
-      <Box flex='1' overflow='hidden' display='flex' maxWidth='100%' whiteSpace='nowrap'>{children}</Box>
-    </Box>
-  )
-}
-function Row (props) {
-  const { isSelected, ...other } = props
-  // TODO: Dark mode
-  const bg = isSelected ? 'yellow.100' : undefined
-  const hover = { bg: isSelected ? 'yellow.200' : 'gray.50' }
-  return (
-    <PseudoBox {...other}
-      overflow='hidden'
-      borderBottomWidth='1px'
-      borderColor={TBORDER}
-      bg={bg}
-      _hover={hover}
-      {...other}
-    />
+      <div style={innerStyle}>{children}</div>
+    </PseudoBox>
   )
 }
 
@@ -118,7 +108,10 @@ function ColumnHeader (props) {
     : null
 
   const { colorMode } = useColorMode()
-  let bg = { light: 'white', dark: 'gray.800' }
+  let bg = { light: 'gray.50', dark: 'gray.800' }
+  if (column.isResizing) {
+    bg = { light: 'yellow.200', dark: 'yellow.600' }
+  }
 
   return (
     <div {...headerProps} style={{ ...headerProps.style, position: 'absolute' }}>
@@ -126,10 +119,10 @@ function ColumnHeader (props) {
         display='flex'
         overflow='hidden'
         borderRightWidth='1px'
-        borderBottomWidth='2px'
+        borderBottomWidth='1px'
         whiteSpace='nowrap'
-        p='2'
-        pr='4'
+        p='1'
+        pr='2'
         fontWeight='600'
         zIndex='200'
         bg={bg[colorMode]}
@@ -141,11 +134,11 @@ function ColumnHeader (props) {
       </Box>
       <PseudoBox
         position='absolute'
-        right='-3px'
+        right='-2px'
         zIndex='400'
         top='0'
         bottom='0'
-        width='8px'
+        width='6px'
         opacity={column.isResizing ? 0.9 : 0}
         bg={column.isResizing ? 'orange.400' : 'yellow.400'}
         _hover={{ opacity: 0.5 }}
@@ -156,7 +149,7 @@ function ColumnHeader (props) {
 }
 
 function HeaderColumnIcon (props) {
-  return <Box as={props.icon} mt={1} mr={1} color={'grey.100'} {...props} />
+  return <Box as={props.icon} mt={1} mr={1} color='gray.700' {...props} />
 }
 
 function ColumnHeaderMenu (props) {
@@ -204,7 +197,7 @@ function HeaderMenuItem (props) {
   // const color = active ? 'green.600' : undefined
   const fontWeight = active ? 'bold' : undefined
   return (
-    <MenuItem onClick={e => onClick && onClick()} fontWeight={fontWeight} {...other} >
+    <MenuItem onClick={e => onClick && onClick()} fontWeight={fontWeight} transition={false} {...other} >
       <Box as={icon} mr='1' />
       {children}
     </MenuItem>
@@ -214,19 +207,16 @@ function HeaderMenuItem (props) {
 // Define a default UI for filtering
 const DefaultColumnFilter = forwardRef((props, ref) => {
   const { column: { filterValue, preFilteredRows, setFilter }, ...other } = props
-  const count = preFilteredRows.length
-  const debouncedSetFilter = useMemo(() => {
-    return debounce(setFilter, 100)
-  }, [])
-  function onChange (e) {
-    debouncedSetFilter(e.target.value || undefined)
-  }
+  const [value, setValue] = useState(filterValue)
+  const debouncedValue = useDebounce(value, 150)
+  useEffect(() => setFilter(debouncedValue), [debouncedValue])
 
+  const count = preFilteredRows.length
   return (
     <Input
       {...other}
-      defaultValue={filterValue || ''}
-      onChange={onChange}
+      value={value}
+      onChange={e => setValue(e.target.value)}
       placeholder={`Search ${count} records...`}
       ref={ref}
     />
@@ -266,8 +256,9 @@ function Table (props) {
   const {
     state: internalTableState,
     getTableProps,
-    getTableBodyProps,
-    headerGroups,
+    // getTableBodyProps,
+    flatHeaders,
+    // headerGroups,
     rows,
     totalColumnsWidth,
     prepareRow,
@@ -276,90 +267,28 @@ function Table (props) {
   } = table
 
   const cellHeight = 32
-  const headerHeight = cellHeight
+  const headerHeight = 32
 
   const [uiState, dispatchUi] = useReducer(uiReducer, { addfilters: [], pane: { preview: true } })
 
-  // TODO: Cache header better?
-  // const header = <RenderHeader />
-  const RenderHeader = React.useCallback(function RenderHeader (props) {
-    debug('render header')
-    return (
-      <div className='thead'>
-        {headerGroups.map(headerGroup => (
-          <div {...headerGroup.getHeaderGroupProps()} className='tr'>
-            {headerGroup.headers.map(column => (
-              <ColumnHeader key={column.id} column={column} dispatch={dispatchUi} />
-            ))}
-          </div>
-        ))}
-      </div>
-    )
-  }, [headerGroups, totalColumnsWidth])
-
   const isResizingColumn = internalTableState.columnResizing.isResizingColumn
 
-  const RenderRow = React.useCallback(function RenderRow (props) {
-    const { index, style } = props
-    const row = rows[index]
-
-    prepareRow(row)
-
-    let onRowClick
-    if (selectMode) {
-      onRowClick = function onRowClick (e) {
-        debug('!select', row.id, 'to', !row.isSelected)
-        if (selectMode === 'single') table.toggleAllRowsSelected(false)
-        row.toggleRowSelected()
-      }
-    }
-
-    // debug('render row id %o isSelected %o', row.id, row.isSelected)
-    return (
-      <Row {...row.getRowProps({ style, isSelected: row.isSelected, onClick: onRowClick })}>
-        {row.cells.map(cell => {
-          // TODO: The rendering while resizing a column still is slow.
-          // We should debounce and animate the inbetweens likely.
-          if (isResizingColumn) {
-            return (
-              <Box {...cell.getCellProps()}
-                bg={isResizingColumn === cell.column.id ? 'yellow.200' : undefined}
-                h='100%'
-              />
-            )
-          }
-          // TODO: Memoize actual (inner) cell rendering?
-          return (
-            <Cell {...cell.getCellProps()}>
-              {cell.render('Cell')}
-            </Cell>
-          )
-        })}
-      </Row>
-    )
-  // TODO: isResizingColumn maybe shouldn't be in these deps but instead be a property on the row
-  }, [prepareRow, rows, isResizingColumn, selectMode])
-
-  // TODO: This does not work and is a wrong pattenr of upcasting state.
-  // const [lastSelected, setLastSelected] = useState(null)
-  // useEffect(() => {
-  //   if (!onSelect) return
-  //   if (lastSelected === selectedFlatRows) return
-  //   if (!selectedFlatRows.length) return onSelect(null)
-  //   const rows = selectedFlatRows.map(row => row.original)
-  //   setLastSelected(selectedFlatRows)
-  //   if (selectMode === 'single') onSelect(rows[0])
-  //   else onSelect(rows)
-  // }, [selectMode, onSelect, selectedFlatRows])
-
-  const innerElementType = useMemo(() => forwardRef((props, ref) => {
+  const innerElementType = useMemo(() => forwardRef(function InnerWindowElement (props, ref) {
     const { style, children, ...other } = props
-    debug('render inner')
+
+    const header = useMemo(() => (
+      <div style={{ top: 0, position: 'sticky', height: headerHeight + 'px', backgroundColor: 'inherit', zIndex: 1000 }}>
+        {flatHeaders.map(column => (
+          <ColumnHeader key={column.id} column={column} dispatch={dispatchUi} />
+        ))}
+      </div>
+    ), [flatHeaders])
+
+    // debug('render inner')
+
     return (
       <React.Fragment>
-        <div style={{ top: 0, position: 'sticky', height: headerHeight + 'px', backgroundColor: 'inherit', zIndex: 1000 }}>
-          <RenderHeader />
-        </div>
+        {header}
         <div
           {...other}
           ref={ref}
@@ -369,7 +298,7 @@ function Table (props) {
         </div>
       </React.Fragment>
     )
-  }), [totalColumnsWidth, selectedFlatRows, rows])
+  }), [flatHeaders, selectedFlatRows, rows])
 
   const renderedPreview = useMemo(() => {
     if (!uiState.pane.preview) return null
@@ -387,18 +316,49 @@ function Table (props) {
     return <TableMeta columns={flatColumns} uiState={uiState} dispatch={dispatchUi} previewActive={!!renderedPreview} />
   }, [flatColumns, uiState, table.rows, table.flatHeaders, !!renderedPreview])
 
-  debug('render table: rows %o, cols %o, selected %o', data.length, selectedFlatRows.length)
+  // debug('render table: rows %o, cols %o, selected %o', data.length, selectedFlatRows.length)
+
+  const RenderCell = useCallback(function RenderCell (props) {
+    const { columnIndex, rowIndex, style } = props
+    const row = rows[rowIndex]
+    prepareRow(row)
+
+    let onRowClick
+    if (selectMode) {
+      onRowClick = function onRowClick (e) {
+        // debug('!select', row.id, 'to', !row.isSelected)
+        if (selectMode === 'single') table.toggleAllRowsSelected(false)
+        row.toggleRowSelected()
+      }
+    }
+    const cell = row.cells[columnIndex]
+    if (!cell) return null
+    return (
+      <Cell style={style} onClick={onRowClick} isRowSelected={row.isSelected}>
+        {cell.render('Cell')}
+      </Cell>
+    )
+  }, [prepareRow, rows, isResizingColumn, selectMode])
+
+  useEffect(() => {
+    if (isResizingColumn) return
+    if (!listRef.current) return
+    listRef.current.resetAfterColumnIndex(0)
+  }, [isResizingColumn, table.flatHeaders])
+
   return (
     <Flex direction='column' flex={1} {...getTableProps()}>
       {tableMeta}
       <Flex flex='1'>
         <AutoSizeList
-          itemCount={rows.length}
-          itemSize={cellHeight}
+          columnCount={table.flatHeaders.length}
+          rowCount={rows.length}
+          columnWidth={index => table.flatHeaders[index].width}
+          rowHeight={index => cellHeight}
           innerElementType={innerElementType}
           ref={listRef}
         >
-          {RenderRow}
+          {RenderCell}
         </AutoSizeList>
         {renderedPreview}
       </Flex>
@@ -434,7 +394,7 @@ const AutoSizeList = forwardRef((props, ref) => {
   return (
     <div ref={containerRef} style={containerStyle}>
       <div style={{ overflow: 'visible', position: 'absolute', height: 0, width: 0 }}>
-        <FixedSizeList
+        <VariableSizeGrid
           ref={ref}
           width={width}
           height={height}
@@ -459,11 +419,11 @@ function FlexContainer (props) {
 }
 
 function TableMeta (props) {
-  const { columns, uiState, dispatch, previewActive } = props
+  const { columns, uiState, dispatch } = props
   const visible = columns.map(c => c.getToggleHiddenProps()).filter(x => x.checked).length
   const filters = columns.filter(c => c.filterValue !== undefined).length
   const sorts = columns.filter(c => c.isSorted).length
-  debug('render meta: uistate %o', uiState)
+  // debug('render meta: uistate %o', uiState)
 
   const togglePane = useCallback((name, state) => {
     let action
@@ -494,7 +454,6 @@ function TableMeta (props) {
     </Flex>
   )
   function onTogglePreview (e) {
-    console.log('dispatch!')
     dispatch({ type: 'pane.toggle', name: 'preview' })
   }
 }
