@@ -47,11 +47,12 @@ module.exports = class SonarClient {
   async createIsland (name, opts) {
     const path = ['_create', name]
     // opts = { key, alias }
-    return this._request({
+    const res = await this._request({
       method: 'PUT',
       path,
       data: opts
     })
+    return res
   }
 
   async getSchema (schemaName) {
@@ -96,6 +97,13 @@ module.exports = class SonarClient {
         'sonar.id': record.id
       }
     })
+  }
+
+  async readResourceFile (record) {
+    const fileUrl = this.parseHyperdriveUrl(record.value.contentUrl)
+    if (!fileUrl) throw new Error('resource has invalid contentUrl')
+    const path = fileUrl.host + '/' + fileUrl.path
+    return this.readFile(path)
   }
 
   async createResource (value, opts = {}) {
@@ -181,11 +189,11 @@ module.exports = class SonarClient {
     })
   }
 
-  async query (query, opts) {
+  async query (name, args, opts) {
     return this._request({
       method: 'POST',
-      path: [this.island, '_query'],
-      data: query,
+      path: [this.island, '_query', name],
+      data: args,
       params: opts
     })
   }

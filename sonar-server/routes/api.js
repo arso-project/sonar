@@ -36,7 +36,7 @@ module.exports = function apiRoutes (api) {
   islandRouter.get('/db/:id', handlers.get)
   // Search/Query
   islandRouter.post('/_search', handlers.search)
-  islandRouter.post('/_query', handlers.query)
+  islandRouter.post('/_query/:name', handlers.query)
   // List schemas
   islandRouter.get('/schema', handlers.getSchemas)
   // Get schema
@@ -46,6 +46,8 @@ module.exports = function apiRoutes (api) {
   // Put source
   // TODO: This route should have the same pattern as the others.
   islandRouter.put('/source/:key', handlers.putSource)
+
+  islandRouter.get('/debug', handlers.debug)
 
   islandRouter.get('/fs-info', function (req, res, next) {
     const { island } = req
@@ -145,9 +147,10 @@ function createIslandHandlers () {
     // TODO: This should be something different than get
     // and intead drive different kinds of queries.
     query (req, res, next) {
-      const { schema, id, source } = req.body
+      const name = req.params.name
+      const args = req.body
       const opts = req.query || {}
-      req.island.get({ schema, id, source }, opts, (err, records) => {
+      req.island.query(name, args, opts, (err, records) => {
         if (err) return next(err)
         res.send(records)
       })
@@ -207,6 +210,10 @@ function createIslandHandlers () {
       // Query can either be a string (tantivy query) or an object (toshi json query)
       // const resultStream = island.db.api.search.query(query)
       // replyStream(res, resultStream)
+    },
+
+    debug (req, res, next) {
+      return res.end('not implemented')
     }
   }
 }

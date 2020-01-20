@@ -88,10 +88,9 @@ async function getSchema (argv) {
 
 async function listSchemas (argv) {
   const client = makeClient(argv)
-  const result = await client.query({ schema: 'core/schema' })
-  // console.log(result)
-  if (!result) return console.error('No schemas')
-  console.log(result.map(r => r.id).join('\n'))
+  const schemas = await client.getSchemas()
+  if (!schemas) return console.error('No schemas')
+  console.log(Object.keys(schemas).join('\n'))
 }
 
 function collectJson () {

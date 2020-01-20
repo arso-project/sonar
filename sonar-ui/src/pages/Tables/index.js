@@ -24,7 +24,7 @@ async function loadSchemas () {
 }
 
 async function loadRecords ({ schema }) {
-  return client.query({ schema })
+  return client.query('records', { schema })
 }
 
 const useGlobalState = makeGlobalStateHook('tables')
