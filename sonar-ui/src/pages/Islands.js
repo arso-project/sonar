@@ -90,30 +90,45 @@ export default function IslandPage (props) {
                     />
                 </Flex>
             </Flex>
-                <Flex
-                  direction='row'
-                  justify='space-between'
+            <Flex direction='row'
+                justify='space-between'
                 >
-                  <Box>Key:</Box>
-                  <Key k={island.key} mr='4' />
-                </Flex>
-                <Flex
-                  direction='row'
-                  justify='space-between'
-                >
-                  <Box>Local key:</Box>
-                  <Key k={island.localKey} mr='4' />
-                </Flex>
-            { getNetworkInfo(island.key) && (
               <Flex
-              direction='row'
-              justify='space-between'
+                direction='row'
+                justify='space-between'
               >
-              <Box>Peers:</Box>
-              <Box>{getNetworkInfo(island.key).peers}</Box>
+                <Box>Key:</Box>
+                <Key k={island.key} mr='4' />
               </Flex>
-            )
+              <Flex
+                direction='row'
+                justify='space-between'
+              >
+                <Box>Local key:</Box>
+                <Key k={island.localKey} mr='4' />
+              </Flex>
+            </Flex>
+            <Flex direction='row'
+                justify='space-between'
+                >
+              <Flex
+                direction='row'
+                justify='space-between'
+              >
+                <Box>Local drive:</Box>
+                <Key k={island.localDrive} mr='4' />
+              </Flex>
+              { getNetworkInfo(island.key) && (
+                  <Flex
+                    direction='row'
+                    justify='space-between'
+                    >
+                    <Box>Peers:</Box>
+                    <Box>{getNetworkInfo(island.key).peers}</Box>
+                  </Flex>
+                )
             }
+                </Flex>
               </Flex>
             </PseudoBox>
           ))}
