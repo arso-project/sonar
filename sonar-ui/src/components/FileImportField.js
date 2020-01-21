@@ -8,6 +8,7 @@ import {
   FormLabel,
   Stack,
   Heading,
+  Tooltip,
   Progress,
   FormErrorMessage,
   FormHelperText,
@@ -46,14 +47,16 @@ function FileListItem(props) {
   return (
     <ListItem>
       <Flex>
-        {findIcon()}
-        <Box flex='1'>{name}</Box>
-        {resource && (
+        <Box flex='1'> {findIcon()}{name}</Box>
+          {resource &&(
           <Box>
-            {resource.id && resource.id}
-            {resource.error && <Text color='red.400'>{resource.error}</Text>}
-          </Box>
-        )}
+            {resource.id && <Badge color='green.400'>{resource.id}</Badge>}
+            {resource.error && 
+            <Tooltip hasArrow label={resource.error} placement="top" bg="red.600">
+<Badge color='red.400'>Error</Badge>
+</Tooltip>}
+          </Box>)}
+      
       </Flex>
     </ListItem>
   )
@@ -73,7 +76,6 @@ function ImportProgress(props) {
 
 function FileProgress(props) {
   const { label, total, transfered, detail } = props
-  console.log('file progress render', props)
   return (
     <Box>
       <Heading fontSize='lg'>{label}</Heading>
@@ -96,8 +98,6 @@ export default function FileImportField(props) {
   const [isLoading, setIsLoading] = useState(false)
   const [progress, setProgress] = useState({})
 
-  console.log('render main', { files, uploads, resources, progress })
-
   const showImportButton = !!Object.values(resources).length
   return (
     <Box borderWidth='2px' m={4} p={4} rounded="lg">
@@ -119,6 +119,7 @@ export default function FileImportField(props) {
           const { name } = file
           const upload = uploads[name]
           const resource = resources[name]
+          console.log('resource', resource)
           return <FileListItem key={name} name={name} upload={upload} resource={resource} />
         })}
       </List>
@@ -158,14 +159,16 @@ export default function FileImportField(props) {
         prefix: 'upload'
       })
         .then(
-          resource => (results[file.name] = { resource }),
+          resource => (results[file.name] =  resource ),
           error => (results[file.name] = { error: error.message })
         )
       promises.push(promise)
     })
     try {
       await Promise.all(promises)
-    } catch (err) { }
+      
+    } catch (err) {}
+    console.log('RESULTS', results)
     setResources(results)
     setIsLoading(false)
   }
@@ -178,29 +181,26 @@ export default function FileImportField(props) {
     for (const file of Object.values(files)) {
       total = total + file.fileitem.size
     }
-    console.log('TOTAL:', total)
     let transfered = 0
     let step = 1
     for (const file of Object.values(files)) {
       const { name, fileitem } = file
       const { size } = fileitem
-      const result = resources[name]
+      const resource= resources[name]
+      console.log("RESULT IN ONIMPORTFILES", resource)
 
-      if (!result || !result.resource) continue
+      if (!resource || !resource.id) continue
 
       let fileTransfered = 0
 
       setUploads(state => ({ ...state, [name]: { isUploading: true } }))
-
-      const fileStream = filereaderStream(fileitem)
-      console.log('stream', fileStream)
 
       const updater = setInterval(() => {
         setProgress({ transfered, fileTransfered, total, fileTotal: size, name, totalSteps, step })
       }, 200)
 
       try {
-        const res = await client.writeResourceFile(result.resource, fileitem, {
+        const res = await client.writeResourceFile(resource, fileitem, {
           onUploadProgress(event) {
             const { loaded } = event
             fileTransfered = loaded
