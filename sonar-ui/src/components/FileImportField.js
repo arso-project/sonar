@@ -1,73 +1,241 @@
-import React, {useState} from 'react'
+import React, { useState } from 'react'
+import filereaderStream from 'filereader-stream'
+import { Transform } from 'stream'
+import pretty from 'pretty-bytes'
 import {
   Input,
   FormControl,
   FormLabel,
+  Stack,
+  Heading,
+  Progress,
   FormErrorMessage,
   FormHelperText,
+  Text,
   Button,
   Box,
   List,
   ListItem,
-  ListIcon
+  ListIcon,
+  Flex,
+  Badge
 } from '@chakra-ui/core'
 
 import client from '../lib/client'
-import { MetaItems } from './MetaItem'
 
-export default function FileImportField (props) {
-    const [files, setFiles] = useState([])
-    return (
-        <Box>
-        <FormControl m={3} p={2}>
-        <FormLabel htmlFor="fileimport">Import file</FormLabel>
-        <Input 
-            id = 'fileimport' 
-            multiple 
-            type = 'file' 
-            aria-describedby="helper-text"
-            onChange = {
-                event => {
-                    let filearr = []
-                    const fileList = event.target.files
-                    for (let i = 0; i < fileList.length; i++){
-                        filearr.push(fileList.item(i))   
-                    }
-                    setFiles(
-                        [...files,...filearr].reduce((x, y) => x.findIndex(e=>e.name==y.name)<0 ? [...x, y]: x, [])
-                    )
-                    console.log(files)      
-            }
-        }
+import {
+  FaFileUpload
+} from 'react-icons/fa'
+import {
+  MdError, MdCheck
+} from 'react-icons/md'
+
+function FileListItem(props) {
+  const { name, resource, upload } = props
+
+  function findIcon() {
+    if (!resource) return <ListIcon icon={FaFileUpload} />
+    if (resource.error) return <ListIcon icon={MdError} color='red.400' />
+    if (!upload) return <ListIcon icon={MdCheck} color='green.400' />
+    if (upload.isUploading) return <ListIcon icon={FaFileUpload} color='blue.400' />
+    if (upload.error) return <ListIcon icon={MdError} color='red.400' />
+    if (upload.uploaded) return <ListIcon icon={FaFileUpload} color='green.400' />
+    return null
+  }
+
+  return (
+    <ListItem>
+      <Flex>
+        {findIcon()}
+        <Box flex='1'>{name}</Box>
+        {resource && (
+          <Box>
+            {resource.id && resource.id}
+            {resource.error && <Text color='red.400'>{resource.error}</Text>}
+          </Box>
+        )}
+      </Flex>
+    </ListItem>
+  )
+}
+
+function ImportProgress(props) {
+  const { total = 0, transfered = 0, fileTotal = 0, fileTransfered = 0, name, step = 0, totalSteps = 0 } = props.progress
+
+  return (
+    <Box>
+      Step {step} of {totalSteps}
+      <FileProgress label='Total' total={total} transfered={transfered} />
+      <FileProgress label='Current' total={fileTotal} transfered={fileTransfered} detail={name} />
+    </Box>
+  )
+}
+
+function FileProgress(props) {
+  const { label, total, transfered, detail } = props
+  console.log('file progress render', props)
+  return (
+    <Box>
+      <Heading fontSize='lg'>{label}</Heading>
+      {detail && <em>{detail}</em>}
+      <Flex>
+        <Progress flex='1' value={total > 0 && (transfered / total) * 100} hasStripe />
+        
+      </Flex>
+      <Badge variant="outline" variantColor="green">
+    {pretty(transfered)} / {pretty(total)} 
+  </Badge>
+    </Box>
+  )
+}
+
+export default function FileImportField(props) {
+  const [files, setFiles] = useState({})
+  const [uploads, setUploads] = useState({})
+  const [resources, setResources] = useState({})
+  const [isLoading, setIsLoading] = useState(false)
+  const [progress, setProgress] = useState({})
+
+  console.log('render main', { files, uploads, resources, progress })
+
+  const showImportButton = !!Object.values(resources).length
+  return (
+    <Box borderWidth='2px' m={4} p={4} rounded="lg">
+      <FormControl m={3} p={2}>
+        <FormLabel htmlFor='fileimport'>Import files</FormLabel>
+        <Input
+          id='fileimport'
+          multiple
+          type='file'
+          aria-describedby='helper-text'
+          onChange={onInputChange}
         />
-        <FormHelperText id="email-helper-text">
-    chose files to import
+        <FormHelperText id='helper-text'>
+          choose files to import
         </FormHelperText>
-        </FormControl>
-    <h2>Files to import:</h2>
-        <List m={3} p={2}>
-      {files.map(function (file, index) {
-        return (<ListItem key = {index}><ListIcon icon="check-circle" color="green.500" />{file.name}</ListItem>)
-      })}
-    </List>
+      </FormControl>
+      <List m={3} p={2}>
+        {Object.values(files).map(function (file, index) {
+          const { name } = file
+          const upload = uploads[name]
+          const resource = resources[name]
+          return <FileListItem key={name} name={name} upload={upload} resource={resource} />
+        })}
+      </List>
 
-        <Button variantColor="green" onClick={
-            event => {
-                event.preventDefault()
-                files.forEach(file => importFile ({
-                    filename: file.name,
-                    prefix: 'upload'
-                }))
-            }
-        }>create Resource</Button>
-        </Box>
-    )
+      <Flex>
+        <Button  m={2}variantColor='green' onClick={onCreateResources} isLoading={isLoading}>
+          Create resources
+        </Button>
+        {showImportButton && (
+          <Button m={2} variantColor='green' onClick={onImportFiles} isLoading={isLoading}>
+            import files
+          </Button>
+        )}
+      </Flex>
+      <ImportProgress progress={progress} />
+    </Box>
+  )
+
+  function onInputChange(event) {
+    const fileList = event.target.files
+    const files = {}
+    for (let i = 0; i < fileList.length; i++) {
+      const fileitem = fileList.item(i)
+      const { name } = fileitem
+      files[name] = { fileitem, name }
+    }
+    setFiles(files)
+  }
+
+  async function onCreateResources(event) {
+    setIsLoading(true)
+    const promises = []
+    const results = {}
+    Object.values(files).forEach(file => {
+      const promise = createResource({
+        filename: file.name,
+        prefix: 'upload'
+      })
+        .then(
+          resource => (results[file.name] = { resource }),
+          error => (results[file.name] = { error: error.message })
+        )
+      promises.push(promise)
+    })
+    try {
+      await Promise.all(promises)
+    } catch (err) { }
+    setResources(results)
+    setIsLoading(false)
+  }
+
+  async function onImportFiles() {
+    setIsLoading(true)
+
+    const totalSteps = Object.values(files).length
+    let total = 0
+    for (const file of Object.values(files)) {
+      total = total + file.fileitem.size
+    }
+    console.log('TOTAL:', total)
+    let transfered = 0
+    let step = 1
+    for (const file of Object.values(files)) {
+      const { name, fileitem } = file
+      const { size } = fileitem
+      const result = resources[name]
+
+      if (!result || !result.resource) continue
+
+      let fileTransfered = 0
+
+      setUploads(state => ({ ...state, [name]: { isUploading: true } }))
+
+      const fileStream = filereaderStream(fileitem)
+      console.log('stream', fileStream)
+
+      const updater = setInterval(() => {
+        setProgress({ transfered, fileTransfered, total, fileTotal: size, name, totalSteps, step })
+      }, 200)
+
+      try {
+        const res = await client.writeResourceFile(result.resource, fileitem, {
+          onUploadProgress(event) {
+            const { loaded } = event
+            fileTransfered = loaded
+          }
+          
+        })
+        console.log('import done', file.name, res)
+      } catch (err) {
+        console.log('import failed', file.name, err)
+      }
+      transfered = transfered + fileTransfered
+      setUploads(state => ({ ...state, [name]: { isUploading: false, uploaded: true } }))
+      setProgress({ transfered, fileTransfered, total, fileTotal: size, name, totalSteps, step })
+      step = step + 1
+
+      clearInterval(updater)
+    }
+
+    setIsLoading(false)
+  }
+
+  async function onDebugClick() {
+    const file = files[0]
+    if (!file) return
+    console.log('file', file)
+    const stream = filereaderStream(file)
+    console.log('stream', stream)
+    const res = await client.writeFile('sid/foo', stream)
+    console.log('uploaded', res)
+  }
 }
 
-async function importFile (props) {
-    const {filename, prefix} = props
-    console.log(prefix + '/' + filename)
-    const id = await client.createResource({filename, prefix})
-    console.log(id)
-
+async function createResource(props) {
+  const { filename, prefix } = props
+  const resource = await client.createResource({ filename, prefix })
+  return resource
 }
+

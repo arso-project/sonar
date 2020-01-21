@@ -82,8 +82,10 @@ function cleanStat (stat, opts = {}) {
   // TODO: Here we assume all metadata entries are strings.
   // TODO: Filter metadata.
   const metadata = {}
-  for (const [key, value] of Object.entries(stat.metadata)) {
-    metadata[key] = value.toString()
+  if (stat.metadata) {
+    for (const [key, value] of Object.entries(stat.metadata)) {
+      metadata[key] = value.toString()
+    }
   }
   return {
     ...stat,
