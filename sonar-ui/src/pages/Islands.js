@@ -133,8 +133,7 @@ export default function IslandPage (props) {
   }
 
   function handleShareSwitch (checked, island) {
-    // TODO: Change sharing for island
-    console.log(checked)
+    client.change({ 'share': checked }, island.key)
   }
 }
 

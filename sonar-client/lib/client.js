@@ -203,6 +203,15 @@ module.exports = class SonarClient {
     })
   }
 
+  async change (config, key) {
+    key = key || this.island
+    return this._request({
+      method: 'PATCH',
+      path: [key],
+      data: config
+    })
+  }
+
   async getDrives () {
     return this._request({
       method: 'GET',
