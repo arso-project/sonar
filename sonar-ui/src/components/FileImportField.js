@@ -1,7 +1,8 @@
 import React, { useState } from 'react'
 import filereaderStream from 'filereader-stream'
-import { Transform } from 'stream'
 import pretty from 'pretty-bytes'
+import mime from 'mime-types'
+
 import {
   Input,
   FormControl,
@@ -19,7 +20,9 @@ import {
   ListItem,
   ListIcon,
   Flex,
-  Badge
+  Grid,
+  Badge,
+  Spinner
 } from '@chakra-ui/core'
 
 import client from '../lib/client'
@@ -38,9 +41,9 @@ function FileListItem(props) {
     if (!resource) return <ListIcon icon={FaFileUpload} />
     if (resource.error) return <ListIcon icon={MdError} color='red.400' />
     if (!upload) return <ListIcon icon={MdCheck} color='green.400' />
-    if (upload.isUploading) return <ListIcon icon={FaFileUpload} color='blue.400' />
+    if (upload.isUploading) return <Spinner></Spinner>
     if (upload.error) return <ListIcon icon={MdError} color='red.400' />
-    if (upload.uploaded) return <ListIcon icon={FaFileUpload} color='green.400' />
+    if (upload.uploaded) return <ListIcon icon="check-circle" color='green.400' />
     return null
   }
 
@@ -50,6 +53,7 @@ function FileListItem(props) {
         <Box flex='1'> {findIcon()}{name}</Box>
         {resource && (
           <Box>
+            
             {resource.id && <Badge color='green.400'>{resource.id}</Badge>}
             {resource.error &&
               <Tooltip hasArrow label={resource.error} placement="top" bg="red.600">
@@ -91,7 +95,7 @@ function FileProgress(props) {
   )
 }
 
-export default function FileImportField(props) {
+export default function FileImporter(props) {
   const [files, setFiles] = useState({})
   const [uploads, setUploads] = useState({})
   const [resources, setResources] = useState({})
@@ -107,9 +111,11 @@ export default function FileImportField(props) {
           id='fileimport'
           multiple
           type='file'
+          file
           onChange={onInputChange}
         />
       </FormControl>
+     
       <List m={3} p={2}>
         {Object.values(files).map(function (file, index) {
           const { name } = file
@@ -151,7 +157,10 @@ export default function FileImportField(props) {
     Object.values(files).forEach(file => {
       const promise = createResource({
         filename: file.name,
-        prefix: 'upload'
+        prefix: 'upload',
+        encodingFormat: mime.lookup(file.name),
+        contentSize: file.fileitem.size,
+        label: file.name
       })
         .then(
           resource => (results[file.name] = resource),
@@ -161,7 +170,6 @@ export default function FileImportField(props) {
     })
     try {
       await Promise.all(promises)
-
     } catch (err) { }
     setResources(results)
     setIsLoading(false)
@@ -172,9 +180,15 @@ export default function FileImportField(props) {
 
     const totalSteps = Object.values(files).length
     let total = 0
-    console.log(files, resources)
     for (const file of Object.values(files)) {
-      total = total + file.fileitem.size
+      const resource = resources[file.name]
+      if (uploads){
+        console.log(uploads)
+      }
+      
+      if (!resource.error ) {
+        total = total + file.fileitem.size
+      }
     }
     let transfered = 0
     let step = 1
@@ -183,7 +197,7 @@ export default function FileImportField(props) {
       const { size } = fileitem
       const resource = resources[name]
 
-      if (!resource || !resource.id) continue
+      if (!resource || !resource.id || uploads[file.name]) continue
 
       let fileTransfered = 0
 
@@ -212,24 +226,13 @@ export default function FileImportField(props) {
 
       clearInterval(updater)
     }
-
     setIsLoading(false)
-  }
-
-  async function onDebugClick() {
-    const file = files[0]
-    if (!file) return
-    console.log('file', file)
-    const stream = filereaderStream(file)
-    console.log('stream', stream)
-    const res = await client.writeFile('sid/foo', stream)
-    console.log('uploaded', res)
   }
 }
 
-async function createResource(props) {
-  const { filename, prefix } = props
-  const resource = await client.createResource({ filename, prefix })
+async function createResource(props, opts) {
+  const { filename, prefix, contentSize, encodingFormat, label } = props
+  const resource = await client.createResource({ filename, prefix, contentSize, encodingFormat, label }, opts)
   return resource
 }
 
