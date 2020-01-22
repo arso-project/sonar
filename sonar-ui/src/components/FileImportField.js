@@ -48,15 +48,15 @@ function FileListItem(props) {
     <ListItem>
       <Flex>
         <Box flex='1'> {findIcon()}{name}</Box>
-          {resource &&(
+        {resource && (
           <Box>
             {resource.id && <Badge color='green.400'>{resource.id}</Badge>}
-            {resource.error && 
-            <Tooltip hasArrow label={resource.error} placement="top" bg="red.600">
-<Badge color='red.400'>Error</Badge>
-</Tooltip>}
+            {resource.error &&
+              <Tooltip hasArrow label={resource.error} placement="top" bg="red.600">
+                <Badge color='red.400'>Error</Badge>
+              </Tooltip>}
           </Box>)}
-      
+
       </Flex>
     </ListItem>
   )
@@ -82,11 +82,11 @@ function FileProgress(props) {
       {detail && <em>{detail}</em>}
       <Flex>
         <Progress flex='1' value={total > 0 && (transfered / total) * 100} hasStripe />
-        
+
       </Flex>
       <Badge variant="outline" variantColor="green">
-    {pretty(transfered)} / {pretty(total)} 
-  </Badge>
+        {pretty(transfered)} / {pretty(total)}
+      </Badge>
     </Box>
   )
 }
@@ -101,31 +101,26 @@ export default function FileImportField(props) {
   const showImportButton = !!Object.values(resources).length
   return (
     <Box borderWidth='2px' m={4} p={4} rounded="lg">
+      <h2>File Importer</h2>
       <FormControl m={3} p={2}>
-        <FormLabel htmlFor='fileimport'>Import files</FormLabel>
         <Input
           id='fileimport'
           multiple
           type='file'
-          aria-describedby='helper-text'
           onChange={onInputChange}
         />
-        <FormHelperText id='helper-text'>
-          choose files to import
-        </FormHelperText>
       </FormControl>
       <List m={3} p={2}>
         {Object.values(files).map(function (file, index) {
           const { name } = file
           const upload = uploads[name]
           const resource = resources[name]
-          console.log('resource', resource)
           return <FileListItem key={name} name={name} upload={upload} resource={resource} />
         })}
       </List>
 
       <Flex>
-        <Button  m={2}variantColor='green' onClick={onCreateResources} isLoading={isLoading}>
+        <Button m={2} variantColor='green' onClick={onCreateResources} isLoading={isLoading}>
           Create resources
         </Button>
         {showImportButton && (
@@ -159,16 +154,15 @@ export default function FileImportField(props) {
         prefix: 'upload'
       })
         .then(
-          resource => (results[file.name] =  resource ),
+          resource => (results[file.name] = resource),
           error => (results[file.name] = { error: error.message })
         )
       promises.push(promise)
     })
     try {
       await Promise.all(promises)
-      
-    } catch (err) {}
-    console.log('RESULTS', results)
+
+    } catch (err) { }
     setResources(results)
     setIsLoading(false)
   }
@@ -178,6 +172,7 @@ export default function FileImportField(props) {
 
     const totalSteps = Object.values(files).length
     let total = 0
+    console.log(files, resources)
     for (const file of Object.values(files)) {
       total = total + file.fileitem.size
     }
@@ -186,8 +181,7 @@ export default function FileImportField(props) {
     for (const file of Object.values(files)) {
       const { name, fileitem } = file
       const { size } = fileitem
-      const resource= resources[name]
-      console.log("RESULT IN ONIMPORTFILES", resource)
+      const resource = resources[name]
 
       if (!resource || !resource.id) continue
 
@@ -205,7 +199,7 @@ export default function FileImportField(props) {
             const { loaded } = event
             fileTransfered = loaded
           }
-          
+
         })
         console.log('import done', file.name, res)
       } catch (err) {
