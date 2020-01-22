@@ -148,7 +148,7 @@ export default function FileImporter(props) {
           </Button>}
       </Flex>
       <ImportProgress progress={progress} />
-      { final && <PseudoBox>{showImportMessage()}</PseudoBox> }
+      { final && <PseudoBox>{toast(showImportMessage())}</PseudoBox> }
     </Box>
   )
   function onClear() {
@@ -167,13 +167,13 @@ export default function FileImporter(props) {
       status = "warning"
       title = "Ouhhhh"
     }
-    return toast({
+    return {
       title: title,
       description: numImportedFiles + " files imported",
       status: status,
       duration: 9000,
       isClosable: true
-    })
+    }
   }
 
   function onInputChange(event) {
