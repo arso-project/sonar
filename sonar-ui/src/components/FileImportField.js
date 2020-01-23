@@ -1,9 +1,8 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import filereaderStream from 'filereader-stream'
 import pretty from 'pretty-bytes'
 import mime from 'mime-types'
-import { useClipboard, useNumberInput, PseudoBox } from "@chakra-ui/core";
-
+import { useClipboard, useDisclosure, useNumberInput, PseudoBox } from "@chakra-ui/core";
 import {
   Input,
   FormControl,
@@ -21,15 +20,33 @@ import {
   Button,
   Box,
   List,
+  Link,
   ListItem,
   ListIcon,
   Flex,
   Grid,
   Badge,
-  Spinner
+  Spinner,
+  Drawer,
+  DrawerBody,
+  DrawerCloseButton,
+  DrawerContent, 
+  DrawerFooter,
+  DrawerHeader,DrawerOverlay,
+  IconButton
 } from '@chakra-ui/core'
-
+import {
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalFooter,
+  ModalBody,
+  ModalCloseButton,
+} from "@chakra-ui/core";
+import { RecordGroup } from '../components/Record'
 import client from '../lib/client'
+import { useParams } from 'react-router-dom'
 
 import {
   FaFileUpload
@@ -41,8 +58,7 @@ import {
 function FileListItem(props) {
   const { name, resource, upload } = props
   const keyRegex = /[aA-zZ0-9]{26}/
-
-
+  
   function findIcon() {
     if (!resource) return <ListIcon icon={FaFileUpload} />
     if (resource.error) return <ListIcon icon={MdError} color='red.400' />
@@ -59,18 +75,24 @@ function FileListItem(props) {
         <Box flex='1'> {findIcon()}{name}</Box>
         {resource && (
           <Box>
-
-            {resource.id && <Badge color='green.400'>{resource.id}</Badge>}
+            {resource.id &&
+              <Badge color='green.400'>{resource.id}</Badge>
+              
+                        }
+            <GetData resource={resource}></GetData>
             {resource.error &&
               <Tooltip hasArrow label={resource.error} placement="top" bg="orange.400">
                 <Badge color='orange.400'>{resource.error.match(keyRegex) || "Error"}</Badge>
               </Tooltip>}
+              
           </Box>)}
-
+            
       </Flex>
     </ListItem>
   )
 }
+
+
 
 function ImportProgress(props) {
   const { total = 0, transfered = 0, fileTotal = 0, fileTransfered = 0, name, step = 0, totalSteps = 0 } = props.progress
@@ -82,6 +104,37 @@ function ImportProgress(props) {
       <FileProgress label='Current' total={fileTotal} transfered={fileTransfered} detail={name} />
     </Box>
   )
+}
+function GetData (props) {
+  const { isOpen, onOpen, onClose } = useDisclosure();
+
+    const {id} = props.resource
+    let data = {}
+    data = useRecordData(id)
+    if (!data) return <em>Loading</em>
+    const { records, schemas } = data
+    return <>
+    <IconButton onClick={onOpen} key={'xl'}aria-label="Show record" icon="edit" />
+
+    <Modal isOpen={isOpen} onClose={onClose}>
+      <ModalOverlay />
+      <ModalContent>
+<ModalHeader>{id}</ModalHeader>
+        <ModalCloseButton />
+        <ModalBody>
+        <RecordGroup records={records} schemas={schemas} />
+        </ModalBody>
+
+        <ModalFooter>
+          <Button variantColor="blue" mr={3} onClick={onClose}>
+            Close
+          </Button>
+        </ModalFooter>
+      </ModalContent>
+    </Modal>
+  </>
+    
+    
 }
 
 function FileProgress(props) {
@@ -148,7 +201,10 @@ export default function FileImporter(props) {
           </Button>}
       </Flex>
       <ImportProgress progress={progress} />
-      { final && <PseudoBox>{toast(showImportMessage())}</PseudoBox> }
+      {final && <PseudoBox>{toast(showImportMessage())}</PseudoBox>}
+      
+
+  }
     </Box>
   )
   function onClear() {
@@ -187,7 +243,7 @@ export default function FileImporter(props) {
       const { name } = fileitem
       files[name] = { fileitem, name }
     }
-    
+
     setFiles(files)
   }
 
@@ -220,12 +276,12 @@ export default function FileImporter(props) {
   async function onImportFiles() {
     setIsLoading(true)
 
-    let totalSteps = 1
+    let totalSteps = 0
     let total = 0
     for (const file of Object.values(files)) {
       const resource = resources[file.name]
-      totalSteps++
       if (!resource.error) {
+        totalSteps++
         total = total + file.fileitem.size
       }
     }
@@ -265,10 +321,10 @@ export default function FileImporter(props) {
 
       clearInterval(updater)
     }
-    
+
     setIsLoading(false)
     setFinal(true)
-    
+
   }
 }
 
@@ -276,5 +332,33 @@ async function createResource(props, opts) {
   const { filename, prefix, contentSize, encodingFormat, label } = props
   const resource = await client.createResource({ filename, prefix, contentSize, encodingFormat, label }, opts)
   return resource
+}
+
+// TODO: relocate fetchRecordData useRecorddata
+async function fetchRecordData (id) {
+  const records = await client.get({ id })
+  const schemaNames = new Set(records.map(r => r.schema))
+  const schemas = {}
+  await Promise.all([...schemaNames].map(async name => {
+    const schema = await client.getSchema(name)
+    console.log('SCHEMA',schema)
+    schemas[name] = schema
+  }))
+  return { records, schemas }
+}
+
+function useRecordData (id) {
+  console.log(id)
+  const [data, setData] = useState(null)
+
+    let mounted = true
+    fetchRecordData(id)
+      .then(({ records, schemas }) => {
+        if (!mounted) return
+        setData({ records, schemas })
+      })
+      .catch(error => console.log(error))
+  console.log('DAT',data)
+  return data
 }
 
