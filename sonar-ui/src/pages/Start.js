@@ -1,6 +1,6 @@
 import React from 'react'
 import config from '../lib/config'
-import FileImportField from '../components/FileImportField'
+import FileImporter from '../components/FileImporter'
 
 import { Redirect } from 'react-router-dom'
 
@@ -12,7 +12,7 @@ export default function StartPage (props) {
 
   return (
     <div className='sonar-start'>
-      <FileImportField/>
+      <FileImporter/>
     </div>
   )
 }

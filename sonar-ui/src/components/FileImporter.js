@@ -202,9 +202,6 @@ export default function FileImporter(props) {
       </Flex>
       <ImportProgress progress={progress} />
       {final && <PseudoBox>{toast(showImportMessage())}</PseudoBox>}
-      
-
-  }
     </Box>
   )
   function onClear() {
