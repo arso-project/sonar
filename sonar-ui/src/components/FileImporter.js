@@ -1,45 +1,25 @@
 import React, { useState, useEffect } from 'react'
-import filereaderStream from 'filereader-stream'
 import pretty from 'pretty-bytes'
 import mime from 'mime-types'
-import { useClipboard, useDisclosure, useNumberInput, PseudoBox } from "@chakra-ui/core";
+import { PseudoBox } from "@chakra-ui/core";
 import {
   Input,
   FormControl,
-  FormLabel,
-  Stack,
   useToast,
   Heading,
-  AlertIcon,
-  Alert,
   Tooltip,
   Progress,
-  FormErrorMessage,
-  FormHelperText,
-  Text,
   Button,
   Box,
   List,
-  Link,
   ListItem,
   ListIcon,
   Flex,
-  Grid,
   Badge,
   Spinner,
- 
-  IconButton,
-  Modal,
-  ModalOverlay,
-  ModalContent,
-  ModalHeader,
-  ModalFooter,
-  ModalBody,
-  ModalCloseButton,
 } from "@chakra-ui/core";
-import { RecordGroup, RecordDrawerByID } from '../components/Record'
+import {  RecordDrawerByID } from '../components/Record'
 import client from '../lib/client'
-import { useRecordData } from '../hooks/use-data'
 
 import {
   FaFileUpload
