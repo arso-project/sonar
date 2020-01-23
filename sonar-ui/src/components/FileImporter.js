@@ -27,15 +27,8 @@ import {
   Grid,
   Badge,
   Spinner,
-  Drawer,
-  DrawerBody,
-  DrawerCloseButton,
-  DrawerContent, 
-  DrawerFooter,
-  DrawerHeader,DrawerOverlay,
-  IconButton
-} from '@chakra-ui/core'
-import {
+ 
+  IconButton,
   Modal,
   ModalOverlay,
   ModalContent,
@@ -44,9 +37,9 @@ import {
   ModalBody,
   ModalCloseButton,
 } from "@chakra-ui/core";
-import { RecordGroup } from '../components/Record'
+import { RecordGroup, RecordDrawerByID } from '../components/Record'
 import client from '../lib/client'
-import { useParams } from 'react-router-dom'
+import { useRecordData } from '../hooks/use-data'
 
 import {
   FaFileUpload
@@ -76,10 +69,8 @@ function FileListItem(props) {
         {resource && (
           <Box>
             {resource.id &&
-              <Badge color='green.400'>{resource.id}</Badge>
-              
-                        }
-            <GetData resource={resource}></GetData>
+              <RecordDrawerByID id={resource.id}/>
+                        }   
             {resource.error &&
               <Tooltip hasArrow label={resource.error} placement="top" bg="orange.400">
                 <Badge color='orange.400'>{resource.error.match(keyRegex) || "Error"}</Badge>
@@ -105,38 +96,6 @@ function ImportProgress(props) {
     </Box>
   )
 }
-function GetData (props) {
-  const { isOpen, onOpen, onClose } = useDisclosure();
-
-    const {id} = props.resource
-    let data = {}
-    data = useRecordData(id)
-    if (!data) return <em>Loading</em>
-    const { records, schemas } = data
-    return <>
-    <IconButton onClick={onOpen} key={'xl'}aria-label="Show record" icon="edit" />
-
-    <Modal isOpen={isOpen} onClose={onClose}>
-      <ModalOverlay />
-      <ModalContent>
-<ModalHeader>{id}</ModalHeader>
-        <ModalCloseButton />
-        <ModalBody>
-        <RecordGroup records={records} schemas={schemas} />
-        </ModalBody>
-
-        <ModalFooter>
-          <Button variantColor="blue" mr={3} onClick={onClose}>
-            Close
-          </Button>
-        </ModalFooter>
-      </ModalContent>
-    </Modal>
-  </>
-    
-    
-}
-
 function FileProgress(props) {
   const { label, total, transfered, detail } = props
   return (
@@ -332,30 +291,5 @@ async function createResource(props, opts) {
 }
 
 // TODO: relocate fetchRecordData useRecorddata
-async function fetchRecordData (id) {
-  const records = await client.get({ id })
-  const schemaNames = new Set(records.map(r => r.schema))
-  const schemas = {}
-  await Promise.all([...schemaNames].map(async name => {
-    const schema = await client.getSchema(name)
-    console.log('SCHEMA',schema)
-    schemas[name] = schema
-  }))
-  return { records, schemas }
-}
 
-function useRecordData (id) {
-  console.log(id)
-  const [data, setData] = useState(null)
-
-    let mounted = true
-    fetchRecordData(id)
-      .then(({ records, schemas }) => {
-        if (!mounted) return
-        setData({ records, schemas })
-      })
-      .catch(error => console.log(error))
-  console.log('DAT',data)
-  return data
-}
 

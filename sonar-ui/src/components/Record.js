@@ -1,10 +1,10 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { format, formatRelative } from 'date-fns'
 import JsonTree from 'react-json-tree'
 import { Link } from 'react-router-dom'
 
 import { MetaItem, MetaItems } from '../components/MetaItem'
-
+import client from '../lib/client'
 import {
   Box,
   Select,
@@ -20,13 +20,20 @@ import {
   MenuItem,
   MenuGroup,
   MenuDivider,
+  useDisclosure,
   MenuOptionGroup,
-  MenuItemOption
+  MenuItemOption,
+  Drawer,
+  DrawerBody,
+  DrawerCloseButton,
+  DrawerContent,
+  DrawerFooter,
+  DrawerHeader, DrawerOverlay,
 } from '@chakra-ui/core'
 
 // import './Record.css'
 
-export function findWidget (fieldSchema) {
+export function findWidget(fieldSchema) {
   const { type, format } = fieldSchema
   if (type === 'string' && format === 'date-time') return DateViewer
   if (type === 'string' || type === 'integer' || type === 'number') return TextViewer
@@ -36,7 +43,7 @@ export function findWidget (fieldSchema) {
   return () => <em>No viewer available for {type}</em>
 }
 
-function getDisplays () {
+function getDisplays() {
   return [
     { id: 'fields', name: 'Fields', component: RecordFieldDisplay },
     { id: 'json', name: 'JSON', component: RecordJsonDisplay },
@@ -45,7 +52,7 @@ function getDisplays () {
   ]
 }
 
-export function RecordLink (props) {
+export function RecordLink(props) {
   let { record, schema, children } = props
   const { id } = record
   children = children || (
@@ -56,12 +63,12 @@ export function RecordLink (props) {
       {children}
     </Link>
   )
-  function recordPath (id) {
+  function recordPath(id) {
     return '/record/' + id
   }
 }
 
-export function RecordGroup (props) {
+export function RecordGroup(props) {
   const { records, schemas } = props
   if (!records) return null
   return (
@@ -73,7 +80,7 @@ export function RecordGroup (props) {
   )
 }
 
-function DisplayMenu (props) {
+function DisplayMenu(props) {
   const { displays, onChange, value } = props
   const active = displays.find(d => d.id === value)
   return (
@@ -92,9 +99,8 @@ function DisplayMenu (props) {
   )
 }
 
-export function Record (props) {
+export function Record(props) {
   const { record, schema } = props
-
   const [displayId, setDisplay] = useState('fields')
   const displays = getDisplays()
   const display = displays.find(d => d.id === displayId)
@@ -112,14 +118,14 @@ export function Record (props) {
   )
 }
 
-export function RecordLabelDisplay (props) {
+export function RecordLabelDisplay(props) {
   const { record } = props
   return (
     <span>{record.value.title || record.id}</span>
   )
 }
 
-export function RecordJsonDisplay (props) {
+export function RecordJsonDisplay(props) {
   const { record } = props
   return (
     <JsonTree
@@ -132,7 +138,7 @@ export function RecordJsonDisplay (props) {
   )
 }
 
-export function RecordRawDisplay (props) {
+export function RecordRawDisplay(props) {
   const { record } = props
   return (
     <Box fontFamily='mono' whiteSpace='pre-wrap'>
@@ -141,7 +147,7 @@ export function RecordRawDisplay (props) {
   )
 }
 
-export function RecordFieldDisplay (props) {
+export function RecordFieldDisplay(props) {
   const { record, schema } = props
 
   if (!schema) return <NoSchemaError record={record} message='Schema not found' />
@@ -159,7 +165,46 @@ export function RecordFieldDisplay (props) {
   )
 }
 
-function ObjectViewer (props) {
+export function RecordDrawerByID(props) {
+  const { isOpen, onOpen, onClose } = useDisclosure();
+  const btnRef = React.useRef();
+  const { id } = props
+  const data = useRecordData(id)
+  if (!data) return <em>Loading</em>
+  const { records, schemas } = data
+  return (<>
+    <Button ml={3} leftIcon="view" variantColor="teal" size="xs"  ref={btnRef} onClick={onOpen}>
+      {id}
+    </Button>
+    <Drawer
+      isOpen={isOpen}
+      placement="right"
+      size="lg"
+      onClose={onClose}
+      finalFocusRef={btnRef}
+    >
+      <DrawerOverlay />
+      <DrawerContent>
+        <DrawerCloseButton />
+        <DrawerHeader>{id}</DrawerHeader>
+
+        <DrawerBody>
+          <RecordGroup records={records} schemas={schemas} ></RecordGroup>
+        </DrawerBody>
+
+        <DrawerFooter>
+          <Button variant="outline" mr={3} onClick={onClose}>
+            Cancel
+            </Button>
+        </DrawerFooter>
+      </DrawerContent>
+    </Drawer>
+  </>
+  )
+}
+
+
+function ObjectViewer(props) {
   const { value, fieldSchema } = props
   if (!value) return 'no object'
   return (
@@ -174,7 +219,7 @@ function ObjectViewer (props) {
   )
 }
 
-function FieldViewer (props) {
+function FieldViewer(props) {
   const { fieldSchema, fieldName, value } = props
   const Viewer = findWidget(fieldSchema)
   return (
@@ -187,7 +232,7 @@ function FieldViewer (props) {
   )
 }
 
-function ArrayViewer (props) {
+function ArrayViewer(props) {
   const { value, fieldSchema } = props
   if (!value) return <InvalidValueError value={value} fieldSchema={fieldSchema} />
   if (!Array.isArray(value)) return <InvalidValueError value={value} fieldSchena={fieldSchema} message='Not an array' />
@@ -203,18 +248,18 @@ function ArrayViewer (props) {
   )
 }
 
-function TextViewer (props) {
+function TextViewer(props) {
   const { value } = props
   if (typeof value === 'undefined') return null
   return String(value)
 }
 
-function BooleanViewer (props) {
+function BooleanViewer(props) {
   const { value } = props
   return value ? 'true' : 'false'
 }
 
-function DateViewer (props) {
+function DateViewer(props) {
   const { value } = props
   if (!value) return <InvalidValueError />
   const date = new Date(value)
@@ -225,7 +270,7 @@ function DateViewer (props) {
   )
 }
 
-function RecordMeta (props) {
+function RecordMeta(props) {
   const { record, schema } = props
   const { id, key, timestamp, schema: schemaName } = record
   return (
@@ -238,7 +283,7 @@ function RecordMeta (props) {
   )
 }
 
-function NoSchemaError (props) {
+function NoSchemaError(props) {
   const { record } = props
   const { id, schema, message } = record
   return (
@@ -248,7 +293,7 @@ function NoSchemaError (props) {
   )
 }
 
-function InvalidValueError (props) {
+function InvalidValueError(props) {
   const { fieldSchema, value } = props
   return (
     <div>
@@ -257,17 +302,45 @@ function InvalidValueError (props) {
   )
 }
 
-function formatDate (ts) {
+function formatDate(ts) {
   const date = new Date(ts)
   return formatRelative(date, Date.now())
 }
 
 // TODO: This is likely too hacky. Propably we'll want
 // a full component with a tooltip for details.
-function formatSchema (schemaName) {
+function formatSchema(schemaName) {
   return schemaName.split('/').slice(1).join('/')
 }
 
-function formatSource (source) {
+function formatSource(source) {
   return source.substring(0, 6)
+}
+
+async function fetchRecordData(id) {
+  const records = await client.get({ id })
+  const schemaNames = new Set(records.map(r => r.schema))
+  const schemas = {}
+  await Promise.all([...schemaNames].map(async name => {
+    const schema = await client.getSchema(name)
+    schemas[name] = schema
+  }))
+  return { records, schemas }
+}
+
+function useRecordData(id) {
+  const [data, setData] = useState(null)
+
+  useEffect(() => {
+    let mounted = true
+    fetchRecordData(id)
+      .then(({ records, schemas }) => {
+        if (!mounted) return
+        setData({ records, schemas })
+      })
+      .catch(error => console.log(error))
+    return () => (mounted = false)
+  }, [id])
+
+  return data
 }
