@@ -29,7 +29,8 @@
     "pretty-bytes": "^5.3.0",
     "simple-rpc-protocol": "^0.2.3",
     "speedometer": "^1.1.0",
-    "websocket-stream": "^5.5.0"
+    "websocket-stream": "^5.5.0",
+    "yargs": "^15.1.0"
   },
   "devDependencies": {
     "trace-console-log": "^1.0.0"
