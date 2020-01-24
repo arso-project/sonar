@@ -24,6 +24,11 @@ exports.builder = function (yargs) {
       handler: readfile
     })
     .command({
+      command: 'read-id <id>',
+      describe: 'read id to stdout',
+      handler: readid
+    })
+    .command({
       command: 'write <path>',
       describe: 'write file from stdin',
       handler: writefile
@@ -64,6 +69,11 @@ exports.builder = function (yargs) {
           alias: 'u',
           boolean: true,
           describe: 'overwrite if existing and update resource'
+        },
+        recursive: {
+          alias: 'r',
+          boolean: true,
+          describe: 'import directories (recursively)'
         }
       }
     })
@@ -89,6 +99,17 @@ async function ls (argv) {
   console.log(res)
 }
 
+async function readid (argv) {
+  const client = makeClient(argv)
+  const id = argv.id
+  console.error('reading ' + id)
+  const res = await client.get({ id, schema: 'sonar/resource' })
+  if (!res.length) throw new Error('id not found')
+  if (res.length > 1) return console.error('warn: multiple files found. reading first')
+  const rs = await client.readResourceFile(res[0])
+  rs.pipe(process.stdout)
+}
+
 async function readfile (argv) {
   const client = makeClient(argv)
   const path = argv.path
@@ -110,17 +131,26 @@ async function importfile (argv) {
   const writable = await client.isWritable()
   if (!writable) throw new Error('island is not writable')
 
-  const stat = await pify(fs.stat, path)
+  return _importfile({ client, path, opts: argv })
+}
 
-  let filename = p.basename(path)
-  const opts = {
-    force: argv.force,
-    update: argv.update,
-    prefix: argv.prefix,
-    scoped: argv.scoped
+async function _importfile ({ client, path, opts }) {
+  // const opts = {
+  //   force: argv.force,
+  //   update: argv.update,
+  //   prefix: argv.prefix,
+  //   scoped: argv.scoped,
+  //   recursive: argv.recursive
+  // }
+  const stat = await pify(fs.stat, path)
+  if (stat.isDirectory()) {
+    if (opts.recursive) return _importfolder({ client, path, stat, opts })
+    else throw new Error('path is a folder and recursive is not set')
   }
+  let filename = p.basename(path)
   const record = await client.createResource({
     filename,
+    prefix: opts.prefix,
     encodingFormat: mime.lookup(filename),
     contentSize: stat.size
   }, opts)
@@ -131,6 +161,25 @@ async function importfile (argv) {
   reportProgress(readStream, { msg: 'Uploading', total: stat.size })
   await client.writeResourceFile(record, readStream)
   console.log('ok')
+}
+
+async function _importfolder ({ client, path, opts }) {
+  const stat = await pify(fs.stat, path)
+  if (!stat.isDirectory()) throw new Error('not a directory')
+  const filenames = await pify(fs.readdir, path)
+  let prefix = p.basename(path)
+  if (opts.prefix) prefix = p.join(opts.prefix, prefix)
+  for (const filename of filenames) {
+    const filepath = p.join(path, filename)
+    console.log('importing: ' + filepath)
+    try {
+      await _importfile({ client, path: filepath, opts: { ...opts, prefix } })
+      console.log('ok')
+    } catch (e) {
+      console.error(e.message)
+    }
+  }
+  console.log(prefix)
 }
 
 function reportProgress (stream, { total, msg, bytes = true, interval = 1000 }) {
