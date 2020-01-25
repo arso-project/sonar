@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react'
 import pretty from 'pretty-bytes'
 import mime from 'mime-types'
-import { PseudoBox } from "@chakra-ui/core";
 import {
+  PseudoBox,
   Input,
   FormControl,
   useToast,
@@ -16,9 +16,10 @@ import {
   ListIcon,
   Flex,
   Badge,
-  Spinner,
-} from "@chakra-ui/core";
-import {  RecordDrawerByID } from '../components/Record'
+  Spinner
+} from '@chakra-ui/core'
+
+import { RecordDrawerByID } from '../components/Record'
 import client from '../lib/client'
 
 import {
@@ -28,17 +29,43 @@ import {
   MdError, MdCheck
 } from 'react-icons/md'
 
-function FileListItem(props) {
+function FileInput (props) {
+  const { onInputChange } = props
+  return (<><h2>File Importer</h2>
+    <FormControl m={3} p={2}>
+      <Input
+        id='fileimport'
+        multiple
+        type='file'
+        onChange={onInputChange}
+      />
+    </FormControl>
+  </>)
+}
+
+function FileList (props) {
+  const { files, resources, uploads } = props
+  return (<List m={3} p={2}>
+    {Object.values(files).map(function (file, index) {
+      const { name } = file
+      const upload = uploads[name]
+      const resource = resources[name]
+      return <FileListItem key={name} name={name} upload={upload} resource={resource} />
+    })}
+          </List>)
+}
+
+function FileListItem (props) {
   const { name, resource, upload } = props
   const keyRegex = /[aA-zZ0-9]{26}/
-  
-  function findIcon() {
+
+  function findIcon () {
     if (!resource) return <ListIcon icon={FaFileUpload} />
     if (resource.error) return <ListIcon icon={MdError} color='red.400' />
     if (!upload) return <ListIcon icon={MdCheck} color='green.400' />
-    if (upload.isUploading) return <Spinner></Spinner>
+    if (upload.isUploading) return <Spinner />
     if (upload.error) return <ListIcon icon={MdError} color='red.400' />
-    if (upload.uploaded) return <ListIcon icon="check-circle" color='green.400' />
+    if (upload.uploaded) return <ListIcon icon='check-circle' color='green.400' />
     return null
   }
 
@@ -49,25 +76,19 @@ function FileListItem(props) {
         {resource && (
           <Box>
             {resource.id &&
-              <RecordDrawerByID id={resource.id}/>
-                        }   
+              <RecordDrawerByID id={resource.id} />}
             {resource.error &&
-              <Tooltip hasArrow label={resource.error} placement="top" bg="orange.400">
-                <Badge color='orange.400'>{resource.error.match(keyRegex) || "Error"}</Badge>
+              <Tooltip hasArrow label={resource.error} placement='top' bg='orange.400'>
+                <Badge color='orange.400'>{resource.error.match(keyRegex) || 'Error'}</Badge>
               </Tooltip>}
-              
           </Box>)}
-            
       </Flex>
     </ListItem>
   )
 }
 
-
-
-function ImportProgress(props) {
+function ImportProgress (props) {
   const { total = 0, transfered = 0, fileTotal = 0, fileTransfered = 0, name, step = 0, totalSteps = 0 } = props.progress
-
   return (
     <Box>
       Step {step} of {totalSteps}
@@ -76,7 +97,8 @@ function ImportProgress(props) {
     </Box>
   )
 }
-function FileProgress(props) {
+
+function FileProgress (props) {
   const { label, total, transfered, detail } = props
   return (
     <Box>
@@ -86,15 +108,14 @@ function FileProgress(props) {
         <Progress flex='1' value={total > 0 && (transfered / total) * 100} hasStripe />
 
       </Flex>
-      <Badge variant="outline" variantColor="green">
+      <Badge variant='outline' variantColor='green'>
         {pretty(transfered)} / {pretty(total)}
       </Badge>
     </Box>
   )
 }
 
-
-export default function FileImporter(props) {
+export default function FileImporter (props) {
   const [files, setFiles] = useState({})
   const [uploads, setUploads] = useState({})
   const [resources, setResources] = useState({})
@@ -103,29 +124,13 @@ export default function FileImporter(props) {
   const [final, setFinal] = useState(false)
   const toast = useToast()
   const showImportButton = !!Object.values(resources).length
-  let showClearButton = final
-  let buttonDisabled = final
+  const showClearButton = final
+  const buttonDisabled = final
+  if (final) toast(showImportMessage())
   return (
-    <Box borderWidth='2px' m={4} p={4} rounded="lg">
-      <h2>File Importer</h2>
-      <FormControl m={3} p={2}>
-        <Input
-          id='fileimport'
-          multiple
-          type='file'
-          onChange={onInputChange}
-        />
-      </FormControl>
-
-      <List m={3} p={2}>
-        {Object.values(files).map(function (file, index) {
-          const { name } = file
-          const upload = uploads[name]
-          const resource = resources[name]
-          return <FileListItem key={name} name={name} upload={upload} resource={resource} />
-        })}
-      </List>
-
+    <Box borderWidth='2px' m={4} p={4} rounded='lg'>
+      <FileInput onInputChange={onInputChange} />
+      <FileList files={files} uploads={uploads} resources={resources} />
       <Flex>
         <Button m={2} variantColor='green' isDisabled={buttonDisabled} onClick={onCreateResources} isLoading={isLoading}>
           Create resources
@@ -137,38 +142,36 @@ export default function FileImporter(props) {
         )}
         {showClearButton && <Button m={2} variantColor='green' onClick={onClear} isLoading={isLoading}>
           clear
-          </Button>}
+                            </Button>}
       </Flex>
       <ImportProgress progress={progress} />
-      {final && <PseudoBox>{toast(showImportMessage())}</PseudoBox>}
     </Box>
   )
-  function onClear() {
+  function onClear () {
     setFiles({})
     setFinal(false)
     setResources({})
     setUploads({})
     setProgress({})
-
   }
-  function showImportMessage() {
-    let status = "success"
-    let title = "Yeahhh"
+  function showImportMessage () {
+    let status = 'success'
+    let title = 'Yeahhh'
     const numImportedFiles = Object.values(uploads).length
     if (numImportedFiles < 1) {
-      status = "warning"
-      title = "Ouhhhh"
+      status = 'warning'
+      title = 'Ouhhhh'
     }
     return {
       title: title,
-      description: numImportedFiles + " files imported",
+      description: numImportedFiles + ' files imported',
       status: status,
       duration: 9000,
       isClosable: true
     }
   }
 
-  function onInputChange(event) {
+  function onInputChange (event) {
     if (final) {
       onClear()
     }
@@ -183,7 +186,7 @@ export default function FileImporter(props) {
     setFiles(files)
   }
 
-  async function onCreateResources(event) {
+  async function onCreateResources (event) {
     setIsLoading(true)
     const promises = []
     const results = {}
@@ -209,7 +212,7 @@ export default function FileImporter(props) {
     setIsLoading(false)
   }
 
-  async function onImportFiles() {
+  async function onImportFiles () {
     setIsLoading(true)
 
     let totalSteps = 0
@@ -240,7 +243,7 @@ export default function FileImporter(props) {
 
       try {
         const res = await client.writeResourceFile(resource, fileitem, {
-          onUploadProgress(event) {
+          onUploadProgress (event) {
             const { loaded } = event
             fileTransfered = loaded
           }
@@ -260,16 +263,11 @@ export default function FileImporter(props) {
 
     setIsLoading(false)
     setFinal(true)
-
   }
 }
 
-async function createResource(props, opts) {
+async function createResource (props, opts) {
   const { filename, prefix, contentSize, encodingFormat, label } = props
   const resource = await client.createResource({ filename, prefix, contentSize, encodingFormat, label }, opts)
   return resource
 }
-
-// TODO: relocate fetchRecordData useRecorddata
-
-

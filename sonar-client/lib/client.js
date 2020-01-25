@@ -271,6 +271,11 @@ module.exports = class SonarClient {
     return this.endpoint + '/' + path
   }
 
+  fileUrl (url) {
+    const path = url.replace("dat://", "")
+    return this.endpoint + '/' + this.island +'/fs/'+ path
+  }
+
   async _request (opts) {
     const axiosOpts = {
       method: opts.method || 'GET',
