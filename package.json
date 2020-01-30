@@ -18,6 +18,7 @@
   "private": true,
   "devDependencies": {
     "lerna": "^3.16.5",
+    "standard": "^14.3.1",
     "tap-spec": "^5.0.0",
     "tape": "^4.12.1",
     "tape-plus": "^1.0.0"
