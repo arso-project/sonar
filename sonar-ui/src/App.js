@@ -4,11 +4,14 @@ import { hot } from 'react-hot-loader/root'
 
 import Sidebar from './components/Sidebar'
 import MobileNav from './components/MobileNav'
-import Status from './components/Status'
+// import Status from './components/Status'
 import Routes from './Routes'
 
 import theme from './theme'
 import CSSReset from './components/CSSReset'
+
+// This sets default props on some chakra components.
+import './components/chakra'
 
 import {
   ThemeProvider,
@@ -17,7 +20,7 @@ import {
   Flex,
   Heading,
   IconButton,
-  Text,
+  // Text,
   useColorMode
 } from '@chakra-ui/core'
 
