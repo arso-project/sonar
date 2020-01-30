@@ -26,6 +26,11 @@ exports.builder = function (yargs) {
       describe: 'add a source to the island',
       handler: addSource
     })
+    .command({
+      command: 'debug',
+      describe: 'get debug information',
+      handler: debug
+    })
 }
 
 async function create (argv) {
@@ -58,4 +63,10 @@ async function list (argv) {
     ].join('\n')
   }).join('\n\n')
   console.log(output)
+}
+
+async function debug (argv) {
+  const client = makeClient(argv)
+  const result = await client._request({ path: [argv.island, 'debug'] })
+  console.log(result)
 }
