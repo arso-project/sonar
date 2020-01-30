@@ -2,7 +2,9 @@ const argv = require('webpack-nano/argv')
 const p = require('path')
 const HtmlWebpackPlugin = require('html-webpack-plugin')
 const { WebpackPluginServe } = require('webpack-plugin-serve')
+const HtmlWebpackInlineSourcePlugin = require('html-webpack-inline-source-plugin')
 
+console.log(argv)
 const isDev = argv.watch || argv.serve || process.env.NODE_ENV === 'development'
 let output = 'dist'
 let ramdisk = false
@@ -63,10 +65,16 @@ const config = {
   plugins: [
     new HtmlWebpackPlugin({
       title: 'Sonar',
-      meta: { viewport: 'width=device-width, initial-scale=1, shrink-to-fit=no' }
+      meta: { viewport: 'width=device-width, initial-scale=1, shrink-to-fit=no' },
+      inlineSource: '.(js|css)$' // has only an effect with HtmlWebpackInlineSourcePlugin
       // template: './index.html'
-    })
+    }),
+    new HtmlWebpackInlineSourcePlugin()
   ]
+}
+
+if (argv.static) {
+  config.plugins.push(new HtmlWebpackInlineSourcePlugin())
 }
 
 if (process.env.WEBPACK_ANALYZE) {

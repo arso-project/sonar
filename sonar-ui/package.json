@@ -6,6 +6,7 @@
   "browser": "dist/bundle.js",
   "scripts": {
     "build": "wp",
+    "build:static": "wp --static",
     "start": "wp --serve",
     "test": "echo \"Error: no test specified\" && exit 0",
     "prepack": "npm run build"
@@ -23,6 +24,7 @@
     "emotion-theming": "^10.0.27",
     "express": "^4.17.1",
     "filereader-stream": "^2.0.0",
+    "html-webpack-inline-source-plugin": "^0.0.10",
     "http-proxy": "^1.18.0",
     "lodash": "^4.17.15",
     "open": "^7.0.0",
