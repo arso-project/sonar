@@ -91,9 +91,11 @@ module.exports = class SonarClient {
     if (record.schema !== SCHEMA_RESOURCE) throw new Error('record is not a resource')
     const fileUrl = this.parseHyperdriveUrl(record.value.contentUrl)
     if (!fileUrl) throw new Error('resource has invalid contentUrl')
-    const path = fileUrl.host + '/' + fileUrl.path
+    const path = fileUrl.host + fileUrl.path
     return this.writeFile(path, file, {
+      ...opts,
       metadata: {
+        ...(opts.metadata || {}),
         'sonar.id': record.id
       }
     })
@@ -239,12 +241,20 @@ module.exports = class SonarClient {
   async writeFile (path, file, opts) {
     if (!path || !path.length) throw new Error('path is required')
     if (path.startsWith('/')) path = path.substring(1)
+    
+    let onUploadProgress
+    if (opts.onUploadProgress) {
+      onUploadProgress = opts.onUploadProgress
+      delete opts.onUploadProgress
+    }
+    
     return this._request({
       path: [this.island, 'fs', path],
       data: file,
       params: opts,
       method: 'PUT',
-      binary: true
+      binary: true,
+      onUploadProgress
     })
   }
 
@@ -269,6 +279,11 @@ module.exports = class SonarClient {
     return this.endpoint + '/' + path
   }
 
+  fileUrl (url) {
+    const path = url.replace("dat://", "")
+    return this.endpoint + '/' + this.island +'/fs/'+ path
+  }
+
   async _request (opts) {
     const axiosOpts = {
       method: opts.method || 'GET',
@@ -282,7 +297,8 @@ module.exports = class SonarClient {
       // Content-Type header if data is empty...
       data: opts.data || {},
       responseType: opts.responseType,
-      params: opts.params
+      params: opts.params,
+      onUploadProgress: opts.onUploadProgress,
     }
     debug('request', axiosOpts)
 

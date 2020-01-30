@@ -1,27 +1,27 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { format, formatRelative } from 'date-fns'
 import JsonTree from 'react-json-tree'
 import { Link } from 'react-router-dom'
 
 import { MetaItem, MetaItems } from '../components/MetaItem'
-
+import client from '../lib/client'
 import {
   Box,
-  Select,
-  Flex,
   Button,
-  Textarea,
   List,
-  Input,
-  Heading,
   Menu,
   MenuButton,
   MenuList,
-  MenuItem,
-  MenuGroup,
-  MenuDivider,
+  useDisclosure,
   MenuOptionGroup,
-  MenuItemOption
+  MenuItemOption,
+  Drawer,
+  DrawerBody,
+  DrawerCloseButton,
+  DrawerContent,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerOverlay
 } from '@chakra-ui/core'
 
 // import './Record.css'
@@ -29,6 +29,7 @@ import {
 export function findWidget (fieldSchema) {
   const { type, format } = fieldSchema
   if (type === 'string' && format === 'date-time') return DateViewer
+  if (type === 'string' && format === 'uri') return LinkViewer
   if (type === 'string' || type === 'integer' || type === 'number') return TextViewer
   if (type === 'boolean') return BooleanViewer
   if (type === 'array') return ArrayViewer
@@ -94,7 +95,6 @@ function DisplayMenu (props) {
 
 export function Record (props) {
   const { record, schema } = props
-
   const [displayId, setDisplay] = useState('fields')
   const displays = getDisplays()
   const display = displays.find(d => d.id === displayId)
@@ -151,11 +151,61 @@ export function RecordFieldDisplay (props) {
     <Box>
       {Object.entries(schema.properties).map(([key, fieldSchema], i) => {
         if (typeof record.value[key] === 'undefined') return null
+        // TODO write a Media component and move it outside here :-P
+        if (key === 'encodingFormat' && record.value.fileUrl) {
+          if (record.value[key].match('audio' || 'video')) {
+            const fieldSchemaFileUrl = {type: "string" , format: "uri", title: "File URL"}
+            return (<>
+              <FieldViewer key={i} fieldSchema={fieldSchema} value={record.value[key]} fieldName={key} />
+              <FieldViewer fieldSchema={fieldSchemaFileUrl} value={record.value.fileUrl} fieldName={record.value.fileUrl} />
+              <audio src={record.value.fileUrl} controls>
+                Your browser does not support the <code>video</code> element.
+              </audio>
+            </>
+            )
+          }
+        }
         return (
           <FieldViewer key={i} fieldSchema={fieldSchema} value={record.value[key]} fieldName={key} />
         )
       })}
     </Box>
+  )
+}
+
+export function RecordDrawerByID (props) {
+  const { isOpen, onOpen, onClose } = useDisclosure()
+  const btnRef = React.useRef()
+  const { id } = props
+  const data = useRecordData(id)
+  if (!data) return <em>Loading</em>
+  const { records, schemas } = data
+  return (<>
+    <Button w='14rem' pl='3' leftIcon='view' justifyContent='left' variantColor='teal' size='xs' ref={btnRef} onClick={onOpen}>
+      {id}
+    </Button>
+    <Drawer
+      isOpen={isOpen}
+      placement='right'
+      size='lg'
+      onClose={onClose}
+      finalFocusRef={btnRef}
+    >
+      <DrawerOverlay />
+      <DrawerContent>
+        <DrawerCloseButton />
+        <DrawerHeader>{id}</DrawerHeader>
+        <DrawerBody>
+          <RecordGroup records={records} schemas={schemas} />
+        </DrawerBody>
+        <DrawerFooter>
+          <Button variant='outline' mr={3} onClick={onClose}>
+            Cancel
+          </Button>
+        </DrawerFooter>
+      </DrawerContent>
+    </Drawer>
+  </>
   )
 }
 
@@ -207,6 +257,12 @@ function TextViewer (props) {
   const { value } = props
   if (typeof value === 'undefined') return null
   return String(value)
+}
+
+function LinkViewer (props) {
+  const { value } = props
+  if (typeof value === 'undefined') return null
+  return <a href={String(value)}>{String(value)}</a>
 }
 
 function BooleanViewer (props) {
@@ -270,4 +326,51 @@ function formatSchema (schemaName) {
 
 function formatSource (source) {
   return source.substring(0, 6)
+}
+
+async function fetchRecordData (id) {
+  let records = await client.get({ id })
+  const schemaNames = new Set(records.map(r => r.schema))
+  const schemas = {}
+  records = await fetchFileUrls(records)
+  console.log(records)
+  await Promise.all([...schemaNames].map(async name => {
+    const schema = await client.getSchema(name)
+    schemas[name] = schema
+  }))
+  return { records, schemas }
+}
+// TODO: Move to Resource.js
+async function fetchFileUrls (records) {
+  const links = {}
+  await Promise.all(records.map(async r => {
+    if (r.value.contentUrl) {
+      const contentUrl = r.value.contentUrl
+      const httpLink = await client.fileUrl(contentUrl)
+      links[contentUrl] = httpLink
+    } else return records
+  }
+  )
+  )
+  records.map(r => {
+    r.value.fileUrl = links[r.value.contentUrl]
+  })
+  return records
+}
+
+function useRecordData (id) {
+  const [data, setData] = useState(null)
+
+  useEffect(() => {
+    let mounted = true
+    fetchRecordData(id)
+      .then(({ records, schemas }) => {
+        if (!mounted) return
+        setData({ records, schemas })
+      })
+      .catch(error => console.log(error))
+    return () => (mounted = false)
+  }, [id])
+
+  return data
 }

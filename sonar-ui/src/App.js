@@ -7,7 +7,7 @@ import MobileNav from './components/MobileNav'
 // import Status from './components/Status'
 import Routes from './Routes'
 
-import theme from './theme'
+import createTheme from './theme'
 import CSSReset from './components/CSSReset'
 
 // This sets default props on some chakra components.
@@ -36,15 +36,21 @@ export default hot(App)
 
 function Wrappers (props) {
   return (
-    <ThemeProvider theme={theme}>
-      <ColorModeProvider>
+    <ColorModeProvider>
+      <SonarThemeProvider>
         <CSSReset />
         <Router>
           {props.children}
         </Router>
-      </ColorModeProvider>
-    </ThemeProvider>
+      </SonarThemeProvider>
+    </ColorModeProvider>
   )
+}
+
+function SonarThemeProvider (props) {
+  const { colorMode } = useColorMode()
+  const theme = createTheme(colorMode)
+  return <ThemeProvider {...props} theme={theme} />
 }
 
 function Page (props) {
