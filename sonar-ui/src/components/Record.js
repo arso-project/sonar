@@ -154,8 +154,10 @@ export function RecordFieldDisplay (props) {
         // TODO write a Media component and move it outside here :-P
         if (key === 'encodingFormat' && record.value.fileUrl) {
           if (record.value[key].match('audio' || 'video')) {
+            const fieldSchemaFileUrl = {type: "string" , format: "uri", title: "File URL"}
             return (<>
               <FieldViewer key={i} fieldSchema={fieldSchema} value={record.value[key]} fieldName={key} />
+              <FieldViewer fieldSchema={fieldSchemaFileUrl} value={record.value.fileUrl} fieldName={record.value.fileUrl} />
               <audio src={record.value.fileUrl} controls>
                 Your browser does not support the <code>video</code> element.
               </audio>
@@ -179,7 +181,7 @@ export function RecordDrawerByID (props) {
   if (!data) return <em>Loading</em>
   const { records, schemas } = data
   return (<>
-    <Button ml={3} leftIcon='view' variantColor='teal' size='xs' ref={btnRef} onClick={onOpen}>
+    <Button w='14rem' pl='3' leftIcon='view' justifyContent='left' variantColor='teal' size='xs' ref={btnRef} onClick={onOpen}>
       {id}
     </Button>
     <Drawer

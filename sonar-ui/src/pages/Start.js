@@ -4,6 +4,7 @@ import FileImporter from '../components/FileImporter'
 
 import { Redirect } from 'react-router-dom'
 
+import { Box } from '@chakra-ui/core'
 
 export default function StartPage (props) {
   if (!config.get('endpoint')) {
@@ -11,9 +12,9 @@ export default function StartPage (props) {
   }
 
   return (
-    <div className='sonar-start'>
+    <Box flex='1'>
       <FileImporter/>
-    </div>
+    </Box>
   )
 }
 
