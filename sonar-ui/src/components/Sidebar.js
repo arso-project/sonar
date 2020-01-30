@@ -22,6 +22,7 @@ export function SidebarContent (props) {
           <Fragment>
             <MenuHeading>{island.substring(0, 6)}</MenuHeading>
             <NavLink to='/search'>Search</NavLink>
+            <NavLink to='/fileimport'>Import files</NavLink>
             <NavLink to='/filebrowser'>Filebrowser</NavLink>
             <NavLink to='/tables'>Tables</NavLink>
           </Fragment>

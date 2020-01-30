@@ -4,19 +4,16 @@ import FileImporter from '../components/FileImporter'
 
 import { Redirect } from 'react-router-dom'
 
-import { Box, Text } from '@chakra-ui/core'
+import { Box } from '@chakra-ui/core'
 
-export default function StartPage (props) {
+export default function FileImportPage (props) {
   if (!config.get('endpoint')) {
     return <Redirect to='/config' />
   }
 
   return (
     <Box flex='1'>
-      <Text color='teal.400' fontSize={['lg','2xl','4xl']} my='8' textAlign='center'>
-        Hello friend, welcome to Sonar!
-      </Text>
+      <FileImporter/>
     </Box>
   )
 }
-

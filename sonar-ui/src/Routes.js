@@ -9,6 +9,7 @@ import Filebrowser from './pages/Filebrowser'
 import RecordPage from './pages/Record'
 import TablesPage from './pages/Tables'
 import DebugPage from './pages/Debug'
+import FileImportPage from './pages/FileImport'
 
 export default function Pageroutes () {
   return (
@@ -18,6 +19,7 @@ export default function Pageroutes () {
       <Route path='/search'><Search /></Route>
       <Route path='/config'><Config /></Route>
       <Route path='/token/:token'><Config /></Route>
+      <Route path='/fileimport'><FileImportPage /></Route>
       <Route path='/filebrowser'><Filebrowser /></Route>
       <Route path='/record/:id'><RecordPage /></Route>
       <Route path='/tables'><TablesPage /></Route>
