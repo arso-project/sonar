@@ -147,6 +147,7 @@ export function RecordFieldDisplay (props) {
   if (!schema) return <NoSchemaError record={record} message='Schema not found' />
   if (!schema.properties) return <NoSchemaError record={record} message='Invalid schema' />
 
+  console.log('RecordFieldDisplay', { record, schema })
   return (
     <Box>
       {Object.entries(schema.properties).map(([key, fieldSchema], i) => {

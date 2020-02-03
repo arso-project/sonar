@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { Fragment } from 'react'
 import { HashRouter as Router } from 'react-router-dom'
 import { hot } from 'react-hot-loader/root'
 
@@ -20,9 +20,14 @@ import {
   Flex,
   Heading,
   IconButton,
+  Button,
   // Text,
-  useColorMode
+  useColorMode,
+  useDisclosure
 } from '@chakra-ui/core'
+
+import { FaRegListAlt } from 'react-icons/fa'
+import { LogModal } from './components/LogModal'
 
 function App (props) {
   return (
@@ -74,6 +79,26 @@ function Layout (props) {
   )
 }
 
+function LogButton (props) {
+  const { isOpen, onOpen, onClose } = useDisclosure()
+
+  return (
+    <Fragment>
+      <IconButton
+        aria-label={'Show log'}
+        variant='ghost'
+        color='current'
+        ml='2'
+        fontSize='md'
+        height='2rem'
+        onClick={onOpen}
+        icon={FaRegListAlt}
+      />
+      <LogModal isOpen={isOpen} onClose={onClose} />
+    </Fragment>
+  )
+}
+
 function Header (props) {
   const { colorMode, toggleColorMode } = useColorMode()
   const bg = { light: 'white', dark: 'gray.800' }
@@ -104,7 +129,7 @@ function Header (props) {
         </Heading>
 
         <Flex flex='1' />
-
+        <LogButton />
         <IconButton
           aria-label={`Switch to ${
             colorMode === 'light' ? 'dark' : 'light'

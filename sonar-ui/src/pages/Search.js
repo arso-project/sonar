@@ -1,12 +1,13 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import NavLink from '../components/NavLink'
 
 import makeGlobalStateHook from '../hooks/make-global-state-hook'
 
 import client from '../lib/client'
-import errors from '../lib/error'
+import log from '../lib/log'
 
+import Logger from '../components/Logger'
 import { RecordLabelDisplay } from '../components/Record'
 import { MetaItem, MetaItems } from '../components/MetaItem'
 
@@ -54,8 +55,10 @@ export default function SearchPage (props) {
 
 export function SearchInput (props) {
   const [search, setSearch] = useGlobalState('search', '')
+  const [error, setError] = useState(null)
   const [results, setResults] = useGlobalState('results', null)
   return (
+    <React.Fragment>
       <Input
         type='text'
         value={search}
@@ -64,6 +67,8 @@ export function SearchInput (props) {
         mb='4'
         {...props}
       />
+      { error && <Logger error={error} />}
+    </React.Fragment>
   )
 
   function onInputChange (e) {
@@ -71,7 +76,7 @@ export function SearchInput (props) {
     setSearch(search)
     client.search(search)
       .then(results => setResults(results))
-      .catch(error => errors.push(error))
+      .catch(error => setError(error))
   }
 }
 

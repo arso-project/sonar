@@ -11,7 +11,7 @@ import {
 } from '@chakra-ui/core'
 
 import client from '../lib/client'
-import errors from '../lib/error'
+import log from '../lib/log'
 
 import { RecordGroup } from '../components/Record'
 import { SearchResultList } from './Search'

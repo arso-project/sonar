@@ -19,7 +19,7 @@ import {
 } from '@chakra-ui/core'
 import { formData } from '../lib/form'
 import useAsync from '../hooks/use-async'
-import Error from '../components/Error'
+import Logger from '../components/Logger'
 import Loading from '../components/Loading'
 import Key from '../components/Key'
 import config from '../lib/config'
@@ -38,7 +38,7 @@ export default function IslandPage (props) {
   const { data: info, error, reload } = useAsync(loadInfo)
 
   if (!info && !error) return <Loading />
-  if (error) return <Error error={error} />
+  if (error) return <Logger error={error} />
 
   const { islands } = info
   const selectedIsland = config.get('island')

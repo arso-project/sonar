@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import client from '../../lib/client'
-import errors from '../../lib/error'
+import log from '../../lib/log'
 import { findWidget, RecordLink } from '../../components/Record'
 import makeGlobalStateHook from '../../hooks/make-global-state-hook'
 
@@ -38,7 +38,7 @@ export default function TablesPage (props) {
     if (!schemaname) return
     loadRecords({ schema: schemaname })
       .then(records => setRecords(records))
-      .catch(error => errors.push(error))
+      .catch(log => log.error(error))
   }, [schemaname])
 
   const rows = useMemo(() => buildRowsFromRecords(records), [records])
@@ -162,7 +162,7 @@ function SchemaSelect (props) {
   useEffect(() => {
     loadSchemas()
       .then(schemas => setSchemas(schemas))
-      .catch(err => errors.push(err) && setSchemas(null))
+      .catch(err => log.error(err) && setSchemas(null))
   }, [])
 
   if (schemas === null) return <Loading />

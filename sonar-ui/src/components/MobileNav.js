@@ -18,7 +18,8 @@ function MobileNav (props) {
       <IconButton
         display={{ sm: 'inline-flex', md: 'none' }}
         aria-label='Navigation Menu'
-        fontSize='20px'
+        fontSize='md'
+        height='2rem'
         variant='ghost'
         icon={MdDehaze}
         onClick={onToggle}
