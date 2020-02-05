@@ -1,9 +1,13 @@
 const p = require('path')
 const os = require('os')
 const crypto = require('hypercore-crypto')
+const sub = require('subleveldown')
+const mkdirp = require('mkdirp')
 const thunky = require('thunky')
+const leveldb = require('level')
 const debug = require('debug')('sonar-dat')
 const Corestore = require('corestore')
+const Catalog = require('@arso-project/sonar-tantivy')
 
 const Config = require('./config')
 const Network = require('./network')
@@ -14,17 +18,25 @@ const ISLAND_NAME_REGEX = /^[a-zA-Z0-9-_]{3,32}$/
 module.exports = class IslandStore {
   constructor (storage) {
     storage = storage || p.join(os.homedir(), '.sonar')
-    this.storagePath = p.resolve(storage)
+    this.paths = {
+      base: storage,
+      corestore: p.join(storage, 'corestore'),
+      level: p.join(storage, 'level'),
+      tantivy: p.join(storage, 'tantivy')
+    }
+
+    Object.values(this.paths).forEach(p => mkdirp.sync(p))
+
     this.network = new Network({
       announceLocalAddress: true
     })
 
-    const configPath = p.join(this.storagePath, 'config.json')
-    this.config = new Config(configPath)
+    this.config = new Config(p.join(this.paths.base, 'config.json'))
+    this.corestore = new Corestore(this.paths.corestore)
+    this.indexCatalog = new Catalog(this.paths.tantivy)
+    this.level = leveldb(this.paths.level)
 
-    this.corestore = new Corestore(p.join(this.storagePath, 'corestore'))
-
-    debug('islands storage path: ' + this.storagePath)
+    debug('storage location: ' + this.paths.base)
 
     this.islands = {}
     this.opened = false
@@ -208,13 +220,15 @@ module.exports = class IslandStore {
     key = hex(key)
     if (this.islands[key]) return this.islands[key]
 
-    const storagePath = p.join(this.storagePath, 'island', key)
+    // const storagePath = p.join(this.storagePath, 'island', key)
     const namespacedCorestore = this.corestore.namespace(key)
     const islandOpts = {
       ...opts,
-      corestore: namespacedCorestore
+      corestore: namespacedCorestore,
+      indexCatalog: this.indexCatalog,
+      level: sub(this.level, key)
     }
-    const island = new Island(storagePath, key, islandOpts)
+    const island = new Island(key, islandOpts)
 
     this.islands[key] = island
     // else island.ready(() => (this.islands[hex(island.key)] = island))

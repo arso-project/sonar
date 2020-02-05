@@ -1,7 +1,5 @@
 const leveldb = require('level')
-const mkdirp = require('mkdirp')
 const p = require('path')
-const crypto = require('hypercore-crypto')
 const thunky = require('thunky')
 const pretty = require('pretty-hash')
 const sub = require('subleveldown')
@@ -15,26 +13,18 @@ const Fs = require('./fs')
 const sonarView = require('./search/view-sonar')
 
 module.exports = class Island {
-  constructor (storage, key, opts) {
+  constructor (key, opts) {
     const self = this
-    const paths = {
-      level: p.join(storage, 'level'),
-      corestore: p.join(storage, 'corestore'),
-      tantivy: p.join(storage, 'tantivy')
-    }
+    const { level, corestore, indexCatalog } = opts
 
-    // TODO: Remove sync op?
-    Object.values(paths).forEach(p => mkdirp.sync(p))
+    debug('open island name %s alias %s key %s', opts.name, opts.alias, pretty(key))
 
-    const level = leveldb(paths.level)
-
+    this.corestore = corestore
+    this.indexCatalog = indexCatalog
     this._level = {
       db: sub(level, 'd'),
       fs: sub(level, 'f')
     }
-
-    this.corestore = opts.corestore
-    debug('open island name %s alias %s key %s', opts.name, opts.alias, pretty(key))
 
     this.db = new Database({
       key,
@@ -77,8 +67,6 @@ module.exports = class Island {
       }
     })
 
-    this.db.useRecordView('search', sonarView, { storage: paths.tantivy })
-
     if (opts.name) this.name = opts.name
 
     this.ready = thunky(this._ready.bind(this))
@@ -88,6 +76,14 @@ module.exports = class Island {
     this.db.ready(() => {
       this.key = this.db.key
       this.discoveryKey = this.db.discoveryKey
+
+      this.db.useRecordView('search',
+        sonarView,
+        {
+          indexCatalog: this.indexCatalog
+        }
+      )
+
       this.fs.ready(() => {
         debug('ready', this.db)
         cb()
