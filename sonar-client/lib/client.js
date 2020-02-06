@@ -203,7 +203,7 @@ module.exports = class SonarClient {
     })
   }
 
-  async change (config, key) {
+  async updateIsland (config, key) {
     key = key || this.island
     return this._request({
       method: 'PATCH',

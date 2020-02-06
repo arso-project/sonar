@@ -148,7 +148,7 @@ export default function IslandPage (props) {
   }
 
   function handleShareSwitch (checked, island) {
-    client.change({ 'share': checked }, island.key)
+    client.updateIsland({ 'share': checked }, island.key)
   }
 }
 
