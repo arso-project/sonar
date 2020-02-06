@@ -15,7 +15,8 @@ import {
   FormErrorMessage,
   FormHelperText,
   useColorMode,
-  useToast
+  useToast,
+  Collapse
 } from '@chakra-ui/core'
 import { formData } from '../lib/form'
 import useAsync from '../hooks/use-async'
@@ -36,6 +37,7 @@ async function loadInfo () {
 export default function IslandPage (props) {
   const { colorMode } = useColorMode()
   const { data: info, error, reload } = useAsync(loadInfo)
+  const [showMoreIslands, setShowMoreIslands] = useState({})
 
   if (!info && !error) return <Loading />
   if (error) return <Error error={error} />
@@ -43,6 +45,7 @@ export default function IslandPage (props) {
   const { islands, network } = info
   const selectedIsland = config.get('island')
   const selectedBg = { dark: 'gray.700', light: 'gray.100' }
+
 
   // let { } = useParams()
   // _hover={{ bg: 'gray.50' }}
@@ -89,46 +92,51 @@ export default function IslandPage (props) {
                       onChange={e => handleShareSwitch(e.target.checked, island)}
                     />
                 </Flex>
+                  <Button variantColor="blue" onClick={e => handleToggle(island.key)}>
+        Info
+      </Button>
             </Flex>
-            <Flex direction='row'
-                justify='space-between'
+                <Collapse isOpen={showMoreIslands[island.key]}>
+                <Flex direction='row'
+                  justify='space-between'
                 >
-              <Flex
-                direction='row'
-                justify='space-between'
-              >
-                <Box>Key:</Box>
-                <Key k={island.key} mr='4' />
-              </Flex>
-              <Flex
-                direction='row'
-                justify='space-between'
-              >
-                <Box>Local key:</Box>
-                <Key k={island.localKey} mr='4' />
-              </Flex>
-            </Flex>
-            <Flex direction='row'
-                justify='space-between'
-                >
-              <Flex
-                direction='row'
-                justify='space-between'
-              >
-                <Box>Local drive:</Box>
-                <Key k={island.localDrive} mr='4' />
-              </Flex>
-              { getNetworkInfo(island.key) && (
                   <Flex
                     direction='row'
                     justify='space-between'
-                    >
-                    <Box>Peers:</Box>
-                    <Box>{getNetworkInfo(island.key).peers}</Box>
+                  >
+                    <Box>Key:</Box>
+                    <Key k={island.key} mr='4' />
                   </Flex>
-                )
-            }
+                  <Flex
+                    direction='row'
+                    justify='space-between'
+                  >
+                    <Box>Local key:</Box>
+                    <Key k={island.localKey} mr='4' />
+                  </Flex>
                 </Flex>
+                <Flex direction='row'
+                  justify='space-between'
+                >
+                  <Flex
+                    direction='row'
+                    justify='space-between'
+                  >
+                    <Box>Local drive:</Box>
+                    <Key k={island.localDrive} mr='4' />
+                  </Flex>
+            { getNetworkInfo(island.key) && (
+              <Flex
+                direction='row'
+                justify='space-between'
+              >
+                <Box>Peers:</Box>
+                <Box>{getNetworkInfo(island.key).peers}</Box>
+              </Flex>
+            )
+                  }
+                </Flex>
+            </Collapse>
               </Flex>
             </PseudoBox>
           ))}
@@ -149,6 +157,25 @@ export default function IslandPage (props) {
 
   function handleShareSwitch (checked, island) {
     client.updateIsland({ 'share': checked }, island.key)
+  }
+
+  function handleToggle (key) {
+    if (showMoreIslands.hasOwnProperty(key)) {
+      showMoreIslands[key] = !showMoreIslands[key]
+    } else {
+      showMoreIslands[key] = true
+    }
+    setShowMoreIslands(showMoreIslands)
+    console.log(showMoreIslands)
+  }
+
+  function showIsland (key) {
+    if (showMoreIslands.hasOwnProperty(key) && showMoreIslands[key]) {
+      console.log('truuu dat')
+      return true
+    }
+
+    return false
   }
 }
 
