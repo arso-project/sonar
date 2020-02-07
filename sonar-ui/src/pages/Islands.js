@@ -102,46 +102,36 @@ export default function IslandPage (props) {
                   </Flex>
                 </Flex>
                 <Collapse isOpen={showMoreIslands[island.key]}>
-                <Flex direction='row'
-                  justify='space-between'
-                >
-                  <Flex
-                    direction='row'
-                    justify='space-between'
-                  >
-                    <Box>Key:</Box>
-                    <Key k={island.key} mr='4' />
+                  <Flex direction="column" borderBottomWidth='1px' py='2'>
+                    <Flex direction="row" justify="space-between">
+                    <Box flexShrink='0' width={['auto', '12rem']} color='teal.400'>Key:</Box>
+                      <Box flex='1' style={{ overflowWrap: 'anywhere' }}>
+                      <Key k={island.key} mr='4' />
+                      </Box>
+                    </Flex>
+                    <Flex direction="row" justify="space-between">
+                    <Box flexShrink='0' width={['auto', '12rem']} color='teal.400'>Local key:</Box>
+                    <Box flex='1' style={{ overflowWrap: 'anywhere' }}>
+                      <Key k={island.localKey} mr='4' />
+                    </Box>
+                    </Flex>
+                    <Flex direction="row" justify="space-between">
+                    <Box flexShrink='0' width={['auto', '12rem']} color='teal.400'>Local drive:</Box>
+                    <Box flex='1' style={{ overflowWrap: 'anywhere' }}>
+                                  <Key k={island.localDrive} mr='4' />
+                    </Box>
+                      </Flex>
+                    { getNetworkInfo(island.key) && (
+                    <Flex direction="row" justify="space-between">
+                        <Box flexShrink='0' width={['auto', '12rem']} color='teal.400'>Peers:</Box>
+                        <Box flex='1' style={{overflowWrap: 'anywhere'}}>
+                          {getNetworkInfo(island.key).peers}
+                        </Box>
+                      </Flex>
+                    )
+                    }
                   </Flex>
-                  <Flex
-                    direction='row'
-                    justify='space-between'
-                  >
-                    <Box>Local key:</Box>
-                    <Key k={island.localKey} mr='4' />
-                  </Flex>
-                </Flex>
-                <Flex direction='row'
-                  justify='space-between'
-                >
-                  <Flex
-                    direction='row'
-                    justify='space-between'
-                  >
-                    <Box>Local drive:</Box>
-                    <Key k={island.localDrive} mr='4' />
-                  </Flex>
-            { getNetworkInfo(island.key) && (
-              <Flex
-                direction='row'
-                justify='space-between'
-              >
-                <Box>Peers:</Box>
-                <Box>{getNetworkInfo(island.key).peers}</Box>
-              </Flex>
-            )
-                  }
-                </Flex>
-            </Collapse>
+                </Collapse>
               </Flex>
             </PseudoBox>
           ))}
