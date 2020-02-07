@@ -82,7 +82,7 @@ export default function IslandPage (props) {
                   >
                     {island.name}
                   </Link>
-                <Flex>
+                  <Flex>
                     <FormLabel p='0' mr='2' htmlFor={island.key + '-share'}>
                       Share:
                     </FormLabel>
@@ -92,15 +92,15 @@ export default function IslandPage (props) {
                       id={island.key + '-share'}
                       onChange={e => handleShareSwitch(e.target.checked, island)}
                     />
+                    <Button ml="10" variantColor="blue" onClick={e => handleToggle(island.key)}>
+                      Info
+                    <Icon
+                        name={showMoreIslands[island.key] ? 'chevron-down' : 'chevron-right'}
+                        size="24px"
+                      />
+                    </Button>
+                  </Flex>
                 </Flex>
-                  <Button variantColor="blue" onClick={e => handleToggle(island.key)}>
-                    Info
-                    <Icon 
-                      name={showMoreIslands[island.key] ? 'chevron-down' : 'chevron-right' }
-                      size="24px"
-                    />
-      </Button>
-            </Flex>
                 <Collapse isOpen={showMoreIslands[island.key]}>
                 <Flex direction='row'
                   justify='space-between'
