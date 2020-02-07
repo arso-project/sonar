@@ -92,7 +92,7 @@ export default function IslandPage (props) {
                       id={island.key + '-share'}
                       onChange={e => handleShareSwitch(e.target.checked, island)}
                     />
-                    <Button ml="10" variantColor="blue" onClick={e => handleToggle(island.key)}>
+                    <Button size="sm" ml="10" variantColor="blue" onClick={e => handleToggle(island.key)}>
                       Info
                     <Icon
                         name={showMoreIslands[island.key] ? 'chevron-down' : 'chevron-right'}
