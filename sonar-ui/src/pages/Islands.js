@@ -16,7 +16,8 @@ import {
   FormHelperText,
   useColorMode,
   useToast,
-  Collapse
+  Collapse,
+  Icon
 } from '@chakra-ui/core'
 import { formData } from '../lib/form'
 import useAsync from '../hooks/use-async'
@@ -93,7 +94,11 @@ export default function IslandPage (props) {
                     />
                 </Flex>
                   <Button variantColor="blue" onClick={e => handleToggle(island.key)}>
-        Info
+                    Info
+                    <Icon 
+                      name={showMoreIslands[island.key] ? 'chevron-down' : 'chevron-right' }
+                      size="24px"
+                    />
       </Button>
             </Flex>
                 <Collapse isOpen={showMoreIslands[island.key]}>
@@ -160,22 +165,13 @@ export default function IslandPage (props) {
   }
 
   function handleToggle (key) {
+    let newShowMoreIslands = {...showMoreIslands}
     if (showMoreIslands.hasOwnProperty(key)) {
-      showMoreIslands[key] = !showMoreIslands[key]
+      newShowMoreIslands[key] = !showMoreIslands[key]
     } else {
-      showMoreIslands[key] = true
+      newShowMoreIslands[key] = true
     }
-    setShowMoreIslands(showMoreIslands)
-    console.log(showMoreIslands)
-  }
-
-  function showIsland (key) {
-    if (showMoreIslands.hasOwnProperty(key) && showMoreIslands[key]) {
-      console.log('truuu dat')
-      return true
-    }
-
-    return false
+    setShowMoreIslands(newShowMoreIslands)
   }
 }
 
