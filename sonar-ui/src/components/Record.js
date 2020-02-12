@@ -152,20 +152,6 @@ export function RecordFieldDisplay (props) {
     <Box>
       {Object.entries(schema.properties).map(([key, fieldSchema], i) => {
         if (typeof record.value[key] === 'undefined') return null
-        // TODO write a Media component and move it outside here :-P
-        if (key === 'encodingFormat' && record.value.fileUrl) {
-          if (record.value[key].match('audio' || 'video')) {
-            const fieldSchemaFileUrl = {type: "string" , format: "uri", title: "File URL"}
-            return (<>
-              <FieldViewer key={i} fieldSchema={fieldSchema} value={record.value[key]} fieldName={key} />
-              <FieldViewer fieldSchema={fieldSchemaFileUrl} value={record.value.fileUrl} fieldName={record.value.fileUrl} />
-              <audio src={record.value.fileUrl} controls>
-                Your browser does not support the <code>video</code> element.
-              </audio>
-            </>
-            )
-          }
-        }
         return (
           <FieldViewer key={i} fieldSchema={fieldSchema} value={record.value[key]} fieldName={key} />
         )
