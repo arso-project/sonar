@@ -4,7 +4,6 @@ const HtmlWebpackPlugin = require('html-webpack-plugin')
 const { WebpackPluginServe } = require('webpack-plugin-serve')
 const HtmlWebpackInlineSourcePlugin = require('html-webpack-inline-source-plugin')
 
-console.log(argv)
 const isDev = argv.watch || argv.serve || process.env.NODE_ENV === 'development'
 let output = 'dist'
 let ramdisk = false
@@ -74,10 +73,11 @@ const config = {
 }
 
 if (argv.static) {
+  console.log('Building in static mode')
   config.plugins.push(new HtmlWebpackInlineSourcePlugin())
 }
 
-if (process.env.WEBPACK_ANALYZE) {
+if (argv.analyze || process.env.WEBPACK_ANALYZE) {
   const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer')
   config.plugins.push(new BundleAnalyzerPlugin())
 }

@@ -16,19 +16,26 @@ const command = {
   describe: 'ui',
   builder: yargs => {
     yargs
+      .demandCommand(1, '"sonar ui help" lists commands')
       .command({
         command: 'dev',
-        describe: 'start sonar ui (dev mode)',
+        describe: 'Start Sonar UI in dev mode (rebuilds on changes)',
         handler: dev
       })
       .command({
         command: 'build',
-        describe: 'build the ui',
-        handler: build
+        describe: 'Build the ui',
+        handler: build,
+        builder: {
+          static: {
+            boolean: true,
+            describe: 'Build a static HTML export'
+          }
+        }
       })
       .command({
-        command: 'serve',
-        describe: 'start sonar ui (dev mode)',
+        command: ['start', 'serve'],
+        describe: 'Serve Sonar UI over HTTP',
         builder: {
           port: {
             alias: 'p',
@@ -56,7 +63,7 @@ const command = {
 }
 
 const args = cli.command(command)
-if (require.main === module) args.demandCommand().argv
+if (require.main === module) args.demandCommand().parse()
 else module.exports = args
 
 function dev (argv) {
@@ -74,7 +81,9 @@ function dev (argv) {
 function build (argv) {
   console.log('Building UI')
   console.log('Webpack config: ' + WP_CONFIG)
-  const cmd = spawn('node', [WP_BIN, '--config', WP_CONFIG], {
+  const args = []
+  if (argv.static) args.push('--static')
+  const cmd = spawn('node', [WP_BIN, '--config', WP_CONFIG, args], {
     stdio: 'inherit',
     cwd: __dirname,
     env: process.env
