@@ -1,1 +1,2 @@
-sonar-server/bin.js
+#!/usr/bin/env node
+require('./sonar-server/bin.js').argv

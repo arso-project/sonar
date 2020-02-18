@@ -8,8 +8,8 @@
     "install": "lerna bootstrap",
     "bootstrap": "lerna bootstrap",
     "test": "tape */test/*.js | tap-spec",
-    "start": "./sonar start",
-    "dev": "DEBUG=* ./sonar start --dev"
+    "start": "node sonar start",
+    "dev": "node sonar start --dev"
   },
   "workspaces": [
     "*"
