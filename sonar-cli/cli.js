@@ -16,6 +16,21 @@ const args = yargs
   .command(require('./bin/island.js'))
   .command(require('./bin/search.js'))
   .command(require('./bin/status.js'))
+  .help()
+  // TODO: Yargs doesn't provide a clean way to alias the help command as the default command
+  // (if invoked without any args). The following default command is manual default command,
+  // and I cannot find a way to display the output of the help command in there. Weird yargs.
+  .command({
+    command: '$0',
+    async handler (argv) {
+      const msg = [
+        `Usage: sonar <command>`,
+        `The "help" command provides a list of commands.`
+      ].join('\n')
+      printLogo()
+      console.log(msg)
+    }
+  })
   .options({
     endpoint: {
       alias: 'e',
@@ -43,9 +58,7 @@ const args = yargs
   })
 
 if (require.main === module) {
-  args.demandCommand()
-    .help()
-    .argv
+  args.argv
 } else {
   module.exports = args
 }
