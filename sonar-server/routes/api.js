@@ -21,6 +21,8 @@ module.exports = function apiRoutes (api) {
   router.put('/_create/:name', deviceHandlers.createIsland)
 
   const islandRouter = express.Router()
+  // Change island config
+  islandRouter.patch('/', deviceHandlers.updateIsland)
   // Create command stream (websocket)
   islandRouter.ws('/commands', commandHandler)
 
@@ -70,6 +72,7 @@ module.exports = function apiRoutes (api) {
   // Load island if in path.
   router.use('/:island', function (req, res, next) {
     const { island } = req.params
+    res.locals.key = island;
     if (!island) return next()
     api.islands.get(island, (err, island) => {
       if (err) return next(err)
@@ -117,6 +120,13 @@ function createDeviceHandlers (islands) {
           key: island.key.toString('hex')
         })
       })
+    },
+    updateIsland (req, res, next) {
+      let config = {};
+      if (req.body.hasOwnProperty('share')) {
+        config = islands.updateIsland(res.locals.key, req.body) 
+      }
+      res.send(config)
     }
   }
 }
