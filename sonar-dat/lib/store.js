@@ -159,6 +159,17 @@ module.exports = class IslandStore {
     })
   }
 
+  updateIsland (key, config) {
+    let newConfig = {};
+    if (config.share) {
+      newConfig = this.share(key)
+    } else {
+      newConfig = this.unshare(key)
+    }
+    return newConfig
+
+  }
+
   close (cb) {
     for (const island of Object.values(this.islands)) {
       island.close()

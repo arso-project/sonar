@@ -22,7 +22,7 @@ module.exports = function apiRoutes (api) {
 
   const islandRouter = express.Router()
   // Change island config
-  islandRouter.patch('/', deviceHandlers.changeIsland)
+  islandRouter.patch('/', deviceHandlers.updateIsland)
   // Create command stream (websocket)
   islandRouter.ws('/commands', commandHandler)
 
@@ -119,14 +119,10 @@ function createDeviceHandlers (islands) {
         })
       })
     },
-    changeIsland (req, res, next) {
+    updateIsland (req, res, next) {
       let config = {};
       if (req.body.hasOwnProperty('share')) {
-        if (req.body.share) {
-          config = islands.share(res.locals.key) 
-        } else {
-          config = islands.unshare(res.locals.key) 
-        }
+        config = islands.updateIsland(res.locals.key, req.body) 
       }
       res.send(config)
     }
