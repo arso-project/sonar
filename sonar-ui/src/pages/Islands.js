@@ -102,7 +102,7 @@ export default function IslandPage (props) {
                   </Flex>
                 </Flex>
                 <Collapse isOpen={showMoreIslands[island.key]}>
-                  <Flex direction="column" borderBottomWidth='1px' py='2'>
+                  <Flex direction="column" py='2'>
                     <Flex direction="row" justify="space-between">
                     <Box flexShrink='0' width={['auto', '12rem']} color='teal.400'>Key:</Box>
                       <Box flex='1' style={{ overflowWrap: 'anywhere' }}>
