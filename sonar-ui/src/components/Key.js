@@ -17,10 +17,7 @@ export default function Key (props) {
   const [copyValue, setCopyValue] = useState(key)
   const { value, onCopy, hasCopied } = useClipboard(copyValue)
   // var ttColor
-  if (!hasCopied) {
-    return (copyClipboardTooltip())
-  }
-  return (copiedBadge())
+  return (hasCopied ? copiedBadge() : copyClipboardTooltip())
 
   // function copyToClipboard (str) {
   //   const el = document.createElement('textarea')
@@ -41,7 +38,7 @@ export default function Key (props) {
         label={
           <Flex direction='row' justify='space-between'>
             <Box flex='1'><Icon name='copy' /></Box>
-            <Box flex='5'><Text> Copy to clipboard</Text></Box>
+            <Box flex='5'><Text>Copy to clipboard</Text></Box>
           </Flex>
         }
       >
