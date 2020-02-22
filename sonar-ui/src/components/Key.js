@@ -1,7 +1,6 @@
 import React, { useState } from 'react'
 import {
-  Text,
-  Tooltip,
+  Button,
   Flex,
   Icon,
   Box,
@@ -9,64 +8,84 @@ import {
   Badge
 } from '@chakra-ui/core'
 
-// import './Key.css'
+function KeyButton (props) {
+  const { children, ...other } = props
+  return (
+    <Button
+      size='sm'
+      border='1px'
+      p='2'
+      pb='1'
+      my='1'
+      height='1.5rem'
+
+      cursor='copy'
+      rightIcon='copy'
+      fontFamily='mono'
+      fontWeight='semibold'
+      lineHeight='none'
+
+      rounded='2px'
+
+      bg='bg2'
+      borderColor='#ccd0d5'
+      color='text1'
+      _hover={{ bg: 'bg1' }}
+      _active={{ bg: 'bg1' }}
+      {...other}
+    >
+      {children}
+    </Button>
+  )
+}
 
 export default function Key (props) {
   const { k: key } = props
   const shortkey = formatKey(key)
-  const [copyValue, setCopyValue] = useState(key)
-  const { value, onCopy, hasCopied } = useClipboard(copyValue)
-  // var ttColor
-  return (hasCopied ? copiedBadge() : copyClipboardTooltip())
+  const { onCopy, hasCopied } = useClipboard(key)
+  const [hover, setHover] = useState(false)
+  const [focus, setFocus] = useState(false)
 
-  // function copyToClipboard (str) {
-  //   const el = document.createElement('textarea')
-  //   el.value = str
-  //   document.body.appendChild(el)
-  //   el.select()
-  //   document.execCommand('copy')
-  //   document.body.removeChild(el)
-  //   // setIsCopied(true)
-  //   console.log('Copied!')
-  // }
+  const showCopy = hover || focus
+  const showBadge = showCopy || hasCopied
 
-  function copyClipboardTooltip () {
-    return (
-      <Tooltip
-        placement='right-end'
-        width='148px'
-        label={
-          <Flex direction='row' justify='space-between'>
-            <Box flex='1'><Icon name='copy' /></Box>
-            <Box flex='5'><Text>Copy to clipboard</Text></Box>
-          </Flex>
-        }
+  return (
+    <Flex direction='row' justify='space-between'>
+      <KeyButton
+        onClick={onCopy}
+        onMouseEnter={e => setHover(true)}
+        onMouseLeave={e => setHover(false)}
+        onFocus={e => setFocus(true)}
+        onBlur={e => setFocus(false)}
       >
-        {/* <Text cursor='copy' onClick={e => copyToClipboard(key)}> */}
-        <Text cursor='copy' onClick={onCopy}>
-          {shortkey}
-        </Text>
-      </Tooltip>
-    )
-  }
-
-  function copiedBadge () {
-    return (
-      <Flex direction='row' justify='space-between'>
-        <Text>{shortkey}</Text>
-        <Badge variantColor='green' width='73px'>
-          <Flex direction='row' justify='space-around'>
-            <Box flex='1'>
-              <Icon name='check-circle' />
-            </Box>
-            <Box flex='2'>Copied</Box>
-          </Flex>
-        </Badge>
-      </Flex>
-    )
-  }
+        {shortkey}
+      </KeyButton>
+      {showBadge && (
+        <Box ml='2'>
+          <Badge
+            variantColor={hasCopied ? 'green' : undefined}
+            textTransform='0'
+          >
+            <Flex direction='row' justify='space-around'>
+              {hasCopied && (
+                <Flex direction='row' justify='space-around'>
+                  <Box flex='0' mr='1'>
+                    <Icon name='check-circle' />
+                  </Box>
+                  <Box>Copied</Box>
+                </Flex>
+              )}
+              {!hasCopied && showCopy && (
+                <Box>Click to copy</Box>
+              )}
+            </Flex>
+          </Badge>
+        </Box>
+      )}
+    </Flex>
+  )
 }
 
 function formatKey (key) {
-  return key.substring(0, 6) + '...'
+  return key.substring(0, 5) + '..' + key.substring(key.length - 2)
 }
