@@ -103,28 +103,28 @@ export default function IslandPage (props) {
                 </Flex>
                 <Collapse isOpen={showMoreIslands[island.key]}>
                   <Flex direction="column" py='2'>
-                    <Flex direction="row" justify="space-between">
+                    <Flex direction="row" justify="flex-start">
                     <Box flexShrink='0' width={['auto', '12rem']} color='teal.400'>Key:</Box>
-                      <Box flex='1' style={{ overflowWrap: 'anywhere' }}>
+                      <Box style={{ overflowWrap: 'anywhere' }}>
                       <Key k={island.key} mr='4' />
                       </Box>
                     </Flex>
-                    <Flex direction="row" justify="space-between">
+                    <Flex direction="row" justify="flex-start">
                     <Box flexShrink='0' width={['auto', '12rem']} color='teal.400'>Local key:</Box>
-                    <Box flex='1' style={{ overflowWrap: 'anywhere' }}>
+                    <Box style={{ overflowWrap: 'anywhere' }}>
                       <Key k={island.localKey} mr='4' />
                     </Box>
                     </Flex>
-                    <Flex direction="row" justify="space-between">
+                    <Flex direction="row" justify="flex-start">
                     <Box flexShrink='0' width={['auto', '12rem']} color='teal.400'>Local drive:</Box>
-                    <Box flex='1' style={{ overflowWrap: 'anywhere' }}>
+                    <Box style={{ overflowWrap: 'anywhere' }}>
                                   <Key k={island.localDrive} mr='4' />
                     </Box>
                       </Flex>
                     { getNetworkInfo(island.key) && (
-                    <Flex direction="row" justify="space-between">
+                    <Flex direction="row" justify="flex-start">
                         <Box flexShrink='0' width={['auto', '12rem']} color='teal.400'>Peers:</Box>
-                        <Box flex='1' style={{overflowWrap: 'anywhere'}}>
+                        <Box style={{overflowWrap: 'anywhere'}}>
                           {getNetworkInfo(island.key).peers}
                         </Box>
                       </Flex>
