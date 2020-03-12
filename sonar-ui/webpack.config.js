@@ -14,7 +14,7 @@ if (isDev) {
 }
 output = p.join(__dirname, output)
 
-const config = {
+let config = {
   entry: ['./src/index.js'],
   mode: isDev ? 'development' : 'production',
   watch: argv.watch || argv.serve,
@@ -22,6 +22,7 @@ const config = {
   stats: 'minimal',
   module: {
     rules: [
+      // Transpile JS and JSX with babel
       {
         test: /\.(js|jsx)$/,
         exclude: /node_modules/,
@@ -34,6 +35,7 @@ const config = {
           }
         ]
       }
+      // Support importing CSS files and process them with PostCSS
       // {
       //   test: /\.(css|pcss)$/,
       //   use: [
@@ -42,6 +44,7 @@ const config = {
       //     'postcss-loader'
       //   ]
       // },
+      // Support importing font files (also from CSS files)
       // {
       //   test: /\.(woff(2)?|ttf|eot|svg)(\?v=\d+\.\d+\.\d+)?$/,
       //   use: [
@@ -62,26 +65,29 @@ const config = {
     filename: 'bundle.js'
   },
   plugins: [
+    // Create an index.html file
     new HtmlWebpackPlugin({
       title: 'Sonar',
       meta: { viewport: 'width=device-width, initial-scale=1, shrink-to-fit=no' },
       inlineSource: '.(js|css)$' // has only an effect with HtmlWebpackInlineSourcePlugin
       // template: './index.html'
-    }),
-    new HtmlWebpackInlineSourcePlugin()
+    })
   ]
 }
 
+// --static: Include all CSS and JS directly in a singel HTML file
 if (argv.static) {
   console.log('Building in static mode')
   config.plugins.push(new HtmlWebpackInlineSourcePlugin())
 }
 
+// --analyze: Analyze bundle size
 if (argv.analyze || process.env.WEBPACK_ANALYZE) {
   const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer')
   config.plugins.push(new BundleAnalyzerPlugin())
 }
 
+// --serve: Spin up a web server to serve the built UI
 if (argv.serve) {
   config.plugins.push(
     new WebpackPluginServe({
@@ -100,6 +106,15 @@ if (argv.serve) {
   config.entry.push(
     'webpack-plugin-serve/client'
   )
+}
+
+// --bench: Measure webpack build time
+if (argv.bench || process.env.WEBPACK_BENCH) {
+  const SpeedMeasurePlugin = require('speed-measure-webpack-plugin')
+  const smp = new SpeedMeasurePlugin({
+    // granularLoaderData: true
+  })
+  config = smp.wrap(config)
 }
 
 module.exports = config
