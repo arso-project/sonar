@@ -107,6 +107,10 @@ module.exports = class Island {
     this.db.get(req, opts, cb)
   }
 
+  loadRecord (key, seq, cb) {
+    this.db.loadRecord(key, seq, cb)
+  }
+
   putSchema (name, schema, cb) {
     this.db.putSchema(name, schema, cb)
   }
