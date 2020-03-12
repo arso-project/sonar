@@ -83,6 +83,7 @@ function build (argv) {
   console.log('Webpack config: ' + WP_CONFIG)
   const args = []
   if (argv.static) args.push('--static')
+  if (argv.watch) args.push('--watch')
   const cmd = spawn('node', [WP_BIN, '--config', WP_CONFIG, args], {
     stdio: 'inherit',
     cwd: __dirname,
