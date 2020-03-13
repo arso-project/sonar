@@ -162,27 +162,15 @@ module.exports = class SonarClient {
     return url
   }
 
-  async get ({ schema, id }, opts) {
-    let path
-    schema = this.expandSchema(schema)
-    if (schema) {
-      path = [this.island, 'db', schema, id]
-    } else {
-      path = [this.island, 'db', id]
-    }
-    return this._request({ path, params: opts })
+  async get ({ schema, id }) {
+    return this.query('records', { schema, id })
   }
 
   async put (record) {
-    let { schema, id, value } = record
-    schema = this.expandSchema(schema)
-    const path = [this.island, 'db', schema]
-    let method = 'POST'
-    if (id) {
-      method = 'PUT'
-      path.push(id)
-    }
-    return this._request({ path, method, data: value })
+    // let { schema, id, value } = record
+    const path = [this.island, 'db']
+    const method = 'PUT'
+    return this._request({ path, method, data: record })
   }
 
   async getSchemas () {

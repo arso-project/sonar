@@ -29,13 +29,13 @@ module.exports = function apiRoutes (api) {
   // Hyperdrive actions (get and put)
   islandRouter.use('/fs', hyperdriveMiddleware(api.islands))
 
-  // Create record
-  islandRouter.post('/db/:schemans/:schemaname', handlers.put)
-  // Update record
-  islandRouter.put('/db/:schemans/:schemaname/:id', handlers.put)
+  // Create or update record
+  islandRouter.put('/db', handlers.put)
+  islandRouter.put('/db/:schema/:id', handlers.put)
+  islandRouter.get('/db/:key/:seq', handlers.get)
   // Get record
-  islandRouter.get('/db/:schemans/:schemaname/:id', handlers.get)
-  islandRouter.get('/db/:id', handlers.get)
+  // islandRouter.get('/db/:schemans/:schemaname/:id', handlers.get)
+
   // Search/Query
   islandRouter.post('/_search', handlers.search)
   islandRouter.post('/_query/:name', handlers.query)
@@ -135,22 +135,27 @@ function createDeviceHandlers (islands) {
 function createIslandHandlers () {
   return {
     put (req, res, next) {
-      const { id } = req.params
-      const value = req.body
-      const schema = expandSchema(req.island, req.params)
-      req.island.put({ schema, id, value }, (err, id) => {
+      let record
+      if (req.params.schema) {
+        record = {
+          id: req.params.id,
+          schema: req.params.schema,
+          value: req.body
+        }
+      } else {
+        record = req.body
+      }
+      req.island.put(record, (err, id) => {
         if (err) return next(err)
         res.send({ id })
       })
     },
 
     get (req, res, next) {
-      let { id } = req.params
-      const schema = expandSchema(req.island, req.params)
-      const opts = req.query || {}
-      req.island.get({ schema, id }, opts, (err, records) => {
+      const { key, seq } = req.params
+      req.island.loadRecord({ key, seq }, (err, record) => {
         if (err) return next(err)
-        res.send(records)
+        res.send(record)
       })
     },
 
