@@ -1,0 +1,109 @@
+# This file documents the HTTP routes of sonar-server.
+#
+# It follows the OpenAPI 3.0 spec, and is used to generate
+# the /api-docs page with swagger.
+#
+# Edit this file, and then recreate the swagger.json file
+# with `npm run build:swagger`.
+#
+# Docs for the format are here:
+# https://swagger.io/docs/specification/about/
+openapi: 3.0.0
+info:
+  title: "sonar-server"
+  description: "sonar-server HTTP api v1"
+  version: "0.0.1"
+  contact:
+    email: "dev@arso.xyz"
+  license:
+    name: "Apache 2.0"
+    url: "http://www.apache.org/licenses/LICENSE-2.0.html"
+host: "localhost:9191"
+basePath: "/api"
+externalDocs:
+  description: "Sonar docs"
+  url: "https://arso-project.github.io/sonar-book/"
+  
+tags:
+- name: "db"
+  description: "Database related"
+  externalDocs:
+    description: "Database docs"
+    url: "http://docs.arso.xyz/sonar-db"
+- name: "island"
+  description: "Island management"
+schemes:
+- "http"
+paths:
+  /{island}/db:
+    put:
+      tags:
+      - "db"
+      summary: "Put a record into the database"
+      description: ""
+      operationId: "island.put"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "island"
+        in: "path"
+        description: "Island key or name"
+        required: true
+        type: "string"
+      - in: "body"
+        name: "body"
+        description: "Record object"
+        required: true
+        schema:
+          $ref: "#/definitions/Record"
+      responses:
+        405:
+          description: "Invalid input"
+      security:
+      - api_key: []
+  /{island}/_query/{name}:
+    post:
+      tags:
+        - "db"
+      summary: "Query the database"
+      operationId: "island.query"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "island"
+        in: "path"
+        description: "Island key or name"
+        required: true
+        type: "string"
+      - name: "name"
+        in: "path"
+        description: "Query name"
+        required: true
+      - in: "body"
+        name: "body"
+        description: "Query"
+    
+securityDefinitions:
+  api_key:
+    type: "apiKey"
+    name: "api_key"
+    in: "header"
+definitions:
+  Record:
+    type: "object"
+    required: 
+      - schema
+    properties:
+      id:
+        type: "string"
+      schema:
+        type: "string"
+      value:
+        $ref: "#/definitions/Value"
+  Value:
+    type: "object"
+    

@@ -7,7 +7,11 @@ const expressWebSocket = require('express-ws')
 const debug = require('debug')('sonar-server')
 const p = require('path')
 const os = require('os')
+const swaggerUi = require('swagger-ui-express')
 // const websocketStream = require('websocket-stream/stream')
+
+const apiRouter = require('./routes/api')
+const apiDocs = require('./docs/swagger.json')
 
 const DEFAULT_STORAGE = p.join(os.homedir(), '.sonar')
 const DEFAULT_PORT = 9191
@@ -56,7 +60,20 @@ module.exports = function SonarServer (opts) {
     next()
   })
 
-  app.use('/api', require('./routes/api')(api))
+  // Main API
+  const apiRoutes = apiRouter(api)
+
+  app.use('/api', apiRoutes)
+  // TODO: Change to v1
+  // app.use('/api/v1', apiRoutes)
+
+  // API docs
+  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(
+    apiDocs,
+    {
+      customCss: '.swagger-ui .topbar { display: none }'
+    }
+  ))
 
   // Error handling
   app.use(function (err, req, res, next) {
