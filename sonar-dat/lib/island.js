@@ -107,6 +107,10 @@ module.exports = class Island {
     this.db.get(req, opts, cb)
   }
 
+  batch (batch, cb) {
+    this.db.batch(batch, cb)
+  }
+
   loadRecord (key, seq, cb) {
     this.db.loadRecord(key, seq, cb)
   }
