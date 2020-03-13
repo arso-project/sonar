@@ -4,26 +4,42 @@ const { runAll } = require('./lib/util')
 
 const { IslandStore } = require('..')
 
-function prepare (t, cb) {
-  tmp((err, dir, tmpCleanup) => {
+function createStore (opts, cb) {
+  if (typeof opts === 'function') {
+    cb = opts
+    opts = {}
+  }
+  tmp('sonar-test', ondircreated)
+  function ondircreated (err, dir, cleanupTempdir) {
     if (err) return cb(err)
-    const islands = new IslandStore(dir)
-    islands.ready(() => {
+    const islands = new IslandStore(dir, opts)
+    islands.ready(err => {
+      if (err) return cb(err)
       cb(null, islands, cleanup)
     })
     function cleanup (cb) {
       islands.close(() => {
-        tmpCleanup(err => {
-          t.error(err)
-          t.end()
+        cleanupTempdir(err => {
+          cb(err)
         })
       })
     }
-  })
+  }
 }
 
-tape('basic', t => {
-  prepare(t, (err, islands, cleanup) => {
+tape('open close', t => {
+  createStore({ network: false }, (err, islands, cleanup) => {
+    t.true(islands.opened, 'opened property is set')
+    t.error(err)
+    cleanup(err => {
+      t.error(err)
+      t.end()
+    })
+  })
+})
+
+tape('batch and query', t => {
+  createStore({ network: false }, (err, islands, cleanup) => {
     t.error(err, 'tempdir ok')
     islands.create('first', (err, island) => {
       t.error(err, 'island created')
@@ -34,30 +50,40 @@ tape('basic', t => {
       ]
 
       runAll([
-        cb => {
+        next => {
           const batch = records.map(value => ({ op: 'put', schema: 'doc', value }))
-          island.db.batch(batch, (err, res) => {
+          island.batch(batch, (err, res) => {
             t.error(err, 'batch ok')
             t.equal(res.length, 2)
-            cb()
+            next()
           })
         },
-        // TODO: Remove timeout!
-        // cb => setTimeout(cb, 100),
-        cb => setImmediate(() => island.db.kappa.ready('search', cb)),
-        cb => {
-          island.query('search', 'hello', { load: false }, (err, res) => {
+        next => {
+          island.query('search', 'hello', { waitForSync: true }, (err, res) => {
+            t.error(err)
             t.equal(res.length, 2, 'hello search')
-            cb(err)
+            const titles = res.map(r => r.value.title).sort()
+            t.deepEqual(titles, ['Hello moon', 'Hello world'], 'hello results ok')
+            next(err)
           })
         },
-        cb => {
-          island.query('search', 'moon', { load: false }, (err, res) => {
+        next => {
+          island.query('search', 'moon', (err, res) => {
+            t.error(err)
             t.equal(res.length, 1, 'moon search')
-            cb(err)
+            const titles = res.map(r => r.value.title).sort()
+            t.deepEqual(titles, ['Hello moon'], 'moon results ok')
+            next()
           })
         },
-        cb => cleanup(cb)
+        next => {
+          island.query('records', { schema: 'doc' }, (err, res) => {
+            t.error(err)
+            t.equal(res.length, 2)
+            next()
+          })
+        },
+        next => cleanup(next)
       ]).catch(err => t.fail(err)).then(() => t.end())
     })
   })
