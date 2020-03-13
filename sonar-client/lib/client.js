@@ -196,7 +196,7 @@ module.exports = class SonarClient {
     }
     return this._request({
       method: 'POST',
-      path: [this.island, '_search'],
+      path: [this.island, '_query', 'search'],
       data: query
     })
   }

@@ -47,16 +47,7 @@ function executeQuery (indexManager, query, indexName) {
 function transformResults () {
   const transform = through.obj(function (row, enc, next) {
     const record = {
-      value: {
-        title: row.doc.title && row.doc.title[0],
-        body: row.doc,
-        score: row.score,
-        snippet: row.snippet
-      },
-      // schema: 'arso.xyz/SearchResult',
-      schema: row.doc.schema && row.doc.schema[0],
-      id: row.doc.id && row.doc.id[0],
-      source: row.doc.source && row.doc.source[0],
+      key: row.doc.source && row.doc.source[0],
       seq: row.doc.seq && row.doc.seq[0],
       meta: {
         snippet: row.snippet,

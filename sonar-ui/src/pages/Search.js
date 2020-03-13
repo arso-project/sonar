@@ -94,14 +94,14 @@ export function SearchResults (props) {
 }
 
 function SearchResult (props) {
-  const { value, id, schema, source } = props.row
+  const { value, id, schema, key } = props.row
   return (
     <Box mb='4'>
       <Heading fontSize='md' color='pink.500'>{entityLink()}</Heading>
       <MetaItems>
         <MetaItem name='ID' value={id} />
         <MetaItem name='Schema' value={formatSchema(schema)} />
-        <MetaItem name='Source' value={formatSource(source)} />
+        <MetaItem name='Source' value={formatSource(key)} />
       </MetaItems>
       <div
         className='sonar-search__snippet'
