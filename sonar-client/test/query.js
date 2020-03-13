@@ -28,7 +28,7 @@ test('basic query', async t => {
     await cleanup()
     t.end()
   } catch (err) {
-    console.log(err.toString())
+    console.log(err)
     t.error(err)
   }
 })
@@ -47,7 +47,7 @@ test('querybuilder: simple bool search', async t => {
     await cleanup()
     t.end()
   } catch (err) {
-    console.log(err.toString())
+    console.log(err)
     t.error(err)
   }
 })

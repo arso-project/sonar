@@ -55,18 +55,25 @@ module.exports = class SonarClient {
     return res
   }
 
-  async getSchema (schemaName) {
-    schemaName = this.expandSchema(schemaName)
+  async getSchemas () {
     return this._request({
-      path: [this.island, 'schema', schemaName]
+      path: [this.island, 'schema']
     })
   }
 
-  async putSchema (schemaName, schema) {
-    schemaName = this.expandSchema(schemaName)
+  async getSchema (schemaName) {
     return this._request({
-      method: 'PUT',
-      path: [this.island, 'schema', schemaName],
+      path: [this.island, 'schema'],
+      params: { name: schemaName }
+    })
+  }
+
+  // TODO: Remove schemaName arg
+  async putSchema (schemaName, schema) {
+    schema.name = schemaName
+    return this._request({
+      method: 'POST',
+      path: [this.island, 'schema'],
       data: schema
     })
   }
@@ -171,12 +178,6 @@ module.exports = class SonarClient {
     const path = [this.island, 'db']
     const method = 'PUT'
     return this._request({ path, method, data: record })
-  }
-
-  async getSchemas () {
-    return this._request({
-      path: [this.island, 'schema']
-    })
   }
 
   async query (name, args, opts) {
@@ -328,12 +329,6 @@ module.exports = class SonarClient {
     // proto.hello()
     // if (hello) proto.command('hello', hello)
     return proto
-  }
-
-  expandSchema (schema) {
-    if (!schema) return
-    if (schema.indexOf('/') !== -1) return schema
-    return '_/' + schema
   }
 }
 

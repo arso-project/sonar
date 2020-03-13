@@ -37,14 +37,11 @@ module.exports = function apiRoutes (api) {
   // islandRouter.get('/db/:schemans/:schemaname/:id', handlers.get)
 
   // Search/Query
-  islandRouter.post('/_search', handlers.search)
   islandRouter.post('/_query/:name', handlers.query)
   // List schemas
   islandRouter.get('/schema', handlers.getSchemas)
-  // Get schema
-  islandRouter.get('/schema/:schemans/:schemaname', handlers.getSchema)
   // Put schema
-  islandRouter.put('/schema/:schemans/:schemaname', handlers.putSchema)
+  islandRouter.post('/schema', handlers.putSchema)
   // Put source
   // TODO: This route should have the same pattern as the others.
   islandRouter.put('/source/:key', handlers.putSource)
@@ -172,32 +169,28 @@ function createIslandHandlers () {
     },
 
     getSchemas (req, res, next) {
-      const schemas = req.island.getSchemas()
-      res.send(schemas)
-    },
-
-    getSchema (req, res, next) {
-      let schema = expandSchema(req.island, req.params)
-      req.island.getSchema(schema, (err, schemaValue) => {
-        if (err) {
-          err.statusCode = 404
-          return next(err)
-        }
-        res.send(schemaValue)
-      })
+      if (req.query && req.query.name) {
+        const schema = req.island.getSchema(schema)
+        if (!schema) return next(HttpError(404, 'Schema not found'))
+        else res.send(schema)
+      } else {
+        const schemas = req.island.getSchemas()
+        res.send(schemas)
+      }
     },
 
     putSchema (req, res, next) {
-      let schema = expandSchema(req.island, req.params)
+      const schema = req.body
+      const name = schema.name
       const island = req.island
-      island.putSchema(schema, req.body, (err) => {
+      island.putSchema(name, schema, (err, id) => {
         if (err) {
           err.statusCode = 400
           return next(err)
         }
-        island.getSchema(schema, (err, result) => {
+        island.getSchema(name, (err, result) => {
           if (err) return next(err)
-          res.send({ schema })
+          res.send(result)
         })
       })
     },
@@ -211,26 +204,18 @@ function createIslandHandlers () {
       })
     },
 
-    search (req, res, next) {
-      const query = req.body
-      const island = req.island
-      // TODO: Enable loading of records.
-      // TODO: Loading kills the server, that should not be.
-      // There's a schema mismatch somewhere.
-      island.query('search', query, { load: false }, (err, results) => {
-        // console.log('Q', query, err, results)
-        if (err) return next(err)
-        res.send(results)
-      })
-      // Query can either be a string (tantivy query) or an object (toshi json query)
-      // const resultStream = island.db.api.search.query(query)
-      // replyStream(res, resultStream)
-    },
-
     debug (req, res, next) {
       return res.end('not implemented')
     }
   }
+}
+
+function HttpError (code, message) {
+  let err
+  if (message instanceof Error) err = message
+  else err = new Error(message)
+  errr.statusCode = code
+  return err
 }
 
 function expandSchema (island, { schemans, schemaname }) {
