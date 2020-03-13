@@ -262,9 +262,10 @@ function Table (props) {
     rows,
     totalColumnsWidth,
     prepareRow,
-    flatColumns,
+    allColumns,
     selectedFlatRows
   } = table
+  console.log('t', table)
 
   const cellHeight = 32
   const headerHeight = 32
@@ -303,7 +304,7 @@ function Table (props) {
   const renderedPreview = useMemo(() => {
     if (!uiState.pane.preview) return null
     if (!Preview || selectedFlatRows.length !== 1) return null
-    let row = selectedFlatRows[0]
+    const row = selectedFlatRows[0]
     return (
       <FlexContainer flexBasis='50%'>
         <Preview row={row.original} />
@@ -313,8 +314,8 @@ function Table (props) {
 
   // TODO: previewActive should likely be part of uiState
   const tableMeta = useMemo(() => {
-    return <TableMeta columns={flatColumns} uiState={uiState} dispatch={dispatchUi} previewActive={!!renderedPreview} />
-  }, [flatColumns, uiState, table.rows, table.flatHeaders, !!renderedPreview])
+    return <TableMeta columns={allColumns} uiState={uiState} dispatch={dispatchUi} previewActive={!!renderedPreview} />
+  }, [allColumns, uiState, table.rows, table.flatHeaders, !!renderedPreview])
 
   // debug('render table: rows %o, cols %o, selected %o', data.length, selectedFlatRows.length)
 
