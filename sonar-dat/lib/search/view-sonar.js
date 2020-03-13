@@ -15,16 +15,13 @@ function sonarView (level, island, opts) {
 
   const schemas = {}
 
-  island.on('close', () => manager.close())
-
   return {
     version: 2,
     batch: true,
     batchSize: 500,
     map,
-    close: (cb) => manager.close(cb),
+    // close: (cb) => manager.closeIndex(cb),
     api: {
-      close: () => manager.close(),
       info (kcore, args, cb) {
         manager.getInfo()
           .then(info => cb(null, info))

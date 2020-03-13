@@ -16,10 +16,6 @@ module.exports = class IndexManager {
     }
   }
 
-  close () {
-    this.catalog.close()
-  }
-
   async _ready () {
     if (this._init) return
     try {
@@ -67,9 +63,5 @@ module.exports = class IndexManager {
   async getInfo () {
     await this.ready()
     return this.info
-  }
-
-  close () {
-    this.catalog.close()
   }
 }
