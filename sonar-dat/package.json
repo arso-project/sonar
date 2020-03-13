@@ -17,7 +17,7 @@
     "hypercore-crypto": "^1.0.0",
     "hypercore-protocol": "^7.7.1",
     "hyperdrive": "^10.4.4",
-    "hyperswarm": "^2.2.1",
+    "hyperswarm": "^2.8.0",
     "kappa-record-db": "^0.4.0",
     "level": "^5.0.1",
     "mkdirp": "^0.5.1",
