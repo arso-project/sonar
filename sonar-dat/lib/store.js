@@ -16,7 +16,7 @@ const Island = require('./island')
 const ISLAND_NAME_REGEX = /^[a-zA-Z0-9-_]{3,32}$/
 
 module.exports = class IslandStore {
-  constructor (storage) {
+  constructor (storage, opts = {}) {
     storage = storage || p.join(os.homedir(), '.sonar')
     this.paths = {
       base: storage,
@@ -27,9 +27,13 @@ module.exports = class IslandStore {
 
     Object.values(this.paths).forEach(p => mkdirp.sync(p))
 
-    this.network = new Network({
-      announceLocalAddress: true
-    })
+    if (opts.network !== false) {
+      this.network = new Network({
+        announceLocalAddress: true
+      })
+    } else {
+      this.network = new Network.NoNetwork()
+    }
 
     this.config = new Config(p.join(this.paths.base, 'config.json'))
     this.corestore = new Corestore(this.paths.corestore)
@@ -45,15 +49,17 @@ module.exports = class IslandStore {
   }
 
   _ready (cb) {
-    this.corestore.ready(() => {
+    this.corestore.ready((err) => {
+      if (err) return cb(err)
       this.config.load((err, config) => {
         if (err) return cb(err)
         debug('config loaded', this.config.path)
-        if (!config.islands) return cb()
-        for (const info of Object.values(config.islands)) {
-          if (info.share) {
-            const island = this._open(info.key, info)
-            this.network.add(island)
+        if (config.islands) {
+          for (const info of Object.values(config.islands)) {
+            if (info.share) {
+              const island = this._open(info.key, info)
+              this.network.add(island)
+            }
           }
         }
         this.opened = true
@@ -172,23 +178,36 @@ module.exports = class IslandStore {
   }
 
   updateIsland (key, config) {
-    let newConfig = {};
+    let newConfig = {}
     if (config.share) {
       newConfig = this.share(key)
     } else {
       newConfig = this.unshare(key)
     }
     return newConfig
-
   }
 
   close (cb) {
+    const self = this
+
+    let pending = Object.values(this.islands).length + 1
     for (const island of Object.values(this.islands)) {
-      island.close()
+      island.close(finish)
     }
-    this.config.close(() => {
-      this.network.close(cb)
-    })
+    finish()
+
+    function finish () {
+      if (--pending !== 0) return
+      self.indexCatalog.close(() => {
+        self.config.close(() => {
+          self.corestore.close(() => {
+            self.network.close(() => {
+              cb()
+            })
+          })
+        })
+      })
+    }
   }
 
   _saveIsland (info, cb) {
@@ -248,7 +267,7 @@ module.exports = class IslandStore {
       island.ready(() => {
         island.init(() => {
           // TODO: do anything?
-          debug('init island key %s name %s alias %s', island.key, opts.name, opts.alias)
+          debug('init island key %s name %s alias %s', island.key.toString('hex'), opts.name, opts.alias)
         })
       })
     }

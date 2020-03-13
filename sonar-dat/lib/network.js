@@ -62,7 +62,9 @@ module.exports = class Network {
   close (cb = noop) {
     Object.values(this.peers).forEach(peer => peer.stream && peer.stream.destroy())
     this.hyperswarm.destroy(() => {
-      this.localswarm.close(() => cb())
+      this.localswarm.close(() => {
+        cb()
+      })
     })
   }
 
@@ -112,6 +114,13 @@ module.exports = class Network {
       debug('proto error', err)
     })
   }
+}
+
+module.exports.NoNetwork = class NoNetwork {
+  add () {}
+  remove () {}
+  status (cb) { cb(null, {}) }
+  close (cb) { cb() }
 }
 
 function noop () {}
