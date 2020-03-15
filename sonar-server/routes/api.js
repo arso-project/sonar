@@ -170,7 +170,7 @@ function createIslandHandlers () {
 
     getSchemas (req, res, next) {
       if (req.query && req.query.name) {
-        const schema = req.island.getSchema(schema)
+        const schema = req.island.getSchema(req.query.name)
         if (!schema) return next(HttpError(404, 'Schema not found'))
         else res.send(schema)
       } else {
