@@ -4,13 +4,13 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "tape test/*.js"
+    "test": "tape test/*.js | tap-nirvana"
   },
   "keywords": [],
   "author": "",
   "license": "GPL-3.0",
   "dependencies": {
-    "@arso-project/sonar-tantivy": "^0.2.2",
+    "@arso-project/sonar-tantivy": "^0.2.6",
     "async-exit-hook": "^2.0.1",
     "corestore": "^4.0.9",
     "debug": "^4.1.1",
@@ -27,11 +27,11 @@
     "simple-local-swarm": "^1.0.1",
     "stream-collector": "^1.0.1",
     "subleveldown": "^4.1.4",
+    "tap-nirvana": "^1.1.0",
     "through2": "^3.0.1",
     "thunky": "^1.1.0"
   },
   "devDependencies": {
-    "lerna": "^3.16.5",
     "tape": "^4.11.0",
     "temporary-directory": "^1.0.2"
   }

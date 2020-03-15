@@ -198,10 +198,16 @@ module.exports = class IslandStore {
 
     function finish () {
       if (--pending !== 0) return
+      debug('close all services')
       self.indexCatalog.close(() => {
+        debug('closed: index catalog')
         self.config.close(() => {
-          self.corestore.close(() => {
-            self.network.close(() => {
+          debug('closed: config')
+          self.network.close(() => {
+            debug('closed: network')
+            self.corestore.close(() => {
+              debug('closed: corestore')
+              debug('all closed')
               cb()
             })
           })

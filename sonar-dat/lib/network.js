@@ -61,11 +61,13 @@ module.exports = class Network {
 
   close (cb = noop) {
     Object.values(this.peers).forEach(peer => peer.stream && peer.stream.destroy())
-    this.hyperswarm.destroy(() => {
-      this.localswarm.close(() => {
-        cb()
-      })
-    })
+    // TODO: the destroy method of hyperswarm can also take a callback.
+    // Awaiting this callback takes a long time. Investigate why this
+    // is the case and what's it needed for. For now, the callback is
+    // not awaited because of how long it takes and because things seem
+    // to work this way too.
+    this.hyperswarm.destroy()
+    this.localswarm.close(cb)
   }
 
   _onpeer ({ stream, discoveryKey }) {
