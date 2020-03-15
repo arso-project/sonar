@@ -5,25 +5,19 @@
     "url": "git+https://github.com/arso-project/sonar.git"
   },
   "scripts": {
-    "install": "lerna bootstrap",
-    "bootstrap": "lerna bootstrap",
-    "test": "tape */test/*.js | tap-spec",
+    "test": "tape */test/*.js | tap-nirvana",
     "start": "node sonar start",
     "dev": "node sonar start --dev"
   },
   "workspaces": [
-    "*"
+    "*",
+    "bots/*"
   ],
   "license": "GPL-3.0",
   "private": true,
   "devDependencies": {
-    "lerna": "^3.16.5",
     "standard": "^14.3.1",
-    "tap-spec": "^5.0.0",
-    "tape": "^4.12.1",
-    "tape-plus": "^1.0.0"
-  },
-  "dependencies": {
-    "mime-types": "^2.1.26"
+    "tap-nirvana": "^1.1.0",
+    "tape": "^4.12.1"
   }
 }

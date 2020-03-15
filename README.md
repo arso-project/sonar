@@ -27,11 +27,18 @@ First clone this repository.
 Then, to get things running:
 
 ```sh
-# install dev dependencies (lerna)
-npm install
-# let lerna install the dependencies of all modules
-npm run bootstrap
+# install yarn if not yet installed
+npm install -g yarn
+# install dependencies of all workspaces
+yarn
 ```
+
+Instead of yarn, lerna works too:
+```sh
+npm install -g lerna
+lerna bootstrap
+```
+Yarn is recommended because it's much faster.
 
 In the root folder is a symlink `sonar` that leads to `sonar-server/bin.js` which is the main entry point. Through `./sonar` you can start both the UI and the server.
 
