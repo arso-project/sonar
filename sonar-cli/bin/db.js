@@ -4,9 +4,11 @@ const makeClient = require('../client')
 // const table = require('text-table')
 // const date = require('date-fns')
 const collect = require('stream-collector')
+const yargs = require('yargs')
 
-exports.command = 'db <command>'
-exports.describe = 'database'
+exports.command = 'db'
+exports.describe = 'database put, get, query'
+exports.handler = () => yargs.showHelp()
 exports.builder = function (yargs) {
   yargs
     .command({
@@ -51,6 +53,7 @@ exports.builder = function (yargs) {
       describe: 'list schemas',
       handler: listSchemas
     })
+    .help()
 }
 
 async function get (argv) {

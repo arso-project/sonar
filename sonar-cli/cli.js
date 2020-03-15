@@ -56,6 +56,7 @@ const args = yargs
     }
     debug(err)
   })
+  .demandCommand()
 
 if (require.main === module) {
   args.argv

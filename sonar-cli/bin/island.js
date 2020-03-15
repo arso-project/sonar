@@ -1,8 +1,12 @@
 const chalk = require('chalk')
 const makeClient = require('../client')
+const yargs = require('yargs')
 
-exports.command = 'island <command>'
+exports.command = 'island'
 exports.describe = 'manage islands'
+exports.handler = function () {
+  yargs.showHelp()
+}
 exports.builder = function (yargs) {
   yargs
     .command({
@@ -31,6 +35,7 @@ exports.builder = function (yargs) {
       describe: 'get debug information',
       handler: debug
     })
+    .help()
 }
 
 async function create (argv) {
