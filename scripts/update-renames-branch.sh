@@ -1,4 +1,12 @@
 #!/bin/sh
+# this script auto-updates the "renames" branch on top of development.
+#
+# after running use 
+#   git push -f origin renames` 
+# to force push the updated branch
+#
+# needs amber (https://github.com/dalance/amber)
+
 git checkout development
 git branch -D renames
 git checkout -b renames
