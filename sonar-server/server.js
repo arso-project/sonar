@@ -1,4 +1,4 @@
-const { IslandStore } = require('@arso-project/sonar-core')
+const { GroupStore } = require('@arso-project/sonar-core')
 const bodyParser = require('body-parser')
 const onexit = require('async-exit-hook')
 const express = require('express')
@@ -26,7 +26,7 @@ module.exports = function SonarServer (opts) {
 
   const api = {
     config,
-    islands: new IslandStore(config.storage)
+    groups: new GroupStore(config.storage)
   }
 
   const app = express()
@@ -56,7 +56,7 @@ module.exports = function SonarServer (opts) {
     next()
   })
   app.use(function groupMiddleware (req, res, next) {
-    req.islands = api.groups
+    req.groups = api.groups
     next()
   })
 
@@ -87,7 +87,7 @@ module.exports = function SonarServer (opts) {
 
   app.start = function (opts, cb) {
     if (typeof opts === 'function') return app.start(null, opts)
-    api.islands.ready()
+    api.groups.ready()
     opts = opts || {}
     app._port = opts.port || config.port
     app._host = opts.hostname || config.hostname
@@ -96,13 +96,13 @@ module.exports = function SonarServer (opts) {
 
   app.close = function (cb = noop) {
     app.server.close(() => {
-      api.islands.close(cb)
+      api.groups.close(cb)
     })
   }
 
   onexit((cb) => {
-    api.islands.close((err) => {
-      if (err) debug('Error closing island store', err)
+    api.groups.close((err) => {
+      if (err) debug('Error closing group store', err)
       app.close(cb)
     })
   })

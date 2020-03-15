@@ -6,10 +6,10 @@ const { clock } = require('../log')
 
 module.exports = sonarView
 
-function sonarView (level, island, opts) {
+function sonarView (level, group, opts) {
   const manager = new IndexManager({
     level,
-    namespace: island.key.toString('hex'),
+    namespace: group.key.toString('hex'),
     catalog: opts.indexCatalog
   })
 
@@ -38,7 +38,7 @@ function sonarView (level, island, opts) {
     const time = clock()
     await manager.ready()
 
-    const schemas = island.getSchemas()
+    const schemas = group.getSchemas()
 
     const docs = {
       textdump: []
@@ -107,7 +107,7 @@ function sonarView (level, island, opts) {
   function loadSchema (name, record) {
     if (!schemas[name]) {
       schemas[name] = new Promise((resolve, reject) => {
-        island.getSchema(name, (err, schema) => {
+        group.getSchema(name, (err, schema) => {
           if (err) reject(err)
           if (schema) resolve(schema)
           else resolve(null)

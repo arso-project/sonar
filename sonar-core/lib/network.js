@@ -28,34 +28,34 @@ module.exports = class Network {
   }
 
   status (cb) {
-    const shared = Object.values(this.replicating).map(island => ({
-      dkey: island.discoveryKey.toString('hex'),
-      key: island.key.toString('hex'),
-      name: island.name,
-      peers: this.peers[island.discoveryKey.toString('hex')].length
+    const shared = Object.values(this.replicating).map(group => ({
+      dkey: group.discoveryKey.toString('hex'),
+      key: group.key.toString('hex'),
+      name: group.name,
+      peers: this.peers[group.discoveryKey.toString('hex')].length
     }))
     cb(null, {
       shared
     })
   }
 
-  add (island) {
-    island.ready(() => {
-      const dkey = island.discoveryKey
+  add (group) {
+    group.ready(() => {
+      const dkey = group.discoveryKey
       const hdkey = dkey.toString('hex')
       if (this.replicating[hdkey]) return
-      this.replicating[hdkey] = island
+      this.replicating[hdkey] = group
       this.peers[hdkey] = []
       this.hyperswarm.join(dkey, {
         lookup: true,
         announce: true // TODO: Maybe not always announce?
       })
       this.localswarm.join(dkey)
-      debug('swarming: ' + island.name + ' ' + pretty(hdkey))
+      debug('swarming: ' + group.name + ' ' + pretty(hdkey))
     })
   }
 
-  remove (island) {
+  remove (group) {
     // TODO.
   }
 
@@ -84,27 +84,27 @@ module.exports = class Network {
     debug('onconnection', isInitiator, dkey ? dkey.toString('hex') : null)
     if (isInitiator) {
       const hdkey = dkey.toString('hex')
-      const island = this.replicating[hdkey]
-      if (!island) {
+      const group = this.replicating[hdkey]
+      if (!group) {
         debug('invalid discovery key')
         socket.destroy()
         return
       }
       debug('start replication [init: true]!')
-      stream = island.replicate(true)
-      this._onpeer({ stream, discoveryKey: hdkey, island })
+      stream = group.replicate(true)
+      this._onpeer({ stream, discoveryKey: hdkey, group })
     } else {
       stream = new Protocol(false)
       stream.once('discovery-key', dkey => {
         debug('ondiscoverykey', dkey.toString('hex'))
         const hdkey = dkey.toString('hex')
-        const island = this.replicating[hdkey]
-        if (!island) {
+        const group = this.replicating[hdkey]
+        if (!group) {
           debug('invalid discovery key')
         } else {
           debug('start replication [init: false]')
-          island.replicate(false, { stream })
-          this._onpeer({ stream, discoveryKey: hdkey, island })
+          group.replicate(false, { stream })
+          this._onpeer({ stream, discoveryKey: hdkey, group })
         }
       })
     }

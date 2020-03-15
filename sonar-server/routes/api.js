@@ -11,53 +11,53 @@ module.exports = function apiRoutes (api) {
   const router = express.Router()
 
   // Top level actions
-  const deviceHandlers = createDeviceHandlers(api.islands)
-  const handlers = createIslandHandlers(api.islands)
-  const commandHandler = createCommandHandler(api.islands)
+  const deviceHandlers = createDeviceHandlers(api.groups)
+  const handlers = createGroupHandlers(api.groups)
+  const commandHandler = createCommandHandler(api.groups)
 
   // Info
   router.get('/_info', deviceHandlers.info)
-  // Create island
-  router.put('/_create/:name', deviceHandlers.createIsland)
+  // Create group
+  router.put('/_create/:name', deviceHandlers.createGroup)
 
-  const islandRouter = express.Router()
-  // Change island config
-  islandRouter.patch('/', deviceHandlers.updateIsland)
+  const groupRouter = express.Router()
+  // Change group config
+  groupRouter.patch('/', deviceHandlers.updateGroup)
   // Create command stream (websocket)
-  islandRouter.ws('/commands', commandHandler)
+  groupRouter.ws('/commands', commandHandler)
 
   // Hyperdrive actions (get and put)
-  islandRouter.use('/fs', hyperdriveMiddleware(api.islands))
+  groupRouter.use('/fs', hyperdriveMiddleware(api.groups))
 
   // Create or update record
-  islandRouter.put('/db', handlers.put)
-  islandRouter.put('/db/:schema/:id', handlers.put)
-  islandRouter.get('/db/:key/:seq', handlers.get)
+  groupRouter.put('/db', handlers.put)
+  groupRouter.put('/db/:schema/:id', handlers.put)
+  groupRouter.get('/db/:key/:seq', handlers.get)
   // Get record
-  // islandRouter.get('/db/:schemans/:schemaname/:id', handlers.get)
+  // groupRouter.get('/db/:schemans/:schemaname/:id', handlers.get)
 
   // Search/Query
-  islandRouter.post('/_query/:name', handlers.query)
+  groupRouter.post('/_query/:name', handlers.query)
   // List schemas
-  islandRouter.get('/schema', handlers.getSchemas)
+  groupRouter.get('/schema', handlers.getSchemas)
   // Put schema
-  islandRouter.post('/schema', handlers.putSchema)
+  groupRouter.post('/schema', handlers.putSchema)
   // Put source
   // TODO: This route should have the same pattern as the others.
-  islandRouter.put('/source/:key', handlers.putSource)
+  groupRouter.put('/source/:key', handlers.putSource)
 
-  islandRouter.get('/debug', handlers.debug)
+  groupRouter.get('/debug', handlers.debug)
 
-  islandRouter.get('/fs-info', function (req, res, next) {
-    const { island } = req
-    island.query('records', { schema: 'core/source' }, (err, records) => {
+  groupRouter.get('/fs-info', function (req, res, next) {
+    const { group } = req
+    group.query('records', { schema: 'core/source' }, (err, records) => {
       if (err) return next(err)
       const drives = records
         .filter(record => record.value.type === 'hyperdrive')
         .map(record => record.value)
       let pending = drives.length
       drives.forEach(driveInfo => {
-        island.fs.get(driveInfo.key, (err, drive) => {
+        group.fs.get(driveInfo.key, (err, drive) => {
           driveInfo.writable = drive.writable
           if (--pending === 0) res.send(drives)
         })
@@ -66,22 +66,22 @@ module.exports = function apiRoutes (api) {
     })
   })
 
-  // Load island if in path.
-  router.use('/:island', function (req, res, next) {
-    const { island } = req.params
-    res.locals.key = island;
-    if (!island) return next()
-    api.islands.get(island, (err, island) => {
+  // Load group if in path.
+  router.use('/:group', function (req, res, next) {
+    const { group } = req.params
+    res.locals.key = group;
+    if (!group) return next()
+    api.groups.get(group, (err, group) => {
       if (err) return next(err)
-      req.island = island
+      req.group = group
       next()
     })
-  }, islandRouter)
+  }, groupRouter)
 
   return router
 }
 
-function createCommandHandler (islands) {
+function createCommandHandler (groups) {
   const router = new Router({ name: 'server' })
   // router.command('ping', (args, channel) => {
   //   channel.reply('pong')
@@ -100,36 +100,36 @@ function createCommandHandler (islands) {
   }
 }
 
-function createDeviceHandlers (islands) {
+function createDeviceHandlers (groups) {
   return {
     info (req, res, next) {
-      islands.status((err, status) => {
+      groups.status((err, status) => {
         if (err) return next(err)
         res.send(status)
       })
     },
-    createIsland (req, res, next) {
+    createGroup (req, res, next) {
       const { name } = req.params
       const { key, alias } = req.body
-      islands.create(name, { key, alias }, (err, island) => {
+      groups.create(name, { key, alias }, (err, group) => {
         if (err) return next(err)
         res.send({
-          key: island.key.toString('hex')
+          key: group.key.toString('hex')
         })
       })
     },
-    updateIsland (req, res, next) {
+    updateGroup (req, res, next) {
       let config = {};
       if (req.body.hasOwnProperty('share')) {
-        config = islands.updateIsland(res.locals.key, req.body) 
+        config = groups.updateGroup(res.locals.key, req.body) 
       }
       res.send(config)
     }
   }
 }
 
-// These handlers all expect a req.island property.
-function createIslandHandlers () {
+// These handlers all expect a req.group property.
+function createGroupHandlers () {
   return {
     put (req, res, next) {
       let record
@@ -142,7 +142,7 @@ function createIslandHandlers () {
       } else {
         record = req.body
       }
-      req.island.put(record, (err, id) => {
+      req.group.put(record, (err, id) => {
         if (err) return next(err)
         res.send({ id })
       })
@@ -150,7 +150,7 @@ function createIslandHandlers () {
 
     get (req, res, next) {
       const { key, seq } = req.params
-      req.island.loadRecord({ key, seq }, (err, record) => {
+      req.group.loadRecord({ key, seq }, (err, record) => {
         if (err) return next(err)
         res.send(record)
       })
@@ -162,7 +162,7 @@ function createIslandHandlers () {
       const name = req.params.name
       const args = req.body
       const opts = req.query || {}
-      req.island.query(name, args, opts, (err, records) => {
+      req.group.query(name, args, opts, (err, records) => {
         if (err) return next(err)
         res.send(records)
       })
@@ -170,11 +170,11 @@ function createIslandHandlers () {
 
     getSchemas (req, res, next) {
       if (req.query && req.query.name) {
-        const schema = req.island.getSchema(req.query.name)
+        const schema = req.group.getSchema(req.query.name)
         if (!schema) return next(HttpError(404, 'Schema not found'))
         else res.send(schema)
       } else {
-        const schemas = req.island.getSchemas()
+        const schemas = req.group.getSchemas()
         res.send(schemas)
       }
     },
@@ -182,13 +182,13 @@ function createIslandHandlers () {
     putSchema (req, res, next) {
       const schema = req.body
       const name = schema.name
-      const island = req.island
-      island.putSchema(name, schema, (err, id) => {
+      const group = req.group
+      group.putSchema(name, schema, (err, id) => {
         if (err) {
           err.statusCode = 400
           return next(err)
         }
-        island.getSchema(name, (err, result) => {
+        group.getSchema(name, (err, result) => {
           if (err) return next(err)
           res.send(result)
         })
@@ -198,7 +198,7 @@ function createIslandHandlers () {
     putSource (req, res, next) {
       const { key } = req.params
       const info = req.body
-      req.island.putSource(key, info, (err) => {
+      req.group.putSource(key, info, (err) => {
         if (err) return next(err)
         return res.send({ msg: 'ok' })
       })
@@ -218,9 +218,9 @@ function HttpError (code, message) {
   return err
 }
 
-function expandSchema (island, { schemans, schemaname }) {
+function expandSchema (group, { schemans, schemaname }) {
   if (!schemans || !schemaname) return null
-  if (schemans === '_') schemans = island.key.toString('hex')
+  if (schemans === '_') schemans = group.key.toString('hex')
   const schema = schemans + '/' + schemaname
   return schema
 }

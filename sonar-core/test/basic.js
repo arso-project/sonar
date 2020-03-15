@@ -2,7 +2,7 @@ const tape = require('tape')
 const tmp = require('temporary-directory')
 const { runAll } = require('./lib/util')
 
-const { IslandStore } = require('..')
+const { GroupStore } = require('..')
 
 function createStore (opts, cb) {
   if (typeof opts === 'function') {
@@ -12,13 +12,13 @@ function createStore (opts, cb) {
   tmp('sonar-test', ondircreated)
   function ondircreated (err, dir, cleanupTempdir) {
     if (err) return cb(err)
-    const islands = new IslandStore(dir, opts)
-    islands.ready(err => {
+    const groups = new GroupStore(dir, opts)
+    groups.ready(err => {
       if (err) return cb(err)
-      cb(null, islands, cleanup)
+      cb(null, groups, cleanup)
     })
     function cleanup (cb) {
-      islands.close(() => {
+      groups.close(() => {
         cleanupTempdir(err => {
           cb(err)
         })
@@ -28,8 +28,8 @@ function createStore (opts, cb) {
 }
 
 tape('open close', t => {
-  createStore({ network: false }, (err, islands, cleanup) => {
-    t.true(islands.opened, 'opened property is set')
+  createStore({ network: false }, (err, groups, cleanup) => {
+    t.true(groups.opened, 'opened property is set')
     t.error(err)
     cleanup(err => {
       t.error(err)
@@ -39,10 +39,10 @@ tape('open close', t => {
 })
 
 tape('batch and query', t => {
-  createStore({ network: false }, (err, islands, cleanup) => {
+  createStore({ network: false }, (err, groups, cleanup) => {
     t.error(err, 'tempdir ok')
-    islands.create('first', (err, island) => {
-      t.error(err, 'island created')
+    groups.create('first', (err, group) => {
+      t.error(err, 'group created')
 
       const records = [
         { title: 'Hello world', body: 'so rough' },
@@ -52,14 +52,14 @@ tape('batch and query', t => {
       runAll([
         next => {
           const batch = records.map(value => ({ op: 'put', schema: 'doc', value }))
-          island.batch(batch, (err, res) => {
+          group.batch(batch, (err, res) => {
             t.error(err, 'batch ok')
             t.equal(res.length, 2)
             next()
           })
         },
         next => {
-          island.query('search', 'hello', { waitForSync: true }, (err, res) => {
+          group.query('search', 'hello', { waitForSync: true }, (err, res) => {
             t.error(err)
             t.equal(res.length, 2, 'hello search')
             const titles = res.map(r => r.value.title).sort()
@@ -68,7 +68,7 @@ tape('batch and query', t => {
           })
         },
         next => {
-          island.query('search', 'moon', (err, res) => {
+          group.query('search', 'moon', (err, res) => {
             t.error(err)
             t.equal(res.length, 1, 'moon search')
             const titles = res.map(r => r.value.title).sort()
@@ -77,7 +77,7 @@ tape('batch and query', t => {
           })
         },
         next => {
-          island.query('records', { schema: 'doc' }, (err, res) => {
+          group.query('records', { schema: 'doc' }, (err, res) => {
             t.error(err)
             t.equal(res.length, 2)
             next()

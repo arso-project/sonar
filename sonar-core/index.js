@@ -1,4 +1,4 @@
-const IslandStore = require('./lib/store')
-const Island = require('./lib/island')
+const GroupStore = require('./lib/store')
+const Group = require('./lib/group')
 
-module.exports = { IslandStore, Island }
+module.exports = { GroupStore, Group }

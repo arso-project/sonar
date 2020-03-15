@@ -10,8 +10,8 @@ A JavaScript client for Sonar.
 const SonarClient = require('@arso-project/sonar-client')
 
 // endpoint: default is http://localhost:9191/api
-// island: default is 'default'
-const client = new SonarClient(endpoint, island)
+// group: default is 'default'
+const client = new SonarClient(endpoint, group)
 
 // TODO: Add API docs. See tests for now.
 

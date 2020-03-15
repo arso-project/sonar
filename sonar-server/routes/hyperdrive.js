@@ -7,11 +7,11 @@ const express = require('express')
 const speedometer = require('speedometer')
 const debug = require('debug')('sonar-server:fs')
 
-module.exports = function hyperdriveMiddleware (islands) {
+module.exports = function hyperdriveMiddleware (groups) {
   const router = express.Router()
 
   router.use('/:drive', function (req, res, next) {
-    req.island.drive(req.params.drive, (err, drive) => {
+    req.group.drive(req.params.drive, (err, drive) => {
       if (err) return next(err)
       req.drive = drive
       next()
@@ -169,11 +169,11 @@ function mkdirp (fs, path, cb) {
 }
 
 // function hyperdriveRoutes (fastify, opts, done) {
-//   const islands = opts.islands
+//   const groups = opts.groups
 
 //   fastify.get('/:key/*', (req, res) => {
 //     const { key, '*': wildcard } = req.params
-//     hyperdriveHandler(islands, key, wildcard, req, res)
+//     hyperdriveHandler(groups, key, wildcard, req, res)
 //   })
 
 //   done()

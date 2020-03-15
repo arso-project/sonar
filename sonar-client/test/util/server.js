@@ -8,7 +8,7 @@ module.exports = {
 
 async function makeClient (opts = {}) {
   let _cleanup = await makeServer(opts)
-  let client = new SonarClient(`http://localhost:${opts.port}/api`, opts.island)
+  let client = new SonarClient(`http://localhost:${opts.port}/api`, opts.group)
   return [client, cleanup]
   function cleanup () {
     client.close()
@@ -28,7 +28,7 @@ function makeServer (opts = {}) {
       const app = createServer(opts)
       app.start({ port: opts.port }, (err) => {
         if (err) reject(err)
-        app.api.islands.ready((err) => {
+        app.api.groups.ready((err) => {
           if (err) return reject(err)
           resolve(shutdown)
         })

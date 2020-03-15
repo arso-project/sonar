@@ -12,12 +12,12 @@ const Fs = require('./fs')
 
 const sonarView = require('./search/view-sonar')
 
-module.exports = class Island {
+module.exports = class Group {
   constructor (key, opts) {
     const self = this
     const { level, corestore, indexCatalog } = opts
 
-    debug('open island name %s alias %s key %s', opts.name, opts.alias, pretty(key))
+    debug('open group name %s alias %s key %s', opts.name, opts.alias, pretty(key))
 
     this.corestore = corestore
     this.indexCatalog = indexCatalog

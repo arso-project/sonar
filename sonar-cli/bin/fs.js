@@ -131,7 +131,7 @@ async function importfile(argv) {
   const path = p.resolve(argv.path)
 
   const writable = await client.isWritable()
-  if (!writable) throw new Error('island is not writable')
+  if (!writable) throw new Error('group is not writable')
 
   return _importfile({ client, path, opts: argv })
 }

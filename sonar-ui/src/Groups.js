@@ -29,22 +29,22 @@ import FormField from '../components/FormField'
 
 import client from '../lib/client'
 
-// import './Islands.css'
+// import './Groups.css'
 
 async function loadInfo () {
   return client.info()
 }
 
-export default function IslandPage (props) {
+export default function GroupPage (props) {
   const { colorMode } = useColorMode()
   const { data: info, error, reload } = useAsync(loadInfo)
-  const [showMoreIslands, setShowMoreIslands] = useState({})
+  const [showMoreGroups, setShowMoreGroups] = useState({})
 
   if (!info && !error) return <Loading />
   if (error) return <Logger error={error} />
 
-  const { islands, network } = info
-  const selectedIsland = config.get('island')
+  const { groups, network } = info
+  const selectedGroup = config.get('group')
   const selectedBg = { dark: 'gray.700', light: 'gray.100' }
 
 
@@ -55,17 +55,17 @@ export default function IslandPage (props) {
       flex='1'
       direction='column'
     >
-      <Heading color='teal.400'>Islands</Heading>
-      { islands && (
+      <Heading color='teal.400'>Groups</Heading>
+      { groups && (
         <Flex direction='column' mb={4}>
-          {Object.values(islands).map((island, i) => (
+          {Object.values(groups).map((group, i) => (
             <PseudoBox
               key={i}
               borderBottomWidth='1px'
               display={{ md: 'flex' }}
               justify='center'
               p={1}
-              bg={island.key === selectedIsland ? selectedBg[colorMode] : undefined}
+              bg={group.key === selectedGroup ? selectedBg[colorMode] : undefined}
             >
               <Flex
                 flex='1'
@@ -78,54 +78,54 @@ export default function IslandPage (props) {
                     textAlign='left'
                     color='pink.500'
                     fontWeight='700'
-                    onClick={e => onSelectIsland(island)}
+                    onClick={e => onSelectGroup(group)}
                   >
-                    {island.name}
+                    {group.name}
                   </Link>
                   <Flex>
-                    <FormLabel p='0' mr='2' htmlFor={island.key + '-share'}>
+                    <FormLabel p='0' mr='2' htmlFor={group.key + '-share'}>
                       Share:
                     </FormLabel>
                     <Switch
                       size='sm'
-                      defaultIsChecked={island.share}
-                      id={island.key + '-share'}
-                      onChange={e => handleShareSwitch(e.target.checked, island)}
+                      defaultIsChecked={group.share}
+                      id={group.key + '-share'}
+                      onChange={e => handleShareSwitch(e.target.checked, group)}
                     />
-                    <Button size="sm" ml="10" variantColor="blue" onClick={e => handleToggle(island.key)}>
+                    <Button size="sm" ml="10" variantColor="blue" onClick={e => handleToggle(group.key)}>
                       Info
                     <Icon
-                        name={showMoreIslands[island.key] ? 'chevron-down' : 'chevron-right'}
+                        name={showMoreGroups[group.key] ? 'chevron-down' : 'chevron-right'}
                         size="24px"
                       />
                     </Button>
                   </Flex>
                 </Flex>
-                <Collapse isOpen={showMoreIslands[island.key]}>
+                <Collapse isOpen={showMoreGroups[group.key]}>
                   <Flex direction="column" py='2'>
                     <Flex direction="row" justify="flex-start">
                     <Box flexShrink='0' width={['auto', '12rem']} color='teal.400'>Key:</Box>
                       <Box style={{ overflowWrap: 'anywhere' }}>
-                      <Key k={island.key} mr='4' />
+                      <Key k={group.key} mr='4' />
                       </Box>
                     </Flex>
                     <Flex direction="row" justify="flex-start">
                     <Box flexShrink='0' width={['auto', '12rem']} color='teal.400'>Local key:</Box>
                     <Box style={{ overflowWrap: 'anywhere' }}>
-                      <Key k={island.localKey} mr='4' />
+                      <Key k={group.localKey} mr='4' />
                     </Box>
                     </Flex>
                     <Flex direction="row" justify="flex-start">
                     <Box flexShrink='0' width={['auto', '12rem']} color='teal.400'>Local drive:</Box>
                     <Box style={{ overflowWrap: 'anywhere' }}>
-                                  <Key k={island.localDrive} mr='4' />
+                                  <Key k={group.localDrive} mr='4' />
                     </Box>
                       </Flex>
-                    { getNetworkInfo(island.key) && (
+                    { getNetworkInfo(group.key) && (
                     <Flex direction="row" justify="flex-start">
                         <Box flexShrink='0' width={['auto', '12rem']} color='teal.400'>Peers:</Box>
                         <Box style={{overflowWrap: 'anywhere'}}>
-                          {getNetworkInfo(island.key).peers}
+                          {getNetworkInfo(group.key).peers}
                         </Box>
                       </Flex>
                     )
@@ -137,12 +137,12 @@ export default function IslandPage (props) {
           ))}
         </Flex>
       )}
-      <CreateIsland onCreate={reload} />
+      <CreateGroup onCreate={reload} />
     </Flex>
   )
 
-  function onSelectIsland (island) {
-    config.set('island', island.key)
+  function onSelectGroup (group) {
+    config.set('group', group.key)
     window.location.reload()
   }
   
@@ -150,18 +150,18 @@ export default function IslandPage (props) {
     return network.shared.find(el => el.key === key)
   }
 
-  function handleShareSwitch (checked, island) {
-    client.updateIsland({ 'share': checked }, island.key)
+  function handleShareSwitch (checked, group) {
+    client.updateGroup({ 'share': checked }, group.key)
   }
 
   function handleToggle (key) {
-    let newShowMoreIslands = {...showMoreIslands}
-    if (showMoreIslands.hasOwnProperty(key)) {
-      newShowMoreIslands[key] = !showMoreIslands[key]
+    let newShowMoreGroups = {...showMoreGroups}
+    if (showMoreGroups.hasOwnProperty(key)) {
+      newShowMoreGroups[key] = !showMoreGroups[key]
     } else {
-      newShowMoreIslands[key] = true
+      newShowMoreGroups[key] = true
     }
-    setShowMoreIslands(newShowMoreIslands)
+    setShowMoreGroups(newShowMoreGroups)
   }
 }
 
@@ -182,18 +182,18 @@ function Form (props) {
   )
 }
 
-function CreateIsland (props) {
+function CreateGroup (props) {
   const [message, setMessage] = useState(null)
   const [error, setError] = useState(null)
   const toast = useToast()
 
   return (
     <Box>
-      <Form title='Create island' onSubmit={onCreate}>
+      <Form title='Create group' onSubmit={onCreate}>
         <FormField name='name' title='Local Name' />
         <FormField name='alias' title='Alias' />
       </Form>
-      <Form title='Clone island' onSubmit={onCreate}>
+      <Form title='Clone group' onSubmit={onCreate}>
         <FormField name='name' title='Name' />
         <FormField name='key' title='Key' />
         <FormField name='alias' title='Alias' />
@@ -208,10 +208,10 @@ function CreateIsland (props) {
     if (!key || key === '') key = undefined
     if (!name) return setMessage(<strong>Name may not be empty</strong>)
 
-    client.createIsland(name, { key, alias })
+    client.createGroup(name, { key, alias })
       .then(res => {
         toast({
-          title: 'Island created',
+          title: 'Group created',
           status: 'success'
         })
         if (props.onCreate) props.onCreate()

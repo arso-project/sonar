@@ -11,16 +11,16 @@ const {
 } = require('./constants')
 
 module.exports = class SonarClient {
-  constructor (endpoint, island, opts = {}) {
+  constructor (endpoint, group, opts = {}) {
     if (typeof endpoint === 'object') {
       opts = endpoint
       endpoint = opts.endpoint
-      island = opts.island
+      group = opts.group
     }
 
-    debug('create client', { endpoint, island, opts })
+    debug('create client', { endpoint, group, opts })
     this.endpoint = endpoint || DEFAULT_ENDPOINT
-    this.island = island || DEFAULT_ISLAND
+    this.group = group || DEFAULT_ISLAND
     // this.token = opts.token || ''
 
     this.id = opts.id || randombytes(16).toString('hex')
@@ -32,7 +32,7 @@ module.exports = class SonarClient {
     this._sockets.forEach(s => s.destroy())
   }
 
-  // TODO: Support read-only islands.
+  // TODO: Support read-only groups.
   async isWritable () {
     return true
   }
@@ -44,7 +44,7 @@ module.exports = class SonarClient {
     })
   }
 
-  async createIsland (name, opts) {
+  async createGroup (name, opts) {
     const path = ['_create', name]
     // opts = { key, alias }
     const res = await this._request({
@@ -57,13 +57,13 @@ module.exports = class SonarClient {
 
   async getSchemas () {
     return this._request({
-      path: [this.island, 'schema']
+      path: [this.group, 'schema']
     })
   }
 
   async getSchema (schemaName) {
     return this._request({
-      path: [this.island, 'schema'],
+      path: [this.group, 'schema'],
       params: { name: schemaName }
     })
   }
@@ -73,7 +73,7 @@ module.exports = class SonarClient {
     schema.name = schemaName
     return this._request({
       method: 'POST',
-      path: [this.island, 'schema'],
+      path: [this.group, 'schema'],
       data: schema
     })
   }
@@ -81,7 +81,7 @@ module.exports = class SonarClient {
   async putSource (key, info) {
     return this._request({
       method: 'PUT',
-      path: [this.island, 'source', key],
+      path: [this.group, 'source', key],
       data: info
     })
   }
@@ -175,7 +175,7 @@ module.exports = class SonarClient {
 
   async put (record) {
     // let { schema, id, value } = record
-    const path = [this.island, 'db']
+    const path = [this.group, 'db']
     const method = 'PUT'
     return this._request({ path, method, data: record })
   }
@@ -183,7 +183,7 @@ module.exports = class SonarClient {
   async query (name, args, opts) {
     return this._request({
       method: 'POST',
-      path: [this.island, '_query', name],
+      path: [this.group, '_query', name],
       data: args,
       params: opts
     })
@@ -197,13 +197,13 @@ module.exports = class SonarClient {
     }
     return this._request({
       method: 'POST',
-      path: [this.island, '_query', 'search'],
+      path: [this.group, '_query', 'search'],
       data: query
     })
   }
 
-  async updateIsland (config, key) {
-    key = key || this.island
+  async updateGroup (config, key) {
+    key = key || this.group
     return this._request({
       method: 'PATCH',
       path: [key],
@@ -214,7 +214,7 @@ module.exports = class SonarClient {
   async getDrives () {
     return this._request({
       method: 'GET',
-      path: [this.island, 'fs-info']
+      path: [this.group, 'fs-info']
     })
   }
 
@@ -222,7 +222,7 @@ module.exports = class SonarClient {
     const self = this
     path = path || '/'
     if (path.length > 2 && path.charAt(0) === '/') path = path.substring(1)
-    let files = await this._request({ path: [this.island, 'fs', path] })
+    let files = await this._request({ path: [this.group, 'fs', path] })
     if (files && files.length) {
       files = files.map(file => {
         file.link = makeLink(file)
@@ -232,7 +232,7 @@ module.exports = class SonarClient {
     return files
 
     function makeLink (file) {
-      return `${self.endpoint}/${self.island}/fs/${file.path}`
+      return `${self.endpoint}/${self.group}/fs/${file.path}`
     }
   }
 
@@ -247,7 +247,7 @@ module.exports = class SonarClient {
     }
     
     return this._request({
-      path: [this.island, 'fs', path],
+      path: [this.group, 'fs', path],
       data: file,
       params: opts,
       method: 'PUT',
@@ -259,7 +259,7 @@ module.exports = class SonarClient {
   async readFile (path) {
     if (path.startsWith('/')) path = path.substring(1)
     return this._request({
-      path: [this.island, 'fs', path],
+      path: [this.group, 'fs', path],
       binary: true,
       responseType: 'stream'
     })
@@ -268,7 +268,7 @@ module.exports = class SonarClient {
   async statFile (path) {
     if (path.startsWith('/')) path = path.substring(1)
     return this._request({
-      path: [this.island, 'fs', path]
+      path: [this.group, 'fs', path]
     })
   }
 
@@ -279,7 +279,7 @@ module.exports = class SonarClient {
 
   fileUrl (url) {
     const path = url.replace("dat://", "")
-    return this.endpoint + '/' + this.island +'/fs/'+ path
+    return this.endpoint + '/' + this.group +'/fs/'+ path
   }
 
   async _request (opts) {
@@ -323,7 +323,7 @@ module.exports = class SonarClient {
 
   createCommandStream (opts = {}) {
     const { commands, name = 'sonar-client' } = opts
-    const stream = this._socket([this.island, 'commands'])
+    const stream = this._socket([this.group, 'commands'])
     const proto = new Endpoint({ stream, commands, name })
     proto.announce()
     // proto.hello()

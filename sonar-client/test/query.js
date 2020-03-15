@@ -6,9 +6,9 @@ const { makeClient } = require('./util/server')
 
 async function prepare (t) {
   const port = 21212
-  const island = 'foo'
-  let [client, cleanup] = await makeClient({ port, island })
-  await client.createIsland(island)
+  const group = 'foo'
+  let [client, cleanup] = await makeClient({ port, group })
+  await client.createGroup(group)
   // const key = res.key
   await client.put({ schema: 'doc', value: { title: 'hello world' } })
   await client.put({ schema: 'doc', value: { title: 'hello moon' } })

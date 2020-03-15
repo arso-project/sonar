@@ -6,7 +6,7 @@ const { makeClient } = require('./util/server')
 
 test('commands', async t => {
   let [client1, cleanup] = await makeClient()
-  await client1.createIsland('default')
+  await client1.createGroup('default')
   const client2 = new SonarClient(client1.endpoint)
 
   // A client with a command

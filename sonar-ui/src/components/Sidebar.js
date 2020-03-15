@@ -9,7 +9,7 @@ import {
 
 import config from '../lib/config'
 
-const island = config.get('island')
+const group = config.get('group')
 
 export function SidebarContent (props) {
   return (
@@ -17,10 +17,10 @@ export function SidebarContent (props) {
       <List>
         <NavLink exact to='/'>Start</NavLink>
         <NavLink to='/config'>Config</NavLink>
-        <NavLink to='/islands'>Islands</NavLink>
-        {island && (
+        <NavLink to='/groups'>Groups</NavLink>
+        {group && (
           <Fragment>
-            <MenuHeading>{island.substring(0, 6)}</MenuHeading>
+            <MenuHeading>{group.substring(0, 6)}</MenuHeading>
             <NavLink to='/search'>Search</NavLink>
             <NavLink to='/fileimport'>Import files</NavLink>
             <NavLink to='/filebrowser'>Filebrowser</NavLink>
