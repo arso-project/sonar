@@ -5,7 +5,7 @@ const sub = require('subleveldown')
 const mkdirp = require('mkdirp')
 const thunky = require('thunky')
 const leveldb = require('level')
-const debug = require('debug')('sonar-dat')
+const debug = require('debug')('sonar-core')
 const Corestore = require('corestore')
 const Catalog = require('@arso-project/sonar-tantivy')
 

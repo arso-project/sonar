@@ -1,5 +1,5 @@
 {
-  "name": "@arso-project/sonar-dat",
+  "name": "@arso-project/sonar-core",
   "version": "0.2.0",
   "description": "",
   "main": "index.js",
