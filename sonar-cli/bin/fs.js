@@ -8,15 +8,17 @@ const table = require('text-table')
 const date = require('date-fns')
 const mime = require('mime-types')
 const speedometer = require('speedometer')
+const yargs = require('yargs')
 
-exports.command = 'fs <command>'
+exports.command = 'fs'
 exports.describe = 'file system'
+exports.handler = () => yargs.showHelp()
 exports.builder = function (yargs) {
   yargs
     .command({
-      command: '$0',
-      describe: 'the default command',
-      handler: info
+      command: 'list',
+      describe: 'list drives',
+      handler: list
     })
     .command({
       command: 'read <path>',
@@ -25,7 +27,7 @@ exports.builder = function (yargs) {
     })
     .command({
       command: 'read-id <id>',
-      describe: 'read id to stdout',
+      describe: 'read file by id to stdout',
       handler: readid
     })
     .command({
@@ -79,7 +81,7 @@ exports.builder = function (yargs) {
     })
 }
 
-async function info(argv) {
+async function list (argv) {
   const client = makeClient(argv)
   const list = await client.getDrives()
   console.log(list)
@@ -256,7 +258,8 @@ function formatList(list) {
   return table(rows)
 }
 
-function formatDate(d) {
+function formatDate (d) {
+  if (typeof d === 'string') d = date.parseISO(d)
   if (date.differenceInYears(new Date(), d)) {
     return date.format(d, 'dd. MMM yyyy')
   } else {
