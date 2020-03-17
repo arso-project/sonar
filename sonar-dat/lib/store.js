@@ -49,9 +49,9 @@ module.exports = class IslandStore {
   }
 
   _ready (cb) {
-    this.corestore.ready((err) => {
+    this.config.load((err, config) => {
       if (err) return cb(err)
-      this.config.load((err, config) => {
+      this.corestore.ready((err) => {
         if (err) return cb(err)
         debug('config loaded', this.config.path)
         if (config.islands) {
