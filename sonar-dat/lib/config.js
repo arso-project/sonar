@@ -37,7 +37,7 @@ module.exports = class ConfigLoader {
   save (config, cb) {
     this.lock(release => {
       this.config = config
-      const json = JSON.stringify(this.config)
+      const json = JSON.stringify(this.config, null, 2)
       fs.writeFile(this.path, Buffer.from(json), (err, res) => {
         release()
         cb(err, res)
