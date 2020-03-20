@@ -6,6 +6,7 @@ const mkdirp = require('mkdirp')
 const thunky = require('thunky')
 const leveldb = require('level')
 const debug = require('debug')('sonar-dat')
+const { EventEmitter } = require('events')
 const Corestore = require('corestore')
 const Catalog = require('@arso-project/sonar-tantivy')
 
@@ -15,8 +16,9 @@ const Island = require('./island')
 
 const ISLAND_NAME_REGEX = /^[a-zA-Z0-9-_]{3,32}$/
 
-module.exports = class IslandStore {
+module.exports = class IslandStore extends EventEmitter {
   constructor (storage, opts = {}) {
+    super()
     storage = storage || p.join(os.homedir(), '.sonar')
     this.paths = {
       base: storage,
@@ -38,6 +40,9 @@ module.exports = class IslandStore {
     this.config = new Config(p.join(this.paths.base, 'config.json'))
     this.corestore = new Corestore(this.paths.corestore)
     this.indexCatalog = new Catalog(this.paths.tantivy)
+    this.indexCatalog.on('error', err => {
+      this.emit('error', err)
+    })
     this.level = leveldb(this.paths.level)
 
     debug('storage location: ' + this.paths.base)
