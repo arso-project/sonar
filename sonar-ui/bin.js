@@ -5,6 +5,7 @@ const cli = require('@arso-project/sonar-cli')
 const express = require('express')
 const p = require('path')
 const open = require('open')
+const yargs = require('yargs')
 
 // TODO: This pulls webpack-nano into packaging.
 // Should be optional.
@@ -12,8 +13,9 @@ const WP_BIN = require.resolve('webpack-nano/bin/wp.js')
 const WP_CONFIG = p.join(__dirname, 'webpack.config.js')
 
 const command = {
-  command: 'ui [dev|serve]',
+  command: 'ui',
   describe: 'ui',
+  handler: () => yargs.showHelp(),
   builder: yargs => {
     yargs
       .demandCommand(1, '"sonar ui help" lists commands')
@@ -62,9 +64,13 @@ const command = {
   }
 }
 
-const args = cli.command(command)
-if (require.main === module) args.demandCommand().parse()
-else module.exports = args
+// const args = cli.command(command)
+if (require.main === module) {
+  yargs.command(command).demandCommand().help().parse()
+} else {
+  module.exports = command
+  module.exports.serve = serve
+}
 
 function dev (argv) {
   console.log('Starting UI in dev mode')
