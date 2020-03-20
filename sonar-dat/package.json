@@ -18,7 +18,7 @@
     "hypercore-protocol": "^7.7.1",
     "hyperdrive": "^10.4.4",
     "hyperswarm": "^2.8.0",
-    "kappa-record-db": "^0.5.0",
+    "kappa-record-db": "^0.6.0",
     "level": "^5.0.1",
     "mkdirp": "^0.5.1",
     "mutexify": "^1.2.0",
@@ -27,12 +27,12 @@
     "simple-local-swarm": "^1.0.1",
     "stream-collector": "^1.0.1",
     "subleveldown": "^4.1.4",
-    "tap-nirvana": "^1.1.0",
     "through2": "^3.0.1",
     "thunky": "^1.1.0"
   },
   "devDependencies": {
     "tape": "^4.11.0",
+    "tap-nirvana": "^1.1.0",
     "temporary-directory": "^1.0.2"
   }
 }

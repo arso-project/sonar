@@ -77,7 +77,7 @@ module.exports = class Island {
       this.key = this.db.key
       this.discoveryKey = this.db.discoveryKey
 
-      this.db.useRecordView('search',
+      this.db.use('search',
         sonarView,
         {
           indexCatalog: this.indexCatalog
