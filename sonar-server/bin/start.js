@@ -1,27 +1,15 @@
 const p = require('path')
 const { spawn } = require('child_process')
 const debug = require('debug')
+const onexit = require('async-exit-hook')
 
-const { startServer } = require('./server-start')
+const { options, startServer } = require('./server')
 
 exports.command = 'start'
 exports.describe = 'start sonar'
 exports.handler = start
 exports.builder = {
-  port: {
-    alias: 'p',
-    describe: 'port',
-    default: 9191
-  },
-  hostname: {
-    alias: 'h',
-    describe: 'hostname',
-    default: 'localhost'
-  },
-  storage: {
-    alias: 's',
-    describe: 'The storage path for this sonar server'
-  },
+  ...options,
   dev: {
     alias: 'd',
     describe: 'Start in developer mode'
@@ -30,22 +18,26 @@ exports.builder = {
 
 function start (argv) {
   if (argv.dev) {
-    // TODO: Why does this not work?
-    debug.enable('sonar')
+    process.env.DEBUG = process.env.DEBUG || 'sonar:*'
   }
   startServer(argv)
   const path = p.join(__dirname, '..', 'bin.js')
   const cmd = argv.dev ? 'dev' : 'serve'
-  spawn('node', [path, 'ui', cmd], {
+  const proc = spawn('node', [path, 'ui', cmd], {
+    stdio: 'inherit',
     env: {
       ...process.env,
       DEBUG: '',
-      FORCE_COLOR: 2
-    },
-    stdio: 'inherit'
+      FORCE_COLOR: process.env.FORCE_COLOR || '2'
+    }
+  })
+  onexit(cb => {
+    if (proc.killed) return cb()
+    proc.once('exit', cb)
+    proc.kill()
   })
 }
 
-function stop (args) {
-  console.error('not implemented')
-}
+// function stop (args) {
+//   console.error('not implemented')
+// }
