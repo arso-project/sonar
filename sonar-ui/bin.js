@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 
 const { spawn } = require('child_process')
-const cli = require('@arso-project/sonar-cli')
 const express = require('express')
 const p = require('path')
 const open = require('open')
@@ -66,7 +65,8 @@ const command = {
 
 // const args = cli.command(command)
 if (require.main === module) {
-  yargs.command(command).demandCommand().help().parse()
+  command.builder(yargs)
+  yargs.demandCommand().help().parse()
 } else {
   module.exports = command
   module.exports.serve = serve

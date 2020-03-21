@@ -12,6 +12,9 @@
 		"express": "^4.17.1",
 		"open": "^7.0.0"
 	},
+  "bin": {
+    "sonar-ui": "bin.js"
+  },
 	"devDependencies": {
 		"@babel/core": "^7.6.4",
 		"@babel/preset-env": "^7.6.3",
