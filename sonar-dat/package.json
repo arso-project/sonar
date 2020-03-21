@@ -1,6 +1,6 @@
 {
   "name": "@arso-project/sonar-dat",
-  "version": "0.2.0",
+  "version": "0.3.0-alpha.1",
   "description": "",
   "main": "index.js",
   "scripts": {
@@ -31,8 +31,8 @@
     "thunky": "^1.1.0"
   },
   "devDependencies": {
-    "tape": "^4.11.0",
     "tap-nirvana": "^1.1.0",
+    "tape": "^4.11.0",
     "temporary-directory": "^1.0.2"
   }
 }

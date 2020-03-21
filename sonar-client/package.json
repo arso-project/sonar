@@ -1,6 +1,6 @@
 {
   "name": "@arso-project/sonar-client",
-  "version": "0.2.2",
+  "version": "0.3.0-alpha.1",
   "description": "Client for sonar",
   "main": "index.js",
   "scripts": {
@@ -16,7 +16,7 @@
     "streamx": "^2.5.0"
   },
   "devDependencies": {
-    "@arso-project/sonar-server": "^0.2.2",
+    "@arso-project/sonar-server": "^0.3.0-alpha.1",
     "axios-debug-log": "^0.6.2",
     "tape": "^4.11.0",
     "tape-plus": "^1.0.0",
