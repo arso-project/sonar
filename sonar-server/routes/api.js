@@ -214,7 +214,7 @@ function HttpError (code, message) {
   let err
   if (message instanceof Error) err = message
   else err = new Error(message)
-  errr.statusCode = code
+  err.statusCode = code
   return err
 }
 
