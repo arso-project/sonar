@@ -37,4 +37,3 @@ export default function ConfigPage (props) {
     window.location.reload()
   }
 }
-

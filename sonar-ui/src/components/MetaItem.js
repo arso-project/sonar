@@ -16,7 +16,7 @@ export function MetaItem (props) {
   return (
     <Stack
       direction={stacked ? 'column' : 'row'}
-    spacing={stacked ? 0 : 2}
+      spacing={stacked ? 0 : 2}
       mr='4'
       fontSize='xs'
     >

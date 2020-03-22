@@ -62,7 +62,7 @@ function createConfig (opts) {
       path: output,
       publicPath: '/',
       filename: 'bundle.js',
-      pathinfo: false,
+      pathinfo: false
     },
     plugins: [
       // Create an index.html file

@@ -6,9 +6,9 @@ export default function createTheme (colorMode) {
   const lums = [
     light ? 900 : 50,
     light ? 700 : 300,
-    light ? 500 : 500,
+    light ? 500 : 500
   ]
-  
+
   const theme = {
     ...chakra,
     shadows: {
@@ -23,7 +23,7 @@ export default function createTheme (colorMode) {
       text2: chakra.colors.gray[lums[2]],
       bg0: light ? chakra.colors.gray['200'] : chakra.colors.gray['600'],
       bg1: light ? chakra.colors.gray['100'] : chakra.colors.gray['700'],
-      bg2: light ? chakra.colors.gray['50'] : chakra.colors.gray['800'],
+      bg2: light ? chakra.colors.gray['50'] : chakra.colors.gray['800']
     }
   }
   return theme

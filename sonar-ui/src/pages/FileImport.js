@@ -13,7 +13,7 @@ export default function FileImportPage (props) {
 
   return (
     <Box flex='1'>
-      <FileImporter/>
+      <FileImporter />
     </Box>
   )
 }

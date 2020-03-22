@@ -8,12 +8,11 @@ import {
   AlertTitle,
   AlertDescription,
   useToast
-} from "@chakra-ui/core";
-
+} from '@chakra-ui/core'
 
 const statuses = {
   error: 'error',
-  info: 'info',
+  info: 'info'
 }
 
 function StatusMessage (props) {

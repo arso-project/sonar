@@ -12,33 +12,33 @@ import {
   List,
   ListItem,
   Text
-} from "@chakra-ui/core"
-import useLog from "../hooks/use-log"
+} from '@chakra-ui/core'
+import useLog from '../hooks/use-log'
 import { format } from 'date-fns'
 
 export function LogModal (props) {
   const { isOpen, onClose } = props
   return (
-      <Modal isOpen={isOpen} onClose={onClose} scrollBehavior='inside'>
-        <ModalOverlay />
-        <ModalContent>
-          <ModalHeader>Sonar log</ModalHeader>
-          <ModalCloseButton />
-          <ModalBody>
-            <Log />
-          </ModalBody>
+    <Modal isOpen={isOpen} onClose={onClose} scrollBehavior='inside'>
+      <ModalOverlay />
+      <ModalContent>
+        <ModalHeader>Sonar log</ModalHeader>
+        <ModalCloseButton />
+        <ModalBody>
+          <Log />
+        </ModalBody>
 
-          <ModalFooter>
-            <Button variantColor="blue" mr={3} onClick={onClose}>
+        <ModalFooter>
+          <Button variantColor='blue' mr={3} onClick={onClose}>
               Close
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
+          </Button>
+        </ModalFooter>
+      </ModalContent>
+    </Modal>
   )
 }
 
-const colors =  {
+const colors = {
   error: 'red.400',
   debug: 'gray.500',
   info: 'blue.400'
@@ -49,7 +49,7 @@ export function Log (props) {
   return (
     <List>
       {log.map((msg, i) => (
-          <LogMessage key={i} msg={msg} />
+        <LogMessage key={i} msg={msg} />
       ))}
     </List>
   )
@@ -66,6 +66,6 @@ function LogMessage (props) {
       <Text flex='1'>
         {msg.msg}
       </Text>
-    </ListItem>   
+    </ListItem>
   )
 }

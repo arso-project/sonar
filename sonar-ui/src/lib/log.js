@@ -7,7 +7,7 @@ export class LogStore {
   error (msg) {
     return this.log('error', msg)
   }
-  
+
   debug (msg) {
     return this.log('debug', msg)
   }
@@ -19,21 +19,21 @@ export class LogStore {
   log (level, msg) {
     if (typeof msg === 'string') msg = { msg }
     if (msg instanceof Error) msg = { msg: msg.message, error: msg }
-    
+
     const timestamp = Date.now()
-    
+
     msg = { timestamp, level, ...msg }
     this.msgs.push(msg)
 
     const colors = {
       error: 'red',
       info: 'blue',
-      debug: 'gray' 
+      debug: 'gray'
     }
-    console.log('%c%s: %c%s %o', 
+    console.log('%c%s: %c%s %o',
       `color: ${colors[level] || 'black'}; font-weight: bold;`,
       msg.level,
-    'color: black; font-weight: bold;',
+      'color: black; font-weight: bold;',
       msg.msg,
       msg
     )

@@ -47,11 +47,10 @@ export default function IslandPage (props) {
   const selectedIsland = config.get('island')
   const selectedBg = { dark: 'gray.700', light: 'gray.100' }
 
-
   // let { } = useParams()
   // _hover={{ bg: 'gray.50' }}
   return (
-    <Flex 
+    <Flex
       flex='1'
       direction='column'
     >
@@ -92,39 +91,39 @@ export default function IslandPage (props) {
                       id={island.key + '-share'}
                       onChange={e => handleShareSwitch(e.target.checked, island)}
                     />
-                    <Button size="sm" ml="10" variantColor="blue" onClick={e => handleToggle(island.key)}>
+                    <Button size='sm' ml='10' variantColor='blue' onClick={e => handleToggle(island.key)}>
                       Info
-                    <Icon
+                      <Icon
                         name={showMoreIslands[island.key] ? 'chevron-down' : 'chevron-right'}
-                        size="24px"
+                        size='24px'
                       />
                     </Button>
                   </Flex>
                 </Flex>
                 <Collapse isOpen={showMoreIslands[island.key]}>
-                  <Flex direction="column" py='2'>
-                    <Flex direction="row" justify="flex-start">
-                    <Box flexShrink='0' width={['auto', '12rem']} color='teal.400'>Key:</Box>
+                  <Flex direction='column' py='2'>
+                    <Flex direction='row' justify='flex-start'>
+                      <Box flexShrink='0' width={['auto', '12rem']} color='teal.400'>Key:</Box>
                       <Box style={{ overflowWrap: 'anywhere' }}>
-                      <Key k={island.key} mr='4' />
+                        <Key k={island.key} mr='4' />
                       </Box>
                     </Flex>
-                    <Flex direction="row" justify="flex-start">
-                    <Box flexShrink='0' width={['auto', '12rem']} color='teal.400'>Local key:</Box>
-                    <Box style={{ overflowWrap: 'anywhere' }}>
-                      <Key k={island.localKey} mr='4' />
-                    </Box>
+                    <Flex direction='row' justify='flex-start'>
+                      <Box flexShrink='0' width={['auto', '12rem']} color='teal.400'>Local key:</Box>
+                      <Box style={{ overflowWrap: 'anywhere' }}>
+                        <Key k={island.localKey} mr='4' />
+                      </Box>
                     </Flex>
-                    <Flex direction="row" justify="flex-start">
-                    <Box flexShrink='0' width={['auto', '12rem']} color='teal.400'>Local drive:</Box>
-                    <Box style={{ overflowWrap: 'anywhere' }}>
-                                  <Key k={island.localDrive} mr='4' />
-                    </Box>
-                      </Flex>
+                    <Flex direction='row' justify='flex-start'>
+                      <Box flexShrink='0' width={['auto', '12rem']} color='teal.400'>Local drive:</Box>
+                      <Box style={{ overflowWrap: 'anywhere' }}>
+                        <Key k={island.localDrive} mr='4' />
+                      </Box>
+                    </Flex>
                     { getNetworkInfo(island.key) && (
-                    <Flex direction="row" justify="flex-start">
+                      <Flex direction='row' justify='flex-start'>
                         <Box flexShrink='0' width={['auto', '12rem']} color='teal.400'>Peers:</Box>
-                        <Box style={{overflowWrap: 'anywhere'}}>
+                        <Box style={{ overflowWrap: 'anywhere' }}>
                           {getNetworkInfo(island.key).peers}
                         </Box>
                       </Flex>
@@ -145,7 +144,7 @@ export default function IslandPage (props) {
     config.set('island', island.key)
     window.location.reload()
   }
-  
+
   function getNetworkInfo (key) {
     return network.shared.find(el => el.key === key)
   }
@@ -155,7 +154,7 @@ export default function IslandPage (props) {
   }
 
   function handleToggle (key) {
-    let newShowMoreIslands = {...showMoreIslands}
+    let newShowMoreIslands = { ...showMoreIslands }
     if (showMoreIslands.hasOwnProperty(key)) {
       newShowMoreIslands[key] = !showMoreIslands[key]
     } else {
