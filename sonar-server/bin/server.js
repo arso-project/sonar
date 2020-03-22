@@ -13,9 +13,7 @@ exports.builder = function (yargs) {
       command: 'start',
       describe: 'start the sonar server',
       handler: start,
-      builder: {
-        options
-      }
+      builder: options
     })
     .command({
       command: 'stop',
