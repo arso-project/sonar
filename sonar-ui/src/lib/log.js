@@ -23,7 +23,7 @@ export class LogStore {
     const timestamp = Date.now()
     
     msg = { timestamp, level, ...msg }
-    const ret = this.msgs.push(msg)
+    this.msgs.push(msg)
 
     const colors = {
       error: 'red',

@@ -3,27 +3,26 @@ import { useParams } from 'react-router-dom'
 
 import {
   Box,
-  Flex,
-  Text,
-  List,
-  Input,
-  Heading
+  Flex
 } from '@chakra-ui/core'
 
 import client from '../lib/client'
-import log from '../lib/log'
 
+import useAsync from '../hooks/use-async'
+import Logger from '../components/Logger'
 import { RecordGroup } from '../components/Record'
 import { SearchResultList } from './Search'
 
-// import './Record.css'
+async function fetchRecordData (id) {
+  const records = await client.get({ id })
+  const schemas = await client.getSchemas()
+  return { records, schemas }
+}
 
 export default function RecordPage (props) {
   const { id } = useParams()
-  const data = useRecordData(id)
-  // const searchResults = useSearchResults()
-
-  if (!data) return <em>Loading</em>
+  const { data, error, pending } = useAsync(fetchRecordData, [id], [id])
+  if (error || pending) return <Logger error={error} pending={pending} />
 
   const { records, schemas } = data
 
@@ -37,32 +36,4 @@ export default function RecordPage (props) {
       </Box>
     </Flex>
   )
-}
-
-async function fetchRecordData (id) {
-  const records = await client.get({ id })
-  const schemaNames = new Set(records.map(r => r.schema))
-  const schemas = {}
-  await Promise.all([...schemaNames].map(async name => {
-    const schema = await client.getSchema(name)
-    schemas[name] = schema
-  }))
-  return { records, schemas }
-}
-
-function useRecordData (id) {
-  const [data, setData] = useState(null)
-
-  useEffect(() => {
-    let mounted = true
-    fetchRecordData(id)
-      .then(({ records, schemas }) => {
-        if (!mounted) return
-        setData({ records, schemas })
-      })
-      .catch(error => errors.push(error))
-    return () => (mounted = false)
-  }, [id])
-
-  return data
 }

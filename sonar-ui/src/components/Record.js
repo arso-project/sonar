@@ -286,7 +286,7 @@ function NoSchemaError (props) {
   const { id, schema, message } = record
   return (
     <div>
-      Cannot display record <strong>{id}</strong> (schema <code>{schema}</code>): {message}.
+      Missing schema for record <strong>{id}</strong> (schema <code>{schema}</code>): {message}.
     </div>
   )
 }

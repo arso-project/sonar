@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
-import log from '../lib/log'
+import logger from '../lib/log'
+import Loading from './Loading'
 
 import {
   Alert,
@@ -15,39 +16,48 @@ const statuses = {
   info: 'info',
 }
 
+function StatusMessage (props) {
+  const { message } = props
+  if (!message) return null
+  const { msg, timestamp, level } = message
+  return (
+    <Alert status={statuses[level]} maxHeight='4rem'>
+      <AlertIcon />
+      <AlertTitle mr={2}>{level}</AlertTitle>
+      <AlertDescription>{msg}</AlertDescription>
+    </Alert>
+  )
+}
+
 export default function Logger (props) {
-  let { error, info, debug, toast } = props
+  const { pending, error, info, debug, toast } = props
   const toaster = useToast()
-  const [msg, setMsg] = useState(null)
-  
-  let level
-  if (error) level = 'error'
-  else if (info) level = 'info'
-  else if (debug) level = 'debug'
-  
+  const [currentMessage, setCurrentMessage] = useState(null)
+
+  const incomingMessage = error || info || debug
+
   useEffect(() => {
-    const msg = log[level](error || info || debug)
-    setMsg(msg)
+    if (pending || !incomingMessage) return
+    const level = (error && 'error') || (info && 'info') || (debug && 'debug')
+    const loggedMessage = logger.log(level, incomingMessage)
+    setCurrentMessage(loggedMessage)
     if (level !== 'debug' && toast) {
       toaster({
         status: statuses[level],
         title: level,
-        description: msg.msg,
+        description: loggedMessage.msg,
         duration: 9000,
         isClosable: true
       })
     }
   }, [error])
 
-  if (!msg) return null
-  if (level === 'debug') return null
+  if (pending) return <Loading />
+  if (!currentMessage) return null
+  if (currentMessage.level === 'debug') return null
   if (toast) return null
 
-  return (
-    <Alert status={statuses[level]} maxHeight='4rem'>
-      <AlertIcon />
-      <AlertTitle mr={2}>{level}</AlertTitle>
-      <AlertDescription>{msg.msg}</AlertDescription>
-    </Alert>
-  )
+  return <StatusMessage message={currentMessage} />
 }
+
+Logger.Loading = Loading
