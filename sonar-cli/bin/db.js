@@ -84,7 +84,7 @@ async function put (argv) {
 async function query (argv) {
   const client = makeClient(argv)
   let { name, args } = argv
-  args = JSON.parse(args)
+  if (args) args = JSON.parse(args)
   const results = await client.query(name, args)
   console.log(results)
 }
