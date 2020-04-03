@@ -1,5 +1,3 @@
-const leveldb = require('level')
-const p = require('path')
 const thunky = require('thunky')
 const pretty = require('pretty-hash')
 const sub = require('subleveldown')
@@ -11,6 +9,7 @@ const Database = require('kappa-record-db')
 const Fs = require('./fs')
 
 const sonarView = require('./search/view-sonar')
+const historyView = require('../views/history')
 
 module.exports = class Island {
   constructor (key, opts) {
@@ -77,12 +76,10 @@ module.exports = class Island {
       this.key = this.db.key
       this.discoveryKey = this.db.discoveryKey
 
-      this.db.use('search',
-        sonarView,
-        {
-          indexCatalog: this.indexCatalog
-        }
-      )
+      this.db.use('search', sonarView, {
+        indexCatalog: this.indexCatalog
+      })
+      this.db.use('history', historyView)
 
       this.fs.ready(() => {
         debug('ready', this.db)
