@@ -5,5 +5,5 @@ args.command(require('@arso-project/sonar-ui/bin.js'))
 args.command(require('./bin/start.js'))
 args.command(require('./bin/server.js'))
 
-if (require.main === module) args.demandCommand().argv
+if (require.main === module) args.help().demandCommand().argv
 else module.exports = args
