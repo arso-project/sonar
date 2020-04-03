@@ -2,30 +2,36 @@ const axios = require('axios')
 const randombytes = require('randombytes')
 const Socket = require('simple-websocket')
 const { Endpoint } = require('simple-rpc-protocol')
-const debug = require('debug')('sonar-client')
-const SearchQueryBuilder = require('./searchquerybuilder.js')
 const parseUrl = require('parse-dat-url')
+const debug = require('debug')('sonar-client')
+
+const SearchQueryBuilder = require('./searchquerybuilder.js')
+const RecordCache = require('./record-cache')
 
 const {
-  DEFAULT_ENDPOINT, DEFAULT_ISLAND, SCHEMA_RESOURCE, METADATA_ID, HYPERDRIVE_SCHEME
+  DEFAULT_ENDPOINT,
+  DEFAULT_ISLAND,
+  SCHEMA_RESOURCE,
+  METADATA_ID,
+  HYPERDRIVE_SCHEME
 } = require('./constants')
 
 module.exports = class SonarClient {
-  constructor (endpoint, island, opts = {}) {
-    if (typeof endpoint === 'object') {
-      opts = endpoint
-      endpoint = opts.endpoint
-      island = opts.island
-    }
-
-    debug('create client', { endpoint, island, opts })
-    this.endpoint = endpoint || DEFAULT_ENDPOINT
-    this.island = island || DEFAULT_ISLAND
-    // this.token = opts.token || ''
+  constructor (opts = {}) {
+    this.endpoint = opts.endpoint || DEFAULT_ENDPOINT
+    this.island = opts.island || DEFAULT_ISLAND
 
     this.id = opts.id || randombytes(16).toString('hex')
     this.name = opts.name || null
+
     this._sockets = []
+    this._cache = new RecordCache()
+
+    if (opts.cache !== false) {
+      this._cacheid = 'client:' + this.id
+    }
+
+    debug(`create client: endpoint ${this.endpoint} island ${this.island}`)
   }
 
   close () {
@@ -116,7 +122,7 @@ module.exports = class SonarClient {
   }
 
   async createResource (value, opts = {}) {
-    let { filename, prefix } = value
+    const { filename, prefix } = value
     if (!filename) throw new Error('Filename is required')
     if (filename.indexOf('/') !== -1) throw new Error('Invalid filename')
     if (opts.scoped) throw new Error('Scoped option is not supported')
@@ -180,13 +186,23 @@ module.exports = class SonarClient {
     return this._request({ path, method, data: record })
   }
 
-  async query (name, args, opts) {
-    return this._request({
+  async query (name, args, opts = {}) {
+    if (this._cacheid) {
+      opts.cacheid = this._cacheid
+    }
+
+    const records = await this._request({
       method: 'POST',
       path: [this.island, '_query', name],
       data: args,
       params: opts
     })
+
+    if (this._cacheid) {
+      return this._cache.batch(records)
+    }
+
+    return records
   }
 
   async search (query) {
@@ -195,11 +211,7 @@ module.exports = class SonarClient {
     } else if (query instanceof SearchQueryBuilder) {
       query = query.getQuery()
     }
-    return this._request({
-      method: 'POST',
-      path: [this.island, '_query', 'search'],
-      data: query
-    })
+    return this.query('search', query)
   }
 
   async updateIsland (config, key) {
@@ -239,13 +251,13 @@ module.exports = class SonarClient {
   async writeFile (path, file, opts) {
     if (!path || !path.length) throw new Error('path is required')
     if (path.startsWith('/')) path = path.substring(1)
-    
+
     let onUploadProgress
     if (opts.onUploadProgress) {
       onUploadProgress = opts.onUploadProgress
       delete opts.onUploadProgress
     }
-    
+
     return this._request({
       path: [this.island, 'fs', path],
       data: file,
@@ -278,8 +290,8 @@ module.exports = class SonarClient {
   }
 
   fileUrl (url) {
-    const path = url.replace("dat://", "")
-    return this.endpoint + '/' + this.island +'/fs/'+ path
+    const path = url.replace('dat://', '')
+    return this.endpoint + '/' + this.island + '/fs/' + path
   }
 
   async _request (opts) {
@@ -296,7 +308,7 @@ module.exports = class SonarClient {
       data: opts.data || {},
       responseType: opts.responseType,
       params: opts.params,
-      onUploadProgress: opts.onUploadProgress,
+      onUploadProgress: opts.onUploadProgress
     }
     debug('request', axiosOpts)
 
