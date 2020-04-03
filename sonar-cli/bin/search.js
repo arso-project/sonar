@@ -3,6 +3,7 @@ const table = require('text-table')
 const chalk = require('chalk')
 const ansi = require('ansi-styles')
 const util = require('util')
+const prettyHash = require('pretty-hash')
 
 exports.command = 'search <query>'
 exports.describe = 'make search queries'
@@ -12,6 +13,15 @@ exports.builder = {
     boolean: true,
     alias: 'f',
     describe: 'long output'
+  },
+  json: {
+    boolean: true,
+    alias: 'j',
+    describe: 'output as json'
+  },
+  pretty: {
+    boolean: true,
+    describe: 'pretty-print json'
   }
 }
 
@@ -19,8 +29,12 @@ async function search (argv) {
   const client = makeClient(argv)
   const query = argv.query
   const results = await client.search(query)
-  const formatted = formatResults(results, argv)
-  console.log(formatted)
+  if (argv.json) {
+    console.log(JSON.stringify(results, 0, 2))
+  } else {
+    const formatted = formatResults(results, argv)
+    console.log(formatted)
+  }
 }
 
 function formatResults (results, opts) {
@@ -29,7 +43,7 @@ function formatResults (results, opts) {
   if (!opts.full) {
     list = table(results.map(r => {
       return [
-        r.value.score,
+        r.meta.score,
         formatSchema(r),
         r.id,
         chalk.bold.yellow(r.value.title)
@@ -55,8 +69,8 @@ function formatMeta (r) {
     chalk.bold(formatSchema(r)),
     'id',
     chalk.bold(r.id),
-    'source',
-    chalk.bold(r.source.substring(0, 6) + '..'),
+    'feed',
+    chalk.bold(prettyHash(r.key))
   ].join(' ')
   return line
   // return chalk.dim(line)
@@ -64,7 +78,7 @@ function formatMeta (r) {
 }
 
 function formatValue (r) {
-  let snippet = r.value.snippet
+  let snippet = r.meta.snippet
   snippet = snippet.replace('<b>', ansi.yellow.open)
   snippet = snippet.replace('</b>', ansi.yellow.close)
   return snippet
