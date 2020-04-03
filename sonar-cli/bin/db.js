@@ -39,6 +39,11 @@ exports.builder = function (yargs) {
       handler: put
     })
     .command({
+      command: 'query [name] [args]',
+      describe: 'query',
+      handler: query
+    })
+    .command({
       command: 'put-schema [name]',
       describe: 'put schema from stdin',
       handler: putSchema
@@ -68,10 +73,20 @@ async function put (argv) {
   let { schema, id, data } = argv
   if (!data) {
     data = await collectJson(process.stdin)
+  } else {
+    data = JSON.parse(data)
   }
   const record = { schema, id, value: data }
   const result = await client.put(record)
   console.log(result.id)
+}
+
+async function query (argv) {
+  const client = makeClient(argv)
+  let { name, args } = argv
+  args = JSON.parse(args)
+  const results = await client.query(name, args)
+  console.log(results)
 }
 
 async function putSchema (argv) {
