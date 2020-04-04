@@ -42,7 +42,6 @@ function start (argv) {
   })
 
   onexit(cb => {
-    console.log(proc)
     if (proc.killed) return cb()
     proc.once('exit', cb)
     proc.kill()
