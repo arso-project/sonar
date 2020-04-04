@@ -147,4 +147,19 @@ module.exports = class Island {
   close (cb) {
     this.db.close(cb)
   }
+
+  getState (cb) {
+    const indexer = this.db.indexer
+    const subscriptions = indexer._subscriptions
+    const statuses = {}
+    // console.log('subs', subscriptions)
+    let pending = Object.keys(subscriptions).length
+    for (const [name, sub] of Object.entries(subscriptions)) {
+      sub.getState((err, status) => {
+        if (err) return cb(err)
+        statuses[name] = status
+        if (--pending === 0) cb(null, statuses)
+      })
+    }
+  }
 }

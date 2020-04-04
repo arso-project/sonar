@@ -205,7 +205,10 @@ function createIslandHandlers () {
     },
 
     debug (req, res, next) {
-      return res.end('not implemented')
+      req.island.getState((err, state) => {
+        if (err) return next(err)
+        res.send(state)
+      })
     }
   }
 }
