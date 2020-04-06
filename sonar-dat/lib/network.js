@@ -91,7 +91,7 @@ module.exports = class Network {
         return
       }
       debug('start replication [init: true]!')
-      stream = island.replicate(true)
+      stream = island.replicate(true, { live: true })
       this._onpeer({ stream, discoveryKey: hdkey, island })
     } else {
       stream = new Protocol(false)
@@ -103,7 +103,7 @@ module.exports = class Network {
           debug('invalid discovery key')
         } else {
           debug('start replication [init: false]')
-          island.replicate(false, { stream })
+          island.replicate(false, { stream, live: true })
           this._onpeer({ stream, discoveryKey: hdkey, island })
         }
       })
