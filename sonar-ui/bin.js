@@ -1,15 +1,11 @@
 #!/usr/bin/env node
 
-const { spawn } = require('child_process')
 const express = require('express')
 const p = require('path')
 const fs = require('fs')
 const open = require('open')
 const yargs = require('yargs')
 
-// TODO: This pulls webpack-nano into packaging.
-// Should be optional.
-const WP_BIN = process.env.WP_BIN || require.resolve('webpack-nano/bin/wp.js')
 const DIST_PATH = p.join('build', 'dist')
 
 const commonOptions = {
@@ -59,6 +55,18 @@ const command = {
           static: {
             boolean: true,
             describe: 'Build a static HTML export'
+          },
+          analyze: {
+            boolean: true,
+            describe: 'Analyze build size'
+          },
+          'json-stats': {
+            boolean: true,
+            describe: 'Emit build stats as JSON'
+          },
+          bench: {
+            boolean: true,
+            describe: 'Benchmark build timings'
           }
         }
       })
@@ -95,17 +103,14 @@ function createServer (opts) {
 
 function dev (argv) {
   console.log('Starting UI in dev mode')
-  argv.workdir = p.resolve(argv.workdir)
-  const configPath = findWebpackConfig(argv.workdir)
-  console.log('Webpack config: ' + configPath)
 
   process.env.NODE_ENV = 'development'
   process.env.WORKDIR = argv.workdir
 
-  const app = createServer(argv)
-
-  const config = require(configPath)
+  const config = getWebpackConfig(argv)
   const webpack = require('webpack')
+
+  const app = createServer(argv)
 
   // Enable hot module replacement.
   config.plugins.push(new webpack.HotModuleReplacementPlugin())
@@ -143,45 +148,69 @@ function serve (argv) {
 }
 
 function build (argv) {
-  console.log('Start building UI')
-  argv.workdir = p.resolve(argv.workdir)
-  const configPath = findWebpackConfig(argv.workdir)
-  console.log('Webpack config: ' + configPath)
-
-  process.env.NODE_ENV = 'production'
+  console.error('Start building UI')
+  process.env.NODE_ENV = process.env.NODE_ENV || 'production'
   process.env.WORKDIR = argv.workdir
 
-  const args = copyArgs(argv, ['static', 'watch', 'port', 'hostname', 'workdir'])
-  spawn('node', [WP_BIN, '--config', configPath, ...args], {
-    stdio: 'inherit',
-    cwd: __dirname,
-    env: process.env
-  })
+  const webpack = require('webpack')
+  const config = getWebpackConfig(argv)
+
+  if (argv.jsonStats) {
+    config.profile = true
+    config.stats = 'verbose'
+  }
+
+  const compiler = webpack(config)
+  if (argv.watch) {
+    console.error('Watching files and rebuilding on changes')
+    compiler.watch({}, done)
+  } else {
+    compiler.run(done)
+  }
+
+  function done (err, stats) {
+    if (err) console.log('Build errored', err)
+    if (argv.jsonStats) {
+      console.log(JSON.stringify(stats.toJson(), 0, 2))
+    } else {
+      console.log(stats.toString({
+        colors: true,
+        assets: false,
+        buildAt: true,
+        cached: true,
+        chunks: false,
+        context: argv.workdir,
+        entrypoints: true,
+        errors: true,
+        errorDetails: true,
+        hash: false,
+        modules: false,
+        timings: true,
+        warnings: false,
+        version: !argv.watch,
+        performance: false,
+        providedExports: false,
+        children: false
+      }))
+    }
+  }
+}
+
+function getWebpackConfig (argv) {
+  const configPath = findWebpackConfig(argv.workdir)
+  console.error('Webpack config: ' + configPath)
+  let config = require(configPath)
+  if (config.createConfig) {
+    config = config.createConfig(argv)
+  }
+  return config
 }
 
 function findWebpackConfig (workdir) {
+  workdir = p.resolve(workdir)
   if (fs.existsSync(p.join(workdir, 'webpack.config.js'))) {
     return p.join(workdir, 'webpack.config.js')
   } else {
     return p.join(__dirname, 'webpack.config.js')
-  }
-}
-
-function copyArgs (from, keys) {
-  const args = []
-  for (const key in keys) {
-    if (from[key] !== undefined) {
-      args.push(argkey(key))
-      if (from[key] !== true) {
-        args.push(from[key])
-      }
-    }
-  }
-  return args
-  function argkey (key) {
-    return '--' + key.replace(
-      /[\w]([A-Z])/g,
-      m => m[0] + '-' + m[1]
-    ).toLowerCase()
   }
 }
