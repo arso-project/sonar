@@ -28,7 +28,7 @@ module.exports = class SonarClient {
     this._cache = new RecordCache()
 
     if (opts.cache !== false) {
-      this._cacheid = 'client:' + this.id
+      this._cacheid = 'client:' + this.id + ':' + this.island
     }
 
     debug(`create client: endpoint ${this.endpoint} island ${this.island}`)
@@ -100,7 +100,7 @@ module.exports = class SonarClient {
     return writableDrives[0].key
   }
 
-  async writeResourceFile (record, file, opts) {
+  async writeResourceFile (record, file, opts = {}) {
     if (record.schema !== SCHEMA_RESOURCE) throw new Error('record is not a resource')
     const fileUrl = this.parseHyperdriveUrl(record.value.contentUrl)
     if (!fileUrl) throw new Error('resource has invalid contentUrl')
@@ -175,8 +175,15 @@ module.exports = class SonarClient {
     return url
   }
 
-  async get ({ schema, id }) {
-    return this.query('records', { schema, id })
+  resourceHttpUrl (record) {
+    const fileUrl = this.parseHyperdriveUrl(record.value.contentUrl)
+    if (!fileUrl) throw new Error('resource has invalid contentUrl')
+    const path = this._url([this.island, 'fs', fileUrl.host, fileUrl.path])
+    return path
+  }
+
+  async get ({ schema, id }, opts) {
+    return this.query('records', { schema, id }, opts)
   }
 
   async put (record) {
@@ -327,17 +334,21 @@ module.exports = class SonarClient {
 
   _socket (opts) {
     if (Array.isArray(opts)) opts = { path: opts }
-    const url = opts.url || this._url(opts.path)
+    let url = opts.url || this._url(opts.path)
+    url = url.replace(/^http/, 'ws')
     const socket = new Socket(url)
     this._sockets.push(socket)
     return socket
   }
 
   createCommandStream (opts = {}) {
-    const { commands, name = 'sonar-client' } = opts
+    let { name, commands } = opts
+    name = opts.name || 'client:' + this.id
     const stream = this._socket([this.island, 'commands'])
     const proto = new Endpoint({ stream, commands, name })
     proto.announce()
+    stream.on('error', err => console.error('socket error', err))
+    stream.on('close', () => console.log('socket closed'))
     // proto.hello()
     // if (hello) proto.command('hello', hello)
     return proto
