@@ -162,34 +162,33 @@ module.exports = class IslandStore extends EventEmitter {
     })
   }
 
-  share (key) {
+  share (key, cb) {
     key = hex(key)
     if (!this.islands[key]) return
     this.network.add(this.islands[key])
     this.config.update(config => {
       config.islands[key].share = true
       return config
-    })
+    }, cb)
   }
 
-  unshare (key) {
+  unshare (key, cb) {
     key = hex(key)
     if (!this.islands[key]) return
     this.network.remove(this.islands[key])
     this.config.update(config => {
       config.islands[key].share = false
       return config
-    })
+    }, cb)
   }
 
-  updateIsland (key, config) {
-    let newConfig = {}
+  updateIsland (key, config, cb) {
+    console.log('UPDATE', key, config)
     if (config.share) {
-      newConfig = this.share(key)
+      return this.share(key, cb)
     } else {
-      newConfig = this.unshare(key)
+      return this.unshare(key, cb)
     }
-    return newConfig
   }
 
   close (cb) {

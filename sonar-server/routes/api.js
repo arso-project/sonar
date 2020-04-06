@@ -69,7 +69,6 @@ module.exports = function apiRoutes (api) {
   // Load island if in path.
   router.use('/:island', function (req, res, next) {
     const { island } = req.params
-    res.locals.key = island;
     if (!island) return next()
     api.islands.get(island, (err, island) => {
       if (err) return next(err)
@@ -108,6 +107,7 @@ function createDeviceHandlers (islands) {
         res.send(status)
       })
     },
+
     createIsland (req, res, next) {
       const { name } = req.params
       const { key, alias } = req.body
@@ -118,12 +118,12 @@ function createDeviceHandlers (islands) {
         })
       })
     },
+
     updateIsland (req, res, next) {
-      let config = {};
-      if (req.body.hasOwnProperty('share')) {
-        config = islands.updateIsland(res.locals.key, req.body) 
-      }
-      res.send(config)
+      islands.updateIsland(req.island.key, req.body, (err, newConfig) => {
+        if (err) return next(err)
+        res.send(newConfig)
+      })
     }
   }
 }
