@@ -5,7 +5,9 @@ const { Router } = require('simple-rpc-protocol')
 const express = require('express')
 const websocketStream = require('websocket-stream/stream')
 const debug = require('debug')
+const SSE = require('express-sse')
 const log = debug('sonar:server')
+const pump = require('pump')
 
 module.exports = function apiRoutes (api) {
   const router = express.Router()
@@ -47,6 +49,11 @@ module.exports = function apiRoutes (api) {
   islandRouter.put('/source/:key', handlers.putSource)
 
   islandRouter.get('/debug', handlers.debug)
+
+  islandRouter.put('/subscription/:name', handlers.createSubscription)
+  islandRouter.get('/subscription/:name', handlers.pullSubscription)
+  islandRouter.get('/subscription/:name/sse', handlers.pullSubscriptionSSE)
+  islandRouter.post('/subscription/:name/:cursor', handlers.ackSubscription)
 
   islandRouter.get('/fs-info', function (req, res, next) {
     const { island } = req
@@ -208,6 +215,49 @@ function createIslandHandlers () {
       req.island.getState((err, state) => {
         if (err) return next(err)
         res.send(state)
+      })
+    },
+
+    createSubscription (req, res, next) {
+      const { name } = req.params
+      const opts = req.query || {}
+      req.island.createSubscription(name, opts)
+      res.send({ name })
+    },
+
+    pullSubscription (req, res, next) {
+      const { name } = req.params
+      const opts = req.query || {}
+      req.island.pullSubscription(name, opts, (err, result) => {
+        if (err) return next(err)
+        res.send(result)
+      })
+    },
+
+    pullSubscriptionSSE (req, res, next) {
+      const { name } = req.params
+      const opts = req.query || {}
+      opts.live = true
+
+      const sse = new SSE()
+      sse.init(req, res)
+
+      const stream = req.island.pullSubscriptionStream(name, opts)
+      stream.on('data', row => {
+        sse.send(row, null, row.lseq)
+      })
+      stream.on('error', err => {
+        sse.send({ error: err.message }, 'error')
+        res.end()
+      })
+      // pump(stream, sse)
+    },
+
+    ackSubscription (req, res, next) {
+      const { name, cursor } = req.params
+      req.island.ackSubscription(name, cursor, (err, result) => {
+        if (err) return next(err)
+        res.send(result)
       })
     }
   }

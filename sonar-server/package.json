@@ -24,6 +24,7 @@
     "collect-stream": "^1.2.1",
     "cors": "^2.8.5",
     "express": "^4.17.1",
+    "express-sse": "^0.5.3",
     "express-ws": "^4.0.0",
     "hyperdrive-http": "^4.4.0",
     "mkdirp": "^0.5.1",
