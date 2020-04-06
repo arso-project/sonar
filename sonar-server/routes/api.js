@@ -58,7 +58,10 @@ module.exports = function apiRoutes (api) {
       let pending = drives.length
       drives.forEach(driveInfo => {
         island.fs.get(driveInfo.key, (err, drive) => {
-          driveInfo.writable = drive.writable
+          if (err) driveInfo.error = err.message
+          else {
+            driveInfo.writable = drive.writable
+          }
           if (--pending === 0) res.send(drives)
         })
       })
