@@ -220,23 +220,3 @@ function HttpError (code, message) {
   err.statusCode = code
   return err
 }
-
-function expandSchema (island, { schemans, schemaname }) {
-  if (!schemans || !schemaname) return null
-  if (schemans === '_') schemans = island.key.toString('hex')
-  const schema = schemans + '/' + schemaname
-  return schema
-}
-
-function replyStream (res, stream) {
-  const results = []
-  let error = false
-  stream.on('data', data => results.push(data))
-  stream.on('error', err => (error = err))
-  stream.on('close', () => {
-    if (error) res.status(422).send({ error })
-  })
-  stream.on('end', () => {
-    res.send(results)
-  })
-}
