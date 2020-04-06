@@ -1,28 +1,24 @@
-const argv = require('webpack-nano/argv')
+const argv = require('yargs-parser')(process.argv)
 const p = require('path')
 const HtmlWebpackPlugin = require('html-webpack-plugin')
 const HtmlWebpackInlineSourcePlugin = require('html-webpack-inline-source-plugin')
 
-module.exports = createConfig({})
-module.exports.createConfig = createConfig
+const opts = {
+  // A workdir is the main entrypoint. Entry file is expected at src/index.js.
+  workdir: p.resolve(argv.workdir || process.env.WORKDIR || __dirname),
+  // Enable dev mode (source maps, hot reloading)
+  dev: process.env.NODE_ENV === 'development',
+  // Build in stati mode (single html file)
+  static: argv.static || process.env.WEBPACK_STATIC,
+  // Analyze bundle size
+  analyze: argv.analyze || process.env.WEBPACK_ANALYZE,
+  // Benchmark build time
+  bench: argv.bench || process.env.WEBPACK_BENCH
+}
 
-function createConfig (opts = {}) {
-  opts = {
-    // A workdir is the main entrypoint. Entry file is expected at src/index.js.
-    workdir: opts.workdir || p.resolve(process.env.WORKDIR || __dirname),
-    // Enable dev mode (source maps, hot reloading)
-    dev: process.env.NODE_ENV === 'development',
-    // Build in stati mode (single html file)
-    static: process.env.WEBPACK_STATIC,
-    // Analyze bundle size
-    analyze: process.env.WEBPACK_ANALYZE,
-    // Benchmark build time
-    bench: process.env.WEBPACK_BENCH,
-    // Create profile stats
-    stats: process.env.WEBPACK_STATS,
-    ...opts
-  }
+module.exports = createConfig(opts)
 
+function createConfig (opts) {
   const target = opts.dev ? 'debug' : 'dist'
   const output = p.join(opts.workdir, 'build', target)
 
