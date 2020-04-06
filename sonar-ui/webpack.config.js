@@ -37,7 +37,13 @@ function createConfig (opts) {
         // Transpile JS and JSX with babel
         {
           test: /\.(js|jsx)$/,
-          exclude: /node_modules/,
+          // Do not transpile node_modules, but do transpile
+          // our own modules even if they are behind node_modules.
+          exclude: function (modulePath) {
+            const exclude = /node_modules/.test(modulePath) &&
+                !/node_modules\/@arso-project/.test(modulePath)
+            return exclude
+          },
           use: [
             {
               loader: require.resolve('babel-loader'),
@@ -57,6 +63,10 @@ function createConfig (opts) {
           ]
         }
       ]
+    },
+    resolve: {
+      // Do not resolve symlinks. Otherwise, yarn link does not work properly.
+      symlinks: false
     },
     output: {
       path: output,
