@@ -11,7 +11,7 @@
   "dependencies": {
     "axios": "^0.19.0",
     "parse-dat-url": "^3.0.3",
-    "simple-rpc-protocol": "^0.2.3",
+    "simple-rpc-protocol": "^0.2.5",
     "simple-websocket": "^8.1.1",
     "streamx": "^2.5.0"
   },
