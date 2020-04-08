@@ -27,7 +27,7 @@
     "express-sse": "^0.5.3",
     "express-ws": "^4.0.0",
     "hyperdrive-http": "^4.4.0",
-    "mkdirp": "^0.5.1",
+    "mkdirp-classic": "^0.5.2",
     "pretty-bytes": "^5.3.0",
     "simple-rpc-protocol": "^0.3.1",
     "speedometer": "^1.1.0",

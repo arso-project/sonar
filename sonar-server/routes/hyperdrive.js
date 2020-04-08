@@ -1,6 +1,6 @@
 const hyperdriveHttp = require('hyperdrive-http')
 const p = require('path')
-// const mkdirp = require('mkdirp')
+// const mkdirp = require('mkdirp-classic')
 const { Transform } = require('stream')
 const pretty = require('pretty-bytes')
 const express = require('express')
