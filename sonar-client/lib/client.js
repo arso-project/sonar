@@ -1,12 +1,11 @@
 const axios = require('axios')
 const randombytes = require('randombytes')
-const Socket = require('simple-websocket')
-const { Endpoint } = require('simple-rpc-protocol')
 const parseUrl = require('parse-dat-url')
 const debug = require('debug')('sonar-client')
 
 const SearchQueryBuilder = require('./searchquerybuilder.js')
 const RecordCache = require('./record-cache')
+const CommandStreamClient = require('./commands')
 
 const {
   DEFAULT_ENDPOINT,
@@ -24,7 +23,6 @@ module.exports = class SonarClient {
     this.id = opts.id || randombytes(16).toString('hex')
     this.name = opts.name || null
 
-    this._sockets = []
     this._cache = new RecordCache()
 
     if (opts.cache !== false) {
@@ -35,7 +33,7 @@ module.exports = class SonarClient {
   }
 
   close () {
-    this._sockets.forEach(s => s.destroy())
+    if (this._commandClient) this._commandClient.close()
   }
 
   // TODO: Support read-only islands.
@@ -332,26 +330,34 @@ module.exports = class SonarClient {
     }
   }
 
-  _socket (opts) {
-    if (Array.isArray(opts)) opts = { path: opts }
-    let url = opts.url || this._url(opts.path)
-    url = url.replace(/^http/, 'ws')
-    const socket = new Socket(url)
-    this._sockets.push(socket)
-    return socket
+  async initCommandClient (opts) {
+    if (this._commandClient) throw new Error('Command client already initialized')
+    opts = {
+      url: this._url(['_commands']),
+      env: {
+        island: this.island
+      },
+      name: 'client:' + this.id,
+      commands: {},
+      ...opts
+    }
+    this._commandClient = new CommandStreamClient(opts)
+    await this._commandClient.open()
   }
 
-  createCommandStream (opts = {}) {
-    let { name, commands } = opts
-    name = opts.name || 'client:' + this.id
-    const stream = this._socket([this.island, 'commands'])
-    const proto = new Endpoint({ stream, commands, name })
-    proto.announce()
-    stream.on('error', err => console.error('socket error', err))
-    stream.on('close', () => console.log('socket closed'))
-    // proto.hello()
-    // if (hello) proto.command('hello', hello)
-    return proto
+  async callCommand (command, args) {
+    if (!this._commandClient) await this.initCommandClient()
+    return this._commandClient.call(command, args)
+  }
+
+  async createQueryStream (name, args, opts) {
+    const [channel] = await this.callCommand('@island query', [name, args, opts])
+    return channel
+  }
+
+  async createSubscriptionStream (name, opts) {
+    const [channel] = await this.callCommand('@island subscribe', [name, opts])
+    return channel
   }
 }
 

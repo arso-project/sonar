@@ -7,8 +7,11 @@ module.exports = {
 }
 
 async function makeClient (opts = {}) {
-  let _cleanup = await makeServer(opts)
-  let client = new SonarClient(`http://localhost:${opts.port}/api`, opts.island)
+  const _cleanup = await makeServer(opts)
+  const client = new SonarClient({
+    endpoint: `http://localhost:${opts.port}/api`,
+    island: opts.island
+  })
   return [client, cleanup]
   function cleanup () {
     client.close()

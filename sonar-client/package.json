@@ -4,14 +4,14 @@
   "description": "Client for sonar",
   "main": "index.js",
   "scripts": {
-    "test": "tape test/*.js"
+    "test": "tape test/*.js | tap-nirvana"
   },
   "author": "",
   "license": "GPL-3.0",
   "dependencies": {
     "axios": "^0.19.0",
     "parse-dat-url": "^3.0.3",
-    "simple-rpc-protocol": "^0.2.5",
+    "simple-rpc-protocol": "^0.3.0",
     "simple-websocket": "^8.1.1",
     "streamx": "^2.5.0"
   },
@@ -20,6 +20,7 @@
     "axios-debug-log": "^0.6.2",
     "tape": "^4.11.0",
     "tape-plus": "^1.0.0",
+    "tap-nirvana": "^1.1.0",
     "temporary-directory": "^1.0.2"
   }
 }

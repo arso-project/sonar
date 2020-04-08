@@ -1,13 +1,13 @@
 // const { hyperdriveHandler } = require('./hyperdrive')
-const hyperdriveMiddleware = require('./hyperdrive')
-const collect = require('collect-stream')
 const { Router } = require('simple-rpc-protocol')
 const express = require('express')
 const websocketStream = require('websocket-stream/stream')
 const debug = require('debug')
 const SSE = require('express-sse')
 const log = debug('sonar:server')
-const pump = require('pump')
+
+const hyperdriveMiddleware = require('./hyperdrive')
+const createIslandCommands = require('../commands/island')
 
 module.exports = function apiRoutes (api) {
   const router = express.Router()
@@ -15,18 +15,18 @@ module.exports = function apiRoutes (api) {
   // Top level actions
   const deviceHandlers = createDeviceHandlers(api.islands)
   const handlers = createIslandHandlers(api.islands)
-  const commandHandler = createCommandHandler(api.islands)
+  const commandHandler = createCommandStreamHandler(api.islands)
 
   // Info
   router.get('/_info', deviceHandlers.info)
   // Create island
   router.put('/_create/:name', deviceHandlers.createIsland)
+  // Create command stream (websocket)
+  router.ws('/_commands', commandHandler)
 
   const islandRouter = express.Router()
   // Change island config
   islandRouter.patch('/', deviceHandlers.updateIsland)
-  // Create command stream (websocket)
-  islandRouter.ws('/commands', commandHandler)
 
   // Hyperdrive actions (get and put)
   islandRouter.use('/fs', hyperdriveMiddleware(api.islands))
@@ -90,22 +90,22 @@ module.exports = function apiRoutes (api) {
   return router
 }
 
-function createCommandHandler (islands) {
+function createCommandStreamHandler (islands) {
   const router = new Router({ name: 'server' })
-  // router.command('ping', (args, channel) => {
-  //   channel.reply('pong')
-  //   channel.end()
-  // })
+  islands.on('close', () => {
+    router.close()
+  })
+  const islandCommands = createIslandCommands(islands)
+  router.service('island', islandCommands.commands, islandCommands.opts)
   router.on('error', log)
-  return function createCommandStream (ws, req) {
-    // const { key } = req.params
+  return function createCommandStream (ws, _req) {
     const stream = websocketStream(ws, {
       binary: true
     })
     stream.on('error', err => {
       log(err)
     })
-    router.connection(stream)
+    router.connection(stream, { allowExpose: true })
   }
 }
 
@@ -126,6 +126,7 @@ function createDeviceHandlers (islands) {
         res.send({
           key: island.key.toString('hex')
         })
+        res.end()
       })
     },
 

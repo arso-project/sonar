@@ -1,0 +1,71 @@
+const pump = require('pump')
+
+module.exports = function createIslandCommands (islands) {
+  return {
+    opts: {
+      onopen (env, channel, cb) {
+        if (!env.island) return cb(new Error('Island is required'))
+        islands.get(env.island, (err, island) => {
+          if (err) return cb(err)
+          channel.island = island
+          cb()
+        })
+      }
+    },
+    commands: {
+      query: {
+        title: 'Query',
+        mode: 'stream',
+        args: [
+          { name: 'name', title: 'Query name', type: 'string' },
+          { name: 'args', title: 'Query arguments', type: 'object' },
+          { name: 'opts', title: 'Options', type: 'object', items: queryStreamOpts }
+        ],
+        encoding: 'json',
+        oncall (args, channel) {
+          channel.reply()
+          const [name, queryArgs, opts] = args
+          const island = channel.island
+          island.db.createQueryStream(name, queryArgs, opts).pipe(channel)
+        }
+      },
+      subscribe: {
+        title: 'Subscribe',
+        mode: 'stream',
+        encoding: 'json',
+        args: [
+          { name: 'name', title: 'Subscription name', type: 'string' },
+          { name: 'opts', title: 'Options', type: 'object', items: subscriptionOpts }
+        ],
+        oncall (args, channel) {
+          channel.reply()
+          let [name, opts] = args
+          opts = opts || {}
+          const island = channel.island
+          const subscription = island.createSubscription(name, opts)
+          pump(subscription.createPullStream({ live: true }), channel)
+          channel.on('data', message => {
+            const { cursor } = message
+            if (cursor) {
+              island.ackSubscription(name, cursor, err => {
+                if (err) channel.error(err)
+              })
+            } else {
+              channel.error(new Error('Invalid message received'))
+            }
+          })
+        }
+      }
+    }
+  }
+}
+
+const queryStreamOpts = {
+  live: { type: 'boolean', title: 'Live' }
+}
+
+const subscriptionOpts = {
+  live: { type: 'boolean', title: 'Live', default: true },
+  old: { type: 'boolean', title: 'Include past messages', default: true },
+  filter: { type: 'object', title: 'Filter' }
+}
