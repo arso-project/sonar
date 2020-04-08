@@ -16,19 +16,20 @@
   "license": "GPL-3.0",
   "dependencies": {
     "@arso-project/sonar-cli": "^0.3.0-alpha.1",
-    "@arso-project/sonar-client": "^0.3.0-alpha.1",
     "@arso-project/sonar-core": "^0.3.0-alpha.1",
     "@arso-project/sonar-ui": "^0.3.0-alpha.1",
     "async-exit-hook": "^2.0.1",
     "body-parser": "^1.19.0",
     "collect-stream": "^1.2.1",
     "cors": "^2.8.5",
+    "debug": "^4.1.1",
     "express": "^4.17.1",
     "express-sse": "^0.5.3",
     "express-ws": "^4.0.0",
     "hyperdrive-http": "^4.4.0",
     "mkdirp-classic": "^0.5.2",
     "pretty-bytes": "^5.3.0",
+    "pump": "^3.0.0",
     "simple-rpc-protocol": "^0.3.1",
     "speedometer": "^1.1.0",
     "swagger-ui-express": "^4.1.4",
@@ -37,8 +38,7 @@
     "yargs": "^15.3.1"
   },
   "devDependencies": {
-    "trace-console-log": "^1.0.0",
-    "yamljs": "^0.3.0"
+    "trace-console-log": "^1.0.0"
   },
   "build": {
     "appId": "org.arso.sonar",

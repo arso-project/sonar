@@ -11,7 +11,6 @@
   "license": "GPL-3.0",
   "dependencies": {
     "@arso-project/sonar-tantivy": "^0.2.8",
-    "async-exit-hook": "^2.0.1",
     "corestore": "^5.1.1",
     "debug": "^4.1.1",
     "hypercore-crypto": "^1.0.0",
