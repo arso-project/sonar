@@ -12,11 +12,11 @@
   "dependencies": {
     "@arso-project/sonar-tantivy": "^0.2.8",
     "async-exit-hook": "^2.0.1",
-    "corestore": "^4.0.9",
+    "corestore": "^5.1.1",
     "debug": "^4.1.1",
     "hypercore-crypto": "^1.0.0",
     "hypercore-protocol": "^7.7.1",
-    "hyperdrive": "^10.4.4",
+    "hyperdrive": "^10.8.20",
     "hyperswarm": "^2.8.0",
     "kappa-record-db": "^0.6.2",
     "level": "^5.0.1",
