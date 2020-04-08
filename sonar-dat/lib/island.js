@@ -165,7 +165,7 @@ module.exports = class Island {
     }
   }
 
-  createSubscription (name, opts) {
+  createSubscription (name, opts = {}) {
     const subscription = this.db.indexer.createSubscription(name, opts)
     this._subscriptions[name] = subscription
     return subscription

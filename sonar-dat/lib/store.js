@@ -183,7 +183,6 @@ module.exports = class IslandStore extends EventEmitter {
   }
 
   updateIsland (key, config, cb) {
-    console.log('UPDATE', key, config)
     if (config.share) {
       return this.share(key, cb)
     } else {
@@ -193,6 +192,8 @@ module.exports = class IslandStore extends EventEmitter {
 
   close (cb) {
     const self = this
+
+    this.emit('close')
 
     let pending = Object.values(this.islands).length + 1
     for (const island of Object.values(this.islands)) {
