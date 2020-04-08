@@ -147,12 +147,9 @@ module.exports = class Island {
   }
 
   close (cb) {
-    let pending = 2
-    this.db.close(done)
-    this.fs.close(done)
-    function done () {
-      if (--pending === 0) cb()
-    }
+    this.fs.close(() => {
+      this.db.close(cb)
+    })
   }
 
   getState (cb) {
