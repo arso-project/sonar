@@ -2,6 +2,7 @@ const thunky = require('thunky')
 const pretty = require('pretty-hash')
 const sub = require('subleveldown')
 const debug = require('debug')('sonar:db')
+const { PassThrough } = require('stream')
 
 const { RESOURCE_SCHEMA } = require('./schemas.js')
 
@@ -20,6 +21,7 @@ module.exports = class Island {
 
     this.corestore = corestore
     this.indexCatalog = indexCatalog
+    this._subscriptions = {}
     this._level = {
       db: sub(level, 'd'),
       fs: sub(level, 'f')
@@ -161,5 +163,32 @@ module.exports = class Island {
         if (--pending === 0) cb(null, statuses)
       })
     }
+  }
+
+  createSubscription (name, opts) {
+    const subscription = this.db.indexer.createSubscription(name, opts)
+    this._subscriptions[name] = subscription
+    return subscription
+  }
+
+  pullSubscription (name, opts, cb) {
+    if (!this._subscriptions[name]) return cb(new Error('Subscription does not exist'))
+    this._subscriptions[name].pull(opts, result => {
+      cb(null, result)
+    })
+  }
+
+  pullSubscriptionStream (name, opts) {
+    if (!this._subscriptions[name]) {
+      const stream = new PassThrough()
+      stream.destroy(new Error('Subscription does not exist'))
+      return stream
+    }
+    return this._subscriptions[name].createPullStream(opts)
+  }
+
+  ackSubscription (name, cursor, cb) {
+    if (!this._subscriptions[name]) return cb(new Error('Subscription does not exist'))
+    this._subscriptions[name].setCursor(cursor, cb)
   }
 }
