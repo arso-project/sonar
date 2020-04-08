@@ -192,32 +192,34 @@ module.exports = class IslandStore extends EventEmitter {
 
   close (cb) {
     const self = this
-
     this.emit('close')
 
-    let pending = Object.values(this.islands).length + 1
+    let islandspending = Object.values(this.islands).length + 1
     for (const island of Object.values(this.islands)) {
-      island.close(finish)
+      island.close(onislandclosed)
     }
-    finish()
+    onislandclosed()
 
-    function finish () {
-      if (--pending !== 0) return
-      debug('close all services')
-      self.indexCatalog.close(() => {
-        debug('closed: index catalog')
-        self.config.close(() => {
-          debug('closed: config')
-          self.network.close(() => {
-            debug('closed: network')
-            self.corestore.close(() => {
-              debug('closed: corestore')
-              debug('all closed')
-              cb()
-            })
-          })
-        })
-      })
+    function onislandclosed () {
+      if (--islandspending !== 0) return
+
+      let pending = 0
+      self.indexCatalog.close(onclose('index catalog'))
+      self.config.close(onclose('config'))
+      self.network.close(onclose('network'))
+      self.corestore.close(onclose('corestore'))
+
+      function onclose (msg) {
+        ++pending
+        return function () {
+          debug('closed: ' + msg)
+          process.nextTick(finish)
+        }
+      }
+
+      function finish () {
+        if (--pending === 0) cb()
+      }
     }
   }
 

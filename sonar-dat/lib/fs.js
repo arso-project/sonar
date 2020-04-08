@@ -20,6 +20,17 @@ module.exports = class SonarFs extends EventEmitter {
     this.aliases = {}
   }
 
+  close (cb) {
+    let pending = Object.values(this.drives).length
+    if (!pending) return cb()
+    for (const drive of Object.values(this.drives)) {
+      drive.close(done)
+    }
+    function done () {
+      if (--pending === 0) cb()
+    }
+  }
+
   ready (cb) {
     this._localwriter((err, drive) => {
       if (err) return cb(err)

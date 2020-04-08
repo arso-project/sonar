@@ -147,7 +147,12 @@ module.exports = class Island {
   }
 
   close (cb) {
-    this.db.close(cb)
+    let pending = 2
+    this.db.close(done)
+    this.fs.close(done)
+    function done () {
+      if (--pending === 0) cb()
+    }
   }
 
   getState (cb) {
@@ -172,17 +177,18 @@ module.exports = class Island {
   }
 
   pullSubscription (name, opts, cb) {
-    if (!this._subscriptions[name]) return cb(new Error('Subscription does not exist'))
+    if (!this._subscriptions[name]) {
+      this.createSubscription(name, opts)
+    }
     this._subscriptions[name].pull(opts, result => {
       cb(null, result)
     })
   }
 
   pullSubscriptionStream (name, opts) {
+    if (opts.live === undefined) opts.live = true
     if (!this._subscriptions[name]) {
-      const stream = new PassThrough()
-      stream.destroy(new Error('Subscription does not exist'))
-      return stream
+      this.createSubscription(name, opts)
     }
     return this._subscriptions[name].createPullStream(opts)
   }
