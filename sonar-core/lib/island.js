@@ -9,7 +9,7 @@ const { RESOURCE_SCHEMA } = require('./schemas.js')
 const Database = require('kappa-record-db')
 const Fs = require('./fs')
 
-const sonarView = require('./search/view-sonar')
+const sonarView = require('../views/search')
 const historyView = require('../views/history')
 
 module.exports = class Island {

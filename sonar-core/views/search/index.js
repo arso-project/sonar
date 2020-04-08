@@ -1,12 +1,12 @@
 const IndexManager = require('./index-manager')
 const doQuery = require('./query')
 
-const log = require('../log').child({ component: 'view-sonar' })
-const { clock } = require('../log')
+const log = require('../../lib/log').child({ component: 'view-sonar' })
+const { clock } = require('../../lib/log')
 
-module.exports = sonarView
+module.exports = searchView
 
-function sonarView (level, island, opts) {
+function searchView (level, island, opts) {
   const manager = new IndexManager({
     level,
     namespace: island.key.toString('hex'),
