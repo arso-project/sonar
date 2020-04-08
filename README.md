@@ -70,9 +70,9 @@ More on this project on [arso.xyz](https://arso.xyz).
 
 The repo is structured as a monorepo of different packages (that are interdependent at several points). 
 
-* **[sonar-dat](sonar-dat/README.md)** it the core module. It manages *islands*, which are our notion of "a group of feeds*. Each island has a [kappa-record-db](https://github.com/arso-project/kappa-record-db) that's plugged into a search index through [sonar-tantivy](https://github.com/arso-project/sonar-tantivy). Each island has also a list of associated [hyperdrives](https://github.com/mafintosh/hyperdrive).
+* **[sonar-core](sonar-core/README.md)** it the core module. It manages *islands*, which are our notion of "a group of feeds*. Each island has a [kappa-record-db](https://github.com/arso-project/kappa-record-db) that's plugged into a search index through [sonar-tantivy](https://github.com/arso-project/sonar-tantivy). Each island has also a list of associated [hyperdrives](https://github.com/mafintosh/hyperdrive).
 
-* **[sonar-server](sonar-server/README.md)** provides a REST style HTTP api that's used both by the CLI and the UI to access and manage the data in sonar-dat.
+* **[sonar-server](sonar-server/README.md)** provides a REST style HTTP api that's used both by the CLI and the UI to access and manage the data in sonar-core.
 
 * **[sonar-client](sonar-client/README.md)** is a Javascript client library. It's used by both the CLI and the UI. It speaks to sonar-server over HTTP.
 
