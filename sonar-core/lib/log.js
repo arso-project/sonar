@@ -1,4 +1,4 @@
-const debug = require('debug')('sonar-dat')
+const debug = require('debug')('sonar-core')
 
 const log = {
   info: (...args) => debug(...args),

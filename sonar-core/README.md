@@ -1,4 +1,4 @@
-# sonar-dat
+# sonar-core
 
 The core. Manages *islands*, where each island is a [kappa-record-db](https://github.com/arso-project/kappa-record-db)and associated hyperdrives.
 
@@ -10,7 +10,7 @@ The core. Manages *islands*, where each island is a [kappa-record-db](https://gi
 ## Example
 
 ```javascript
-const { IslandStore } = require('sonar-dat')
+const { IslandStore } = require('sonar-core')
 
 const store = new IslandStore('/tmp/database')
 

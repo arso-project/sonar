@@ -1,4 +1,4 @@
-const { IslandStore } = require('@arso-project/sonar-dat')
+const { IslandStore } = require('@arso-project/sonar-core')
 const bodyParser = require('body-parser')
 const onexit = require('async-exit-hook')
 const express = require('express')

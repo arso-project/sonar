@@ -2,7 +2,7 @@ const localswarm = require('simple-local-swarm')
 const hyperswarm = require('hyperswarm')
 const Protocol = require('hypercore-protocol')
 const log = require('./log')
-const debug = require('debug')('sonar-dat:network')
+const debug = require('debug')('sonar-core:network')
 const pump = require('pump')
 const pretty = require('pretty-hash')
 
