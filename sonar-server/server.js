@@ -8,6 +8,7 @@ const debug = require('debug')('sonar-server')
 const p = require('path')
 const os = require('os')
 const swaggerUi = require('swagger-ui-express')
+const thunky = require('thunky')
 // const websocketStream = require('websocket-stream/stream')
 
 const apiRouter = require('./routes/api')
@@ -24,9 +25,13 @@ module.exports = function SonarServer (opts) {
     hostname: opts.hostname || DEFAULT_HOSTNAME
   }
 
+  const storeOpts = {
+    network: !!opts.network
+  }
+
   const api = {
     config,
-    islands: new IslandStore(config.storage)
+    islands: new IslandStore(config.storage, storeOpts)
   }
 
   const app = express()
@@ -94,11 +99,10 @@ module.exports = function SonarServer (opts) {
     app.server = app.listen(app._port, app._host, cb)
   }
 
-  app.close = function (cb = noop) {
-    app.server.close(() => {
-      api.islands.close(cb)
-    })
-  }
+  app.close = thunky(cb => {
+    app.server.close()
+    api.islands.close(cb)
+  })
 
   onexit((cb) => {
     app.close(cb)
