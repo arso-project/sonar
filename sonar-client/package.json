@@ -9,16 +9,16 @@
   "author": "",
   "license": "GPL-3.0",
   "dependencies": {
-    "axios": "^0.19.0",
+    "axios": "^0.19.2",
     "parse-dat-url": "^3.0.3",
     "simple-rpc-protocol": "^0.3.1",
     "simple-websocket": "^8.1.1",
-    "streamx": "^2.5.0"
+    "streamx": "^2.6.0"
   },
   "devDependencies": {
     "@arso-project/sonar-server": "^0.3.0-alpha.1",
-    "axios-debug-log": "^0.6.2",
-    "tape": "^4.11.0",
+    "axios-debug-log": "^0.7.0",
+    "tape": "^4.13.2",
     "tape-plus": "^1.0.0",
     "tap-nirvana": "^1.1.0",
     "temporary-directory": "^1.0.2"

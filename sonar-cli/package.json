@@ -11,19 +11,19 @@
   "license": "GPL-3.0",
   "dependencies": {
     "@arso-project/sonar-client": "^0.3.0-alpha.1",
-    "ansi-styles": "^4.1.0",
+    "ansi-styles": "^4.2.1",
     "base32": "^0.0.6",
-    "chalk": "^2.4.2",
-    "date-fns": "^2.6.0",
+    "chalk": "^4.0.0",
+    "date-fns": "^2.11.1",
     "debug": "^4.1.1",
-    "mime-types": "^2.1.25",
-    "minimist": "^1.2.0",
+    "mime-types": "^2.1.26",
+    "minimist": "^1.2.5",
     "pretty-bytes": "^5.3.0",
     "pretty-hash": "^1.0.1",
     "speedometer": "^1.1.0",
     "stream-collector": "^1.0.1",
     "text-table": "^0.2.0",
-    "yargs": "^15.3.0"
+    "yargs": "^15.3.1"
   },
   "pkg": {
     "scripts": "bin/**"
