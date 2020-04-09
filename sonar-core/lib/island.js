@@ -16,6 +16,7 @@ module.exports = class Island {
   constructor (key, opts) {
     const self = this
     const { level, corestore, indexCatalog } = opts
+    if (!Buffer.isBuffer(key)) key = Buffer.from(key, 'hex')
 
     debug('open island name %s alias %s key %s', opts.name, opts.alias, pretty(key))
 
@@ -26,6 +27,8 @@ module.exports = class Island {
       db: sub(level, 'd'),
       fs: sub(level, 'f')
     }
+
+    this.key = key
 
     this.db = new Database({
       key,
@@ -70,12 +73,12 @@ module.exports = class Island {
 
     if (opts.name) this.name = opts.name
 
+    this.opened = false
     this.ready = thunky(this._ready.bind(this))
   }
 
   _ready (cb) {
     this.db.ready(() => {
-      this.key = this.db.key
       this.discoveryKey = this.db.discoveryKey
 
       this.db.use('search', sonarView, {
@@ -85,6 +88,7 @@ module.exports = class Island {
 
       this.fs.ready(() => {
         debug('ready', this.db)
+        this.opened = true
         cb()
       })
     })
@@ -152,17 +156,44 @@ module.exports = class Island {
     })
   }
 
+  // Return some info on the island synchronously.
+  status () {
+    if (!this.opened) return { opened: false, name: this.name }
+    let localKey, localDriveKey
+    const localFeed = this.db.getFeed()
+    if (localFeed) localKey = localFeed.key.toString('hex')
+    const localDrive = this.fs.localwriter
+    if (localDrive) localDriveKey = localDrive.key.toString('hex')
+    return {
+      name: this.name,
+      opened: true,
+      key: this.key.toString('hex'),
+      localKey,
+      localDrive: localDriveKey
+    }
+  }
+
+  // Return more info on the island asynchronously.
   getState (cb) {
+    const status = this.status()
+    this.db.stats((_err, stats) => {
+      this._getSubscriptionState((_err, subscriptionState) => {
+        stats.subscriptions = subscriptionState
+        cb(null, { ...status, ...stats })
+      })
+    })
+  }
+
+  _getSubscriptionState (cb) {
     const indexer = this.db.indexer
     const subscriptions = indexer._subscriptions
-    const statuses = {}
-    // console.log('subs', subscriptions)
+    const state = {}
     let pending = Object.keys(subscriptions).length
     for (const [name, sub] of Object.entries(subscriptions)) {
       sub.getState((err, status) => {
         if (err) return cb(err)
-        statuses[name] = status
-        if (--pending === 0) cb(null, statuses)
+        state[name] = status
+        if (--pending === 0) cb(null, state)
       })
     }
   }

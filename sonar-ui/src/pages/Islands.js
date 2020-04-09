@@ -42,6 +42,7 @@ export default function IslandPage (props) {
 
   if (!info && !error) return <Loading />
   if (error) return <Logger error={error} />
+  console.log('loaded info', info)
 
   const { islands, network } = info
   const selectedIsland = config.get('island')

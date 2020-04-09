@@ -25,9 +25,24 @@ module.exports = class ConfigLoader {
     })
 
     function finish (config) {
+      Object.freeze(config)
       self.config = config
       cb(null, config)
     }
+  }
+
+  get () {
+    if (!this.config) throw new Error('Config is not opened')
+    return this.config
+  }
+
+  getKey (key) {
+    const config = this.get()
+    if (!Array.isArray(key)) key = key.split('.')
+    return key.reduce((res, key) => {
+      if (!(res && typeof res === 'object')) return
+      return res[key]
+    }, config)
   }
 
   close (cb) {
@@ -35,6 +50,7 @@ module.exports = class ConfigLoader {
   }
 
   save (config, cb) {
+    Object.freeze(config)
     this.lock(release => {
       this.config = config
       const json = JSON.stringify(this.config, null, 2)
@@ -48,7 +64,7 @@ module.exports = class ConfigLoader {
     cb = cb || noop
     this.load((err, config) => {
       if (err) return cb(err)
-      config = fn(config)
+      config = fn({ ...config })
       this.save(config, cb)
     })
   }

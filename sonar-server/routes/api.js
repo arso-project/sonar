@@ -216,6 +216,9 @@ function createIslandHandlers () {
     },
 
     debug (req, res, next) {
+      // const flows = Object.keys(req.island.db.kappa.flows)
+      // console.log('flows', flows)
+      // flows.forEach(flow => req.island.db.kappa.reset(flow))
       req.island.getState((err, state) => {
         if (err) return next(err)
         res.send(state)

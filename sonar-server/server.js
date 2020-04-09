@@ -26,7 +26,7 @@ module.exports = function SonarServer (opts) {
   }
 
   const storeOpts = {
-    network: !!opts.network
+    network: typeof opts.network === undefined ? true : opts.network
   }
 
   const api = {

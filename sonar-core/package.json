@@ -17,7 +17,7 @@
     "hypercore-protocol": "^7.10.0",
     "hyperdrive": "^10.8.20",
     "hyperswarm": "^2.11.1",
-    "kappa-record-db": "^0.6.4",
+    "kappa-record-db": "github:arso-project/kappa-record-db#refactor",
     "level": "^6.0.1",
     "mkdirp-classic": "^0.5.2",
     "mutexify": "^1.2.0",

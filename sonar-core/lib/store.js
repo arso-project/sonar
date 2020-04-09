@@ -59,10 +59,11 @@ module.exports = class IslandStore extends EventEmitter {
       this.corestore.ready((err) => {
         if (err) return cb(err)
         debug('config loaded', this.config.path)
+
         if (config.islands) {
           for (const info of Object.values(config.islands)) {
+            const island = this._open(info.key, info)
             if (info.share) {
-              const island = this._open(info.key, info)
               this.network.add(island)
             }
           }
@@ -74,29 +75,36 @@ module.exports = class IslandStore extends EventEmitter {
   }
 
   status (cb) {
-    this.config.load((err, config) => {
-      if (err) return cb(err)
-      this.network.status((err, networkStatus) => {
-        if (err) return cb(err)
-        const islands = {}
-        if (config.islands) {
-          Object.values(config.islands).forEach(island => {
-            const { key } = island
-            if (this.islands[key]) {
-              island.localKey = this.islands[key].db.localKey.toString('hex')
-              island.localDrive = this.islands[key].fs.localwriter.key.toString('hex')
-            }
-            islands[island.key] = island
-          })
-        }
-        cb(null, {
-          storage: this.storagePath,
-          islands,
-          // config: config,
-          network: networkStatus
+    if (!this.opened) return this.ready(() => this.status(cb))
+
+    const status = { storage: this.storagePath, islands: {} }
+
+    // TODO: This opens all islands. Likely we do not want to do this in all cases.
+    let pending = Object.keys(this.islands).length + 1
+    for (const [key, island] of Object.entries(this.islands)) {
+      island.ready(() => {
+        const config = this.getIslandConfig(key)
+        island.getState((_err, state) => {
+          status.islands[key] = {
+            key, 
+            ...config,
+            ...state
+          }
+          finish()
         })
       })
+    }
+
+    this.network.status((err, networkStatus) => {
+      if (err) status.network = { error: err.message }
+      else status.network = networkStatus
+      finish()
     })
+
+    function finish (err) {
+      if (--pending !== 0) return
+      cb(null, status)
+    }
   }
 
   create (name, opts = {}, cb) {
@@ -130,8 +138,10 @@ module.exports = class IslandStore extends EventEmitter {
         // TODO: Add opt to not share island when creating
         share: true
       }
-      this._saveIsland(info, err => cb(err, island))
-      if (info.share) this.share(island.key)
+      this.updateIsland(island.key, info, err => {
+        if (err) return cb(err)
+        cb(null, island)
+      })
     })
   }
 
@@ -162,31 +172,41 @@ module.exports = class IslandStore extends EventEmitter {
     })
   }
 
-  share (key, cb) {
+  share (key) {
     key = hex(key)
     if (!this.islands[key]) return
     this.network.add(this.islands[key])
-    this.config.update(config => {
-      config.islands[key].share = true
-      return config
-    }, cb)
   }
 
   unshare (key, cb) {
     key = hex(key)
     if (!this.islands[key]) return
     this.network.remove(this.islands[key])
+  }
+
+  updateIsland (key, info, cb) {
+    key = hex(key)
+    if (!this.islands[key]) return cb(new Error('Island does not exist'))
+    if (info.share !== undefined) {
+      if (info.share) {
+        this.share(key)
+      } else {
+        this.unshare(key)
+      }
+    }
     this.config.update(config => {
-      config.islands[key].share = false
+      if (!config.islands) config.islands = {}
+      if (!config.islands[key]) config.islands[key] = {}
+      config.islands[key] = { ...config.islands[key], ...info }
       return config
     }, cb)
   }
 
-  updateIsland (key, config, cb) {
-    if (config.share) {
-      return this.share(key, cb)
-    } else {
-      return this.unshare(key, cb)
+  getIslandConfig (key) {
+    try {
+      return this.config.getKey(['islands', key])
+    } catch (err) {
+      return {}
     }
   }
 
@@ -221,16 +241,6 @@ module.exports = class IslandStore extends EventEmitter {
         if (--pending === 0) cb()
       }
     }
-  }
-
-  _saveIsland (info, cb) {
-    let { key, name } = info
-    key = hex(key)
-    this.config.update(config => {
-      config.islands = config.islands || {}
-      config.islands[key] = { name, key }
-      return config
-    }, cb)
   }
 
   _islandByName (name, cb) {

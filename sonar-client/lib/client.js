@@ -151,6 +151,8 @@ module.exports = class SonarClient {
       }
     }
 
+    id = id || opts.id
+
     const res = await this.put({
       schema: SCHEMA_RESOURCE,
       id,
