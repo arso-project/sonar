@@ -32,6 +32,7 @@
     "pump": "^3.0.0",
     "simple-rpc-protocol": "^0.3.1",
     "speedometer": "^1.1.0",
+    "stoppable": "^1.1.0",
     "swagger-ui-express": "^4.1.4",
     "thunky": "^1.1.0",
     "websocket-stream": "^5.5.2",
