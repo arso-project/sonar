@@ -20,5 +20,6 @@ jobs:
     - run: yarn install
     - run: yarn test
       env:
+        DEBUG: "*"
         CI: true
 

@@ -39,7 +39,9 @@ module.exports = class IslandStore extends EventEmitter {
 
     this.config = new Config(p.join(this.paths.base, 'config.json'))
     this.corestore = new Corestore(this.paths.corestore)
-    this.indexCatalog = new Catalog(this.paths.tantivy)
+    this.indexCatalog = new Catalog(this.paths.tantivy, {
+      log: require('debug')('sonar-tantivy')
+    })
     this.indexCatalog.on('error', err => {
       this.emit('error', err)
     })
