@@ -160,7 +160,7 @@ module.exports = class Island {
   status () {
     if (!this.opened) return { opened: false, name: this.name }
     let localKey, localDriveKey
-    const localFeed = this.db.getFeed()
+    const localFeed = this.db.getDefaultWriter()
     if (localFeed) localKey = localFeed.key.toString('hex')
     const localDrive = this.fs.localwriter
     if (localDrive) localDriveKey = localDrive.key.toString('hex')
@@ -169,34 +169,35 @@ module.exports = class Island {
       opened: true,
       key: this.key.toString('hex'),
       localKey,
-      localDrive: localDriveKey
+      localDrive: localDriveKey,
+      ...this.db.status()
     }
   }
 
   // Return more info on the island asynchronously.
-  getState (cb) {
-    const status = this.status()
-    this.db.stats((_err, stats) => {
-      this._getSubscriptionState((_err, subscriptionState) => {
-        stats.subscriptions = subscriptionState
-        cb(null, { ...status, ...stats })
-      })
-    })
-  }
-
-  _getSubscriptionState (cb) {
-    const indexer = this.db.indexer
-    const subscriptions = indexer._subscriptions
-    const state = {}
-    let pending = Object.keys(subscriptions).length
-    for (const [name, sub] of Object.entries(subscriptions)) {
-      sub.getState((err, status) => {
-        if (err) return cb(err)
-        state[name] = status
-        if (--pending === 0) cb(null, state)
-      })
-    }
-  }
+  // getState (cb) {
+  //   const status = this.status()
+  //   this.db.stats((_err, stats) => {
+  //     this._getSubscriptionState((_err, subscriptionState) => {
+  //       stats.subscriptions = subscriptionState
+  //       cb(null, { ...status, ...stats })
+  //     })
+  //   })
+  // }
+  //
+  // _getSubscriptionState (cb) {
+  //   const indexer = this.db.indexer
+  //   const subscriptions = indexer._subscriptions
+  //   const state = {}
+  //   let pending = Object.keys(subscriptions).length
+  //   for (const [name, sub] of Object.entries(subscriptions)) {
+  //     sub.getState((err, status) => {
+  //       if (err) return cb(err)
+  //       state[name] = status
+  //       if (--pending === 0) cb(null, state)
+  //     })
+  //   }
+  // }
 
   createSubscription (name, opts = {}) {
     const subscription = this.db.indexer.createSubscription(name, opts)
