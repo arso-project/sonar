@@ -20,6 +20,8 @@ jobs:
     - run: yarn install
     - run: yarn test
       env:
-        DEBUG: "*"
+        DEBUG: "*,-express:router*,-body-parser*"
+        RUST_LOG: "debug"
+        RUST_BACKTRACE: 1
         CI: true
 

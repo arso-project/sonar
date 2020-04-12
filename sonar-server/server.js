@@ -4,7 +4,7 @@ const onexit = require('async-exit-hook')
 const express = require('express')
 const cors = require('cors')
 const expressWebSocket = require('express-ws')
-const stoppable = require('stoppable')
+const shutdown = require('http-shutdown')
 const debug = require('debug')('sonar-server')
 const p = require('path')
 const os = require('os')
@@ -98,12 +98,19 @@ module.exports = function SonarServer (opts) {
     app._port = opts.port || config.port
     app._host = opts.hostname || config.hostname
     app.server = app.listen(app._port, app._host, cb)
-    stoppable(app.server, 100)
+    shutdown(app.server)
   }
 
   app.close = thunky(cb => {
-    app.server.stop()
-    api.islands.close(cb)
+    let pending = 2
+    app.server.forceShutdown(err => {
+      debug('closed: server', err || '')
+      finish()
+    })
+    api.islands.close(finish)
+    function finish () {
+      if (--pending === 0) cb()
+    }
   })
 
   onexit((cb) => {

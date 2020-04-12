@@ -1,90 +1,103 @@
 require('axios-debug-log')
-const test = require('tape-plus')
+const test = require('tape')
 const { SonarClient } = require('..')
 const debug = require('debug')('time')
 
-const { makeClient } = require('./util/server')
+const ServerClient = require('./util/server')
 const clock = require('./util/clock')
 
 test('commands', async t => {
-  const [client1, cleanup] = await makeClient({ network: false })
-  await client1.createIsland('default')
-  const client2 = new SonarClient({ endpoint: client1.endpoint })
+  const run = new ServerClient(t, { network: false })
+  const client1 = await run.start()
+  try {
+    await client1.createIsland('default')
+    const client2 = new SonarClient({ endpoint: client1.endpoint })
 
-  // A client with a command
-  await client1.initCommandClient({
-    name: 'pinger',
-    commands: {
-      ping: {
-        oncall (args, channel) {
-          t.equal(args, 'hi from client2', 'args ok')
-          channel.reply('hi from 2')
-          channel.once('data', d => {
-            t.equal(d.toString(), 'ping', 'ping ok')
-            channel.write('pong')
-          })
+    // A client with a command
+    await client1.initCommandClient({
+      name: 'pinger',
+      commands: {
+        ping: {
+          oncall (args, channel) {
+            t.equal(args, 'hi from client2', 'args ok')
+            channel.reply('hi from 2')
+            channel.once('data', d => {
+              t.equal(d.toString(), 'ping', 'ping ok')
+              channel.write('pong')
+            })
+          }
         }
       }
-    }
-  })
-
-  const [channel, res] = await client2.callCommand('@pinger ping', 'hi from client2')
-  t.equal(res, 'hi from 2', 'response ok')
-  channel.write('ping')
-
-  await pify(cb => {
-    channel.once('data', d => {
-      t.equal(d.toString(), 'pong', 'pong ok')
-      cb()
     })
-  })
 
-  client2.close()
-  await cleanup()
+    const [channel, res] = await client2.callCommand('@pinger ping', 'hi from client2')
+    t.equal(res, 'hi from 2', 'response ok')
+    channel.write('ping')
+
+    await pify(cb => {
+      channel.once('data', d => {
+        t.equal(d.toString(), 'pong', 'pong ok')
+        cb()
+      })
+    })
+
+    client2.close()
+  } catch (err) {
+    t.fail(err)
+  }
+  await run.stop()
 })
 
 test('query and subscription commands', async t => {
-  t.plan(1)
+  // const run = createServerClient(t, { network: false })
+  const run = new ServerClient(t, { network: false })
+  const client = await run.start()
   const complete = clock()
   let timer = clock()
-  const [client, cleanup] = await makeClient({ network: false })
-  debug('init', timer())
-  const alltimer = clock()
-  timer = clock()
-  await client.createIsland('default')
-  debug('create island', timer())
+  try {
+    debug('init', timer())
+    const alltimer = clock()
+    timer = clock()
+    await client.createIsland('default')
+    debug('create island', timer())
 
-  timer = clock()
-  const sub = await client.createSubscriptionStream('foo')
-  debug('create subscription', timer())
+    timer = clock()
+    const sub = await client.createSubscriptionStream('foo')
+    debug('create subscription', timer())
 
-  const [promise, cb] = createPromiseCallback()
+    const [promise, cb] = createPromiseCallback()
 
-  let i = 0
-  let subtimer = clock()
-  sub.on('data', record => {
-    i++
-    debug('sub', i, subtimer())
-    subtimer = clock()
-    if (record.value && record.value.title === 'hello') {
-      debug('title correct on record', i)
-      t.pass('record arrived in subscription stream')
-      cb()
-    }
-  })
+    let passed
+    let i = 0
+    let subtimer = clock()
+    sub.on('data', record => {
+      i++
+      debug('sub', i, subtimer())
+      subtimer = clock()
+      if (record.value && record.value.title === 'hello') {
+        debug('title correct on record', i)
+        t.pass('record arrived in subscription stream')
+        passed = true
+        cb()
+      }
+    })
 
-  timer = clock()
-  await client.put({ schema: 'foo', value: { title: 'hello' } })
-  debug('put took', timer())
-  timer = clock()
-  await promise
-  debug('sub took', timer())
-  debug('all inner', alltimer())
+    timer = clock()
+    await client.put({ schema: 'foo', value: { title: 'hello' } })
+    debug('put took', timer())
+    timer = clock()
+    await promise
+    debug('sub took', timer())
+    debug('all inner', alltimer())
 
-  timer = clock()
-  await cleanup()
+    timer = clock()
+    if (!passed) t.fail('record did not arrive in subscription stream')
+  } catch (err) {
+    t.fail(err)
+  }
   debug('cleanup took', timer())
   debug('total', complete())
+  await run.stop()
 })
 
 function createPromiseCallback () {

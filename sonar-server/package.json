@@ -26,6 +26,7 @@
     "express": "^4.17.1",
     "express-sse": "^0.5.3",
     "express-ws": "^4.0.0",
+    "http-shutdown": "^1.2.2",
     "hyperdrive-http": "^4.4.0",
     "mkdirp-classic": "^0.5.2",
     "pretty-bytes": "^5.3.0",
@@ -39,6 +40,7 @@
     "yargs": "^15.3.1"
   },
   "devDependencies": {
+    "find-free-port": "^2.0.0",
     "trace-console-log": "^1.0.0"
   },
   "build": {

@@ -152,7 +152,9 @@ module.exports = class Island {
 
   close (cb) {
     this.fs.close(() => {
-      this.db.close(cb)
+      this.db.sync(() => {
+        this.db.close(cb)
+      })
     })
   }
 

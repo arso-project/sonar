@@ -2,54 +2,52 @@ const test = require('tape')
 require('axios-debug-log')
 
 const { SearchQueryBuilder } = require('..')
-const { makeClient } = require('./util/server')
+const ServerClient = require('./util/server')
 
 async function prepare (t) {
-  const port = 21212
   const island = 'foo'
-  let [client, cleanup] = await makeClient({ port, island })
+  const run = new ServerClient(t, { island })
+  const client = await run.start()
+
   await client.createIsland(island)
-  // const key = res.key
   await client.put({ schema: 'doc', value: { title: 'hello world' } })
   await client.put({ schema: 'doc', value: { title: 'hello moon' } })
+  // TODO: await client.sync()
   await new Promise(resolve => setTimeout(resolve, 500))
-  return [client, cleanup]
+
+  return [run, client]
 }
 
 test('basic query', async t => {
+  const [run, client] = await prepare(t)
   try {
-    const [client, cleanup] = await prepare(t)
     let results = await client.search('hello')
     t.equal(results.length, 2, 'hello search')
     results = await client.search('world')
     t.equal(results.length, 1, 'world search')
     results = await client.search('moon')
     t.equal(results.length, 1, 'moon search')
-    await cleanup()
-    t.end()
   } catch (err) {
-    console.log(err)
-    t.error(err)
+    t.fail(err)
   }
+  await run.stop()
 })
 
 test('querybuilder: simple bool search', async t => {
+  const [run, client] = await prepare(t)
   try {
-    const [client, cleanup] = await prepare(t)
     const query = new SearchQueryBuilder('doc')
     query
       .bool('must', [query.term('title', 'hello')])
       .bool('must_not', [query.term('title', 'moon')])
       .limit(10)
-    let results = await client.search(query)
+    const results = await client.search(query)
     t.equal(results.length, 1, 'should return one result')
     t.equal(results[0].value.title, 'hello world', 'toshi query worked')
-    await cleanup()
-    t.end()
   } catch (err) {
-    console.log(err)
-    t.error(err)
+    t.fail(err)
   }
+  await run.stop()
 })
 
 // TODO: Test query for all documents
@@ -60,33 +58,31 @@ test('querybuilder: simple bool search', async t => {
 // TODO: Test fuzzy query
 // TODO: Test phrase query
 test('querybuilder: phrase search', async t => {
+  const [run, client] = await prepare(t)
   try {
-    const [client, cleanup] = await prepare(t)
     const query = new SearchQueryBuilder('doc')
     query.phrase('title', ['hello', 'moon'])
-    let results = await client.search(query)
+    const results = await client.search(query)
     t.equal(results.length, 1, 'should return one result')
     t.equal(results[0].value.title, 'hello moon', 'phrase search worked')
-    await cleanup()
-    t.end()
   } catch (err) {
     console.log(err.toString())
     t.error(err)
   }
+  await run.stop()
 })
 
 test('toshi query', async t => {
+  const [run, client] = await prepare(t)
   try {
-    const [client, cleanup] = await prepare(t)
-    let results = await client.search({
+    const results = await client.search({
       query: { bool: { must: [{ term: { title: 'hello' } }], must_not: [{ term: { title: 'moon' } }] } }, limit: 10
     })
     t.equal(results.length, 1, 'should return one result')
     t.equal(results[0].value.title, 'hello world', 'toshi query worked')
-    await cleanup()
-    t.end()
   } catch (err) {
     console.log(err.toString())
     t.error(err)
   }
+  await run.stop()
 })
