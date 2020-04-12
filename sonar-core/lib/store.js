@@ -86,7 +86,8 @@ module.exports = class IslandStore extends EventEmitter {
         const config = this.getIslandConfig(key)
         island.getState((_err, state) => {
           status.islands[key] = {
-            key, 
+            key,
+            network: this.network.islandStatus(island),
             ...config,
             ...state
           }
@@ -94,14 +95,9 @@ module.exports = class IslandStore extends EventEmitter {
         })
       })
     }
+    finish()
 
-    this.network.status((err, networkStatus) => {
-      if (err) status.network = { error: err.message }
-      else status.network = networkStatus
-      finish()
-    })
-
-    function finish (err) {
+    function finish () {
       if (--pending !== 0) return
       cb(null, status)
     }

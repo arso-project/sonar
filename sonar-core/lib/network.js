@@ -39,6 +39,13 @@ module.exports = class Network {
     })
   }
 
+  islandStatus (island) {
+    const hdkey = island.discoveryKey.toString('hex')
+    if (!this.replicating[hdkey]) return { shared: false }
+    const peers = this.peers[hdkey].length
+    return { shared: true, peers }
+  }
+
   add (island) {
     island.ready(() => {
       const dkey = island.discoveryKey

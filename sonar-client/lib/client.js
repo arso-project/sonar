@@ -221,7 +221,7 @@ module.exports = class SonarClient {
     return this.query('search', query)
   }
 
-  async updateIsland (config, key) {
+  async updateIsland (key, config) {
     key = key || this.island
     return this._request({
       method: 'PATCH',
