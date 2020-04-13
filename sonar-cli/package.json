@@ -25,5 +25,8 @@
   },
   "pkg": {
     "scripts": "bin/**"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

@@ -49,5 +49,8 @@
   },
   "pkg": {
     "scripts": "*/**"
+  },
+    "publishConfig": {
+    "access": "public"
   }
 }

@@ -63,5 +63,8 @@
   },
   "pkg": {
     "assets": "dist/**"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

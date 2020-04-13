@@ -24,5 +24,8 @@
     "tape": "^4.13.2",
     "tape-plus": "^1.0.0",
     "temporary-directory": "^1.0.2"
+  },
+    "publishConfig": {
+    "access": "public"
   }
 }
