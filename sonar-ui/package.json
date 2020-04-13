@@ -8,7 +8,7 @@
   "author": "",
   "license": "GPL-3.0",
   "bin": {
-    "sonar-ui": "node bin.js"
+    "sonar-ui": "bin.js"
   },
   "scripts": {
     "start": "node bin.js start",
