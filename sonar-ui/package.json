@@ -13,7 +13,8 @@
   "scripts": {
     "start": "node bin.js start",
     "build": "node bin.js build",
-    "dev": "node bin.js dev"
+    "dev": "node bin.js dev",
+    "prepublishOnly": "node bin.js build"
   },
   "dependencies": {
     "@arso-project/sonar-client": "^0.3.0-alpha.6",
