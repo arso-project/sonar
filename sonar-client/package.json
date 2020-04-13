@@ -1,6 +1,6 @@
 {
   "name": "@arso-project/sonar-client",
-  "version": "0.3.0-alpha.4",
+  "version": "0.3.0-alpha.5",
   "description": "Client for sonar",
   "main": "index.js",
   "scripts": {
@@ -18,14 +18,14 @@
     "streamx": "^2.6.0"
   },
   "devDependencies": {
-    "@arso-project/sonar-server": "^0.3.0-alpha.4",
+    "@arso-project/sonar-server": "^0.3.0-alpha.5",
     "axios-debug-log": "^0.7.0",
     "tap-nirvana": "^1.1.0",
     "tape": "^4.13.2",
     "tape-plus": "^1.0.0",
     "temporary-directory": "^1.0.2"
   },
-    "publishConfig": {
+  "publishConfig": {
     "access": "public"
   }
 }
