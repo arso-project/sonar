@@ -21,6 +21,7 @@
     "level": "^6.0.1",
     "mkdirp-classic": "^0.5.2",
     "mutexify": "^1.2.0",
+    "nanoresource": "^1.3.0",
     "pretty-hash": "^1.0.1",
     "pump": "^3.0.0",
     "simple-local-swarm": "^1.1.0",

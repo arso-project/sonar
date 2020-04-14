@@ -1,5 +1,6 @@
 const p = require('path')
 const os = require('os')
+const fs = require('fs')
 const crypto = require('hypercore-crypto')
 const sub = require('subleveldown')
 const mkdirp = require('mkdirp-classic')
@@ -26,28 +27,9 @@ module.exports = class IslandStore extends EventEmitter {
       level: p.join(storage, 'level'),
       tantivy: p.join(storage, 'tantivy')
     }
+    this.opts = opts
 
-    Object.values(this.paths).forEach(p => mkdirp.sync(p))
-
-    if (opts.network !== false) {
-      this.network = new Network({
-        announceLocalAddress: true
-      })
-    } else {
-      this.network = new Network.NoNetwork()
-    }
-
-    this.config = new Config(p.join(this.paths.base, 'config.json'))
-    this.corestore = new Corestore(this.paths.corestore)
-    this.indexCatalog = new Catalog(this.paths.tantivy, {
-      log: require('debug')('sonar-tantivy')
-    })
-    this.indexCatalog.on('error', err => {
-      this.emit('error', err)
-    })
-    this.level = leveldb(this.paths.level)
-
-    debug('storage location: ' + this.paths.base)
+    // Actual initialization of resources happens in this._ready()
 
     this.islands = {}
     this.opened = false
@@ -55,25 +37,73 @@ module.exports = class IslandStore extends EventEmitter {
     this.ready()
   }
 
+  _ensurePaths (cb) {
+    cb = once(cb)
+    let pending = Object.values(this.paths).length
+    for (const path of Object.values(this.paths)) {
+      fs.stat(path, (err, stat) => {
+        if (err && err.code !== 'ENOENT') return cb(err)
+        if (err) {
+          mkdirp(path, err => {
+            if (err) return cb(err)
+            done()
+          })
+        } else if (!stat.isDirectory()) {
+          return cb(new Error('Not a directory: ' + path))
+        } else done()
+      })
+    }
+    function done () {
+      if (--pending === 0) cb()
+    }
+  }
+
   _ready (cb) {
-    this.config.load((err, config) => {
+    debug('storage location: ' + this.paths.base)
+    this._ensurePaths(err => {
       if (err) return cb(err)
-      this.corestore.ready((err) => {
+
+      this.config = new Config(p.join(this.paths.base, 'config.json'))
+      this.corestore = new Corestore(this.paths.corestore)
+      this.indexCatalog = new Catalog(this.paths.tantivy, {
+        log: require('debug')('sonar-tantivy')
+      })
+      this.indexCatalog.on('error', err => {
+        this.emit('error', err)
+      })
+
+      this.level = leveldb(this.paths.level)
+
+      if (this.opts.network !== false) {
+        this.network = new Network({
+          announceLocalAddress: true
+        })
+      } else {
+        this.network = new Network.NoNetwork()
+      }
+
+      this.config.load((err, config) => {
         if (err) return cb(err)
         debug('config loaded', this.config.path)
-
-        if (config.islands) {
-          for (const info of Object.values(config.islands)) {
-            const island = this._open(info.key, info)
-            if (info.share) {
-              this.network.add(island)
-            }
-          }
-        }
-        this.opened = true
-        cb()
+        this.corestore.ready((err) => {
+          if (err) return cb(err)
+          else this._onready(config, cb)
+        })
       })
     })
+  }
+
+  _onready (config, cb) {
+    if (config.islands) {
+      for (const info of Object.values(config.islands)) {
+        const island = this._open(info.key, info)
+        if (info.share) {
+          this.network.add(island)
+        }
+      }
+    }
+    this.opened = true
+    cb()
   }
 
   status (cb) {
@@ -305,3 +335,12 @@ function isKey (key) {
 }
 
 function noop () {}
+
+function once (fn) {
+  let called = false
+  return (...args) => {
+    if (called) return
+    called = true
+    fn(...args)
+  }
+}
