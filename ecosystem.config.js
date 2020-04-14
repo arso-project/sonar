@@ -11,8 +11,8 @@ module.exports = {
       watch: false,
       max_memory_restart: '1G',
       env: {
-        NODE_ENV: 'development',
-        DEBUG: '*'
+        NODE_ENV: 'development'
+        // DEBUG: '*'
       },
       env_production: {
         NODE_ENV: 'production'
@@ -21,7 +21,7 @@ module.exports = {
     {
       name: 'ui',
       script: './sonar-ui/bin.js',
-      args: 'ui serve',
+      args: 'start',
       instances: 1,
       // autorestart: true,
       // max_restarts: 1,
