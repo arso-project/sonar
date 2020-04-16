@@ -1,6 +1,6 @@
 # sonar-ui
 
-A UI to Sonar.
+A web UI use and explore [Sonar](https://github.com/arso-project/sonar) islands.
 
 [React](https://reactjs.org) single page application. Uses [sonar-client](../sonar-client/README.md) to talk to [sonar-server](../sonar-server/README) over HTTP.
 

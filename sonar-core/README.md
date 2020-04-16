@@ -1,9 +1,9 @@
 # sonar-core
 
-The core. Manages *islands*, where each island is a [kappa-record-db](https://github.com/arso-project/kappa-record-db)and associated hyperdrives.
+The core. Manages *islands*, where each island is a [kappa-record-db](https://github.com/arso-project/kappa-record-db) and associated hyperdrives.
 
-* Adds a full-text search engine to a kappa-record-db (through [sonar-tantivy](https://github.com/arso-project/sonar-tantivy)
-* Adds a simple file system per island (as [hyperdrives](https://github.com/mafintosh/hyperdrive)
+* Adds a full-text search engine to a kappa-record-db (through [sonar-tantivy](https://github.com/arso-project/sonar-tantivy))
+* Adds a simple file system per island (as [hyperdrives](https://github.com/mafintosh/hyperdrive))
 * Includes an `IslandStore` to manage several islands
 * Includes a networking module to share islands over [hyperswarm](https://github.com/hyperswarm/hyperswarm)
 
