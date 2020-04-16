@@ -14,5 +14,8 @@ module.exports = {
     alias: 's',
     describe: 'the storage path',
     default: null
+  },
+  dev: {
+    describe: 'start in developer\'s mode'
   }
 }

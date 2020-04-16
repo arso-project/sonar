@@ -65,7 +65,7 @@ module.exports = class ServerClient {
     }
     this.server = createServer(opts)
     return new Promise((resolve, reject) => {
-      this.server.start({ port: opts.port }, (err) => {
+      this.server.start((err) => {
         if (err) reject(err)
         this.server.api.islands.ready((err) => {
           if (err) return reject(err)

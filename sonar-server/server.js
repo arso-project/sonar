@@ -20,26 +20,31 @@ const DEFAULT_PORT = 9191
 const DEFAULT_HOSTNAME = 'localhost'
 
 module.exports = function SonarServer (opts) {
-  const config = {
-    storage: opts.storage || DEFAULT_STORAGE,
-    port: opts.port || DEFAULT_PORT,
-    hostname: opts.hostname || DEFAULT_HOSTNAME
+  opts = {
+    storage: DEFAULT_STORAGE,
+    port: DEFAULT_PORT,
+    hostname: DEFAULT_HOSTNAME,
+    dev: process.env.NODE_ENV === 'development',
+    ...opts
   }
 
   const storeOpts = {
-    network: typeof opts.network === undefined ? true : opts.network
+    network: opts.network === undefined ? true : opts.network
   }
 
   const api = {
-    config,
-    islands: new IslandStore(config.storage, storeOpts)
+    islands: new IslandStore(opts.storage, storeOpts)
   }
 
   const app = express()
-  expressWebSocket(app)
 
+  // Make the sonar api available on the app object.
   app.api = api
 
+  // Enable websockets
+  expressWebSocket(app)
+
+  // Bodyparser
   app.use(bodyParser.urlencoded({ extended: true }))
   app.use(bodyParser.json({
     // Currently, the _search route accepts json encoded strings.
@@ -51,29 +56,32 @@ module.exports = function SonarServer (opts) {
   app.use(cors({
     origin: '*'
   }))
-  // app.use(function (req, res, next) {
-  //   res.header('Access-Control-Allow-Origin', '*')
-  //   res.header('Access-Control-Allow-Credentials', true)
-  //   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept')
-  //   next()
-  // })
-  app.use(function configMiddleware (req, res, next) {
-    req.config = api.config
-    next()
-  })
-  app.use(function groupMiddleware (req, res, next) {
-    req.islands = api.groups
+
+  // Include the static UI at /
+  const uiStaticPath = p.join(p.dirname(require.resolve('@arso-project/sonar-ui/package.json')), 'build', 'dist')
+  app.use(express.static(uiStaticPath))
+
+  // If in dev mode, serve the webpack dev middleware for the UI at /ui-dev
+  if (opts.dev) {
+    const devMiddleware = require('@arso-project/sonar-ui/express-dev')
+    devMiddleware(app, { publicPath: '/ui-dev', workdir: opts.workdir })
+  }
+
+  // Make the island api available to all requests
+  app.use(function islandMiddleware (req, res, next) {
+    req.islands = api.islands
     next()
   })
 
   // Main API
   const apiRoutes = apiRouter(api)
 
+  // Serve the API at /api
   app.use('/api', apiRoutes)
   // TODO: Change to v1
   // app.use('/api/v1', apiRoutes)
 
-  // API docs
+  // Serve the swagger API docs at /api-docs
   app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(
     apiDocs,
     {
@@ -91,17 +99,21 @@ module.exports = function SonarServer (opts) {
     res.status(err.statusCode).send(result)
   })
 
-  app.start = function (opts, cb) {
+  app.start = thunky((cb = noop) => {
     if (typeof opts === 'function') return app.start(null, opts)
-    api.islands.ready()
-    opts = opts || {}
-    app._port = opts.port || config.port
-    app._host = opts.hostname || config.hostname
-    app.server = app.listen(app._port, app._host, cb)
-    shutdown(app.server)
-  }
+    // Open the island store.
+    api.islands.ready(err => {
+      if (err) return cb(err)
+      app.port = opts.port
+      app.hostname = opts.hostname
+      // Start the HTTP server.
+      app.server = app.listen(app.port, app.hostname, cb)
+      // Mount the shutdown handler onto the server.
+      shutdown(app.server)
+    })
+  })
 
-  app.close = thunky(cb => {
+  app.close = thunky((cb = noop) => {
     let pending = 2
     app.server.forceShutdown(err => {
       debug('closed: server', err || '')
@@ -113,6 +125,7 @@ module.exports = function SonarServer (opts) {
     }
   })
 
+  // Ensure everything gets closed when the node process exits.
   onexit((cb) => {
     app.close(() => {
       cb()
