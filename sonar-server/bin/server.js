@@ -5,7 +5,7 @@ const onexit = require('async-exit-hook')
 const { printLogo } = require('@arso-project/sonar-cli/util/logo.js')
 const options = require('./lib/options')
 
-const DEV_DEBUG = '*,-express*,-hypercore-protocol*,-bodyparser*'
+const DEV_DEBUG = '*,-express*,-hypercore-protocol*,-bodyparser*,-babel*'
 
 exports.command = 'server <command>'
 exports.describe = 'server'
@@ -54,7 +54,7 @@ function startServer (argv) {
     process.exit(code)
   })
 
-  onexit(cb => {
+  onexit((cb = noop) => {
     closing = true
     if (proc.killed || proc.exitCode !== null) return cb()
     proc.once('exit', cb)
@@ -84,3 +84,5 @@ function copyArgs (from, keys) {
     ).toLowerCase()
   }
 }
+
+function noop () {}

@@ -24,9 +24,13 @@ module.exports = function createIslandCommands (islands) {
         encoding: 'json',
         oncall (args, channel) {
           channel.reply()
-          const [name, queryArgs, opts] = args
+          let [name, queryArgs, opts] = args
+          if (!opts) opts = {}
+          if (!queryArgs) queryArgs = {}
           const island = channel.island
-          island.db.createQueryStream(name, queryArgs, opts).pipe(channel)
+          pump(island.db.createQueryStream(name, queryArgs, opts), channel, err => {
+            if (err) channel.error(err)
+          })
         }
       },
       subscribe: {

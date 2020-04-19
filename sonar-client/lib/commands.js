@@ -17,6 +17,7 @@ module.exports = class CommandStreamClient {
   }
 
   close () {
+    if (this._closed) return
     this._closed = true
     if (this._endpoint) this._endpoint.close()
     if (this._socket) this._socket.destroy()

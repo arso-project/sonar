@@ -19,14 +19,11 @@ const DEFAULT_STORAGE = p.join(os.homedir(), '.sonar')
 const DEFAULT_PORT = 9191
 const DEFAULT_HOSTNAME = 'localhost'
 
-module.exports = function SonarServer (opts) {
-  opts = {
-    storage: DEFAULT_STORAGE,
-    port: DEFAULT_PORT,
-    hostname: DEFAULT_HOSTNAME,
-    dev: process.env.NODE_ENV === 'development',
-    ...opts
-  }
+module.exports = function SonarServer (opts = {}) {
+  if (!opts.storage) opts.storage = process.env.SONAR_STORAGE || DEFAULT_STORAGE
+  if (!opts.port) opts.port = DEFAULT_PORT
+  if (!opts.hostname) opts.hostname = DEFAULT_HOSTNAME
+  if (!opts.dev) opts.dev = process.env.NODE_ENV === 'development'
 
   const storeOpts = {
     network: opts.network === undefined ? true : opts.network
@@ -45,7 +42,7 @@ module.exports = function SonarServer (opts) {
   expressWebSocket(app)
 
   // Bodyparser
-  app.use(bodyParser.urlencoded({ extended: true }))
+  app.use(bodyParser.urlencoded({ extended: true, limit: '10MB' }))
   app.use(bodyParser.json({
     // Currently, the _search route accepts json encoded strings.
     // Remove once that changes.
