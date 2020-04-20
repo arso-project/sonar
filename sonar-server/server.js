@@ -92,8 +92,7 @@ module.exports = function SonarServer (opts = {}) {
     const result = {
       error: err.message
     }
-    if (!err.statusCode) err.statusCode = 500
-    res.status(err.statusCode).send(result)
+    res.status(err.statusCode || 500).send(result)
   })
 
   app.start = thunky((cb = noop) => {
