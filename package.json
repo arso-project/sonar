@@ -18,6 +18,7 @@
   "devDependencies": {
     "standard": "^14.3.3",
     "tap-nirvana": "^1.1.0",
-    "tape": "^4.13.2"
+    "tape": "^4.13.2",
+    "trace-console-log": "^1.0.0"
   }
 }
