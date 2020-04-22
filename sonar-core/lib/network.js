@@ -67,7 +67,7 @@ module.exports = class Network {
       const hdkey = island.discoveryKey.toString('hex')
       if (!this.replicating[hdkey]) return
       for (const peer of this.peers[hdkey]) {
-        peer.stream.destroy()
+        if (peer.protocol && !peer.protocol.destroyed) peer.protocol.destroy()
       }
       this.replicating[hdkey] = undefined
     })
@@ -76,7 +76,7 @@ module.exports = class Network {
   close (cb = noop) {
     this._closing = true
     Object.values(this.peers).forEach(peer => {
-      peer.socket && peer.socket.destroy()
+      if (peer.protocol && !peer.protocol.destroyed) peer.protocol.destroy()
     })
     // TODO: the destroy method of hyperswarm can also take a callback.
     // Awaiting this callback takes a long time. Investigate why this
@@ -97,15 +97,14 @@ module.exports = class Network {
     const hdkey = dkey.toString('hex')
     const island = this.replicating[hdkey]
     if (!island) {
-      debug('invalid discovery key')
-      protocol.destroy()
-    } else {
-      debug('start replication [init: false, discoveryKey: %s]', hdkey)
-      island.replicate(false, { stream: protocol, live: true })
-      this.peers[hdkey] = this.peers[hdkey] || []
-      this.peers[hdkey].push({ protocol, discoveryKey: dkey })
+      debug('unknown discovery key', dkey.toString('hex'))
+      return
     }
-    protocol.on('error', err => debug('protocol error', err))
+
+    debug('start replication [init: false, discoveryKey: %s]', hdkey)
+    island.replicate(null, { stream: protocol, live: true })
+    this.peers[hdkey] = this.peers[hdkey] || []
+    this.peers[hdkey].push({ protocol, discoveryKey: dkey })
   }
 
   _onconnection (socket, details) {
@@ -116,19 +115,20 @@ module.exports = class Network {
     const isInitiator = !!details.client
     const dkey = details.peer ? details.peer.topic : null
 
-    debug('onconnection', isInitiator, dkey ? dkey.toString('hex') : null)
+    const protocol = new Protocol(isInitiator, { live: true })
+    protocol.on('error', err => debug('protocol error', err))
+
     if (isInitiator) {
-      const protocol = new Protocol(true)
-      this._onpeer(dkey, protocol)
       debug('start protocol [init: true]')
+      this._onpeer(dkey, protocol)
     } else {
-      const protocol = new Protocol(false)
       debug('start protocol [init: false]')
       protocol.once('discovery-key', dkey => {
-        debug('ondiscoverykey', dkey.toString('hex'))
         this._onpeer(dkey, protocol)
       })
     }
+
+    pump(protocol, socket, protocol)
   }
 }
 
