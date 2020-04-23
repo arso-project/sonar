@@ -291,6 +291,20 @@ module.exports = class SonarClient {
     })
   }
 
+  async pullSubscription (name, opts) {
+    return this._request({
+      path: [this.island, 'subscription', name],
+      query: opts
+    })
+  }
+
+  async ackSubscription (name, cursor) {
+    return this._request({
+      method: 'post',
+      path: [this.island, 'subscription', name, cursor]
+    })
+  }
+
   _url (path) {
     if (Array.isArray(path)) path = path.join('/')
     return this.endpoint + '/' + path
@@ -332,16 +346,17 @@ module.exports = class SonarClient {
     }
   }
 
-  async initCommandClient (opts) {
+  async initCommandClient (opts = {}) {
     if (this._commandClient) throw new Error('Command client already initialized')
     opts = {
       url: this._url(['_commands']),
+      ...opts,
       env: {
+        ...opts.env || {},
         island: this.island
       },
-      name: 'client:' + this.id,
-      commands: {},
-      ...opts
+      name: opts.name || 'client:' + this.id,
+      commands: opts.commands || {}
     }
     this._commandClient = new CommandStreamClient(opts)
     await this._commandClient.open()

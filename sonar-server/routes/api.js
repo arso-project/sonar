@@ -260,6 +260,7 @@ function createIslandHandlers () {
 
     ackSubscription (req, res, next) {
       const { name, cursor } = req.params
+      req.island.createSubscription(name)
       req.island.ackSubscription(name, cursor, (err, result) => {
         if (err) return next(err)
         res.send(result)

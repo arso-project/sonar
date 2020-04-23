@@ -13,7 +13,7 @@ module.exports = class CommandStreamClient {
   }
 
   setEnv (key, value) {
-    this._env.key = value
+    this._env[key] = value
   }
 
   close () {
