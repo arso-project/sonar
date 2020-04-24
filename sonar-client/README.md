@@ -158,7 +158,7 @@ Read the file attached to a resource.
 
 ### Subscriptions
 
-#### `await client.pullSubscription(name, [opts])
+#### `await client.pullSubscription(name, [opts])`
 
 Pull the subscription `name`. Returns an object with a batch of messages:
 ```javascript
