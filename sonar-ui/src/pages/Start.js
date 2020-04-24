@@ -13,7 +13,7 @@ export default function StartPage (props) {
 
   return (
     <Box flex='1'>
-      <Text color='teal.400' fontSize={['lg', '2xl', '4xl']} my='8' textAlign='center'>
+      <Text color='teal.400' fontSize={['lg', '2xl', '5xl']} my='8' textAlign='center'>
         Hello friend, welcome to Sonar!
       </Text>
     </Box>
