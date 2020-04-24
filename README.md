@@ -6,13 +6,11 @@
 </div>
 <br />
 
-**Early stage WIP! Not yet stable in any way!**
+This is the main repository of Sonar. The usual setup is that you run `sonar-server` on localhost and then interact with Sonar through the [client](sonar-client/REAMDE.md), the UI running on [http://localhost:9191](http://localhost:9191) or the [CLI](sonar-cli/README.md). The CLI can be invoked with `./sonar` from the root of this repository, and is also used to start the server.
 
 The **[Sonar book](https://arso-project.github.io/sonar-book/)** has more documentation (soon).
 
 ## Installation
-
-(this is pre-alpha!)
 
 ```sh
 npm install -g @arso-project/sonar-server
@@ -22,13 +20,13 @@ sonar start
 
 ## Development
 
-First clone this repository. 
+> Note: At the moment [yarn 1](https://classic.yarnpkg.com/) is recommended, please [install it according to the instructions](https://classic.yarnpkg.com/en/docs/install#debian-stable).
 
-Then, to get things running:
 
 ```sh
-# install yarn if not yet installed
-npm install -g yarn
+# clone the sonar repository
+git clone https://github.com/arso-project/sonar.git
+cd sonar
 # install dependencies of all workspaces
 yarn
 ```
@@ -40,16 +38,22 @@ lerna bootstrap
 ```
 Yarn is recommended because it's much faster.
 
-In the root folder is a symlink `sonar` that leads to `sonar-server/bin.js` which is the main entry point. Through `./sonar` you can start both the UI and the server.
+You can start sonar with `./sonar` from the repository root.
 
 ```sh
-# start sonar-server and server-ui in dev mode
+# build the UI (required)
+./sonar ui build
 
+# start the sonar server
+./sonar start
+
+# start the sonar server in dev mode
 ./sonar start --dev
+
 ```
 
 Then, you can:
-* open the web UI on [http://localhost:55555](http://localhost:5555).
+* open the web UI on [http://localhost:9191](http://localhost:9191).
 * use the CLI:
   ```sh
   ./sonar island create default

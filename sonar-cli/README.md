@@ -1,6 +1,6 @@
 # sonar-cli
 
-CLI commands and utitilities for [sonar](https://github.com/arso-project/sonar).
+CLI commands and utitilities for [Sonar](https://github.com/arso-project/sonar).
 
 ```
 sonar <command>
