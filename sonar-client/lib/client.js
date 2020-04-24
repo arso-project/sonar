@@ -112,11 +112,11 @@ module.exports = class SonarClient {
     })
   }
 
-  async readResourceFile (record) {
+  async readResourceFile (record, opts = {}) {
     const fileUrl = this.parseHyperdriveUrl(record.value.contentUrl)
     if (!fileUrl) throw new Error('resource has invalid contentUrl')
     const path = fileUrl.host + '/' + fileUrl.path
-    return this.readFile(path)
+    return this.readFile(path, opts)
   }
 
   async createResource (value, opts = {}) {
@@ -275,13 +275,15 @@ module.exports = class SonarClient {
     })
   }
 
-  async readFile (path) {
+  async readFile (path, opts = {}) {
+    const { stream = true } = opts
     if (path.startsWith('/')) path = path.substring(1)
-    return this._request({
+    const request = {
       path: [this.island, 'fs', path],
-      binary: true,
-      responseType: 'stream'
-    })
+      binary: true
+    }
+    if (stream) request.responseType = 'stream'
+    return this._request(request)
   }
 
   async statFile (path) {
