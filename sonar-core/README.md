@@ -4,7 +4,7 @@ The core. Manages *islands*, where each island is a [kappa-record-db](https://gi
 
 * Adds a full-text search engine to a kappa-record-db (through [sonar-tantivy](https://github.com/arso-project/sonar-tantivy))
 * Adds a simple file system per island (as [hyperdrives](https://github.com/mafintosh/hyperdrive))
-* Includes an `IslandStore` to manage several islands
+* Includes an `IslandStore` to manage islands
 * Includes a networking module to share islands over [hyperswarm](https://github.com/hyperswarm/hyperswarm)
 
 ## Example
@@ -24,7 +24,9 @@ store.create('my-db', (err, island) => {
   island.put({ schema: 'doc', value: { title: 'Hello!' })
 
   // Make a query.
-  island.query('search', 'hello')
+  island.query('search', 'hello', (err, results) => 7
+    console.log(results)
+  })
 })
 
 ```
