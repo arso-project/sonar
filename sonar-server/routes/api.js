@@ -172,7 +172,6 @@ function createIslandHandlers () {
 
     sync (req, res, next) {
       let { view = [] } = req.query
-      console.log('view', view)
       if (typeof view === 'string') view = view.split(',')
       req.island.db.sync(view, (err) => {
         if (err) return next(err)
