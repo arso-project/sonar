@@ -93,6 +93,12 @@ Query the database. Returns an array of matching records. Records may have a `me
     * For `search`: Either a `"string"` for a simple full-text search, or an tantivy query object (to be documented)
     * For `indexes`: `{ schema, prop, value, from, to, reverse, limit }` (to be documented)
 
+#### `await client.sync([views])`
+
+Wait until all running operations are finished. This returns once all currently running indexing batches are finished. If you did any put or delete operations before this function will return once those are commited to all indexes. In case of pending incoming messages from remote feeds, the current indexing run is awaited.
+
+* `views`: Optional. String of a view name or array of view names to wait for being finished. View names are the same as the query names above.
+
 
 ### Files
 

@@ -193,6 +193,13 @@ module.exports = class SonarClient {
     return this._request({ path, method, data: record })
   }
 
+  async sync (view) {
+    const path = [this.island, 'sync']
+    const params = {}
+    if (view) params.view = view
+    return this._request({ path, params })
+  }
+
   async query (name, args, opts = {}) {
     if (this._cacheid) {
       opts.cacheid = this._cacheid

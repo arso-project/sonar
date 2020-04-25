@@ -38,6 +38,9 @@ module.exports = function apiRoutes (api) {
   // Get record
   // islandRouter.get('/db/:schemans/:schemaname/:id', handlers.get)
 
+  // Wait for sync
+  islandRouter.get('/sync', handlers.sync)
+
   // Search/Query
   islandRouter.post('/_query/:name', handlers.query)
   // List schemas
@@ -164,6 +167,16 @@ function createIslandHandlers () {
       req.island.loadRecord({ key, seq }, (err, record) => {
         if (err) return next(err)
         res.send(record)
+      })
+    },
+
+    sync (req, res, next) {
+      let { view = [] } = req.query
+      console.log('view', view)
+      if (typeof view === 'string') view = view.split(',')
+      req.island.db.sync(view, (err) => {
+        if (err) return next(err)
+        res.end()
       })
     },
 
