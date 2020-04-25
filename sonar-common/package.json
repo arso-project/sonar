@@ -10,8 +10,7 @@
   "license": "GPL-3.0",
   "devDependencies": {
     "text-table": "^0.2.0",
-    "tap-nirvana": "^1.1.0",
-    "tape": "^4.13.2"
+    "tape": "^5.0"
   },
   "dependencies": {
     "@iarna/toml": "^2.2.3",

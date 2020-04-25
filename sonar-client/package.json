@@ -4,7 +4,7 @@
   "description": "Client for sonar",
   "main": "index.js",
   "scripts": {
-    "test": "tape test/*.js | tap-nirvana"
+    "test": "tape test/*.js"
   },
   "author": "",
   "license": "GPL-3.0",
@@ -20,8 +20,7 @@
   "devDependencies": {
     "@arso-project/sonar-server": "^0.3.0-alpha.6",
     "axios-debug-log": "^0.7.0",
-    "tap-nirvana": "^1.1.0",
-    "tape": "^4.13.2",
+    "tape": "^5.0",
     "tape-plus": "^1.0.0",
     "temporary-directory": "^1.0.2"
   },
