@@ -2,10 +2,11 @@ const createServer = require('@arso-project/sonar-server')
 const tmp = require('temporary-directory')
 const fp = require('find-free-port')
 const SonarClient = require('../../lib/client')
+// const debug = require('debug')('test')
+// Error.stackTraceLimit = Infinity
 
-module.exports = class ServerClient {
-  constructor (t, opts = {}) {
-    this.t = t
+class ServerClient {
+  constructor (opts = {}) {
     this.opts = {
       persist: false,
       ...opts
@@ -15,7 +16,11 @@ module.exports = class ServerClient {
     this.serverClose = null
   }
 
-  _tmpdir () {
+  _createStorage (opts) {
+    if (opts.storage) {
+      this.storage = opts.storage
+      return this.storage
+    }
     return new Promise((resolve, reject) => {
       tmp((err, dir, cleanup) => {
         if (err) reject(err)
@@ -30,39 +35,35 @@ module.exports = class ServerClient {
     })
   }
 
-  async _findPort () {
-    const ports = await fp(20000)
-    if (!ports.length) throw new Error('No free ports')
-    this.port = ports[0]
+  async _findPort (opts) {
+    if (opts.port) {
+      this.port = opts.port
+    } else {
+      const ports = await fp(20000)
+      if (!ports.length) throw new Error('No free ports')
+      this.port = ports[0]
+    }
     return this.port
   }
 
   async start (opts = {}) {
     try {
-      if (!opts.storage) {
-        await this._tmpdir()
-      }
-      if (!opts.port) {
-        await this._findPort()
-      } else {
-        this.port = opts.port
-      }
-      await this.createServer()
-      return this.createClient(opts)
+      await this.createServer(opts)
+      const client = this.createClient(opts)
+      return client
     } catch (err) {
-      this.t.fail(err)
       await this.stop()
-      this.t.end()
+      throw err
     }
   }
 
-  createServer (opts = {}) {
+  async createServer (opts = {}) {
     opts = {
       ...this.opts,
-      port: this.port,
-      storage: this.storage,
       ...opts
     }
+    opts.storage = await this._createStorage(opts)
+    opts.port = await this._findPort(opts)
     this.server = createServer(opts)
     return new Promise((resolve, reject) => {
       this.server.start((err) => {
@@ -87,22 +88,31 @@ module.exports = class ServerClient {
   }
 
   async stop () {
-    try {
-      for (const client of this.clients) {
-        client.close()
-      }
-      if (this.server) {
-        await new Promise((resolve, reject) => {
-          this.server.close(err => {
-            if (err) reject(err)
-            else resolve()
-          })
-        })
-      }
-      if (this.storageCleanup) await this.storageCleanup()
-    } catch (err) {
-      this.t.fail(err)
+    for (const client of this.clients) {
+      client.close()
     }
-    this.t.end()
+    if (this.server) {
+      await new Promise((resolve, reject) => {
+        this.server.close(err => {
+          if (err) reject(err)
+          else resolve()
+        })
+      })
+    }
+    if (this.storageCleanup) await this.storageCleanup()
   }
 }
+
+async function createServerClient (opts) {
+  opts = Object.assign({
+    network: false,
+    island: 'default'
+  }, opts || {})
+  const context = new ServerClient(opts)
+  const client = await context.start()
+  if (opts.island) await client.createIsland(opts.island)
+  return [context, client]
+}
+
+module.exports = createServerClient
+module.exports.ServerClient = ServerClient

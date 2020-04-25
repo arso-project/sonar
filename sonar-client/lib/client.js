@@ -350,8 +350,8 @@ module.exports = class SonarClient {
       const result = await axios.request(axiosOpts)
       return result.data
     } catch (err) {
-      const wrappedErr = enhanceAxiosError(err)
-      throw wrappedErr
+      const wrappedError = wrapAxiosError(err)
+      throw wrappedError
     }
   }
 
@@ -387,16 +387,41 @@ module.exports = class SonarClient {
   }
 }
 
-function enhanceAxiosError (err) {
+function wrapAxiosError (err) {
   const log = {}
-  const { request, response } = err
-  if (request) log.request = { method: request.method, path: request.path }
-  if (response) log.response = { status: response.status, statusText: response.statusText, headers: response.headers, data: response.data }
+  const { request, response, config } = err
+  if (config) {
+    log.config = {
+      url: config.url,
+      method: config.method,
+      headers: config.headers,
+      data: config.data
+    }
+    err.config = log.config
+  }
+  if (request) {
+    log.request = {
+      method: request.method,
+      path: request.path
+    }
+    err.request = log.request
+  }
+  if (response) {
+    log.response = {
+      status: response.status,
+      statusText: response.statusText,
+      headers: response.headers,
+      data: response.data
+    }
+    err.response = log.response
+  }
   debug(log)
 
   let msg
   if (err && err.response && typeof err.response.data === 'object' && err.response.data.error) {
     msg = err.response.data.error
+  } else {
+    msg = err.message
   }
   err.remoteError = msg
   if (msg) err.message = err.message + ` (reason: ${msg})`
