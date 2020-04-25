@@ -22,7 +22,7 @@ class ServerClient {
       return this.storage
     }
     return new Promise((resolve, reject) => {
-      tmp((err, dir, cleanup) => {
+      tmp('sonar-test', (err, dir, cleanup) => {
         if (err) reject(err)
         this.storage = dir
         this.storageCleanup = function () {
