@@ -19,5 +19,6 @@
     "standard": "^14.3.3",
     "tape": "^5.0",
     "trace-console-log": "^1.0.0"
-  }
+  },
+  "version": "0.0.0"
 }
