@@ -2,12 +2,14 @@
 const { Router } = require('simple-rpc-protocol')
 const express = require('express')
 const websocketStream = require('websocket-stream/stream')
-const debug = require('debug')
+const debug = require('debug')('sonar-server:api')
 const SSE = require('express-sse')
-const log = debug('sonar:server')
+const log = debug
 
 const hyperdriveMiddleware = require('./hyperdrive')
 const createIslandCommands = require('../commands/island')
+
+const SYNC_TIMEOUT = 1000
 
 module.exports = function apiRoutes (api) {
   const router = express.Router()
@@ -26,7 +28,6 @@ module.exports = function apiRoutes (api) {
 
   const islandRouter = express.Router()
   // Change island config
-  islandRouter.patch('/', deviceHandlers.updateIsland)
 
   // Hyperdrive actions (get and put)
   islandRouter.use('/fs', hyperdriveMiddleware(api.islands))
@@ -173,7 +174,16 @@ function createIslandHandlers () {
     sync (req, res, next) {
       let { view = [] } = req.query
       if (typeof view === 'string') view = view.split(',')
+      let done = false
+      setTimeout(() => {
+        if (done) return
+        done = true
+        debug('sync timeout', Object.entries(req.island.db.kappa.flows).map(([n, f]) => `${n}: ${f.status} (upd ${f.incomingUpdate})`))
+        next(new Error('Sync timeout'))
+      }, SYNC_TIMEOUT)
       req.island.db.sync(view, (err) => {
+        if (done) return
+        done = true
         if (err) return next(err)
         res.end()
       })

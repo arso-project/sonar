@@ -5,15 +5,21 @@ const createServerClient = require('./util/server')
 
 async function prepare (t) {
   const [context, client] = await createServerClient()
-  await client.put({ schema: 'doc', value: { title: 'hello world' } })
-  await client.put({ schema: 'doc', value: { title: 'hello moon' } })
-  await client.sync()
+  try {
+    await client.put({ schema: 'doc', value: { title: 'hello world' } })
+    await client.put({ schema: 'doc', value: { title: 'hello moon' } })
+    await client.sync()
+  } catch (e) {
+    t.fail(e)
+    await context.stop()
+    throw e
+  }
 
   return [context, client]
 }
 
 test('basic query', async t => {
-  const [context, client] = await prepare()
+  const [context, client] = await prepare(t)
   let results = await client.search('hello')
   t.equal(results.length, 2, 'hello search')
   results = await client.search('world')
@@ -24,7 +30,7 @@ test('basic query', async t => {
 })
 
 test('querybuilder: simple bool search', async t => {
-  const [context, client] = await prepare()
+  const [context, client] = await prepare(t)
   const query = new SearchQueryBuilder('doc')
   query
     .bool('must', [query.term('title', 'hello')])
@@ -46,7 +52,7 @@ test('querybuilder: simple bool search', async t => {
 // TODO: Test fuzzy query
 // TODO: Test phrase query
 test('querybuilder: phrase search', async t => {
-  const [context, client] = await prepare()
+  const [context, client] = await prepare(t)
   const query = new SearchQueryBuilder('doc')
   query.phrase('title', ['hello', 'moon'])
   const results = await client.query(
