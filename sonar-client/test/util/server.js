@@ -27,7 +27,12 @@ class ServerClient {
         this.storage = dir
         this.storageCleanup = function () {
           return new Promise((resolve, reject) => {
-            cleanup(err => err ? reject(err) : resolve())
+            // Timeout makes test pass on Windows, otherwise the LevelDB
+            // resource is still "BUSY".
+            // TODO: Try to fix this.
+            setTimeout(() => {
+              cleanup(err => err ? reject(err) : resolve())
+            }, 1000)
           })
         }
         resolve(dir)
