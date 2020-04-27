@@ -255,6 +255,7 @@ module.exports = class IslandStore extends EventEmitter {
       self.config.close(onclose('config'))
       self.network.close(onclose('network'))
       self.corestore.close(onclose('corestore'))
+      self.level.close(onclose('leveldb'))
 
       function onclose (name) {
         debug(`waiting for ${name} to close`)
