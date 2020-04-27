@@ -1,6 +1,7 @@
 const { Readable } = require('stream')
 const through = require('through2')
-const log = require('../../lib/log').child({ component: 'view-sonar' })
+// const log = require('../../lib/log').child({ component: 'view-sonar' })
+const debug = require('debug')('sonar-core:search')
 const { clock } = require('../../lib/log')
 
 module.exports = function doQuery (indexManager, query, indexName) {
@@ -37,7 +38,7 @@ function executeQuery (indexManager, query, indexName) {
 
       results.forEach(result => stream.push(result))
       stream.push(null)
-      log.debug('query "%s" on %s: %d results [time: %s]', query, index, results.length, time())
+      debug('query with %d results (time %s, index %s, query %o)', results.length, time(), index.name, query)
     } catch (err) {
       stream.destroy(err)
     }

@@ -21,7 +21,7 @@ jobs:
     - run: yarn install
     - run: yarn test
       env:
-        DEBUG: "express*,-hypercore-protocol*,-bodyparser*,-babel*"
+        DEBUG: "*,-express*,-hypercore-protocol*,-body-parser*,-babel*,-send,-time"
         RUST_LOG: "debug"
         RUST_BACKTRACE: 1
         CI: true

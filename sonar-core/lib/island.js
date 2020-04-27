@@ -1,8 +1,7 @@
 const thunky = require('thunky')
 const pretty = require('pretty-hash')
 const sub = require('subleveldown')
-const debug = require('debug')('sonar:db')
-const { PassThrough } = require('stream')
+const debug = require('debug')('sonar-core:island')
 
 const { RESOURCE_SCHEMA } = require('./schemas.js')
 
@@ -18,7 +17,7 @@ module.exports = class Island {
     const { level, corestore, indexCatalog } = opts
     if (!Buffer.isBuffer(key)) key = Buffer.from(key, 'hex')
 
-    debug('open island name %s alias %s key %s', opts.name, opts.alias, pretty(key))
+    debug('opening island %s (name %s, alias %s)', pretty(key), opts.name, opts.alias)
 
     this.corestore = corestore
     this.indexCatalog = indexCatalog
@@ -87,7 +86,7 @@ module.exports = class Island {
       this.db.use('history', historyView)
 
       this.fs.ready(() => {
-        debug('ready', this.db)
+        debug('opened island %s (dkey %s, feeds %d)', pretty(this.db.key), pretty(this.db.discoveryKey), this.db._feeds.length)
         this.opened = true
         cb()
       })

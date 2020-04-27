@@ -3,7 +3,12 @@ const tmp = require('temporary-directory')
 const fp = require('find-free-port')
 const SonarClient = require('../../lib/client')
 // const debug = require('debug')('test')
-// Error.stackTraceLimit = Infinity
+
+// Increase stack trace limit during tests to get meaningful backtraces when CI breaks
+Error.stackTraceLimit = Infinity
+
+let CNT = 0
+const PORT = process.env.PORT || 10000
 
 class ServerClient {
   constructor (opts = {}) {
@@ -14,6 +19,7 @@ class ServerClient {
     this.clients = []
     this.server = null
     this.serverClose = null
+    this._cnt = ++CNT
   }
 
   _createStorage (opts) {
@@ -25,14 +31,15 @@ class ServerClient {
       tmp('sonar-test', (err, dir, cleanup) => {
         if (err) reject(err)
         this.storage = dir
-        this.storageCleanup = function () {
+        this.storageCleanup = async function () {
+          // Timeout makes test pass on Windows, otherwise the LevelDB
+          // resource is still "BUSY".
+          // TODO: Try to fix this.
+          if (process.env.CI) {
+            await new Promise(resolve => setTimeout(resolve, 500))
+          }
           return new Promise((resolve, reject) => {
-            // Timeout makes test pass on Windows, otherwise the LevelDB
-            // resource is still "BUSY".
-            // TODO: Try to fix this.
-            setTimeout(() => {
-              cleanup(err => err ? reject(err) : resolve())
-            }, 1000)
+            cleanup(err => err ? reject(err) : resolve())
           })
         }
         resolve(dir)
@@ -44,7 +51,7 @@ class ServerClient {
     if (opts.port) {
       this.port = opts.port
     } else {
-      const ports = await fp(20000)
+      const ports = await fp(process.env.PORT || (PORT + this._cnt))
       if (!ports.length) throw new Error('No free ports')
       this.port = ports[0]
     }

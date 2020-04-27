@@ -359,7 +359,7 @@ module.exports = class SonarClient {
       params: opts.params,
       onUploadProgress: opts.onUploadProgress
     }
-    debug('request', axiosOpts)
+    debug('request: %s %s', axiosOpts.method, axiosOpts.url)
 
     if (opts.binary) {
       axiosOpts.headers['content-type'] = 'application/octet-stream'
@@ -367,9 +367,11 @@ module.exports = class SonarClient {
     }
     try {
       const result = await axios.request(axiosOpts)
+      debug('response: %s %s (length %s)', result.status, result.statusText, result.headers['content-length'])
       return result.data
     } catch (err) {
       const wrappedError = wrapAxiosError(err)
+      debug('response: %o', wrappedError.message)
       throw wrappedError
     }
   }
@@ -434,7 +436,7 @@ function wrapAxiosError (err) {
     }
     err.response = log.response
   }
-  debug(log)
+  // debug(log)
 
   let msg
   if (err && err.response && typeof err.response.data === 'object' && err.response.data.error) {

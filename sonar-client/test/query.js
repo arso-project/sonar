@@ -1,5 +1,4 @@
 const test = require('tape')
-require('axios-debug-log')
 
 const { SearchQueryBuilder } = require('..')
 const createServerClient = require('./util/server')

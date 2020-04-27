@@ -111,13 +111,16 @@ module.exports = function SonarServer (opts = {}) {
 
   app.close = thunky((cb = noop) => {
     let pending = 2
+    debug('shutting down')
     app.server.forceShutdown(err => {
-      debug('closed: server', err || '')
+      debug('closed http server', err || '')
       finish()
     })
     api.islands.close(finish)
     function finish () {
-      if (--pending === 0) cb()
+      if (--pending !== 0) return
+      debug('closed')
+      cb()
     }
   })
 

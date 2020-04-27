@@ -241,6 +241,7 @@ module.exports = class IslandStore extends EventEmitter {
     this.emit('close')
 
     let islandspending = Object.values(this.islands).length + 1
+    debug(`waiting for ${islandspending} islands to close`)
     for (const island of Object.values(this.islands)) {
       island.close(onislandclosed)
     }
@@ -255,16 +256,18 @@ module.exports = class IslandStore extends EventEmitter {
       self.network.close(onclose('network'))
       self.corestore.close(onclose('corestore'))
 
-      function onclose (msg) {
+      function onclose (name) {
+        debug(`waiting for ${name} to close`)
         ++pending
         return function () {
-          debug('closed: ' + msg)
           process.nextTick(finish)
         }
       }
 
       function finish () {
-        if (--pending === 0) cb()
+        if (--pending !== 0) return
+        debug('closed everything')
+        cb()
       }
     }
   }
