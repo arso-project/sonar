@@ -17,13 +17,16 @@ export default function createTheme (colorMode) {
     },
     colors: {
       ...chakra.colors,
-      main: chakra.colors.cyan,
+      main: chakra.colors.teal['400'],
       text0: light ? chakra.colors.black : chakra.colors.white,
       text1: chakra.colors.gray[lums[1]],
       text2: chakra.colors.gray[lums[2]],
       bg0: light ? chakra.colors.gray['200'] : chakra.colors.gray['600'],
       bg1: light ? chakra.colors.gray['100'] : chakra.colors.gray['700'],
-      bg2: light ? chakra.colors.gray['50'] : chakra.colors.gray['800']
+      bg2: light ? chakra.colors.gray['50'] : chakra.colors.gray['800'],
+      border1: chakra.colors.gray['400'],
+      border2: chakra.colors.gray['300'],
+      border3: chakra.colors.gray['200']
     }
   }
   return theme

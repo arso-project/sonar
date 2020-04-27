@@ -176,9 +176,11 @@ module.exports = class SonarClient {
   }
 
   resourceHttpUrl (record) {
-    const fileUrl = this.parseHyperdriveUrl(record.value.contentUrl)
-    if (!fileUrl) throw new Error('resource has invalid contentUrl')
-    const path = this._url([this.island, 'fs', fileUrl.host, fileUrl.path])
+    const url = this.parseHyperdriveUrl(record.value.contentUrl)
+    if (!url) throw new Error('resource has invalid contentUrl')
+    let filepath = url.path
+    if (filepath.startsWith('/')) filepath = filepath.substring(1)
+    const path = this._url([this.island, 'fs', url.host, filepath])
     return path
   }
 
@@ -247,18 +249,35 @@ module.exports = class SonarClient {
   async readdir (path) {
     const self = this
     path = path || '/'
+    if (path === '/') {
+      const drives = await this.getDrives()
+      return drives.map(drive => ({
+        name: drive.alias,
+        link: '',
+        resource: null,
+        length: null,
+        directory: true
+      }))
+    }
     if (path.length > 2 && path.charAt(0) === '/') path = path.substring(1)
+    const alias = path.split('/')[0]
     let files = await this._request({ path: [this.island, 'fs', path] })
     if (files && files.length) {
       files = files.map(file => {
         file.link = makeLink(file)
+        file.resource = getResource(file)
         return file
       })
     }
     return files
 
     function makeLink (file) {
-      return `${self.endpoint}/${self.island}/fs/${file.path}`
+      return `${self.endpoint}/${self.island}/fs/${alias}/${file.path}`
+    }
+
+    function getResource (file) {
+      if (!file || !file.metadata || !file.metadata['sonar.id']) return null
+      return file.metadata['sonar.id']
     }
   }
 
