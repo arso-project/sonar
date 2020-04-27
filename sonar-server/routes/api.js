@@ -9,7 +9,7 @@ const log = debug
 const hyperdriveMiddleware = require('./hyperdrive')
 const createIslandCommands = require('../commands/island')
 
-const SYNC_TIMEOUT = 1000
+const SYNC_TIMEOUT = 10000
 
 module.exports = function apiRoutes (api) {
   const router = express.Router()
@@ -174,6 +174,7 @@ function createIslandHandlers () {
     sync (req, res, next) {
       let { view = [] } = req.query
       if (typeof view === 'string') view = view.split(',')
+      if (!view || view.length === 0) view = null
       let done = false
       setTimeout(() => {
         if (done) return
