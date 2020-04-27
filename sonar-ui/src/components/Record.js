@@ -147,6 +147,16 @@ export function RecordFieldDisplay (props) {
   if (!schema) return <NoSchemaError record={record} message='Schema not found' />
   if (!schema.properties) return <NoSchemaError record={record} message='Invalid schema' />
 
+  // TODO: This is a hack until the new schema API arrives.
+  if (record.schema === 'sonar/resource') {
+    schema.properties.httpUrl = {
+      type: 'string',
+      format: 'uri',
+      title: 'HTTP URL to file'
+    }
+    record.value.httpUrl = client.resourceHttpUrl(record)
+  }
+
   console.log('RecordFieldDisplay', { record, schema })
   return (
     <Box>
