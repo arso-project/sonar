@@ -1,6 +1,6 @@
 {
   "name": "@arso-project/sonar-ui",
-  "version": "0.3.0-alpha.6",
+  "version": "0.3.0-alpha.7",
   "description": "",
   "main": "bin.js",
   "browser": "dist/bundle.js",
@@ -17,7 +17,7 @@
     "prepublishOnly": "node bin.js build"
   },
   "dependencies": {
-    "@arso-project/sonar-client": "^0.3.0-alpha.6",
+    "@arso-project/sonar-client": "^0.3.0-alpha.7",
     "debug": "^4.1.1",
     "express": "^4.17.1",
     "open": "^7.0.3",

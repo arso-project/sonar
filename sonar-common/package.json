@@ -1,6 +1,6 @@
 {
   "name": "@arso-project/sonar-common",
-  "version": "0.3.0-alpha.6",
+  "version": "0.3.0-alpha.7",
   "description": "",
   "scripts": {
     "test": "tape test/*.js"
@@ -9,8 +9,8 @@
   "author": "",
   "license": "GPL-3.0",
   "devDependencies": {
-    "text-table": "^0.2.0",
-    "tape": "^5.0"
+    "tape": "^5.0",
+    "text-table": "^0.2.0"
   },
   "dependencies": {
     "@iarna/toml": "^2.2.3",
