@@ -28,6 +28,7 @@ module.exports = function apiRoutes (api) {
 
   const islandRouter = express.Router()
   // Change island config
+  islandRouter.patch('/', deviceHandlers.updateIsland)
 
   // Hyperdrive actions (get and put)
   islandRouter.use('/fs', hyperdriveMiddleware(api.islands))
