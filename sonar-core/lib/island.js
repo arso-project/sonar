@@ -1,7 +1,7 @@
-const thunky = require('thunky')
 const pretty = require('pretty-hash')
 const sub = require('subleveldown')
 const debug = require('debug')('sonar-core:island')
+const Nanoresource = require('nanoresource')
 
 const { RESOURCE_SCHEMA } = require('./schemas.js')
 
@@ -11,8 +11,9 @@ const Fs = require('./fs')
 const sonarView = require('../views/search')
 const historyView = require('../views/history')
 
-module.exports = class Island {
+module.exports = class Island extends Nanoresource {
   constructor (key, opts) {
+    super()
     const self = this
     const { level, corestore, indexCatalog } = opts
     if (!Buffer.isBuffer(key)) key = Buffer.from(key, 'hex')
@@ -72,11 +73,10 @@ module.exports = class Island {
 
     if (opts.name) this.name = opts.name
 
-    this.opened = false
-    this.ready = thunky(this._ready.bind(this))
+    this.ready = this.open.bind(this)
   }
 
-  _ready (cb) {
+  _open (cb) {
     this.db.ready(() => {
       this.discoveryKey = this.db.discoveryKey
 
@@ -87,7 +87,6 @@ module.exports = class Island {
 
       this.fs.ready(() => {
         debug('opened island %s (dkey %s, feeds %d)', pretty(this.db.key), pretty(this.db.discoveryKey), this.db._feeds.length)
-        this.opened = true
         cb()
       })
     })
@@ -149,10 +148,12 @@ module.exports = class Island {
     cb(null, this.fs.localwriter)
   }
 
-  close (cb) {
+  _close (cb) {
     this.fs.close(() => {
       this.db.sync(() => {
-        this.db.close(cb)
+        this.db.close(() => {
+          cb()
+        })
       })
     })
   }
