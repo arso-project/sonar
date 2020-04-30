@@ -115,101 +115,60 @@ tape('share and unshare islands', t => {
   })
 })
 
-tape('three islands', t => {
+tape('close island', t => {
   createStore({ network: false }, (err, islands, cleanup) => {
     t.error(err, 'tempdir ok')
-    const records = [
-      { title: 'Hello world', body: 'so rough' },
-      { title: 'Hello moon', body: 'so dark' }
-    ]
-    const batch = records.map(value => ({ op: 'put', schema: 'doc', value }))
-    runAll([
-      next => {
-        islands.create('first', (err, island) => {
-          t.error(err, 'first island created')
-          island.batch(batch, (err, res) => {
-            t.error(err, 'first batch ok')
-            t.equal(res.length, 2)
-            next()
-          })
+    islands.create('island', (err, island) => {
+      t.error(err, 'island created')
+      t.true(island.opened, 'opened property set')
+      island.close(err => {
+        t.error(err, 'island closed')
+        t.true(island.closed, 'closed property set')
+        cleanup(err => {
+          t.error(err)
+          t.end()
         })
-      },
-      next => {
-        islands.create('second', (err, island) => {
-          t.error(err, 'second island created')
-          t.equals(Object.values(islands.islands).length, 2, '2 islands in store')
-          island.batch(batch, (err, res) => {
-            t.error(err, 'second batch ok')
-            t.equal(res.length, 2)
-            next()
-          })
-        })
-      },
-      next => {
-        islands.create('third', (err, island) => {
-          t.error(err, 'third island created')
-          t.equals(Object.values(islands.islands).length, 3, '3 islands in store')
-          var thirdStatus = island.status()
-          t.true(thirdStatus.opened, 'island opened')
-          island.close(err => {
-            t.error(err, 'closed island')
-            thirdStatus = island.status()
-            // the next line is not correct. should it be? -> FRANZ
-            // t.false(thirdStatus.opened, 'island closed')
-          })
-          // islands.get('first', (err, firstIsland) => {
-          //   t.error(err, 'found first island')
-          //   firstIsland.query('search', 'WORLD', { waitForSync: true }, (err, res) => {
-          //     t.error(err, 'query first island')
-          //     t.equal(res.length, 1, 'world search ok')
-          //     const titles = res.map(r => r.value.title).sort()
-          //     t.deepEqual(titles, ['Hello world'], 'world results ok')
-          //     next(err)
-          //   })
-          // })
-          // ask franz why the callback is never called in this case
-          // and how to test for that)
-          // islands.get('third', (err, thirdIsland) => {
-          //   t.error(err, 'found third island')
-          //   thirdIsland.query('search', 'world', { waitForSync: true }, (err, res) => {
-          //     t.error(err, 'query on third island')
-          //     console.log('it is happening')
-          //   })
-          // })
-          next()
-        })
-      },
-      next => cleanup(next)
-    ]).catch(err => t.fail(err)).then(() => t.end())
+      })
+    })
   })
 })
 
-/*
-tried to test exception throwing when two island with
-the same name are created. Doesn't work -> ask franz
-*/
-// tape('createIslandsSameName', t => {
-//   createStore({ network: false }, (err, islands, cleanup) => {
-//     t.error(err, 'tempdir ok')
-//     function createSameIsland () {
-//       islands.create('sameName', (err, island) => {
-//         if (err) {
-//           console.log(err)
-//           return (err, null)
-//         }
-//         return (null, island)
-//       })
-//     }
-//     runAll([
-//       next => {
-//         t.doesNotThrow(createSameIsland)
-//         next()
-//       },
-//       next => {
-//         t.throws(createSameIsland)
-//         next(err)
-//       },
-//       next => cleanup(next)
-//     ]).catch(err => t.fail(err)).then(() => t.end())
-//   })
-// })
+tape('create island with same name', t => {
+  createStore({ network: false }, (err, islands, cleanup) => {
+    t.error(err)
+    runAll([
+      next => {
+        islands.create('first', (err, island) => {
+          t.error(err, 'no error for first island')
+          next()
+        })
+      },
+      next => {
+        islands.create('first', (err, island) => {
+          t.ok(err, 'error with same name')
+          t.equal(err.message, 'island exists', 'correct error message')
+          next()
+        })
+      },
+      next => cleanup(next),
+      next => t.end()
+    ])
+  })
+})
+
+tape('query empty island', t => {
+  createStore({ network: false }, (err, islands, cleanup) => {
+    t.error(err)
+    islands.create('island', (err, island) => {
+      t.error(err)
+      island.query('search', 'anything', { waitForSync: true }, (err, res) => {
+        t.error(err, 'query on empty island')
+        t.deepEquals(res, [], 'empty result')
+        cleanup(err => {
+          t.error(err)
+          t.end()
+        })
+      })
+    })
+  })
+})
