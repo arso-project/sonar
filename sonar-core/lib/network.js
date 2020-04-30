@@ -136,6 +136,7 @@ module.exports.NoNetwork = class NoNetwork {
   add () {}
   remove () {}
   status (cb) { cb(null, {}) }
+  islandStatus (island, cb) { cb(null, { share: false }) }
   close (cb) { cb() }
 }
 
