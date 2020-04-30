@@ -58,81 +58,58 @@ tape('batch and query', t => {
             next()
           })
         },
-        // FRANZ: i often get Child process died error when querying
-        // next => {
-        //   island.query('search', 'hello', { waitForSync: true }, (err, res) => {
-        //     t.error(err)
-        //     t.equal(res.length, 2, 'hello search')
-        //     const titles = res.map(r => r.value.title).sort()
-        //     t.deepEqual(titles, ['Hello moon', 'Hello world'], 'hello results ok')
-        //     next(err)
-        //   })
-        // },
-        // next => {
-        //   island.query('search', 'moon', (err, res) => {
-        //     t.error(err)
-        //     t.equal(res.length, 1, 'moon search')
-        //     const titles = res.map(r => r.value.title).sort()
-        //     t.deepEqual(titles, ['Hello moon'], 'moon results ok')
-        //     next()
-        //   })
-        // },
-        // next => {
-        //   island.query('records', { schema: 'doc' }, (err, res) => {
-        //     t.error(err)
-        //     t.equal(res.length, 2)
-        //     next()
-        //   })
-        // },
+        next => {
+          island.query('search', 'hello', { waitForSync: true }, (err, res) => {
+            t.error(err)
+            t.equal(res.length, 2, 'hello search')
+            const titles = res.map(r => r.value.title).sort()
+            t.deepEqual(titles, ['Hello moon', 'Hello world'], 'hello results ok')
+            next(err)
+          })
+        },
+        next => {
+          island.query('search', 'moon', (err, res) => {
+            t.error(err)
+            t.equal(res.length, 1, 'moon search')
+            const titles = res.map(r => r.value.title).sort()
+            t.deepEqual(titles, ['Hello moon'], 'moon results ok')
+            next()
+          })
+        },
+        next => {
+          island.query('records', { schema: 'doc' }, (err, res) => {
+            t.error(err)
+            t.equal(res.length, 2)
+            next()
+          })
+        },
         next => cleanup(next)
       ]).catch(err => t.fail(err)).then(() => t.end())
     })
   })
 })
 
-tape('share and unshare islands, no network', t => {
-  createStore({ network: false }, (err, islands, cleanup) => {
-    t.error(err, 'tempdir ok')
-    islands.create('ExIsland', (err, island) => {
-      t.error(err, 'island created')
-      // did not manage to access hex function from store, neither
-      // from here, nor from store  -> FRANZ
-      const keyStr = island.key.toString('hex')
-      var firstIslandConfig = islands.getIslandConfig(keyStr)
-      t.true(firstIslandConfig, 'island config exists')
-      t.true(firstIslandConfig.share, 'island initially shared')
-      islands.unshare(island.key)
-      firstIslandConfig = islands.getIslandConfig(keyStr)
-      // next line throws exception. change unshare function? -> FRANZ
-      // t.false(firstIslandConfig.share, 'island unshared')
-      cleanup(err => {
-        t.error(err)
-        t.end()
-      })
-    })
-  })
-})
-
-// not sure what exactly should happen. anything yet?
-// what makes sense to test here?
-tape('share and unshare islands with network', t => {
+tape('share and unshare islands', t => {
   createStore({ network: true }, (err, islands, cleanup) => {
     t.error(err, 'tempdir ok')
-    islands.create('ExIsland', (err, island) => {
+    islands.create('island', (err, island) => {
       t.error(err, 'island created')
-      // did not manage to access hex function from store, neither
-      // from here, nor from store  -> FRANZ
-      const keyStr = island.key.toString('hex')
-      var firstIslandConfig = islands.getIslandConfig(keyStr)
-      t.true(firstIslandConfig, 'island config exists')
-      t.true(firstIslandConfig.share, 'island initially shared')
-      islands.unshare(island.key)
-      firstIslandConfig = islands.getIslandConfig(keyStr)
-      // next line throws exception. change unshare function? -> FRANZ
-      // t.false(firstIslandConfig.share, 'island unshared')
-      cleanup(err => {
-        t.error(err)
-        t.end()
+      const hkey = island.key.toString('hex')
+      const config = islands.getIslandConfig(hkey)
+      t.true(config, 'island config exists')
+      t.true(config.share, 'island config init shared')
+      const status = islands.network.islandStatus(island)
+      t.equal(status.shared, true, 'island network init shared')
+      islands.updateIsland(hkey, { share: false }, (err) => {
+        t.error(err, 'no error at update')
+        const config = islands.getIslandConfig(hkey)
+        t.equal(config.share, false, 'island updated config not shared')
+        const status = islands.network.islandStatus(island)
+        t.equal(status.shared, false, 'island updated network not shared')
+        cleanup(err => {
+          t.error(err)
+          t.end()
+        })
       })
     })
   })
