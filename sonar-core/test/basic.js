@@ -88,3 +88,87 @@ tape('batch and query', t => {
     })
   })
 })
+
+tape('share and unshare islands', t => {
+  createStore({ network: true }, (err, islands, cleanup) => {
+    t.error(err, 'tempdir ok')
+    islands.create('island', (err, island) => {
+      t.error(err, 'island created')
+      const hkey = island.key.toString('hex')
+      const config = islands.getIslandConfig(hkey)
+      t.true(config, 'island config exists')
+      t.true(config.share, 'island config init shared')
+      const status = islands.network.islandStatus(island)
+      t.equal(status.shared, true, 'island network init shared')
+      islands.updateIsland(hkey, { share: false }, (err) => {
+        t.error(err, 'no error at update')
+        const config = islands.getIslandConfig(hkey)
+        t.equal(config.share, false, 'island updated config not shared')
+        const status = islands.network.islandStatus(island)
+        t.equal(status.shared, false, 'island updated network not shared')
+        cleanup(err => {
+          t.error(err)
+          t.end()
+        })
+      })
+    })
+  })
+})
+
+tape('close island', t => {
+  createStore({ network: false }, (err, islands, cleanup) => {
+    t.error(err, 'tempdir ok')
+    islands.create('island', (err, island) => {
+      t.error(err, 'island created')
+      t.true(island.opened, 'opened property set')
+      island.close(err => {
+        t.error(err, 'island closed')
+        t.true(island.closed, 'closed property set')
+        cleanup(err => {
+          t.error(err)
+          t.end()
+        })
+      })
+    })
+  })
+})
+
+tape('create island with same name', t => {
+  createStore({ network: false }, (err, islands, cleanup) => {
+    t.error(err)
+    runAll([
+      next => {
+        islands.create('first', (err, island) => {
+          t.error(err, 'no error for first island')
+          next()
+        })
+      },
+      next => {
+        islands.create('first', (err, island) => {
+          t.ok(err, 'error with same name')
+          t.equal(err.message, 'island exists', 'correct error message')
+          next()
+        })
+      },
+      next => cleanup(next),
+      next => t.end()
+    ])
+  })
+})
+
+tape('query empty island', t => {
+  createStore({ network: false }, (err, islands, cleanup) => {
+    t.error(err)
+    islands.create('island', (err, island) => {
+      t.error(err)
+      island.query('search', 'anything', { waitForSync: true }, (err, res) => {
+        t.error(err, 'query on empty island')
+        t.deepEquals(res, [], 'empty result')
+        cleanup(err => {
+          t.error(err)
+          t.end()
+        })
+      })
+    })
+  })
+})
