@@ -115,14 +115,17 @@ module.exports = class IslandStore extends EventEmitter {
     let pending = Object.keys(this.islands).length + 1
     for (const [key, island] of Object.entries(this.islands)) {
       island.ready(() => {
-        const config = this.getIslandConfig(key)
-        status.islands[key] = {
-          key,
-          network: this.network.islandStatus(island),
-          ...config,
-          ...island.status()
-        }
-        finish()
+        const islandConfig = this.getIslandConfig(key)
+        island.status((err, islandStatus) => {
+          status.islands[key] = {
+            key,
+            network: this.network.islandStatus(island),
+            ...islandConfig,
+            // config: islandConfig,
+            ...islandStatus
+          }
+          finish()
+        })
       })
     }
     finish()

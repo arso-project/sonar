@@ -159,21 +159,31 @@ module.exports = class Island extends Nanoresource {
   }
 
   // Return some info on the island synchronously.
-  status () {
+  status (cb) {
     if (!this.opened) return { opened: false, name: this.name }
     let localKey, localDriveKey
     const localFeed = this.db.getDefaultWriter()
     if (localFeed) localKey = localFeed.key.toString('hex')
     const localDrive = this.fs.localwriter
     if (localDrive) localDriveKey = localDrive.key.toString('hex')
-    return {
+
+    const status = {
       name: this.name,
       opened: true,
       key: this.key.toString('hex'),
       localKey,
-      localDrive: localDriveKey,
-      ...this.db.status()
+      localDrive: localDriveKey
     }
+
+    let pending = 2
+    this.db.status((err, dbStats) => {
+      status.db = dbStats
+      if (--pending === 0) cb(null, status)
+    })
+    this.fs.status((err, fsStats) => {
+      status.fs = fsStats
+      if (--pending === 0) cb(null, status)
+    })
   }
 
   // Return more info on the island asynchronously.

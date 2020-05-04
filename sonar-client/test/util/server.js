@@ -2,7 +2,7 @@ const createServer = require('@arso-project/sonar-server')
 const tmp = require('temporary-directory')
 const fp = require('find-free-port')
 const SonarClient = require('../../lib/client')
-// const debug = require('debug')('test')
+const debug = require('debug')('test')
 
 // Increase stack trace limit during tests to get meaningful backtraces when CI breaks
 Error.stackTraceLimit = Infinity
@@ -111,7 +111,9 @@ class ServerClient {
         })
       })
     }
+    debug('server closed')
     if (this.storageCleanup) await this.storageCleanup()
+    debug('storage deleted')
   }
 }
 

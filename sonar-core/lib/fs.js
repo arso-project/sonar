@@ -41,6 +41,59 @@ module.exports = class SonarFs extends EventEmitter {
     })
   }
 
+  status (cb) {
+    cb = once(cb)
+    const stats = {}
+    let pending = Object.values(this.drives).length
+    for (const drive of Object.values(this.drives)) {
+      const key = drive.key.toString('hex')
+      driveStats(drive, (err, dstats) => {
+        if (err) return cb(err)
+        stats[key] = dstats
+        if (--pending === 0) cb(null, stats)
+      })
+    }
+
+    function driveStats (drive, cb) {
+      let pending = 2
+      const stats = {
+        version: drive.version,
+        writable: drive.writable,
+        contentWritable: drive.contentWritable,
+        metadata: feedStats(drive.db.feed)
+      }
+
+      drive.getContent((err, feed) => {
+        if (err) return cb(err)
+        stats.content = feedStats(feed)
+        if (--pending === 0) cb(null, stats)
+      })
+
+      drive.getAllMounts((err, mounts) => {
+        if (err) return cb(err)
+        stats.mounts = Object.entries(mounts).reduce((agg, [key, feeds]) => {
+          agg[key] = {
+            metadata: feedStats(feeds.metadata),
+            content: feedStats(feeds.content)
+          }
+          return agg
+        }, {})
+        if (--pending === 0) cb(null, stats)
+      })
+    }
+
+    function feedStats (feed) {
+      return {
+        key: feed.key.toString('hex'),
+        writable: feed.writable,
+        length: feed.length,
+        byteLength: feed.byteLength,
+        downloadedBlocks: feed.downloaded(0, feed.length),
+        stats: feed.stats
+      }
+    }
+  }
+
   add (key) {
     if (Buffer.isBuffer(key)) key = key.toString('hex')
     this.db.put(DRIVES + key, '')
@@ -111,5 +164,14 @@ function prefix (key) {
   return {
     gte: key,
     lte: key + '\uffff'
+  }
+}
+
+function once (fn) {
+  let called = false
+  return (...args) => {
+    if (called) return
+    called = true
+    fn(...args)
   }
 }
