@@ -105,7 +105,7 @@ module.exports = class Island extends Nanoresource {
   }
 
   get (req, opts, cb) {
-    this.db.get(req, opts, cb)
+    this.db.query('records', req, opts, cb)
   }
 
   batch (batch, cb) {
