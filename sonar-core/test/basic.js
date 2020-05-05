@@ -190,7 +190,7 @@ tape('query empty island', t => {
   })
 })
 
-tape.only('put and get on island', t => {
+tape('put and get on island', t => {
   const content = { title: 'I want to', body: 'ride my bicycle' }
   const record = { schema: 'string', value: content }
   createStore({ network: false }, (err, islands, cleanup) => {
