@@ -189,27 +189,3 @@ tape('query empty island', t => {
     })
   })
 })
-
-tape('put and get on island', t => {
-  const content = { title: 'I want to', body: 'ride my bicycle' }
-  const record = { schema: 'string', value: content }
-  createStore({ network: false }, (err, islands, cleanup) => {
-    t.error(err)
-    islands.create('island', (err, island) => {
-      t.error(err)
-      island.put(record, (err, recordId) => {
-        t.error(err, 'put record into island')
-        island.get({ id: recordId, schema: 'string' }, { waitForSync: true }, (err, res) => {
-          t.error(err, 'get record from island')
-          // console.log(res)
-          t.equals(res.length, 1, 'found one matching record')
-          t.equals(res[0].value.body, 'ride my bicycle', 'record content correct')
-          cleanup(err => {
-            t.error(err)
-            t.end()
-          })
-        })
-      })
-    })
-  })
-})
