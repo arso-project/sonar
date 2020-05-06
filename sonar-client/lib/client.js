@@ -59,6 +59,27 @@ module.exports = class SonarClient {
     return res
   }
 
+  async focusIsland (name) {
+    if (!name && this.island) name = this.island
+    if (!name) throw new Error('Missing island name')
+    if (name === this.island && this._info) return this._info
+
+    const res = await this._request({ path: [name] })
+    this._info = res
+
+    if (this._info.name !== this.island) {
+      this.island = res.name
+      this._cache.reset()
+    }
+
+    return this._info
+  }
+
+  async getCurrentIsland () {
+    if (!this._info) await this.focusIsland()
+    return this._info
+  }
+
   async getSchemas () {
     return this._request({
       path: [this.island, 'schema']

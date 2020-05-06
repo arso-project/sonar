@@ -33,6 +33,9 @@ module.exports = function apiRoutes (api) {
   // Hyperdrive actions (get and put)
   islandRouter.use('/fs', hyperdriveMiddleware(api.islands))
 
+  // Island status info
+  islandRouter.get('/', handlers.status)
+
   // Create or update record
   islandRouter.put('/db', handlers.put)
   islandRouter.put('/db/:schema/:id', handlers.put)
@@ -147,6 +150,12 @@ function createDeviceHandlers (islands) {
 // These handlers all expect a req.island property.
 function createIslandHandlers () {
   return {
+    status (req, res, next) {
+      req.island.status((err, status) => {
+        if (err) return next(err)
+        res.send(status)
+      })
+    },
     put (req, res, next) {
       let record
       if (req.params.schema) {

@@ -1,5 +1,9 @@
 module.exports = class RecordCache {
   constructor () {
+    this.reset()
+  }
+
+  reset () {
     this.records = {}
     this._byId = {}
   }
