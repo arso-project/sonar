@@ -63,10 +63,10 @@ export default function IslandPage (props) {
         <Button onClick={() => setModal('add')}>Open existing island</Button>
       </Flex>
       <IslandFormModal isOpen={modal === 'create'} onClose={e => setModal(null)}>
-        <CreateIsland create />
+        <CreateIsland create onFinish={onCreate} />
       </IslandFormModal>
       <IslandFormModal isOpen={modal === 'add'} onClose={e => setModal(null)}>
-        <CreateIsland />
+        <CreateIsland onFinish={onCreate} />
       </IslandFormModal>
       {islands && (
         <IslandList
@@ -79,9 +79,23 @@ export default function IslandPage (props) {
     </Flex>
   )
 
-  function onSelectIsland (key) {
-    config.set('island', key)
-    window.location.reload()
+  function onCreate () {
+    setModal(null)
+    reload()
+  }
+
+  async function onSelectIsland (key) {
+    console.log('select', key)
+    try {
+      await client.focusIsland(key)
+      config.set('island', key)
+      console.log('onSelect', config.get('island'))
+    } catch (err) {
+      console.error('Error selecting island', err)
+    }
+    // When changing island we want to reset all state.
+    // Instead of using a react context, for now just rerender the whole app.
+    window.__sonarRerender()
   }
 
   function onUpdateIsland (key, info) {
@@ -101,7 +115,6 @@ function Form (props) {
     <Box as='form' mb='4' p='2' maxWidth='48rem' {...other}>
       {title && <FormHeading>{title}</FormHeading>}
       {children}
-      <Button type='submit' variantColor='teal'>{submitLabel}</Button>
     </Box>
   )
 }
@@ -123,9 +136,8 @@ function IslandFormModal (props) {
 }
 
 function CreateIsland (props) {
-  const { create } = props
-  const [message, setMessage] = useState(null)
-  const [error, setError] = useState(null)
+  const { create, onFinish } = props
+  const [pending, setPending] = useState(false)
   const toast = useToast()
 
   return (
@@ -134,6 +146,7 @@ function CreateIsland (props) {
         <Form title='Create island' onSubmit={onCreate}>
           <FormField name='name' title='Local Name' />
           <FormField name='alias' title='Alias' />
+          <Button type='submit' disabled={pending} variantColor='teal'>Create</Button>
         </Form>
       )}
       {!create && (
@@ -141,6 +154,7 @@ function CreateIsland (props) {
           <FormField name='name' title='Name' />
           <FormField name='key' title='Key' />
           <FormField name='alias' title='Alias' />
+          <Button type='submit' disaled={pending} variantColor='teal'>Create</Button>
         </Form>
       )}
     </Box>
@@ -151,7 +165,7 @@ function CreateIsland (props) {
     // Key may be empty
     let { name, key, alias } = formData(e.currentTarget)
     if (!key || key === '') key = undefined
-    if (!name) return setMessage(<strong>Name may not be empty</strong>)
+    setPending(true)
 
     client.createIsland(name, { key, alias })
       .then(res => {
@@ -159,17 +173,17 @@ function CreateIsland (props) {
           title: 'Island created',
           status: 'success'
         })
-        if (props.onCreate) props.onCreate()
-        setMessage(<strong>Success!</strong>)
+        if (props.onFinish) props.onFinish()
+        setPending(false)
       })
       .catch(err => {
-        console.log('ERR', err)
         toast({
           title: 'Error',
           description: err.remoteError || err.message,
           status: 'error'
         })
-        setMessage(<Error error={err} />)
+        if (props.onFinish) props.onFinish()
+        setPending(false)
       })
   }
 }

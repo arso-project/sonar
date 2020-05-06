@@ -8,10 +8,14 @@ import {
 } from '@chakra-ui/core'
 
 import config from '../lib/config'
+import client from '../lib/client'
+import useAsync from '../hooks/use-async'
+import { IslandName } from '../components/Island'
 
 const island = config.get('island')
 
 export function SidebarContent (props) {
+  const { data: island } = useAsync(() => client.getCurrentIsland())
   return (
     <Fragment>
       <List>
@@ -19,15 +23,21 @@ export function SidebarContent (props) {
         <NavLink to='/config'>Config</NavLink>
         <NavLink to='/islands'>Islands</NavLink>
         {island && (
-          <Fragment>
-            <MenuHeading>{island.substring(0, 6)}</MenuHeading>
-            <NavLink to='/search'>Search</NavLink>
-            <NavLink to='/fileimport'>Import files</NavLink>
-            <NavLink to='/filebrowser'>Filebrowser</NavLink>
-            <NavLink to='/tables'>Tables</NavLink>
-          </Fragment>
+          <IslandMenu />
         )}
       </List>
+    </Fragment>
+  )
+}
+
+function IslandMenu (props) {
+  return (
+    <Fragment>
+      <MenuHeading><IslandName /></MenuHeading>
+      <NavLink to='/search'>Search</NavLink>
+      <NavLink to='/fileimport'>Import files</NavLink>
+      <NavLink to='/filebrowser'>Filebrowser</NavLink>
+      <NavLink to='/tables'>Tables</NavLink>
     </Fragment>
   )
 }

@@ -265,7 +265,6 @@ function Table (props) {
     allColumns,
     selectedFlatRows
   } = table
-  console.log('t', table)
 
   const cellHeight = 32
   const headerHeight = 32

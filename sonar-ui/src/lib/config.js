@@ -5,7 +5,7 @@ class Config {
   }
 
   set (key, value) {
-    config[key] = value
+    this.config[key] = value
     window.localStorage.setItem(key, JSON.stringify(value))
   }
 
