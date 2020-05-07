@@ -63,7 +63,13 @@ module.exports = class SonarClient {
     if (!name && this.island) name = this.island
     if (!name) throw new Error('Missing island name')
     if (name === this.island && this._info) return this._info
+    if (name === this.island && this._islandInfoPromise) return this._islandInfoPromise
 
+    this._islandInfoPromise = this._getIslandInfo(name)
+    return this._islandInfoPromise
+  }
+
+  async _getIslandInfo (name) {
     const res = await this._request({ path: [name] })
     this._info = res
 
