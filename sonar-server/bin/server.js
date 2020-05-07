@@ -5,7 +5,7 @@ const onexit = require('async-exit-hook')
 const { printLogo } = require('@arso-project/sonar-cli/util/logo.js')
 const options = require('./lib/options')
 
-const DEV_DEBUG = '*,-express*,-hypercore-protocol*,-bodyparser*,-babel*'
+const DEV_DEBUG = '*,-express*,-hypercore-protocol*,-body-parser*,-babel*'
 
 exports.command = 'server <command>'
 exports.describe = 'server'

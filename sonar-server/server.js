@@ -54,16 +54,6 @@ module.exports = function SonarServer (opts = {}) {
     origin: '*'
   }))
 
-  // Include the static UI at /
-  const uiStaticPath = p.join(p.dirname(require.resolve('@arso-project/sonar-ui/package.json')), 'build', 'dist')
-  app.use(express.static(uiStaticPath))
-
-  // If in dev mode, serve the webpack dev middleware for the UI at /ui-dev
-  if (opts.dev) {
-    const devMiddleware = require('@arso-project/sonar-ui/express-dev')
-    devMiddleware(app, { publicPath: '/ui-dev', workdir: opts.workdir })
-  }
-
   // Make the island api available to all requests
   app.use(function islandMiddleware (req, res, next) {
     req.islands = api.islands
@@ -85,6 +75,17 @@ module.exports = function SonarServer (opts = {}) {
       customCss: '.swagger-ui .topbar { display: none }'
     }
   ))
+
+  // Include the static UI at /
+  const uiStaticPath = p.join(p.dirname(require.resolve('@arso-project/sonar-ui/package.json')), 'build', 'dist')
+  app.use(express.static(uiStaticPath))
+
+  // If in dev mode, serve the webpack dev middleware for the UI at /ui-dev
+  if (opts.dev) {
+    const devMiddleware = require('@arso-project/sonar-ui/express-dev')
+    devMiddleware(app, { publicPath: '/ui-dev', workdir: opts.workdir })
+  }
+
 
   // Error handling
   app.use(function (err, req, res, next) {
