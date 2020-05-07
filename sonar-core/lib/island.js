@@ -8,7 +8,7 @@ const { RESOURCE_SCHEMA } = require('./schemas.js')
 const Database = require('kappa-record-db')
 const Fs = require('./fs')
 
-const sonarView = require('../views/search')
+const searchView = require('../views/search')
 const historyView = require('../views/history')
 
 module.exports = class Island extends Nanoresource {
@@ -80,7 +80,7 @@ module.exports = class Island extends Nanoresource {
     this.db.ready(() => {
       this.discoveryKey = this.db.discoveryKey
 
-      this.db.use('search', sonarView, {
+      this.db.use('search', searchView, {
         indexCatalog: this.indexCatalog
       })
       this.db.use('history', historyView)
