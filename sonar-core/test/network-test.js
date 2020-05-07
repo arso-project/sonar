@@ -29,9 +29,9 @@ function createStore (opts, cb) {
 tape('2 islandstores shared island', t => {
   const content = { title: 'I want to', body: 'ride my bicycle' }
   const record = { schema: 'string', value: content }
-  createStore({ network: true }, (err, islands1, cleanup) => {
+  createStore({ network: true }, (err, islands1, cleanup1) => {
     t.error(err, 'first store created')
-    createStore ({ network: true }, (err, islands2, cleanup) => {
+    createStore({ network: true }, (err, islands2, cleanup2) => {
       t.error(err, 'second store created')
       islands1.create('island', (err, island) => {
         t.error(err, 'island on first store created')
@@ -45,9 +45,12 @@ tape('2 islandstores shared island', t => {
               islandClone.get({ id }, { waitForSync: true }, (err, records) => {
                 t.error(err, 'querying on island of 2nd store')
                 t.equal(records.length, 1, 'found record on 2nd store')
-                cleanup(err => {
+                cleanup1(err => {
                   t.error(err)
-                  t.end()
+                  cleanup2(err => {
+                    t.error(err)
+                    t.end()
+                  })
                 })
               })
             }
