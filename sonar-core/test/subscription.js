@@ -67,18 +67,14 @@ function createPromiseCallback () {
   return [promise, cb]
 }
 
-function createStore (opts) {
+function createStore (opts = {}) {
   return new Promise((resolve, reject) => {
-    if (typeof opts === 'function') {
-      cb = opts
-      opts = {}
-    }
     tmp('sonar-test', ondircreated)
     function ondircreated (err, dir, cleanupTempdir) {
       if (err) return reject(err)
       const islands = new IslandStore(dir, opts)
       islands.ready(err => {
-        if (err) return cb(err)
+        if (err) return reject(err)
         resolve([islands, cleanup])
       })
       function cleanup () {

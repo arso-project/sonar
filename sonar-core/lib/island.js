@@ -15,17 +15,19 @@ module.exports = class Island extends Nanoresource {
   constructor (key, opts) {
     super()
     const self = this
-    const { level, corestore, indexCatalog } = opts
+
+    this.opts = opts
+
     if (!Buffer.isBuffer(key)) key = Buffer.from(key, 'hex')
 
     debug('opening island %s (name %s, alias %s)', pretty(key), opts.name, opts.alias)
 
-    this.corestore = corestore
-    this.indexCatalog = indexCatalog
+    this.corestore = opts.corestore
+
     this._subscriptions = {}
     this._level = {
-      db: sub(level, 'd'),
-      fs: sub(level, 'f')
+      db: sub(opts.level, 'd'),
+      fs: sub(opts.level, 'f')
     }
 
     this.key = key
@@ -78,18 +80,28 @@ module.exports = class Island extends Nanoresource {
 
   _open (cb) {
     this.db.ready(() => {
+      this.key = this.db.key
       this.discoveryKey = this.db.discoveryKey
-
-      this.db.use('search', searchView, {
-        indexCatalog: this.indexCatalog
-      })
-      this.db.use('history', historyView)
-
+      this._mountViews()
       this.fs.ready(() => {
-        debug('opened island %s (dkey %s, feeds %d)', pretty(this.db.key), pretty(this.db.discoveryKey), this.db._feeds.length)
+        debug(
+          'opened island %s (dkey %s, feeds %d)',
+          pretty(this.db.key),
+          pretty(this.db.discoveryKey),
+          this.db._feeds.length
+        )
         cb()
       })
     })
+  }
+
+  _mountViews () {
+    if (this.opts.indexCatalog) {
+      this.db.use('search', searchView, {
+        indexCatalog: this.opts.indexCatalog
+      })
+    }
+    this.db.use('history', historyView)
   }
 
   init (cb) {
@@ -177,39 +189,16 @@ module.exports = class Island extends Nanoresource {
 
     let pending = 2
     this.db.status((err, dbStats) => {
-      status.db = dbStats
+      if (err) status.db = { error: err.message }
+      else status.db = dbStats
       if (--pending === 0) cb(null, status)
     })
     this.fs.status((err, fsStats) => {
-      status.fs = fsStats
+      if (err) status.fs = { error: err.message }
+      else status.fs = fsStats
       if (--pending === 0) cb(null, status)
     })
   }
-
-  // Return more info on the island asynchronously.
-  // getState (cb) {
-  //   const status = this.status()
-  //   this.db.stats((_err, stats) => {
-  //     this._getSubscriptionState((_err, subscriptionState) => {
-  //       stats.subscriptions = subscriptionState
-  //       cb(null, { ...status, ...stats })
-  //     })
-  //   })
-  // }
-  //
-  // _getSubscriptionState (cb) {
-  //   const indexer = this.db.indexer
-  //   const subscriptions = indexer._subscriptions
-  //   const state = {}
-  //   let pending = Object.keys(subscriptions).length
-  //   for (const [name, sub] of Object.entries(subscriptions)) {
-  //     sub.getState((err, status) => {
-  //       if (err) return cb(err)
-  //       state[name] = status
-  //       if (--pending === 0) cb(null, state)
-  //     })
-  //   }
-  // }
 
   createSubscription (name, opts = {}) {
     const subscription = this.db.indexer.createSubscription(name, opts)

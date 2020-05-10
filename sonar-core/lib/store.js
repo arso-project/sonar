@@ -7,8 +7,9 @@ const mkdirp = require('mkdirp-classic')
 const thunky = require('thunky')
 const leveldb = require('level')
 const debug = require('debug')('sonar-core')
-const { EventEmitter } = require('events')
 const Corestore = require('corestore')
+const Nanoresource = require('nanoresource/emitter')
+
 const Catalog = require('@arso-project/sonar-tantivy')
 
 const Config = require('./config')
@@ -17,7 +18,7 @@ const Island = require('./island')
 
 const ISLAND_NAME_REGEX = /^[a-zA-Z0-9-_]{3,32}$/
 
-module.exports = class IslandStore extends EventEmitter {
+module.exports = class IslandStore extends Nanoresource {
   constructor (storage, opts = {}) {
     super()
     storage = storage || p.join(os.homedir(), '.sonar')
@@ -29,12 +30,11 @@ module.exports = class IslandStore extends EventEmitter {
     }
     this.opts = opts
 
-    // Actual initialization of resources happens in this._ready()
+    // Actual initialization of resources happens in this._open()
 
     this.islands = {}
-    this.opened = false
-    this.ready = thunky(this._ready.bind(this))
-    this.ready()
+    this.ready = this.open.bind(this)
+    this.open()
   }
 
   _ensurePaths (cb) {
@@ -58,7 +58,7 @@ module.exports = class IslandStore extends EventEmitter {
     }
   }
 
-  _ready (cb) {
+  _open (cb) {
     debug('storage location: ' + this.paths.base)
     this._ensurePaths(err => {
       if (err) return cb(err)
@@ -96,7 +96,7 @@ module.exports = class IslandStore extends EventEmitter {
   _onready (config, cb) {
     if (config.islands) {
       for (const info of Object.values(config.islands)) {
-        const island = this._open(info.key, info)
+        const island = this._openIsland(info.key, info)
         if (info.share) {
           this.network.add(island)
         }
@@ -117,6 +117,7 @@ module.exports = class IslandStore extends EventEmitter {
       island.ready(() => {
         const islandConfig = this.getIslandConfig(key)
         island.status((err, islandStatus) => {
+          if (err) return cb(err)
           status.islands[key] = {
             key,
             network: this.network.islandStatus(island),
@@ -157,7 +158,7 @@ module.exports = class IslandStore extends EventEmitter {
   }
 
   _create (name, { key, alias }, cb = noop) {
-    const island = this._open(key || null, { name, alias })
+    const island = this._openIsland(key || null, { name, alias })
     island.ready(err => {
       if (err) return cb(err)
       const info = {
@@ -182,14 +183,14 @@ module.exports = class IslandStore extends EventEmitter {
       this._islandByKey(key, (err, info) => {
         if (err) return cb(err)
         if (!info) return cb(new Error(`island ${keyOrName} does not exist.`))
-        const island = this._open(info.key, info)
+        const island = this._openIsland(info.key, info)
         island.ready(() => cb(null, island))
       })
     } else {
       this._islandByName(keyOrName, (err, info) => {
         if (err) return cb(err)
         if (!info) return cb(new Error(`island ${keyOrName} does not exist.`))
-        const island = this._open(info.key, info)
+        const island = this._openIsland(info.key, info)
         island.ready(() => cb(null, island))
       })
     }
@@ -239,7 +240,7 @@ module.exports = class IslandStore extends EventEmitter {
     }
   }
 
-  close (cb) {
+  _close (cb) {
     const self = this
     this.emit('close')
 
@@ -292,8 +293,8 @@ module.exports = class IslandStore extends EventEmitter {
     })
   }
 
-  _open (key, opts) {
-    if (typeof opts === 'function') return this._open(key, {}, opts)
+  _openIsland (key, opts) {
+    if (typeof opts === 'function') return this._openIsland(key, {}, opts)
     let create = false
     // No key means create a new island. We need the key for the storage path,
     // so first create a new writable feed.
@@ -317,7 +318,6 @@ module.exports = class IslandStore extends EventEmitter {
     const island = new Island(key, islandOpts)
 
     this.islands[key] = island
-    // else island.ready(() => (this.islands[hex(island.key)] = island))
 
     if (create) {
       island.ready(() => {
