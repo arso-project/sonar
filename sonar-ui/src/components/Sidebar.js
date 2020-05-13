@@ -34,6 +34,7 @@ function IslandMenu (props) {
   return (
     <Fragment>
       <MenuHeading><IslandName /></MenuHeading>
+      <NavLink to='/activity'>Activity</NavLink>
       <NavLink to='/search'>Search</NavLink>
       <NavLink to='/fileimport'>Import files</NavLink>
       <NavLink to='/filebrowser'>Filebrowser</NavLink>
