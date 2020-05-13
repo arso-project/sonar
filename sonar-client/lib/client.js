@@ -424,13 +424,23 @@ module.exports = class SonarClient {
     return this._commandClient.call(command, args)
   }
 
-  async createQueryStream (name, args, opts) {
+  async createQueryStream (name, args, opts = {}) {
+    // if (opts.cacheid === undefined && this._cacheid) {
+    //   opts.cacheid = this._cacheid
+    // }
     const [channel] = await this.callCommand('@island query', [name, args, opts])
+    // const transform = this._cache.transform()
+    // return channel.pipe(transform)
     return channel
   }
 
-  async createSubscriptionStream (name, opts) {
+  async createSubscriptionStream (name, opts = {}) {
+    // if (opts.cacheid === undefined && this._cacheid) {
+    //   opts.cacheid = this._cacheid
+    // }
     const [channel] = await this.callCommand('@island subscribe', [name, opts])
+    // const transform = this._cache.transform()
+    // return channel.pipe(transform)
     return channel
   }
 }

@@ -1,8 +1,8 @@
 const test = require('tape')
 const debug = require('debug')('time')
+const { clock } = require('nanobench-utils')
 
 const createServerClient = require('./util/server')
-const clock = require('./util/clock')
 
 test('commands', async t => {
   const [context, client1] = await createServerClient()
@@ -29,10 +29,10 @@ test('commands', async t => {
   t.equal(res, 'hi from 2', 'response ok')
   channel.write('ping')
 
-  await pify(cb => {
+  await new Promise(resolve => {
     channel.once('data', d => {
       t.equal(d.toString(), 'pong', 'pong ok')
-      cb()
+      resolve()
     })
   })
 
@@ -40,74 +40,81 @@ test('commands', async t => {
   t.end()
 })
 
-test('query and subscription commands', async t => {
-  // const run = createServerClient(t, { network: false })
+test('subscription commands', async t => {
+  const timer = clock()
   const [context, client] = await createServerClient()
-  const complete = clock()
-  let timer = clock()
-  debug('init', timer())
-  const alltimer = clock()
-  timer = clock()
-  debug('create island', timer())
+  debug(timer.log('init', true))
 
-  timer = clock()
   const sub = await client.createSubscriptionStream('foo')
-  debug('create subscription', timer())
+  debug(timer.log('create subscription', true))
 
-  const [promise, cb] = createPromiseCallback()
+  const count = 10
 
-  let passed
-  let i = 0
-  let subtimer = clock()
-  sub.on('data', record => {
-    i++
-    debug('sub', i, subtimer())
-    subtimer = clock()
-    if (record.value && record.value.title === 'hello') {
-      debug('title correct on record', i)
-      t.pass('record arrived in subscription stream')
-      passed = true
-      cb()
+  process.nextTick(async () => {
+    try {
+      for (let i = 0; i < count; i++) {
+        await client.put({ schema: 'foo', value: { title: 'hello' } })
+        debug(timer.log('put' + i, true))
+      }
+    } catch (err) {
+      t.fail(err)
     }
   })
 
-  timer = clock()
-  await client.put({ schema: 'foo', value: { title: 'hello' } })
-  debug('put took', timer())
-  timer = clock()
-  await promise
-  debug('sub took', timer())
-  debug('all inner', alltimer())
+  await new Promise(resolve => {
+    let i = 0
+    let received = 0
+    sub.on('data', record => {
+      i++
+      debug(timer.log('read subscription ' + i, true))
+      if (record.value && record.value.title === 'hello') {
+        received++
+      }
+      if (received === count) {
+        debug('title correct on record', i)
+        t.pass('record arrived in subscription stream')
+        resolve()
+      }
+    })
+  })
 
-  timer = clock()
-  if (!passed) t.fail('record did not arrive in subscription stream')
-  debug('cleanup took', timer())
-  debug('total', complete())
+  debug(timer.log('complete', true))
   await context.stop()
+  debug(timer.log('shutdown', true))
   t.end()
 })
 
-function createPromiseCallback () {
-  let cb
-  const promise = new Promise((resolve, reject) => {
-    cb = function (err, ...args) {
-      if (err) return reject(err)
-      if (!args.args) args = undefined
-      else if (args.length === 1) args = args[0]
-      resolve(args)
-    }
-  })
-  return [promise, cb]
-}
+test.only('query commands', async t => {
+  const timer = clock()
+  const [context, client] = await createServerClient()
+  debug(timer.log('init', true))
 
-function pify (fn) {
-  return new Promise((resolve, reject) => {
-    function cb (err, ...res) {
-      if (err) return reject(err)
-      if (!res.length) res = undefined
-      else if (res.length === 1) res = res[0]
-      resolve(res)
-    }
-    fn(cb)
+  const count = 5
+  const schema = 'foo'
+
+  for (let i = 0; i < count; i++) {
+    await client.put({ schema, value: { title: 'hello' } })
+    debug(timer.log('put' + i, true))
+  }
+
+  await client.sync()
+  const qs = await client.createQueryStream('records', { schema })
+  timer.debug('create qs')
+
+  await new Promise(resolve => {
+    let i = 0
+    qs.on('data', record => {
+      i++
+      t.equal(record.value.title, 'hello')
+    })
+    qs.on('end', () => {
+      t.equal(i, count)
+      resolve()
+    })
   })
-}
+
+  timer.debug('complete')
+  await context.stop()
+  timer.debug('shutdown')
+  t.end()
+})

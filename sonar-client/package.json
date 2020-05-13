@@ -20,6 +20,7 @@
   "devDependencies": {
     "@arso-project/sonar-server": "^0.3.0-alpha.7",
     "axios-debug-log": "^0.7.0",
+    "nanobench-utils": "^0.1.1",
     "tape": "^5.0",
     "tape-plus": "^1.0.0",
     "temporary-directory": "^1.0.2"

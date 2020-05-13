@@ -1,3 +1,5 @@
+const { Transform } = require('streamx')
+
 module.exports = class RecordCache {
   constructor () {
     this.reset()
@@ -31,6 +33,17 @@ module.exports = class RecordCache {
       return Object.assign({}, this.records[cacheid], record)
     }
     return record
+  }
+
+  transformStream () {
+    const self = this
+    return new Transform({
+      transform (record, next) {
+        record = self.upgrade(record)
+        this.push(record)
+        next()
+      }
+    })
   }
 
   cacheid (record) {
