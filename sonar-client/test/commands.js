@@ -84,7 +84,7 @@ test('subscription commands', async t => {
   t.end()
 })
 
-test.only('query commands', async t => {
+test('query commands', async t => {
   const timer = clock()
   const [context, client] = await createServerClient()
   debug(timer.log('init', true))
