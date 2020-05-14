@@ -69,7 +69,7 @@ function stop (args) {
 function copyArgs (from, keys) {
   const args = []
   for (const key of keys) {
-    if (from[key] !== undefined) {
+    if (from[key] !== undefined && from[key] !== null) {
       args.push(argkey(key))
       if (from[key] !== true) {
         args.push(from[key])
