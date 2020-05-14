@@ -1,0 +1,9 @@
+{
+  "name": "@arso-project/sonar-view-relations",
+  "version": "0.3.0-alpha.7",
+  "main": "index.js",
+  "license": "MIT",
+  "dependencies": {
+    "quadstore": "^6.0.1"
+  }
+}

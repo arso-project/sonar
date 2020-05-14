@@ -96,6 +96,9 @@ module.exports = class Island extends Nanoresource {
   }
 
   _mountViews () {
+    if (this.opts.relations) {
+      this.db.use('relations', this.opts.relations.createView(this))
+    }
     if (this.opts.indexCatalog) {
       this.db.use('search', searchView, {
         indexCatalog: this.opts.indexCatalog

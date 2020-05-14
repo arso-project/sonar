@@ -11,6 +11,7 @@ const Corestore = require('corestore')
 const Nanoresource = require('nanoresource/emitter')
 
 const Catalog = require('@arso-project/sonar-tantivy')
+const Relations = require('@arso-project/sonar-view-relations')
 
 const Config = require('./config')
 const Network = require('./network')
@@ -73,6 +74,8 @@ module.exports = class IslandStore extends Nanoresource {
       })
 
       this.level = leveldb(this.paths.level)
+
+      this.relations = new Relations(sub(this.level, '_r'))
 
       if (this.opts.network !== false) {
         this.network = new Network({
@@ -313,6 +316,7 @@ module.exports = class IslandStore extends Nanoresource {
       ...opts,
       corestore: namespacedCorestore,
       indexCatalog: this.indexCatalog,
+      relations: this.relations,
       level: sub(this.level, key)
     }
     const island = new Island(key, islandOpts)
