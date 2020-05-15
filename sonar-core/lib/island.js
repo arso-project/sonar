@@ -119,6 +119,10 @@ module.exports = class Island extends Nanoresource {
     this.db.put(record, cb)
   }
 
+  del (record, cb) {
+    this.db.del(record, cb)
+  }
+
   get (req, opts, cb) {
     this.db.query('records', req, opts, cb)
   }

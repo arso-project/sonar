@@ -38,7 +38,8 @@ module.exports = function apiRoutes (api) {
 
   // Create or update record
   islandRouter.put('/db', handlers.put)
-  islandRouter.put('/db/:schema/:id', handlers.put)
+  islandRouter.put('/db/:id', handlers.put)
+  islandRouter.delete('/db/:id', handlers.del)
   islandRouter.get('/db/:key/:seq', handlers.get)
   // Get record
   // islandRouter.get('/db/:schemans/:schemaname/:id', handlers.get)
@@ -170,6 +171,15 @@ function createIslandHandlers () {
       req.island.put(record, (err, id) => {
         if (err) return next(err)
         res.send({ id })
+      })
+    },
+
+    del (req, res, next) {
+      const { id } = req.params
+      const { schema } = req.query
+      req.island.db.del({ id, schema }, (err, result) => {
+        if (err) return next(err)
+        res.send({ id, schema, deleted: true })
       })
     },
 

@@ -222,6 +222,13 @@ module.exports = class SonarClient {
     return this._request({ path, method, data: record })
   }
 
+  async del (record) {
+    const path = [this.island, 'db', record.id]
+    const method = 'DELETE'
+    const params = { schema: record.schema }
+    return this._request({ path, method, params })
+  }
+
   async sync (view) {
     const path = [this.island, 'sync']
     const params = {}
