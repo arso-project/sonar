@@ -13,9 +13,10 @@ test('commands', async t => {
     name: 'pinger',
     commands: {
       ping: {
+        mode: 'streaming',
         oncall (args, channel) {
           t.equal(args, 'hi from client2', 'args ok')
-          channel.reply('hi from 2')
+          // channel.reply('hi from 2')
           channel.once('data', d => {
             t.equal(d.toString(), 'ping', 'ping ok')
             channel.write('pong')
@@ -25,8 +26,8 @@ test('commands', async t => {
     }
   })
 
-  const [channel, res] = await client2.callCommand('@pinger ping', 'hi from client2')
-  t.equal(res, 'hi from 2', 'response ok')
+  const channel = await client2.callCommandStreaming('@pinger ping', 'hi from client2')
+  // t.equal(res, 'hi from 2', 'response ok')
   channel.write('ping')
 
   await new Promise(resolve => {

@@ -37,7 +37,7 @@ module.exports = class CommandStreamClient {
   async callStreaming (command, args) {
     if (this._closed) throw new Error('Stream closed')
     await this.open()
-    return this._endpoint.callStreaming(command, args, this._env)
+    return this._endpoint.callStream(command, args, this._env)
   }
 
   async open () {
