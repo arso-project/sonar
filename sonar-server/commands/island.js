@@ -15,7 +15,7 @@ module.exports = function createIslandCommands (islands) {
     commands: {
       query: {
         title: 'Query',
-        mode: 'stream',
+        mode: 'streaming',
         args: [
           { name: 'name', title: 'Query name', type: 'string' },
           { name: 'args', title: 'Query arguments', type: 'object' },
@@ -35,7 +35,7 @@ module.exports = function createIslandCommands (islands) {
       },
       subscribe: {
         title: 'Subscribe',
-        mode: 'stream',
+        mode: 'streaming',
         encoding: 'json',
         args: [
           { name: 'name', title: 'Subscription name', type: 'string' },
