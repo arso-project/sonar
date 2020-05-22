@@ -177,7 +177,7 @@ function createIslandHandlers () {
     del (req, res, next) {
       const { id } = req.params
       const { schema } = req.query
-      req.island.db.del({ id, schema }, (err, result) => {
+      req.island.del({ id, schema }, (err, result) => {
         if (err) return next(err)
         res.send({ id, schema, deleted: true })
       })
