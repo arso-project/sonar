@@ -431,6 +431,11 @@ module.exports = class SonarClient {
     return this._commandClient.call(command, args)
   }
 
+  async callCommandStreaming (command, args) {
+    if (!this._commandClient) await this.initCommandClient()
+    return this._commandClient.callStreaming(command, args)
+  }
+
   async createQueryStream (name, args, opts = {}) {
     // if (opts.cacheid === undefined && this._cacheid) {
     //   opts.cacheid = this._cacheid

@@ -34,6 +34,12 @@ module.exports = class CommandStreamClient {
     })
   }
 
+  async callStreaming (command, args) {
+    if (this._closed) throw new Error('Stream closed')
+    await this.open()
+    return this._endpoint.callStreaming(command, args, this._env)
+  }
+
   async open () {
     if (!this._initPromise) this._initPromise = this._init()
     await this._initPromise
