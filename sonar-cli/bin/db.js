@@ -101,7 +101,7 @@ async function getSchema (argv) {
   const client = makeClient(argv)
   const { name } = argv
   const result = await client.getSchema(name)
-  console.log(result)
+  console.log(JSON.stringify(result))
 }
 
 async function listSchemas (argv) {
