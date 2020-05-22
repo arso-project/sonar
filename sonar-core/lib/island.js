@@ -79,7 +79,7 @@ module.exports = class Island extends Nanoresource {
   }
 
   _open (cb) {
-    this.db.ready(() => {
+    this.db.open(() => {
       this.key = this.db.key
       this.discoveryKey = this.db.discoveryKey
       this._mountViews()
