@@ -57,6 +57,7 @@ module.exports = class SonarFs extends EventEmitter {
     function driveStats (drive, cb) {
       let pending = 2
       const stats = {
+        discoveryKey: drive.discoveryKey.toString('hex'),
         version: drive.version,
         writable: drive.writable,
         contentWritable: drive.contentWritable,
