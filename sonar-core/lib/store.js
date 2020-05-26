@@ -207,12 +207,9 @@ module.exports = class IslandStore extends Nanoresource {
   }
 
   share (key) {
-    console.log('share', key)
     if (!this.network) return
-    console.log('a')
     key = hex(key)
     if (!this.islands[key]) return
-    console.log('b')
     const island = this.islands[key]
     this.network.join(island.discoveryKey)
     debug('join swarm for discoveryKey %s', island.discoveryKey.toString('hex'))
@@ -222,8 +219,6 @@ module.exports = class IslandStore extends Nanoresource {
         this.network.join(Buffer.from(discoveryKey, 'hex'))
       }
     })
-
-    // this.network.add(this.islands[key])
   }
 
   unshare (key, cb) {
@@ -276,24 +271,26 @@ module.exports = class IslandStore extends Nanoresource {
       if (--islandspending !== 0) return
 
       let pending = 0
-      self.indexCatalog.close(onclose('index catalog'))
-      self.config.close(onclose('config'))
       if (self.network) {
         const close = onclose('network')
-        self.network.close().then(close)
+        self.network.close().then(close).catch(close)
       }
+      self.indexCatalog.close(onclose('index catalog'))
+      self.config.close(onclose('config'))
       self.corestore.close(onclose('corestore'))
       self.level.close(onclose('leveldb'))
 
-      function onclose (name) {
+      function onclose (name, err) {
         debug(`waiting for ${name} to close`)
         ++pending
         return function () {
-          process.nextTick(finish)
+          process.nextTick(finish.bind(null, name))
         }
       }
 
-      function finish () {
+      function finish (name, err) {
+        debug(`closed ${name}`)
+        if (err) debug(err)
         if (--pending !== 0) return
         debug('closed everything')
         cb()
