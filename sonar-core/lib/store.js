@@ -8,13 +8,13 @@ const thunky = require('thunky')
 const leveldb = require('level')
 const debug = require('debug')('sonar-core')
 const Corestore = require('corestore')
+const SwarmNetworker = require('corestore-swarm-networking')
 const Nanoresource = require('nanoresource/emitter')
 
 const Catalog = require('@arso-project/sonar-tantivy')
 const Relations = require('@arso-project/sonar-view-relations')
 
 const Config = require('./config')
-const Network = require('./network')
 const Island = require('./island')
 
 const ISLAND_NAME_REGEX = /^[a-zA-Z0-9-_]{3,32}$/
@@ -78,11 +78,9 @@ module.exports = class IslandStore extends Nanoresource {
       this.relations = new Relations(sub(this.level, '_r'))
 
       if (this.opts.network !== false) {
-        this.network = new Network({
+        this.network = new SwarmNetworker(this.corestore, {
           announceLocalAddress: true
         })
-      } else {
-        this.network = new Network.NoNetwork()
       }
 
       this.config.load((err, config) => {
@@ -101,7 +99,7 @@ module.exports = class IslandStore extends Nanoresource {
       for (const info of Object.values(config.islands)) {
         const island = this._openIsland(info.key, info)
         if (info.share) {
-          this.network.add(island)
+          island.ready(() => this.share(island.key))
         }
       }
     }
@@ -123,10 +121,13 @@ module.exports = class IslandStore extends Nanoresource {
           if (err) return cb(err)
           status.islands[key] = {
             key,
-            network: this.network.islandStatus(island),
+            network: {},
             ...islandConfig,
             // config: islandConfig,
             ...islandStatus
+          }
+          if (this.network) {
+            status.islands[key].network = this.network.status(island.discoveryKey)
           }
           finish()
         })
@@ -206,15 +207,32 @@ module.exports = class IslandStore extends Nanoresource {
   }
 
   share (key) {
+    console.log('share', key)
+    if (!this.network) return
+    console.log('a')
     key = hex(key)
     if (!this.islands[key]) return
-    this.network.add(this.islands[key])
+    console.log('b')
+    const island = this.islands[key]
+    this.network.join(island.discoveryKey)
+    debug('join swarm for discoveryKey %s', island.discoveryKey.toString('hex'))
+    island.fs.status((err, info) => {
+      if (err) return
+      for (const { discoveryKey } of Object.values(info)) {
+        this.network.join(Buffer.from(discoveryKey, 'hex'))
+      }
+    })
+
+    // this.network.add(this.islands[key])
   }
 
   unshare (key, cb) {
+    if (!this.network) return
     key = hex(key)
     if (!this.islands[key]) return
-    this.network.remove(this.islands[key])
+    const island = this.islands[key]
+    debug('leave swarm for discoveryKey %s', island.discoveryKey.toString('hex'))
+    this.network.leave(island.discoveryKey)
   }
 
   updateIsland (key, info, cb) {
@@ -260,7 +278,10 @@ module.exports = class IslandStore extends Nanoresource {
       let pending = 0
       self.indexCatalog.close(onclose('index catalog'))
       self.config.close(onclose('config'))
-      self.network.close(onclose('network'))
+      if (self.network) {
+        const close = onclose('network')
+        self.network.close().then(close)
+      }
       self.corestore.close(onclose('corestore'))
       self.level.close(onclose('leveldb'))
 
