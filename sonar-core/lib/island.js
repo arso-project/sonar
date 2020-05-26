@@ -190,6 +190,7 @@ module.exports = class Island extends Nanoresource {
       name: this.name,
       opened: true,
       key: this.key.toString('hex'),
+      discoveryKey: this.discoveryKey.toString('hex'),
       localKey,
       localDrive: localDriveKey
     }
