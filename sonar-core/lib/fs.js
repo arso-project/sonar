@@ -46,11 +46,13 @@ module.exports = class SonarFs extends EventEmitter {
     const stats = {}
     let pending = Object.values(this.drives).length
     for (const drive of Object.values(this.drives)) {
-      const key = drive.key.toString('hex')
-      driveStats(drive, (err, dstats) => {
-        if (err) return cb(err)
-        stats[key] = dstats
-        if (--pending === 0) cb(null, stats)
+      drive.ready(() => {
+        const key = drive.key.toString('hex')
+        driveStats(drive, (err, dstats) => {
+          if (err) return cb(err)
+          stats[key] = dstats
+          if (--pending === 0) cb(null, stats)
+        })
       })
     }
 
