@@ -14,7 +14,6 @@
     "base32": "^0.0.6",
     "charwise": "^3.0.1",
     "debug": "^4.1.1",
-    "kappa-record-db": "^0.10.0",
     "level-live": "github:Frando/level-live#key-encodings",
     "level-mem": "^5.0.1",
     "pretty-hash": "^1.0.1",
