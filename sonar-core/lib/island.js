@@ -41,7 +41,7 @@ module.exports = class Island extends Nanoresource {
 
     this.db = new Database({
       scope: this.scope,
-      db: require('level-mem')(),
+      db: this._level.db,
       validate: false
     })
 

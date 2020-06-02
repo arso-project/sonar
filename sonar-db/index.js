@@ -60,7 +60,6 @@ module.exports = class Database {
   }
 
   _onopen (cb) {
-    console.log('db open', this.scope)
     initSchemas(this.scope, this.schemas, () => {
       initSources(this.scope, cb)
     })
