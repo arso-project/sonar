@@ -1,15 +1,16 @@
 const pretty = require('pretty-hash')
+const datEncoding = require('dat-encoding')
 const sub = require('subleveldown')
 const debug = require('debug')('sonar-core:island')
-const Nanoresource = require('nanoresource')
+const hcrypto = require('hypercore-crypto')
+const Nanoresource = require('nanoresource/emitter')
 
 const { RESOURCE_SCHEMA } = require('./schemas.js')
 
-const Database = require('kappa-record-db')
+const Database = require('@arso-project/sonar-db')
 const Fs = require('./fs')
 
 const searchView = require('../views/search')
-const historyView = require('../views/history')
 
 module.exports = class Island extends Nanoresource {
   constructor (key, opts) {
@@ -18,11 +19,16 @@ module.exports = class Island extends Nanoresource {
 
     this.opts = opts
 
-    if (!Buffer.isBuffer(key)) key = Buffer.from(key, 'hex')
+    key = datEncoding.decode(key)
 
-    debug('opening island %s (name %s, alias %s)', pretty(key), opts.name, opts.alias)
+    debug('island open %s (name %s, alias %s)', pretty(key), opts.name, opts.alias)
 
-    this.corestore = opts.corestore
+    this.scope = opts.scope
+    this.corestore = opts.scope.corestore
+    this.name = opts.name
+
+    this.scope.on('remote-update', () => this.emit('remote-update'))
+    this.scope.on('feed', feed => this.emit('feed', feed))
 
     this._subscriptions = {}
     this._level = {
@@ -31,14 +37,12 @@ module.exports = class Island extends Nanoresource {
     }
 
     this.key = key
+    this.discoveryKey = hcrypto.discoveryKey(this.key)
 
     this.db = new Database({
-      key,
-      corestore: this.corestore,
-      db: this._level.db,
-      validate: false,
-      name: opts.name,
-      alias: opts.alias
+      scope: this.scope,
+      db: require('level-mem')(),
+      validate: false
     })
 
     this.fs = new Fs({
@@ -53,7 +57,7 @@ module.exports = class Island extends Nanoresource {
         })
       },
       resolveAlias (alias, cb) {
-        self.query('records', { schema: 'core/source' }, (err, records) => {
+        self.db.query('records', { schema: 'core/source' }, (err, records) => {
           if (err) return cb(err)
           const aliases = records
             .map(r => r.value)
@@ -73,26 +77,54 @@ module.exports = class Island extends Nanoresource {
       }
     })
 
-    if (opts.name) this.name = opts.name
-
     this.ready = this.open.bind(this)
   }
 
+  get writable () {
+    if (this._local && this._local.writable) return true
+    return false
+  }
+
   _open (cb) {
-    this.db.open(() => {
-      this.key = this.db.key
-      this.discoveryKey = this.db.discoveryKey
+    const self = this
+    cb = once(cb)
+    this.scope.open(() => {
       this._mountViews()
-      this.fs.ready(() => {
+
+      // If the scope is opened for the first time, it is empty. Add our initial feeds.
+      if (!this.scope.list().length) {
+        // Add a root feed with the island key.
+        this._root = this.scope.addFeed({ key: this.key , name: 'root' })
+        this._root.ready((err) => {
+          if (err) return cb(err)
+          // root is writable: it is also our local feed.
+          if (this._root.writable) {
+            this._local = this.scope.addFeed({ key: this._root.key, name: 'local' })
+            // root is not writable: create a local feed and add it to the scope.
+          } else {
+            this._local = this.scope.addFeed({ name: 'local' })
+          }
+          onfeedsinit()
+        })
+      // If the scope is reopened, alias our initial feeds.
+      } else {
+        this._root = this.scope.feed('root')
+        this._local = this.scope.feed('local')
+        onfeedsinit()
+      }
+    })
+
+    function onfeedsinit () {
+      self.fs.ready(() => {
         debug(
           'opened island %s (dkey %s, feeds %d)',
-          pretty(this.db.key),
-          pretty(this.db.discoveryKey),
-          this.db._feeds.length
+          pretty(self.db.key),
+          pretty(self.db.discoveryKey),
+          self.scope.status().feeds.length
         )
         cb()
       })
-    })
+    }
   }
 
   _mountViews () {
@@ -101,10 +133,10 @@ module.exports = class Island extends Nanoresource {
     }
     if (this.opts.indexCatalog) {
       this.db.use('search', searchView, {
+        island: this,
         indexCatalog: this.opts.indexCatalog
       })
     }
-    this.db.use('history', historyView)
   }
 
   init (cb) {
@@ -124,15 +156,15 @@ module.exports = class Island extends Nanoresource {
   }
 
   get (req, opts, cb) {
-    this.db.query('records', req, opts, cb)
+    this.scope.query('records', req, opts, cb)
   }
 
   batch (batch, cb) {
-    this.db.batch(batch, cb)
+    this.scope.batch(batch, cb)
   }
 
   loadRecord (key, seq, cb) {
-    this.db.loadRecord(key, seq, cb)
+    this.scope.loadRecord(key, seq, cb)
   }
 
   putSchema (name, schema, cb) {
@@ -156,7 +188,11 @@ module.exports = class Island extends Nanoresource {
   }
 
   query (name, args, opts, cb) {
-    return this.db.query(name, args, opts, cb)
+    return this.scope.query(name, args, opts, cb)
+  }
+
+  createQueryStream (name, args, opts) {
+    return this.scope.createQueryStream(name, args, opts)
   }
 
   drive (key, cb) {
@@ -167,10 +203,15 @@ module.exports = class Island extends Nanoresource {
     cb(null, this.fs.localwriter)
   }
 
+  sync (cb) {
+    this.scope.sync(cb)
+  }
+
   _close (cb) {
     this.fs.close(() => {
-      this.db.sync(() => {
-        this.db.close(() => {
+      this.scope.sync(() => {
+        this.scope.close(() => {
+          console.log('island closed', this.name)
           cb()
         })
       })
@@ -179,14 +220,13 @@ module.exports = class Island extends Nanoresource {
 
   // Return some info on the island synchronously.
   status (cb) {
-    if (!this.opened) return { opened: false, name: this.name }
-    let localKey, localDriveKey
-    const localFeed = this.db.getDefaultWriter()
-    if (localFeed) localKey = localFeed.key.toString('hex')
+    if (!this.opened) return cb(null, { opened: false, name: this.name })
+    const localKey = datEncoding.encode(this._local.key)
     const localDrive = this.fs.localwriter
-    if (localDrive) localDriveKey = localDrive.key.toString('hex')
+    if (localDrive) var localDriveKey = datEncoding.encode(localDrive.key)
 
     const status = {
+      ...this.scope.status(),
       name: this.name,
       opened: true,
       key: this.key.toString('hex'),
@@ -195,21 +235,20 @@ module.exports = class Island extends Nanoresource {
       localDrive: localDriveKey
     }
 
-    let pending = 2
-    this.db.status((err, dbStats) => {
-      if (err) status.db = { error: err.message }
-      else status.db = dbStats
-      if (--pending === 0) cb(null, status)
-    })
-    this.fs.status((err, fsStats) => {
-      if (err) status.fs = { error: err.message }
-      else status.fs = fsStats
-      if (--pending === 0) cb(null, status)
-    })
+    if (cb) {
+      let pending = 1
+      this.fs.status((err, fsStats) => {
+        if (err) status.fs = { error: err.message }
+        else status.fs = fsStats
+        if (--pending === 0) cb(null, status)
+      })
+    }
+
+    return status
   }
 
   createSubscription (name, opts = {}) {
-    const subscription = this.db.indexer.createSubscription(name, opts)
+    const subscription = this.scope.indexer.createSubscription(name, opts)
     this._subscriptions[name] = subscription
     return subscription
   }
@@ -234,5 +273,13 @@ module.exports = class Island extends Nanoresource {
   ackSubscription (name, cursor, cb) {
     if (!this._subscriptions[name]) return cb(new Error('Subscription does not exist'))
     this._subscriptions[name].setCursor(cursor, cb)
+  }
+}
+
+function once (fn) {
+  let called = false
+  return (...args) => {
+    if (!called) fn(...args)
+    called = true
   }
 }

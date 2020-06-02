@@ -1,4 +1,4 @@
-const { mapRecordsIntoLevelDB } = require('kappa-record-db/views/helpers')
+const { mapRecordsIntoLevelDB } = require('./helpers')
 const through = require('through2')
 
 module.exports = function recordView (level, db) {

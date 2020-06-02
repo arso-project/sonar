@@ -1,5 +1,6 @@
 const p = require('path')
 const os = require('os')
+const datEncoding = require('dat-encoding')
 const fs = require('fs')
 const crypto = require('hypercore-crypto')
 const sub = require('subleveldown')
@@ -11,6 +12,7 @@ const Corestore = require('corestore')
 const SwarmNetworker = require('corestore-swarm-networking')
 const Nanoresource = require('nanoresource/emitter')
 
+const Scopes = require('kappa-scopes')
 const Catalog = require('@arso-project/sonar-tantivy')
 const Relations = require('@arso-project/sonar-view-relations')
 
@@ -75,7 +77,17 @@ module.exports = class IslandStore extends Nanoresource {
 
       this.level = leveldb(this.paths.level)
 
-      this.relations = new Relations(sub(this.level, '_r'))
+      this._dbs = {
+        scopes: sub(this.level, 's'),
+        relations: sub(this.level, 'r')
+      }
+
+      this.scopes = new Scopes({
+        corestore: this.corestore,
+        db: this._dbs.scopes
+      })
+
+      this.relations = new Relations(this._dbs.relations)
 
       if (this.opts.network !== false) {
         this.network = new SwarmNetworker(this.corestore, {
@@ -86,9 +98,12 @@ module.exports = class IslandStore extends Nanoresource {
       this.config.load((err, config) => {
         if (err) return cb(err)
         debug('config loaded', this.config.path)
-        this.corestore.ready((err) => {
+        this.corestore.ready(err => {
           if (err) return cb(err)
-          else this._onready(config, cb)
+          // this.scopes.open(err => {
+          // })
+          if (err) return cb(err)
+          this._onready(config, cb)
         })
       })
     })
@@ -261,7 +276,7 @@ module.exports = class IslandStore extends Nanoresource {
     this.emit('close')
 
     let islandspending = Object.values(this.islands).length + 1
-    debug(`waiting for ${islandspending} islands to close`)
+    debug(`waiting for ${islandspending - 1} islands to close`)
     for (const island of Object.values(this.islands)) {
       island.close(onislandclosed)
     }
@@ -317,6 +332,7 @@ module.exports = class IslandStore extends Nanoresource {
   _openIsland (key, opts) {
     if (typeof opts === 'function') return this._openIsland(key, {}, opts)
     let create = false
+
     // No key means create a new island. We need the key for the storage path,
     // so first create a new writable feed.
     if (!key) {
@@ -328,11 +344,20 @@ module.exports = class IslandStore extends Nanoresource {
     key = hex(key)
     if (this.islands[key]) return this.islands[key]
 
-    // const storagePath = p.join(this.storagePath, 'island', key)
-    const namespacedCorestore = this.corestore.namespace(key)
+    const scopeOpts = {
+      name: opts.name,
+      key,
+      // rootFeedKey: key,
+      defaultFeedType: 'sonar.db'
+    }
+
+    // const scope = this.scopes.createScopeWithRootFeed(scopeOpts)
+    const scope = this.scopes.get(scopeOpts)
+
     const islandOpts = {
       ...opts,
-      corestore: namespacedCorestore,
+      key,
+      scope,
       indexCatalog: this.indexCatalog,
       relations: this.relations,
       level: sub(this.level, key)
