@@ -11,6 +11,7 @@
   "license": "GPL-3.0",
   "dependencies": {
     "@arso-project/sonar-tantivy": "^0.2.14",
+    "@arso-project/sonar-db": "^0.3.0-alpha.7",
     "corestore": "^5.4.0",
     "corestore-swarm-networking": "^5.4.5",
     "debug": "^4.1.1",
@@ -18,7 +19,7 @@
     "hypercore-protocol": "^8.0.0",
     "hyperdrive": "^10.11.2",
     "hyperswarm": "^2.11.1",
-    "kappa-record-db": "^0.10.0",
+    "kappa-scopes": "^0.0.1",
     "level": "^6.0.1",
     "mkdirp-classic": "^0.5.2",
     "mutexify": "^1.2.0",

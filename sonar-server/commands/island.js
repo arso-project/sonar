@@ -28,7 +28,7 @@ module.exports = function createIslandCommands (islands) {
           if (!opts) opts = {}
           if (!queryArgs) queryArgs = {}
           const island = channel.island
-          pump(island.db.createQueryStream(name, queryArgs, opts), channel, err => {
+          pump(island.createQueryStream(name, queryArgs, opts), channel, err => {
             if (err) channel.error(err)
           })
         }

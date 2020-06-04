@@ -195,16 +195,16 @@ function createIslandHandlers () {
       let { view = [] } = req.query
       if (typeof view === 'string') view = view.split(',')
       if (!view || view.length === 0) view = null
-      let done = false
-      setTimeout(() => {
-        if (done) return
-        done = true
-        debug('sync timeout', Object.entries(req.island.db.kappa.flows).map(([n, f]) => `${n}: ${f.status} (upd ${f.incomingUpdate})`))
-        next(new Error('Sync timeout'))
-      }, SYNC_TIMEOUT)
-      req.island.db.sync(view, (err) => {
-        if (done) return
-        done = true
+      // TODO: Rethink the timeout logic?
+      // let done = false
+      // setTimeout(() => {
+      //   if (done) return
+      //   done = true
+      //   next(new Error('Sync timeout'))
+      // }, SYNC_TIMEOUT)
+      req.island.scope.sync(view, (err) => {
+        // if (done) return
+        // done = true
         if (err) return next(err)
         res.end()
       })

@@ -6,7 +6,8 @@ const { clock } = require('../../lib/log')
 
 module.exports = searchView
 
-function searchView (level, island, opts) {
+function searchView (level, _scope, opts) {
+  const island = opts.island
   const manager = new IndexManager({
     level,
     namespace: island.key.toString('hex'),

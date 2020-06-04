@@ -88,6 +88,28 @@ tape('batch and query', t => {
     })
   })
 })
+
+tape('put and get', t => {
+  createStore({ network: false }, (err, islands, cleanup) => {
+    t.error(err, 'tempdir ok')
+    islands.create('default', (err, island) => {
+      t.error(err)
+      // island.status((err, status) => {
+      //   console.log('STATUS', err, status)
+      //   t.end()
+      // })
+      island.put({ schema: 'foo', value: { title: 'hello' } }, (err, id) => {
+        t.error(err)
+        island.get({ id }, { waitForSync: true }, (err, records) => {
+          t.error(err)
+          t.equal(records.length, 1)
+          t.equal(records[0].value.title, 'hello')
+          cleanup(() => t.end())
+        })
+      })
+    })
+  })
+})
 tape('put and get', t => {
   createStore({ network: false }, (err, islands, cleanup) => {
     t.error(err, 'tempdir ok')

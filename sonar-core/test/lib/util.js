@@ -1,5 +1,6 @@
-exports.runAll = function runAll (ops) {
-  return new Promise((resolve, reject) => {
+const pump = require('pump')
+exports.runAll = function runAll (ops, cb) {
+  const promise = new Promise((resolve, reject) => {
     runNext(ops.shift())
     function runNext (op) {
       op(err => {
@@ -10,12 +11,16 @@ exports.runAll = function runAll (ops) {
       })
     }
   })
+  if (cb) promise.then(cb).catch(cb)
+  else return promise
 }
 
 exports.replicate = function replicate (a, b, opts, cb) {
   if (typeof opts === 'function') return replicate(a, b, null, opts)
   if (!opts) opts = { live: true }
   const stream = a.replicate(true, opts)
-  stream.pipe(b.replicate(false, opts)).pipe(stream)
+  pump(stream, b.replicate(false, opts), stream, err => {
+    // console.log('replication closed', err)
+  })
   setImmediate(cb)
 }
