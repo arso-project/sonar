@@ -57,7 +57,7 @@ module.exports = class Island extends Nanoresource {
         })
       },
       resolveAlias (alias, cb) {
-        self.db.query('records', { schema: 'core/source' }, (err, records) => {
+        self.query('records', { schema: 'core/source' }, (err, records) => {
           if (err) return cb(err)
           const aliases = records
             .map(r => r.value)
