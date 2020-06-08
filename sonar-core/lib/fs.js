@@ -138,8 +138,8 @@ module.exports = class SonarFs extends EventEmitter {
   get (keyOrAlias, cb) {
     this.resolveAlias(keyOrAlias, (err, key) => {
       if (err) return cb(err)
-      key = datEncoding.encode(key)
-      const hkey = datEncoding.decode(key)
+      key = datEncoding.decode(key)
+      const hkey = datEncoding.encode(key)
       if (this.drives[hkey]) return cb(null, this.drives[hkey])
 
       const drive = hyperdrive(this.corestore, key)
