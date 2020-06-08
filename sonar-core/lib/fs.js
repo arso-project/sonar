@@ -1,4 +1,5 @@
 const hyperdrive = require('hyperdrive')
+const datEncoding = require('dat-encoding')
 const { EventEmitter } = require('events')
 const collect = require('stream-collector')
 const sub = require('subleveldown')
@@ -10,6 +11,7 @@ module.exports = class SonarFs extends EventEmitter {
   constructor (opts) {
     super()
     this.corestore = opts.corestore
+    // this.db is a leveldb.
     this.db = opts.db
 
     this.handlers = {
@@ -32,7 +34,7 @@ module.exports = class SonarFs extends EventEmitter {
   }
 
   ready (cb) {
-    this._localwriter((err, drive) => {
+    this._openLocalwriter((err, drive) => {
       if (err) return cb(err)
       this.localwriter = drive
       this.aliases.me = this.localwriter.key.toString('hex')
@@ -103,17 +105,24 @@ module.exports = class SonarFs extends EventEmitter {
     this.emit('drive', key)
   }
 
-  _localwriter (cb) {
+  // Open the writable drive, create if not exists.
+  _openLocalwriter (cb) {
+    // Get the local writer key from the leveldb.
     this.db.get(LOCALW, (err, key) => {
       if (err && !err.notFound) return cb(err)
-      if (key) return this.get(key, cb)
-      else {
-        const drive = this.create()
-        const key = drive.key.toString('hex')
-        this.add(drive)
-        this.db.put(LOCALW, key, () => cb(null, drive))
-        if (this.handlers.oninit) this.handlers.oninit(key)
-      }
+      if (key) this.get(key, cb)
+      else this._createLocalwriter(cb)
+    })
+  }
+
+  _createLocalwriter (cb) {
+    this._createDrive((err, drive) => {
+      if (err) return cb(err)
+      const hkey = drive.key.toString('hex')
+      this.add(drive)
+      this.db.put(LOCALW, hkey, () => cb(null, drive))
+      if (this.handlers.oninit) this.handlers.oninit(hkey)
+      cb(null, drive)
     })
   }
 
@@ -125,15 +134,18 @@ module.exports = class SonarFs extends EventEmitter {
     }))
   }
 
+  // Get a drive by key or alias.
   get (keyOrAlias, cb) {
     this.resolveAlias(keyOrAlias, (err, key) => {
       if (err) return cb(err)
-      if (this.drives[key]) return cb(null, this.drives[key])
+      key = datEncoding.encode(key)
+      const hkey = datEncoding.decode(key)
+      if (this.drives[hkey]) return cb(null, this.drives[hkey])
 
       const drive = hyperdrive(this.corestore, key)
       drive.ready((err) => {
         if (err) return cb(err)
-        this.drives[key] = drive
+        this.drives[hkey] = drive
         cb(null, drive)
       })
     })
@@ -149,13 +161,10 @@ module.exports = class SonarFs extends EventEmitter {
     })
   }
 
-  create () {
+  _createDrive (cb) {
     const feed = this.corestore.get()
     const key = feed.key.toString('hex')
-    const drive = hyperdrive(this.corestore, feed.key)
-    this.drives[key] = drive
-    this.add(key)
-    return drive
+    this.get(key, cb)
   }
 }
 
