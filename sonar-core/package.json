@@ -19,7 +19,7 @@
     "hypercore-protocol": "^8.0.0",
     "hyperdrive": "^10.11.2",
     "hyperswarm": "^2.11.1",
-    "kappa-scopes": "^0.0.1",
+    "kappa-scopes": "^0.0.2",
     "level": "^6.0.1",
     "mkdirp-classic": "^0.5.2",
     "mutexify": "^1.2.0",
