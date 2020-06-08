@@ -94,24 +94,25 @@ module.exports = class Island extends Nanoresource {
       // If the scope is opened for the first time, it is empty. Add our initial feeds.
       if (!this.scope.list().length) {
         // Add a root feed with the island key.
-        this._root = this.scope.addFeed({ key: this.key , name: 'root' })
+        this._root = this.scope.addFeed({ key: this.key, name: 'root' })
         this._root.ready((err) => {
           if (err) return cb(err)
-          // root is writable: it is also our local feed.
-          if (this._root.writable) {
-            this._local = this.scope.addFeed({ key: this._root.key, name: 'local' })
-            // root is not writable: create a local feed and add it to the scope.
-          } else {
-            this._local = this.scope.addFeed({ name: 'local' })
-          }
           onfeedsinit()
         })
-      // If the scope is reopened, alias our initial feeds.
+      // If the scope is reopened, alias our root feed.
       } else {
         this._root = this.scope.feed('root')
-        this._local = this.scope.feed('local')
-        onfeedsinit()
       }
+      this._root.ready(() => {
+        // root is writable: it is also our local feed.
+        if (this._root.writable) {
+          this._local = this.scope.addFeed({ key: this._root.key, name: 'local' })
+          // root is not writable: create a local feed and add it to the scope.
+        } else {
+          this._local = this.scope.addFeed({ name: 'local' })
+        }
+        onfeedsinit()
+      })
     })
 
     function onfeedsinit () {
@@ -211,7 +212,6 @@ module.exports = class Island extends Nanoresource {
     this.fs.close(() => {
       this.scope.sync(() => {
         this.scope.close(() => {
-          console.log('island closed', this.name)
           cb()
         })
       })
