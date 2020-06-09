@@ -6,3 +6,5 @@ module.exports = function (...args) {
 }
 module.exports.SonarClient = SonarClient
 module.exports.SearchQueryBuilder = SearchQueryBuilder
+
+module.exports.NewClient = require('./new/client')
