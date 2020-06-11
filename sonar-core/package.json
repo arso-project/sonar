@@ -17,7 +17,7 @@
     "debug": "^4.1.1",
     "hypercore-crypto": "^2.1.0",
     "hypercore-protocol": "^8.0.0",
-    "hyperdrive": "^10.11.2",
+    "hyperdrive": "^10.12.3",
     "hyperswarm": "^2.11.1",
     "kappa-scopes": "^0.0.2",
     "level": "^6.0.1",
