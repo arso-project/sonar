@@ -3,21 +3,22 @@ module.exports = class Fs {
     this.collection = collection
   }
 
-  async request (method, path, opts) {
-    if (!Array.isArray(path)) path = [path]
-    return this.collection.request(method, ['fs', ...path], opts)
+  async fetch (path, opts) {
+    if (!path.startsWith('/')) path = '/' + path
+    path = '/fs' + path
+    return this.collection.fetch(path, opts)
   }
 
   async listDrives () {
     // TODO: Move route under /fs somehow. Maybe HEAD on /?
-    return this.collection.request('GET', 'fs-info')
+    return this.collection.fetch('/fs-info')
   }
 
   async readdir (path) {
     const self = this
     path = path || '/'
     if (path === '/') {
-      const drives = await this.getDrives()
+      const drives = await this.listDrives()
       return drives.map(drive => ({
         name: drive.alias,
         link: '',
@@ -28,7 +29,9 @@ module.exports = class Fs {
     }
     if (path.length > 2 && path.charAt(0) === '/') path = path.substring(1)
     const alias = path.split('/')[0]
-    let files = await this.request('GET', path)
+
+    let files = await this.fetch(path)
+
     if (files && files.length) {
       files = files.map(file => {
         file.link = makeLink(file)
@@ -48,36 +51,34 @@ module.exports = class Fs {
     }
   }
 
-  async writeFile (path, file, opts) {
-    if (!path || !path.length) throw new Error('path is required')
-    if (path.startsWith('/')) path = path.substring(1)
+  async writeFile (path, file, opts = {}) {
+    const requestType = opts.requestType || 'buffer'
+    opts.requestType = undefined
 
-    let onUploadProgress
-    if (opts.onUploadProgress) {
-      onUploadProgress = opts.onUploadProgress
-      delete opts.onUploadProgress
-    }
-
-    return this.request('PUT', path, {
-      data: file,
+    return this.fetch(path, {
+      method: 'PUT',
+      body: file,
       params: opts,
-      binary: true,
-      onUploadProgress
+      responseType: 'text',
+      requestType,
+      // binary: true,
+      onUploadProgress: opts.onUploadProgress
     })
   }
 
   async readFile (path, opts = {}) {
-    const { stream = true } = opts
-    if (path.startsWith('/')) path = path.substring(1)
-    const request = {
-      binary: true
-    }
-    if (stream) request.responseType = 'stream'
-    return this.request('GET', ['fs', 'path'], request)
+    opts.responseType = opts.responseType || 'buffer'
+    opts.requestType = opts.requestType || 'buffer'
+    return this.fetch(path, opts)
+  }
+
+  async createReadStream (path, opts = {}) {
+    // opts.stream = true
+    opts.responseType = 'stream'
+    return this.readFile(path, opts)
   }
 
   async statFile (path) {
-    if (path.startsWith('/')) path = path.substring(1)
-    return this.request('GET', path)
+    return this.fetch(path)
   }
 }

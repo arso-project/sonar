@@ -1,6 +1,7 @@
 const debug = require('debug')('sonar-client')
 const randombytes = require('randombytes')
 const axios = require('axios')
+const fetch = require('isomorphic-fetch')
 
 const Commands = require('./commands')
 const Collection = require('./collection')
@@ -12,14 +13,14 @@ const {
 module.exports = class Client {
   constructor (opts = {}) {
     this.endpoint = opts.endpoint || DEFAULT_ENDPOINT
-    if (!this.endpoint.endsWith('/')) {
-      this.endpoint = this.endpoint + '/'
+    if (this.endpoint.endsWith('/')) {
+      this.endpoint = this.endpoint.substring(0, this.endpoint.length - 1)
     }
     this._collections = new Map()
     this._id = opts.id || randombytes(16).toString('hex')
 
     this.commands = new Commands({
-      url: this.endpoint + '_commands',
+      url: this.endpoint + '/_commands',
       name: opts.name || 'client:' + this._id
     })
   }
@@ -29,21 +30,23 @@ module.exports = class Client {
   }
 
   async listCollections () {
-    const info = await this.request('GET', '_info')
+    const info = await this.fetch('/_info')
     return info.collections
   }
 
   async createCollection (name, opts) {
-    await this.request('PUT', ['_create', name], {
-      data: opts
+    await this.fetch(`/_create/${name}`, {
+      method: 'PUT',
+      body: opts
     })
     return this.openCollection(name)
   }
 
   // TODO: Move to Collection.update()?
   async updateCollection (name, info) {
-    return this._request('PATCH', name, {
-      data: info
+    return this.fetch(name, {
+      method: 'PATCH',
+      body: info
     })
   }
 
@@ -57,12 +60,74 @@ module.exports = class Client {
     return collection
   }
 
-  async request (method, path, opts = {}) {
+  async fetch (path, opts) {
+    return this.fetchFetch(path, opts)
+  }
+
+  async fetchFetch (path, opts = {}) {
+    if (!path.startsWith('/')) path = '/' + path
+    let url = this.endpoint + path
+
+    if (!opts.headers) opts.headers = {}
+    if (!opts.requestType) {
+      if (Buffer.isBuffer(opts.body)) opts.requestType = 'buffer'
+      else opts.requestType = 'json'
+    }
+
+    if (opts.params) {
+      const searchParams = new URLSearchParams()
+      for (const [key, value] of Object.entries(opts.params)) {
+        searchParams.append(key, value)
+      }
+      url += '?' + searchParams.toString()
+    }
+
+    if (opts.requestType === 'json') {
+      opts.body = JSON.stringify(opts.body)
+      opts.headers['content-type'] = 'application/json'
+    }
+    if (opts.requestType === 'buffer') {
+      opts.headers['content-type'] = 'application/octet-stream'
+    }
+
+    try {
+      debug('fetch', url, opts)
+      const res = await fetch(url, opts)
+      if (!res.ok) {
+        let message
+        if (isJsonResponse(res)) {
+          message = (await res.json()).error
+        } else {
+          message = await res.text()
+        }
+        throw new Error('Remote error (code ' + res.status + '): ' + message)
+      }
+
+      if (opts.responseType === 'stream') {
+        return res.body
+      }
+      if (opts.responseType === 'buffer') {
+        if (res.buffer) return await res.buffer()
+        else return await res.arrayBuffer()
+      }
+
+      if (isJsonResponse(res)) {
+        return await res.json()
+      }
+
+      return await res.text()
+    } catch (err) {
+      debug('fetch error', err)
+      throw err
+    }
+  }
+
+  async fetchAxios (path, opts = {}) {
     if (Array.isArray(path)) path = path.join('/')
-    if (path.startsWith('/')) path = path.substring(1)
+    if (!path.startsWith('/')) path = '/' + path
     const url = this.endpoint + path
     const request = {
-      method,
+      method: opts.method,
       url,
       maxRedirects: 0,
       headers: {
@@ -71,7 +136,7 @@ module.exports = class Client {
       },
       // axios has a very weird bug that it REMOVES the
       // Content-Type header if data is empty...
-      data: opts.data || {},
+      data: opts.body || {},
       params: opts.params,
       onUploadProgress: opts.onUploadProgress
     }
@@ -95,6 +160,12 @@ module.exports = class Client {
       throw wrappedError
     }
   }
+}
+
+function isJsonResponse (res) {
+  const header = res.headers.get('content-type')
+  if (!header) return false
+  return header.indexOf('application/json') !== -1
 }
 
 function wrapAxiosError (err) {

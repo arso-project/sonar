@@ -8,8 +8,16 @@ module.exports = class Collection {
     this._info = {}
     this._cache = new RecordCache()
     this._schema = new Schema()
-    this._fs = new Fs(client, name)
+    this._fs = new Fs(this)
     this._name = name
+  }
+
+  get fs () {
+    return this._fs
+  }
+
+  get schema () {
+    return this._schema
   }
 
   get name () {
@@ -21,9 +29,9 @@ module.exports = class Collection {
   }
 
   async open () {
-    const info = await this.request('GET', '')
+    const info = await this.fetch('/')
     this._info = info
-    const schemas = await this.request('GET', 'schema')
+    const schemas = await this.fetch('/schema')
     this._schema.add(schemas)
   }
 
@@ -32,8 +40,9 @@ module.exports = class Collection {
       opts.cacheid = this._cacheid
     }
 
-    const records = await this.request('POST', ['query', name], {
-      data: args,
+    const records = await this.fetch('/query/' + name, {
+      method: 'POST',
+      body: args,
       params: opts
     })
 
@@ -45,8 +54,9 @@ module.exports = class Collection {
   }
 
   async put (record) {
-    return this.request('PUT', 'db', {
-      data: record
+    return this.fetch('db', {
+      method: 'PUT',
+      body: record
     })
   }
 
@@ -59,18 +69,19 @@ module.exports = class Collection {
   }
 
   async del (record) {
-    this.request('DELETE', ['db', record.id], {
-      // type: record.type
-      schema: record.schema
+    return this.fetch('/db/' + record.id, {
+      method: 'DELETE',
+      params: { schema: record.schema }
     })
   }
 
   async sync () {
-    return this.request('GET', 'sync')
+    return this.fetch('/sync')
   }
 
-  async request (method, path, opts) {
-    if (!Array.isArray(path)) path = [path]
-    return this._client.request(method, [this._name, ...path], opts)
+  async fetch (path, opts) {
+    if (!path.startsWith('/')) path = '/' + path
+    path = '/' + this._name + path
+    return this._client.fetch(path, opts)
   }
 }

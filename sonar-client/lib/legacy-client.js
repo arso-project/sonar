@@ -117,7 +117,7 @@ module.exports = class LegacyClient extends Client {
     return collection.ackSubscription(name, cursor)
   }
 
-  // TODO: backwards-compat only, remove.
+  // Commands
   async initCommandStream (opts = {}) {
     return this.openCommandStream(opts)
   }
@@ -151,5 +151,4 @@ module.exports = class LegacyClient extends Client {
   async createSubscriptionStream (name, opts = {}) {
     return this.callCommandStreaming('@collection subscribe', [name, opts])
   }
-
 }
