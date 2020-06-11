@@ -23,21 +23,23 @@ module.exports = class CommandStreamClient {
     if (this._socket) this._socket.destroy()
   }
 
-  async call (command, args) {
+  async call (command, args, env = {}) {
     if (this._closed) throw new Error('Stream closed')
     await this.open()
+    env = { ...this._env, ...env }
     return new Promise((resolve, reject) => {
-      this._endpoint.call(command, args, this._env, (err, msg, channel) => {
+      this._endpoint.call(command, args, env, (err, msg, channel) => {
         if (err) return reject(err)
         resolve([channel, msg])
       })
     })
   }
 
-  async callStreaming (command, args) {
+  async callStreaming (command, args, env) {
     if (this._closed) throw new Error('Stream closed')
     await this.open()
-    return this._endpoint.callStream(command, args, this._env)
+    env = { ...this._env, ...env }
+    return this._endpoint.callStream(command, args, env)
   }
 
   async open () {
