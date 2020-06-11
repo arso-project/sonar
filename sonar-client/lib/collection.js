@@ -21,6 +21,7 @@ module.exports = class Collection {
   }
 
   get name () {
+    if (this._info) return this._info.name
     return this._name
   }
 
@@ -72,6 +73,13 @@ module.exports = class Collection {
     return this.fetch('/db/' + record.id, {
       method: 'DELETE',
       params: { schema: record.schema }
+    })
+  }
+
+  async putSchema (schema) {
+    return this.fetch('/schema', {
+      method: 'POST',
+      body: schema
     })
   }
 
