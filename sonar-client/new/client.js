@@ -1,7 +1,7 @@
 const debug = require('debug')('sonar-client')
 const axios = require('axios')
 
-const Island = require('./island')
+const Collection = require('./collection')
 
 const {
   DEFAULT_ENDPOINT,
@@ -17,10 +17,10 @@ module.exports = class Client {
     if (!this.endpoint.endsWith('/')) {
       this.endpoint = this.endpoint + '/'
     }
-    this.islands = new Map()
+    this.collections = new Map()
   }
 
-  async listIslands () {
+  async listCollections () {
     const info = await this.request({
       method: 'GET',
       path: ['_info']
@@ -28,20 +28,20 @@ module.exports = class Client {
     return info
   }
 
-  async createIsland (name, opts) {
+  async createCollection (name, opts) {
     await this.request('PUT', ['_create', name], {
       data: opts
     })
-    return this.openIsland(name)
+    return this.openCollection(name)
   }
 
-  async openIsland (keyOrName) {
-    if (this.islands.get(keyOrName)) return this.islands.get(keyOrName)
+  async openCollection (keyOrName) {
+    if (this.collections.get(keyOrName)) return this.collections.get(keyOrName)
     const info = await this.request('GET', [keyOrName])
-    const island = new Island(this, info)
-    this.islands.set(info.name, island)
-    this.islands.set(info.key, island)
-    return island
+    const collection = new Collection(this, info)
+    this.collections.set(info.name, collection)
+    this.collections.set(info.key, collection)
+    return collection
   }
 
   async request (method, path, opts = {}) {

@@ -1,7 +1,7 @@
 const RecordCache = require('./record-cache')
 const Schema = require('./schema')
 
-module.exports = class Island {
+module.exports = class Collection {
   constructor (client, info) {
     this._client = client
     this._info = info
