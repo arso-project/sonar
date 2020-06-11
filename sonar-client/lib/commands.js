@@ -10,6 +10,7 @@ module.exports = class CommandStreamClient {
     this._commands = opts.commands
     this._socket = null
     this._endpoint = null
+    this.opened = false
   }
 
   setEnv (key, value) {
@@ -48,6 +49,21 @@ module.exports = class CommandStreamClient {
     debug('command stream open')
   }
 
+  async setName (name) {
+    this._name = name
+    await this.open()
+    // TODO: Don't reannounce if commands were sent during open.
+    this._endpoint.announce()
+  }
+
+  async defineCommands (commands) {
+    this._commands = { ...this._commands, ...commands }
+    await this.open()
+    // TODO: Don't reannounce if commands were sent during open.
+    this._endpoint.commands(this._commands)
+    this._endpoint.announce()
+  }
+
   _init () {
     const self = this
     return new Promise((resolve, reject) => {
@@ -70,6 +86,7 @@ module.exports = class CommandStreamClient {
           self._remoteManifest = manifest
           if (!resolved) {
             resolved = true
+            self.opened = true
             resolve()
           }
         })

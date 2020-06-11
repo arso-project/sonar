@@ -19,7 +19,7 @@ module.exports = class Client {
     this._id = opts.id || randombytes(16).toString('hex')
 
     this.commands = new Commands({
-      url: this.endpoint + 'commands',
+      url: this.endpoint + '_commands',
       name: opts.name || 'client:' + this._id
     })
   }

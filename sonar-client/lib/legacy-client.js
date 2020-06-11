@@ -1,12 +1,12 @@
 const Client = require('./client')
 const { DEFAULT_COLLECTION } = require('./constants')
+const SearchQueryBuilder = require('./searchquerybuilder')
 
 module.exports = class LegacyClient extends Client {
   constructor (opts) {
     super(opts)
     this._focus = null
-    this.focusCollection(opts.collection || DEFAULT_COLLECTION)
-    console.log('CONSTR', this)
+    this._defaultCollection = opts.collection || DEFAULT_COLLECTION
   }
 
   focusCollection (name) {
@@ -14,7 +14,8 @@ module.exports = class LegacyClient extends Client {
   }
 
   async focusedCollection () {
-    if (!this._focus) throw new Error('No collection focused')
+    if (!this._focus && this._defaultCollection) this.focusCollection(this._defaultCollection)
+    await this._focus
     return this._focus
   }
 
@@ -63,9 +64,14 @@ module.exports = class LegacyClient extends Client {
     return collection.query(name, args, opts)
   }
 
-  async search (query) {
+  async search (args, opts) {
+    if (typeof args === 'string') {
+      args = JSON.stringify(args)
+    } else if (args instanceof SearchQueryBuilder) {
+      args = args.getQuery()
+    }
     const collection = await this.focusedCollection()
-    return collection.search(query)
+    return collection.query('search', args, opts)
   }
 
   // TODO: Port!
@@ -116,18 +122,34 @@ module.exports = class LegacyClient extends Client {
     return this.openCommandStream(opts)
   }
 
+  async initCommandClient (opts = {}) {
+    await this.openCommandStream(opts)
+    return this.commands
+  }
+
   async openCommandStream (opts = {}) {
-    const collection = await this.focusedCollection()
-    return collection.commands.open()
+    await this.commands.open()
+    return this.commands
   }
 
   async callCommand (command, args) {
     const collection = await this.focusedCollection()
-    return collection.commands.call(command, args)
+    const env = { collection: collection.name }
+    return this.commands.call(command, args, env)
   }
 
   async callCommandStreaming (command, args) {
     const collection = await this.focusedCollection()
-    return collection.commands.callStreaming(command, args)
+    const env = { collection: collection.name }
+    return this.commands.callStreaming(command, args, env)
   }
+
+  async createQueryStream (name, args, opts) {
+    return this.callCommandStreaming('@collection query', [name, args, opts])
+  }
+
+  async createSubscriptionStream (name, opts = {}) {
+    return this.callCommandStreaming('@collection subscribe', [name, opts])
+  }
+
 }

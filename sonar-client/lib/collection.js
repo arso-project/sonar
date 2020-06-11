@@ -51,9 +51,10 @@ module.exports = class Collection {
   }
 
   async get (req, opts) {
-    if (this._cache.has(req)) {
-      return this._cache.get(req)
-    }
+    // TODO: Implement RecordCache.has
+    // if (this._cache.has(req)) {
+    //   return this._cache.get(req)
+    // }
     return this.query('records', req, opts)
   }
 

@@ -1,9 +1,8 @@
 const tape = require('tape')
 const createServerClient = require('./util/server')
 
-tape.only('sync', async t => {
+tape('sync', async t => {
   const [context, client] = await createServerClient()
-  console.log(client)
   try {
     const { id } = await client.put({
       schema: 'foo',

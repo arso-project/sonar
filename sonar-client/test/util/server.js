@@ -96,7 +96,6 @@ class ServerClient {
       ...opts
     })
     this.clients.push(client)
-    console.log('CC', client)
     return client
   }
 
