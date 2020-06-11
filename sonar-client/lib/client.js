@@ -18,7 +18,7 @@ const {
 module.exports = class SonarClient {
   constructor (opts = {}) {
     this.endpoint = opts.endpoint || DEFAULT_ENDPOINT
-    this.island = opts.island || DEFAULT_ISLAND
+    this.collection = opts.collection || DEFAULT_ISLAND
 
     this.id = opts.id || randombytes(16).toString('hex')
     this.name = opts.name || null
@@ -26,17 +26,17 @@ module.exports = class SonarClient {
     this._cache = new RecordCache()
 
     if (opts.cache !== false) {
-      this._cacheid = 'client:' + this.id + ':' + this.island
+      this._cacheid = 'client:' + this.id + ':' + this.collection
     }
 
-    debug(`create client: endpoint ${this.endpoint} island ${this.island}`)
+    debug(`create client: endpoint ${this.endpoint} collection ${this.collection}`)
   }
 
   close () {
     if (this._commandClient) this._commandClient.close()
   }
 
-  // TODO: Support read-only islands.
+  // TODO: Support read-only collections.
   async isWritable () {
     return true
   }
@@ -48,7 +48,7 @@ module.exports = class SonarClient {
     })
   }
 
-  async createIsland (name, opts) {
+  async createCollection (name, opts) {
     const path = ['_create', name]
     // opts = { key, alias }
     const res = await this._request({
@@ -59,42 +59,42 @@ module.exports = class SonarClient {
     return res
   }
 
-  async focusIsland (name) {
-    if (!name && this.island) name = this.island
-    if (!name) throw new Error('Missing island name')
-    if (name === this.island && this._info) return this._info
-    if (name === this.island && this._islandInfoPromise) return this._islandInfoPromise
+  async focusCollection (name) {
+    if (!name && this.collection) name = this.collection
+    if (!name) throw new Error('Missing collection name')
+    if (name === this.collection && this._info) return this._info
+    if (name === this.collection && this._collectionInfoPromise) return this._collectionInfoPromise
 
-    this._islandInfoPromise = this._getIslandInfo(name)
-    return this._islandInfoPromise
+    this._collectionInfoPromise = this._getCollectionInfo(name)
+    return this._collectionInfoPromise
   }
 
-  async _getIslandInfo (name) {
+  async _getCollectionInfo (name) {
     const res = await this._request({ path: [name] })
     this._info = res
 
-    if (this._info.name !== this.island) {
-      this.island = res.name
+    if (this._info.name !== this.collection) {
+      this.collection = res.name
       this._cache.reset()
     }
 
     return this._info
   }
 
-  async getCurrentIsland () {
-    if (!this._info) await this.focusIsland()
+  async getCurrentCollection () {
+    if (!this._info) await this.focusCollection()
     return this._info
   }
 
   async getSchemas () {
     return this._request({
-      path: [this.island, 'schema']
+      path: [this.collection, 'schema']
     })
   }
 
   async getSchema (schemaName) {
     return this._request({
-      path: [this.island, 'schema'],
+      path: [this.collection, 'schema'],
       params: { name: schemaName }
     })
   }
@@ -104,7 +104,7 @@ module.exports = class SonarClient {
     schema.name = schemaName
     return this._request({
       method: 'POST',
-      path: [this.island, 'schema'],
+      path: [this.collection, 'schema'],
       data: schema
     })
   }
@@ -112,7 +112,7 @@ module.exports = class SonarClient {
   async putSource (key, info) {
     return this._request({
       method: 'PUT',
-      path: [this.island, 'source', key],
+      path: [this.collection, 'source', key],
       data: info
     })
   }
@@ -207,7 +207,7 @@ module.exports = class SonarClient {
     if (!url) throw new Error('resource has invalid contentUrl')
     let filepath = url.path
     if (filepath.startsWith('/')) filepath = filepath.substring(1)
-    const path = this._url([this.island, 'fs', url.host, filepath])
+    const path = this._url([this.collection, 'fs', url.host, filepath])
     return path
   }
 
@@ -217,20 +217,20 @@ module.exports = class SonarClient {
 
   async put (record) {
     // let { schema, id, value } = record
-    const path = [this.island, 'db']
+    const path = [this.collection, 'db']
     const method = 'PUT'
     return this._request({ path, method, data: record })
   }
 
   async del (record) {
-    const path = [this.island, 'db', record.id]
+    const path = [this.collection, 'db', record.id]
     const method = 'DELETE'
     const params = { schema: record.schema }
     return this._request({ path, method, params })
   }
 
   async sync (view) {
-    const path = [this.island, 'sync']
+    const path = [this.collection, 'sync']
     const params = {}
     if (view) params.view = view
     return this._request({ path, params })
@@ -243,7 +243,7 @@ module.exports = class SonarClient {
 
     const records = await this._request({
       method: 'POST',
-      path: [this.island, '_query', name],
+      path: [this.collection, '_query', name],
       data: args,
       params: opts
     })
@@ -264,8 +264,8 @@ module.exports = class SonarClient {
     return this.query('search', query)
   }
 
-  async updateIsland (key, config) {
-    key = key || this.island
+  async updateCollection (key, config) {
+    key = key || this.collection
     return this._request({
       method: 'PATCH',
       path: [key],
@@ -276,7 +276,7 @@ module.exports = class SonarClient {
   async getDrives () {
     return this._request({
       method: 'GET',
-      path: [this.island, 'fs-info']
+      path: [this.collection, 'fs-info']
     })
   }
 
@@ -295,7 +295,7 @@ module.exports = class SonarClient {
     }
     if (path.length > 2 && path.charAt(0) === '/') path = path.substring(1)
     const alias = path.split('/')[0]
-    let files = await this._request({ path: [this.island, 'fs', path] })
+    let files = await this._request({ path: [this.collection, 'fs', path] })
     if (files && files.length) {
       files = files.map(file => {
         file.link = makeLink(file)
@@ -306,7 +306,7 @@ module.exports = class SonarClient {
     return files
 
     function makeLink (file) {
-      return `${self.endpoint}/${self.island}/fs/${alias}/${file.path}`
+      return `${self.endpoint}/${self.collection}/fs/${alias}/${file.path}`
     }
 
     function getResource (file) {
@@ -326,7 +326,7 @@ module.exports = class SonarClient {
     }
 
     return this._request({
-      path: [this.island, 'fs', path],
+      path: [this.collection, 'fs', path],
       data: file,
       params: opts,
       method: 'PUT',
@@ -339,7 +339,7 @@ module.exports = class SonarClient {
     const { stream = true } = opts
     if (path.startsWith('/')) path = path.substring(1)
     const request = {
-      path: [this.island, 'fs', path],
+      path: [this.collection, 'fs', path],
       binary: true
     }
     if (stream) request.responseType = 'stream'
@@ -349,13 +349,13 @@ module.exports = class SonarClient {
   async statFile (path) {
     if (path.startsWith('/')) path = path.substring(1)
     return this._request({
-      path: [this.island, 'fs', path]
+      path: [this.collection, 'fs', path]
     })
   }
 
   async pullSubscription (name, opts) {
     return this._request({
-      path: [this.island, 'subscription', name],
+      path: [this.collection, 'subscription', name],
       query: opts
     })
   }
@@ -363,7 +363,7 @@ module.exports = class SonarClient {
   async ackSubscription (name, cursor) {
     return this._request({
       method: 'post',
-      path: [this.island, 'subscription', name, cursor]
+      path: [this.collection, 'subscription', name, cursor]
     })
   }
 
@@ -374,7 +374,7 @@ module.exports = class SonarClient {
 
   fileUrl (url) {
     const path = url.replace('dat://', '')
-    return this.endpoint + '/' + this.island + '/fs/' + path
+    return this.endpoint + '/' + this.collection + '/fs/' + path
   }
 
   async _request (opts) {
@@ -417,7 +417,7 @@ module.exports = class SonarClient {
       ...opts,
       env: {
         ...opts.env || {},
-        island: this.island
+        collection: this.collection
       },
       name: opts.name || 'client:' + this.id,
       commands: opts.commands || {}
@@ -440,7 +440,7 @@ module.exports = class SonarClient {
     // if (opts.cacheid === undefined && this._cacheid) {
     //   opts.cacheid = this._cacheid
     // }
-    const channel = await this.callCommandStreaming('@island query', [name, args, opts])
+    const channel = await this.callCommandStreaming('@collection query', [name, args, opts])
     // const transform = this._cache.transform()
     // return channel.pipe(transform)
     return channel
@@ -450,7 +450,7 @@ module.exports = class SonarClient {
     // if (opts.cacheid === undefined && this._cacheid) {
     //   opts.cacheid = this._cacheid
     // }
-    const channel = await this.callCommandStreaming('@island subscribe', [name, opts])
+    const channel = await this.callCommandStreaming('@collection subscribe', [name, opts])
     // const transform = this._cache.transform()
     // return channel.pipe(transform)
     return channel

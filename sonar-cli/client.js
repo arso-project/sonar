@@ -3,7 +3,7 @@ const Client = require('@arso-project/sonar-client')
 module.exports = function getClient (argv) {
   const client = new Client({
     endpoint: argv.endpoint,
-    island: argv.island,
+    collection: argv.collection,
     cache: false
   })
   return client

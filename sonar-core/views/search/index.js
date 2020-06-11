@@ -7,10 +7,10 @@ const { clock } = require('../../lib/log')
 module.exports = searchView
 
 function searchView (level, _scope, opts) {
-  const island = opts.island
+  const collection = opts.collection
   const manager = new IndexManager({
     level,
-    namespace: island.key.toString('hex'),
+    namespace: collection.key.toString('hex'),
     catalog: opts.indexCatalog
   })
 
@@ -39,7 +39,7 @@ function searchView (level, _scope, opts) {
     const time = clock()
     await manager.ready()
 
-    const schemas = island.getSchemas()
+    const schemas = collection.getSchemas()
 
     const docs = {
       textdump: []
@@ -108,7 +108,7 @@ function searchView (level, _scope, opts) {
   function loadSchema (name, record) {
     if (!schemas[name]) {
       schemas[name] = new Promise((resolve, reject) => {
-        island.getSchema(name, (err, schema) => {
+        collection.getSchema(name, (err, schema) => {
           if (err) reject(err)
           if (schema) resolve(schema)
           else resolve(null)

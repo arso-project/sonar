@@ -1,4 +1,4 @@
-const { IslandStore } = require('@arso-project/sonar-core')
+const { CollectionStore } = require('@arso-project/sonar-core')
 const bodyParser = require('body-parser')
 const onexit = require('async-exit-hook')
 const express = require('express')
@@ -30,7 +30,7 @@ module.exports = function SonarServer (opts = {}) {
   }
 
   const api = {
-    islands: new IslandStore(opts.storage, storeOpts)
+    collections: new CollectionStore(opts.storage, storeOpts)
   }
 
   const app = express()
@@ -54,9 +54,9 @@ module.exports = function SonarServer (opts = {}) {
     origin: '*'
   }))
 
-  // Make the island api available to all requests
-  app.use(function islandMiddleware (req, res, next) {
-    req.islands = api.islands
+  // Make the collection api available to all requests
+  app.use(function collectionMiddleware (req, res, next) {
+    req.collections = api.collections
     next()
   })
 
@@ -98,8 +98,8 @@ module.exports = function SonarServer (opts = {}) {
 
   app.start = thunky((cb = noop) => {
     if (typeof opts === 'function') return app.start(null, opts)
-    // Open the island store.
-    api.islands.ready(err => {
+    // Open the collection store.
+    api.collections.ready(err => {
       if (err) return cb(err)
       app.port = opts.port
       app.hostname = opts.hostname
@@ -117,7 +117,7 @@ module.exports = function SonarServer (opts = {}) {
       debug('closed http server', err || '')
       finish()
     })
-    api.islands.close(finish)
+    api.collections.close(finish)
     function finish () {
       if (--pending !== 0) return
       debug('closed')

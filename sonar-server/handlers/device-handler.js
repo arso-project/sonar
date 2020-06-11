@@ -1,26 +1,26 @@
-module.exports = function createDeviceHandler (islands) {
+module.exports = function createDeviceHandler (collections) {
   return {
     info (req, res, next) {
-      islands.status((err, status) => {
+      collections.status((err, status) => {
         if (err) return next(err)
         res.send(status)
       })
     },
 
-    createIsland (req, res, next) {
+    createCollection (req, res, next) {
       const { name } = req.params
       const { key, alias } = req.body
-      islands.create(name, { key, alias }, (err, island) => {
+      collections.create(name, { key, alias }, (err, collection) => {
         if (err) return next(err)
         res.send({
-          key: island.key.toString('hex')
+          key: collection.key.toString('hex')
         })
         res.end()
       })
     },
 
-    updateIsland (req, res, next) {
-      islands.updateIsland(req.island.key, req.body, (err, newConfig) => {
+    updateCollection (req, res, next) {
+      collections.updateCollection(req.collection.key, req.body, (err, newConfig) => {
         if (err) return next(err)
         res.send(newConfig)
       })

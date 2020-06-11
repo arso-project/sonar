@@ -56,7 +56,7 @@ Then, you can:
 * open the web UI on [http://localhost:9191](http://localhost:9191).
 * use the CLI:
   ```sh
-  ./sonar island create default
+  ./sonar collection create default
   ./sonar db get
   # etc.
   # the cli has a built-in help that should list the available commands
@@ -74,7 +74,7 @@ More on this project on [arso.xyz](https://arso.xyz).
 
 The repo is structured as a monorepo of different packages (that are interdependent at several points). 
 
-* **[sonar-core](sonar-core/README.md)** it the core module. It manages *islands*, which are our notion of "a group of feeds*. Each island has a [kappa-record-db](https://github.com/arso-project/kappa-record-db) that's plugged into a search index through [sonar-tantivy](https://github.com/arso-project/sonar-tantivy). Each island has also a list of associated [hyperdrives](https://github.com/mafintosh/hyperdrive).
+* **[sonar-core](sonar-core/README.md)** it the core module. It manages *collections*, which are our notion of "a group of feeds*. Each collection has a [kappa-record-db](https://github.com/arso-project/kappa-record-db) that's plugged into a search index through [sonar-tantivy](https://github.com/arso-project/sonar-tantivy). Each collection has also a list of associated [hyperdrives](https://github.com/mafintosh/hyperdrive).
 
 * **[sonar-server](sonar-server/README.md)** provides a REST style HTTP api that's used both by the CLI and the UI to access and manage the data in sonar-core.
 
@@ -82,4 +82,4 @@ The repo is structured as a monorepo of different packages (that are interdepend
 
 * **[sonar-ui](sonar-ui/README.md)** is a single-page application to browse data in Sonar.
 
-* **[sonar-cli](sonar-cli/README.md)** is a command-line application. It can manage islands, put and get into the database, upload and download files, and make search queries.
+* **[sonar-cli](sonar-cli/README.md)** is a command-line application. It can manage collections, put and get into the database, upload and download files, and make search queries.

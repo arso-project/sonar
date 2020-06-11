@@ -1,6 +1,6 @@
-const IslandStore = require('./lib/store')
-const Island = require('./lib/island')
+const CollectionStore = require('./lib/store')
+const Collection = require('./lib/collection')
 
-module.exports = IslandStore
-module.exports.IslandStore = IslandStore
-module.exports.Island = Island
+module.exports = CollectionStore
+module.exports.CollectionStore = CollectionStore
+module.exports.Collection = Collection

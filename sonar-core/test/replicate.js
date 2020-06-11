@@ -1,23 +1,23 @@
 const tape = require('tape')
 const { runAll, replicate } = require('./lib/util')
-const Islands = require('..')
+const Collections = require('..')
 const createStore = require('./lib/create')
 const { promisify } = require('util')
 
 tape('put query without replication', async t => {
   let id
   console.log('X')
-  const [islands, cleanup] = await createStore({ network: false })
-  const island = await promisify(islands.create.bind(islands))('foo')
+  const [collections, cleanup] = await createStore({ network: false })
+  const collection = await promisify(collections.create.bind(collections))('foo')
   await runAll([
-    cb => island.ready(cb),
-    cb => island.put({ schema: 'doc', value: 'foo' }, (err, _id) => {
+    cb => collection.ready(cb),
+    cb => collection.put({ schema: 'doc', value: 'foo' }, (err, _id) => {
       t.error(err)
       id = _id
       cb()
     }),
-    cb => island.put({ schema: 'doc', value: 'bar', id }, cb),
-    cb => island.query('records', { schema: 'doc' }, { waitForSync: true }, (err, records) => {
+    cb => collection.put({ schema: 'doc', value: 'bar', id }, cb),
+    cb => collection.query('records', { schema: 'doc' }, { waitForSync: true }, (err, records) => {
       t.error(err)
       t.equal(records.length, 1)
       t.equal(records[0].value, 'bar')
@@ -33,56 +33,56 @@ function doc (value, id) {
 }
 
 tape('simple replication', async t => {
-  const [islands1, cleanup1] = await createStore({ network: true })
-  const [islands2, cleanup2] = await createStore({ network: true })
-  const island = await promisify(islands1.create.bind(islands1))('island1')
-  let island2, id
+  const [collections1, cleanup1] = await createStore({ network: true })
+  const [collections2, cleanup2] = await createStore({ network: true })
+  const collection = await promisify(collections1.create.bind(collections1))('collection1')
+  let collection2, id
   await runAll([
-    cb => island.ready(cb),
-    cb => island.put(doc('1rev1'), (err, _id) => {
+    cb => collection.ready(cb),
+    cb => collection.put(doc('1rev1'), (err, _id) => {
       t.error(err)
       id = _id
       cb()
     }),
-    cb => island.sync(cb),
-    cb => island.put(doc('1rev2', id), cb),
+    cb => collection.sync(cb),
+    cb => collection.put(doc('1rev2', id), cb),
     cb => {
-      islands2.create('island2', {
-        key: island.key,
+      collections2.create('collection2', {
+        key: collection.key,
         alias: 'writer2'
-      }, (err, island) => {
+      }, (err, collection) => {
         if (err) return cb(err)
-        island2 = island
-        island2.ready(cb)
+        collection2 = collection
+        collection2.ready(cb)
       })
     },
-    cb => checkOne(t, island, { schema: 'doc' }, '1rev2', 'init island1 ok', cb),
+    cb => checkOne(t, collection, { schema: 'doc' }, '1rev2', 'init collection1 ok', cb),
     cb => {
       // console.log('STATUS MID')
-      // console.log('island1', island.scope)
-      // console.log('island2', island2.scope)
+      // console.log('collection1', collection.scope)
+      // console.log('collection2', collection2.scope)
       cb()
     },
-    cb => replicate(island, island2, cb),
-    cb => island2.sync(cb),
-    cb => checkOne(t, island2, { schema: 'doc' }, '1rev2', 'init island2 ok', cb),
+    cb => replicate(collection, collection2, cb),
+    cb => collection2.sync(cb),
+    cb => checkOne(t, collection2, { schema: 'doc' }, '1rev2', 'init collection2 ok', cb),
     cb => {
-      const island2localkey = island2._local.key
-      island.putSource(island2localkey, { alias: 'w2' }, cb)
+      const collection2localkey = collection2._local.key
+      collection.putSource(collection2localkey, { alias: 'w2' }, cb)
     },
-    cb => island.sync(cb),
+    cb => collection.sync(cb),
     cb => {
-      island2.put(doc('2rev1', id), cb)
+      collection2.put(doc('2rev1', id), cb)
     },
-    cb => island.once('remote-update', cb),
-    cb => island.sync(cb),
+    cb => collection.once('remote-update', cb),
+    cb => collection.sync(cb),
     cb => setTimeout(cb, 100),
-    cb => checkOne(t, island, { schema: 'doc' }, '2rev1', 'end island1 ok', cb),
-    cb => checkOne(t, island2, { schema: 'doc' }, '2rev1', 'end island2 ok', cb),
+    cb => checkOne(t, collection, { schema: 'doc' }, '2rev1', 'end collection1 ok', cb),
+    cb => checkOne(t, collection2, { schema: 'doc' }, '2rev1', 'end collection2 ok', cb),
     cb => {
       // console.log('STATUS END')
-      // console.log('island1', island.scope)
-      // console.log('island2', island2.scope)
+      // console.log('collection1', collection.scope)
+      // console.log('collection2', collection2.scope)
       cb()
     }
   ])
@@ -90,8 +90,8 @@ tape('simple replication', async t => {
   await cleanup2()
 })
 
-function checkOne (t, island, query, value, msg, cb) {
-  island.query('records', query, { waitForSync: true }, (err, records) => {
+function checkOne (t, collection, query, value, msg, cb) {
+  collection.query('records', query, { waitForSync: true }, (err, records) => {
     // console.log({ msg, query, value, records })
     t.error(err, msg + ' (no err)')
     t.equal(records.length, 1, msg + ' (result len)')

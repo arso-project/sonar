@@ -1,5 +1,5 @@
 const tmp = require('temporary-directory')
-const { IslandStore } = require('../..')
+const { CollectionStore } = require('../..')
 
 module.exports = function createStore (opts, cb) {
   if (typeof opts === 'function') {
@@ -10,14 +10,14 @@ module.exports = function createStore (opts, cb) {
   tmp('sonar-test', ondircreated)
   function ondircreated (err, dir, cleanupTempdir) {
     if (err) return cb(err)
-    const islands = new IslandStore(dir, opts)
-    islands.ready(err => {
+    const collections = new CollectionStore(dir, opts)
+    collections.ready(err => {
       if (err) return cb(err)
-      cb(null, islands, cleanup)
+      cb(null, collections, cleanup)
     })
     function cleanup (cb) {
       cb = maybepify(cb)
-      islands.close(() => {
+      collections.close(() => {
         cleanupTempdir(err => {
           cb(err)
         })

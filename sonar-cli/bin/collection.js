@@ -2,8 +2,8 @@ const chalk = require('chalk')
 const makeClient = require('../client')
 const yargs = require('yargs')
 
-exports.command = 'island'
-exports.describe = 'manage islands'
+exports.command = 'collection'
+exports.describe = 'manage collections'
 exports.handler = function () {
   yargs.showHelp()
 }
@@ -11,7 +11,7 @@ exports.builder = function (yargs) {
   yargs
     .command({
       command: 'create <name> [key]',
-      describe: 'create a new island',
+      describe: 'create a new collection',
       builder: {
         alias: {
           alias: 'a',
@@ -22,12 +22,12 @@ exports.builder = function (yargs) {
     })
     .command({
       command: 'list',
-      describe: 'list islands',
+      describe: 'list collections',
       handler: list
     })
     .command({
       command: 'add-source <name> <key>',
-      describe: 'add a source to the island',
+      describe: 'add a source to the collection',
       handler: addSource
     })
     .command({
@@ -43,7 +43,7 @@ async function create (argv) {
   const name = argv.name
   const key = argv.key
   const alias = argv.alias
-  const result = await client.createIsland(name, { key, alias })
+  const result = await client.createCollection(name, { key, alias })
   console.log(result)
 }
 
@@ -58,13 +58,13 @@ async function addSource (argv) {
 async function list (argv) {
   const client = makeClient(argv)
   const info = await client.info()
-  const output = Object.values(info.islands).map(island => {
+  const output = Object.values(info.collections).map(collection => {
     return [
-      chalk.bold.blueBright(island.name),
-      island.key.toString('hex'),
-      'Shared: ' + chalk.bold(island.share ? 'Yes' : 'No'),
-      'Local key: ' + chalk.bold(island.localKey),
-      'Local drive: ' + chalk.bold(island.localDrive)
+      chalk.bold.blueBright(collection.name),
+      collection.key.toString('hex'),
+      'Shared: ' + chalk.bold(collection.share ? 'Yes' : 'No'),
+      'Local key: ' + chalk.bold(collection.localKey),
+      'Local drive: ' + chalk.bold(collection.localDrive)
     ].join('\n')
   }).join('\n\n')
   console.log(output)
@@ -72,6 +72,6 @@ async function list (argv) {
 
 async function debug (argv) {
   const client = makeClient(argv)
-  const result = await client._request({ path: [argv.island, 'debug'] })
+  const result = await client._request({ path: [argv.collection, 'debug'] })
   console.log(result)
 }

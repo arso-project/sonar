@@ -80,7 +80,7 @@ class ServerClient {
     return new Promise((resolve, reject) => {
       this.server.start((err) => {
         if (err) reject(err)
-        this.server.api.islands.ready((err) => {
+        this.server.api.collections.ready((err) => {
           if (err) return reject(err)
           resolve(this.server)
         })
@@ -120,11 +120,11 @@ class ServerClient {
 async function createServerClient (opts) {
   opts = Object.assign({
     network: false,
-    island: 'default'
+    collection: 'default'
   }, opts || {})
   const context = new ServerClient(opts)
   const client = await context.start()
-  if (opts.island) await client.createIsland(opts.island)
+  if (opts.collection) await client.createCollection(opts.collection)
   return [context, client]
 }
 

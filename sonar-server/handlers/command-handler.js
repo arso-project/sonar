@@ -2,15 +2,15 @@ const { Router } = require('simple-rpc-protocol')
 const websocketStream = require('websocket-stream/stream')
 const debug = require('debug')('sonar-server:api')
 const log = debug
-const createIslandCommands = require('../commands/island')
+const createCollectionCommands = require('../commands/collection')
 
-module.exports = function createCommandStreamHandler (islands) {
+module.exports = function createCommandStreamHandler (collections) {
   const router = new Router({ name: 'server' })
-  islands.on('close', () => {
+  collections.on('close', () => {
     router.close()
   })
-  const islandCommands = createIslandCommands(islands)
-  router.service('island', islandCommands.commands, islandCommands.opts)
+  const collectionCommands = createCollectionCommands(collections)
+  router.service('collection', collectionCommands.commands, collectionCommands.opts)
   router.on('error', log)
   return function createCommandStream (ws, _req) {
     const stream = websocketStream(ws, {

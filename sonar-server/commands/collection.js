@@ -1,13 +1,13 @@
 const pump = require('pump')
 
-module.exports = function createIslandCommands (islands) {
+module.exports = function createCollectionCommands (collections) {
   return {
     opts: {
       onopen (env, channel, cb) {
-        if (!env.island) return cb(new Error('Island is required'))
-        islands.get(env.island, (err, island) => {
+        if (!env.collection) return cb(new Error('Collection is required'))
+        collections.get(env.collection, (err, collection) => {
           if (err) return cb(err)
-          channel.island = island
+          channel.collection = collection
           cb()
         })
       }
@@ -27,8 +27,8 @@ module.exports = function createIslandCommands (islands) {
           let [name, queryArgs, opts] = args
           if (!opts) opts = {}
           if (!queryArgs) queryArgs = {}
-          const island = channel.island
-          pump(island.createQueryStream(name, queryArgs, opts), channel, err => {
+          const collection = channel.collection
+          pump(collection.createQueryStream(name, queryArgs, opts), channel, err => {
             if (err) channel.error(err)
           })
         }
@@ -45,13 +45,13 @@ module.exports = function createIslandCommands (islands) {
           channel.reply()
           let [name, opts] = args
           opts = opts || {}
-          const island = channel.island
-          const subscription = island.createSubscription(name, opts)
+          const collection = channel.collection
+          const subscription = collection.createSubscription(name, opts)
           pump(subscription.createPullStream({ live: true }), channel)
           channel.on('data', message => {
             const { cursor } = message
             if (cursor) {
-              island.ackSubscription(name, cursor, err => {
+              collection.ackSubscription(name, cursor, err => {
                 if (err) channel.error(err)
               })
             } else {

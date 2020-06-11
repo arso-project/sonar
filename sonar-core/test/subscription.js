@@ -1,6 +1,6 @@
 const tape = require('tape')
 const tmp = require('temporary-directory')
-const { IslandStore } = require('..')
+const { CollectionStore } = require('..')
 const debug = require('debug')('time')
 
 tape('subscription stream', async t => {
@@ -9,15 +9,15 @@ tape('subscription stream', async t => {
     debug('start')
     const complete = clock()
     let timer = clock()
-    const [islands, cleanup] = await createStore({ network: false })
+    const [collections, cleanup] = await createStore({ network: false })
     debug('init', timer())
     const alltimer = clock()
     timer = clock()
-    const island = await pify(cb => islands.create('default', cb))
-    debug('create island', timer())
+    const collection = await pify(cb => collections.create('default', cb))
+    debug('create collection', timer())
 
     timer = clock()
-    const sub = island.pullSubscriptionStream('foo', { live: true })
+    const sub = collection.pullSubscriptionStream('foo', { live: true })
     debug('create subscription', timer())
 
     const [promise, cb] = createPromiseCallback()
@@ -36,7 +36,7 @@ tape('subscription stream', async t => {
     })
 
     timer = clock()
-    await pify(cb => island.put({ schema: 'foo', value: { title: 'hello' } }, cb))
+    await pify(cb => collection.put({ schema: 'foo', value: { title: 'hello' } }, cb))
     debug('put took', timer())
     timer = clock()
     await promise
@@ -72,14 +72,14 @@ function createStore (opts = {}) {
     tmp('sonar-test', ondircreated)
     function ondircreated (err, dir, cleanupTempdir) {
       if (err) return reject(err)
-      const islands = new IslandStore(dir, opts)
-      islands.ready(err => {
+      const collections = new CollectionStore(dir, opts)
+      collections.ready(err => {
         if (err) return reject(err)
-        resolve([islands, cleanup])
+        resolve([collections, cleanup])
       })
       function cleanup () {
         return new Promise((resolve, reject) => {
-          islands.close(() => {
+          collections.close(() => {
             cleanupTempdir(err => {
               err ? reject(err) : resolve()
             })

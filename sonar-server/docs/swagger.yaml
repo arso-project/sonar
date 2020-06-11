@@ -30,26 +30,26 @@ tags:
   externalDocs:
     description: "Database docs"
     url: "http://docs.arso.xyz/sonar-db"
-- name: "island"
-  description: "Island management"
+- name: "collection"
+  description: "Collection management"
 schemes:
 - "http"
 paths:
-  /{island}/db:
+  /{collection}/db:
     put:
       tags:
       - "db"
       summary: "Put a record into the database"
       description: ""
-      operationId: "island.put"
+      operationId: "collection.put"
       consumes:
       - "application/json"
       produces:
       - "application/json"
       parameters:
-      - name: "island"
+      - name: "collection"
         in: "path"
-        description: "Island key or name"
+        description: "Collection key or name"
         required: true
         type: "string"
       - in: "body"
@@ -63,20 +63,20 @@ paths:
           description: "Invalid input"
       security:
       - api_key: []
-  /{island}/_query/{name}:
+  /{collection}/_query/{name}:
     post:
       tags:
         - "db"
       summary: "Query the database"
-      operationId: "island.query"
+      operationId: "collection.query"
       consumes:
       - "application/json"
       produces:
       - "application/json"
       parameters:
-      - name: "island"
+      - name: "collection"
         in: "path"
-        description: "Island key or name"
+        description: "Collection key or name"
         required: true
         type: "string"
       - name: "name"

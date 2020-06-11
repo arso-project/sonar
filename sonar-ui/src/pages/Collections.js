@@ -40,7 +40,7 @@ async function loadInfo () {
   return client.info()
 }
 
-export default function IslandPage (props) {
+export default function CollectionPage (props) {
   const { data: info, error, reload } = useAsync(loadInfo)
   const [modal, setModal] = useState(null)
 
@@ -49,31 +49,31 @@ export default function IslandPage (props) {
 
   console.log('loaded info', info)
 
-  const { islands } = info
-  const selectedIsland = config.get('island')
+  const { collections } = info
+  const selectedCollection = config.get('collection')
 
   return (
     <Flex
       flex='1'
       direction='column'
     >
-      <Heading color='teal.400'>Islands</Heading>
+      <Heading color='teal.400'>Collections</Heading>
       <Flex py='4'>
-        <Button mr='4' onClick={() => setModal('create')}>Create new island</Button>
-        <Button onClick={() => setModal('add')}>Open existing island</Button>
+        <Button mr='4' onClick={() => setModal('create')}>Create new collection</Button>
+        <Button onClick={() => setModal('add')}>Open existing collection</Button>
       </Flex>
-      <IslandFormModal isOpen={modal === 'create'} onClose={e => setModal(null)}>
-        <CreateIsland create onFinish={onCreate} />
-      </IslandFormModal>
-      <IslandFormModal isOpen={modal === 'add'} onClose={e => setModal(null)}>
-        <CreateIsland onFinish={onCreate} />
-      </IslandFormModal>
-      {islands && (
-        <IslandList
-          islands={islands}
-          selected={selectedIsland}
-          onSelect={onSelectIsland}
-          onUpdate={onUpdateIsland}
+      <CollectionFormModal isOpen={modal === 'create'} onClose={e => setModal(null)}>
+        <CreateCollection create onFinish={onCreate} />
+      </CollectionFormModal>
+      <CollectionFormModal isOpen={modal === 'add'} onClose={e => setModal(null)}>
+        <CreateCollection onFinish={onCreate} />
+      </CollectionFormModal>
+      {collections && (
+        <CollectionList
+          collections={collections}
+          selected={selectedCollection}
+          onSelect={onSelectCollection}
+          onUpdate={onUpdateCollection}
         />
       )}
     </Flex>
@@ -84,22 +84,22 @@ export default function IslandPage (props) {
     reload()
   }
 
-  async function onSelectIsland (key) {
+  async function onSelectCollection (key) {
     console.log('select', key)
     try {
-      await client.focusIsland(key)
-      config.set('island', key)
-      console.log('onSelect', config.get('island'))
+      await client.focusCollection(key)
+      config.set('collection', key)
+      console.log('onSelect', config.get('collection'))
     } catch (err) {
-      console.error('Error selecting island', err)
+      console.error('Error selecting collection', err)
     }
-    // When changing island we want to reset all state.
+    // When changing collection we want to reset all state.
     // Instead of using a react context, for now just rerender the whole app.
     window.__sonarRerender()
   }
 
-  function onUpdateIsland (key, info) {
-    client.updateIsland(key, info)
+  function onUpdateCollection (key, info) {
+    client.updateCollection(key, info)
   }
 }
 
@@ -119,7 +119,7 @@ function Form (props) {
   )
 }
 
-function IslandFormModal (props) {
+function CollectionFormModal (props) {
   const { isOpen, onClose, title, children } = props
   return (
     <Modal blockScrollOnMount={false} isOpen={isOpen} onClose={onClose}>
@@ -135,7 +135,7 @@ function IslandFormModal (props) {
   )
 }
 
-function CreateIsland (props) {
+function CreateCollection (props) {
   const { create, onFinish } = props
   const [pending, setPending] = useState(false)
   const toast = useToast()
@@ -143,14 +143,14 @@ function CreateIsland (props) {
   return (
     <Box>
       {create && (
-        <Form title='Create island' onSubmit={onCreate}>
+        <Form title='Create collection' onSubmit={onCreate}>
           <FormField name='name' title='Local Name' />
           <FormField name='alias' title='Alias' />
           <Button type='submit' disabled={pending} variantColor='teal'>Create</Button>
         </Form>
       )}
       {!create && (
-        <Form title='Clone island' onSubmit={onCreate}>
+        <Form title='Clone collection' onSubmit={onCreate}>
           <FormField name='name' title='Name' />
           <FormField name='key' title='Key' />
           <FormField name='alias' title='Alias' />
@@ -167,10 +167,10 @@ function CreateIsland (props) {
     if (!key || key === '') key = undefined
     setPending(true)
 
-    client.createIsland(name, { key, alias })
+    client.createCollection(name, { key, alias })
       .then(res => {
         toast({
-          title: 'Island created',
+          title: 'Collection created',
           status: 'success'
         })
         if (props.onFinish) props.onFinish()
@@ -188,8 +188,8 @@ function CreateIsland (props) {
   }
 }
 
-function IslandList (props) {
-  const { islands, selected, onSelect, onUpdate } = props
+function CollectionList (props) {
+  const { collections, selected, onSelect, onUpdate } = props
   const { colorMode } = useColorMode()
   const [toggled, setToggled] = useState({})
   function onToggle (key) {
@@ -200,14 +200,14 @@ function IslandList (props) {
 
   return (
     <Flex direction='column' mb={4}>
-      {Object.values(islands).map((island, i) => (
+      {Object.values(collections).map((collection, i) => (
         <PseudoBox
           key={i}
           borderBottomWidth='1px'
           display={{ md: 'flex' }}
           justify='center'
           p={1}
-          bg={island.key === selected ? selectedBg[colorMode] : undefined}
+          bg={collection.key === selected ? selectedBg[colorMode] : undefined}
         >
           <Flex
             flex='1'
@@ -220,54 +220,54 @@ function IslandList (props) {
                 textAlign='left'
                 color='pink.500'
                 fontWeight='700'
-                onClick={e => onSelect(island.key)}
+                onClick={e => onSelect(collection.key)}
               >
-                {island.name}
+                {collection.name}
               </Link>
               <Flex>
-                <FormLabel p='0' mr='2' htmlFor={island.key + '-share'}>
+                <FormLabel p='0' mr='2' htmlFor={collection.key + '-share'}>
                   Share:
                 </FormLabel>
                 <Switch
                   size='sm'
-                  defaultIsChecked={island.share}
-                  id={island.key + '-share'}
-                  onChange={e => onUpdate(island.key, { share: !!e.target.checked })}
+                  defaultIsChecked={collection.share}
+                  id={collection.key + '-share'}
+                  onChange={e => onUpdate(collection.key, { share: !!e.target.checked })}
                 />
-                <Button size='sm' ml='10' variantColor='blue' onClick={e => onToggle(island.key)}>
+                <Button size='sm' ml='10' variantColor='blue' onClick={e => onToggle(collection.key)}>
                   Info
                   <Icon
-                    name={toggled[island.key] ? 'chevron-down' : 'chevron-right'}
+                    name={toggled[collection.key] ? 'chevron-down' : 'chevron-right'}
                     size='24px'
                   />
                 </Button>
               </Flex>
             </Flex>
-            <Collapse isOpen={toggled[island.key]}>
+            <Collapse isOpen={toggled[collection.key]}>
               <Flex direction='column' py='2'>
                 <Flex direction='row' justify='flex-start'>
                   <Box flexShrink='0' width={['auto', '12rem']} color='teal.400'>Key:</Box>
                   <Box style={{ overflowWrap: 'anywhere' }}>
-                    <Key k={island.key} mr='4' />
+                    <Key k={collection.key} mr='4' />
                   </Box>
                 </Flex>
                 <Flex direction='row' justify='flex-start'>
                   <Box flexShrink='0' width={['auto', '12rem']} color='teal.400'>Local key:</Box>
                   <Box style={{ overflowWrap: 'anywhere' }}>
-                    <Key k={island.localKey} mr='4' />
+                    <Key k={collection.localKey} mr='4' />
                   </Box>
                 </Flex>
                 <Flex direction='row' justify='flex-start'>
                   <Box flexShrink='0' width={['auto', '12rem']} color='teal.400'>Local drive:</Box>
                   <Box style={{ overflowWrap: 'anywhere' }}>
-                    <Key k={island.localDrive} mr='4' />
+                    <Key k={collection.localDrive} mr='4' />
                   </Box>
                 </Flex>
-                {island.network.shared && (
+                {collection.network.shared && (
                   <Flex direction='row' justify='flex-start'>
                     <Box flexShrink='0' width={['auto', '12rem']} color='teal.400'>Peers:</Box>
                     <Box style={{ overflowWrap: 'anywhere' }}>
-                      {island.network.peers}
+                      {collection.network.peers}
                     </Box>
                   </Flex>
                 )}

@@ -10,7 +10,7 @@ $ sonar help
 Commands:
   bin.js db <command>      database
   bin.js fs <command>      file system
-  bin.js island <command>  manage islands
+  bin.js collection <command>  manage collections
   bin.js search <query>    make search queries
   bin.js server <command>  server
   bin.js ui [dev|serve]    ui
@@ -18,7 +18,7 @@ Commands:
 Options :
   --version       Version anzeigen                                     [boolean]
   --endpoint, -e  api endpoint url       [Standard: "http://localhost:9191/api"]
-  --island, -i    island key or name                       [Standard: "default"]
+  --collection, -i    collection key or name                       [Standard: "default"]
   --help          Hilfe anzeigen                                       [boolean]
 
 $ ./sonar server help
