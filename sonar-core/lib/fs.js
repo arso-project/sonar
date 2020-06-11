@@ -1,13 +1,12 @@
 const hyperdrive = require('hyperdrive')
 const datEncoding = require('dat-encoding')
-const { EventEmitter } = require('events')
+const Nanoresource = require('nanoresource/emitter')
 const collect = require('stream-collector')
-const sub = require('subleveldown')
 
 const DRIVES = 'd!'
 const LOCALW = 'w!'
 
-module.exports = class SonarFs extends EventEmitter {
+module.exports = class SonarFs extends Nanoresource {
   constructor (opts) {
     super()
     this.corestore = opts.corestore
@@ -20,9 +19,10 @@ module.exports = class SonarFs extends EventEmitter {
     }
     this.drives = {}
     this.aliases = {}
+    this.ready = this.open.bind(this)
   }
 
-  close (cb) {
+  _close (cb) {
     let pending = Object.values(this.drives).length
     if (!pending) return cb()
     for (const drive of Object.values(this.drives)) {
@@ -33,7 +33,7 @@ module.exports = class SonarFs extends EventEmitter {
     }
   }
 
-  ready (cb) {
+  _open (cb) {
     this._openLocalwriter((err, drive) => {
       if (err) return cb(err)
       this.localwriter = drive
@@ -110,7 +110,7 @@ module.exports = class SonarFs extends EventEmitter {
     // Get the local writer key from the leveldb.
     this.db.get(LOCALW, (err, key) => {
       if (err && !err.notFound) return cb(err)
-      if (key) this.get(key, cb)
+      if (key) return this.get(key, cb)
       else this._createLocalwriter(cb)
     })
   }
@@ -120,9 +120,8 @@ module.exports = class SonarFs extends EventEmitter {
       if (err) return cb(err)
       const hkey = drive.key.toString('hex')
       this.add(drive)
-      this.db.put(LOCALW, hkey, () => cb(null, drive))
+      this.db.put(LOCALW, hkey, err => cb(err, drive))
       if (this.handlers.oninit) this.handlers.oninit(hkey)
-      cb(null, drive)
     })
   }
 
