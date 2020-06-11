@@ -40,6 +40,12 @@ Yarn is recommended because it's much faster.
 
 You can start sonar with `./sonar` from the repository root.
 
+If the start fails with errors related to `sonar-tantivy`, try to redownload or rebuild sonar-tantivy (the search engine included in sonar):
+
+```
+yarn run build:sonar-tantivy
+```
+
 ```sh
 # build the UI (required)
 ./sonar ui build

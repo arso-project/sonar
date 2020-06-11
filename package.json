@@ -7,7 +7,8 @@
   "scripts": {
     "test": "tape */test/*.js",
     "start": "node sonar start",
-    "dev": "node sonar start --dev"
+    "dev": "node sonar start --dev",
+    "build:tantivy": "cd node_modules/@arso-project/sonar-tantivy; npm run postinstall"
   },
   "workspaces": [
     "*",
