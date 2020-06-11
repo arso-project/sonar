@@ -20,6 +20,7 @@
     "@arso-project/sonar-client": "^0.3.0-alpha.7",
     "debug": "^4.1.1",
     "express": "^4.17.1",
+    "moment": "^2.26.0",
     "open": "^7.0.3",
     "react-moment": "^0.9.7",
     "yargs": "^15.3.1",
