@@ -17,11 +17,11 @@ const Catalog = require('@arso-project/sonar-tantivy')
 const Relations = require('@arso-project/sonar-view-relations')
 
 const Config = require('./config')
-const Island = require('./island')
+const Collection = require('./collection')
 
 const ISLAND_NAME_REGEX = /^[a-zA-Z0-9-_]{3,32}$/
 
-module.exports = class IslandStore extends Nanoresource {
+module.exports = class CollectionStore extends Nanoresource {
   constructor (storage, opts = {}) {
     super()
     storage = storage || p.join(os.homedir(), '.sonar')
@@ -35,7 +35,7 @@ module.exports = class IslandStore extends Nanoresource {
 
     // Actual initialization of resources happens in this._open()
 
-    this.islands = {}
+    this.collections = {}
     this.ready = this.open.bind(this)
     this.open()
   }
@@ -110,11 +110,11 @@ module.exports = class IslandStore extends Nanoresource {
   }
 
   _onready (config, cb) {
-    if (config.islands) {
-      for (const info of Object.values(config.islands)) {
-        const island = this._openIsland(info.key, info)
+    if (config.collections) {
+      for (const info of Object.values(config.collections)) {
+        const collection = this._openCollection(info.key, info)
         if (info.share) {
-          island.ready(() => this.share(island.key))
+          collection.ready(() => this.share(collection.key))
         }
       }
     }
@@ -125,24 +125,24 @@ module.exports = class IslandStore extends Nanoresource {
   status (cb) {
     if (!this.opened) return this.ready(() => this.status(cb))
 
-    const status = { storage: this.storagePath, islands: {} }
+    const status = { storage: this.storagePath, collections: {} }
 
-    // TODO: This opens all islands. Likely we do not want to do this in all cases.
-    let pending = Object.keys(this.islands).length + 1
-    for (const [key, island] of Object.entries(this.islands)) {
-      island.ready(() => {
-        const islandConfig = this.getIslandConfig(key)
-        island.status((err, islandStatus) => {
+    // TODO: This opens all collections. Likely we do not want to do this in all cases.
+    let pending = Object.keys(this.collections).length + 1
+    for (const [key, collection] of Object.entries(this.collections)) {
+      collection.ready(() => {
+        const collectionConfig = this.getCollectionConfig(key)
+        collection.status((err, collectionStatus) => {
           if (err) return cb(err)
-          status.islands[key] = {
+          status.collections[key] = {
             key,
             network: {},
-            ...islandConfig,
-            // config: islandConfig,
-            ...islandStatus
+            ...collectionConfig,
+            // config: collectionConfig,
+            ...collectionStatus
           }
           if (this.network) {
-            status.islands[key].network = this.network.status(island.discoveryKey)
+            status.collections[key].network = this.network.status(collection.discoveryKey)
           }
           finish()
         })
@@ -162,34 +162,34 @@ module.exports = class IslandStore extends Nanoresource {
       opts = {}
     }
     let { key, alias } = opts
-    if (!name || !name.match(ISLAND_NAME_REGEX)) return cb(new Error('invalid island name'))
+    if (!name || !name.match(ISLAND_NAME_REGEX)) return cb(new Error('invalid collection name'))
     if (!key && !alias) alias = name
     if (!alias) return cb(new Error('alias is required'))
     if (!alias.match(ISLAND_NAME_REGEX)) return cb(new Error('invalid alias'))
 
     // TODO: Validate key.
     if (key) key = Buffer.from(key, 'hex')
-    this._islandByName(name, (err, info) => {
+    this._collectionByName(name, (err, info) => {
       if (err) return cb(err)
-      if (info) return cb(new Error('island exists'))
+      if (info) return cb(new Error('collection exists'))
       this._create(name, { key, alias }, cb)
     })
   }
 
   _create (name, { key, alias }, cb = noop) {
-    const island = this._openIsland(key || null, { name, alias })
-    island.ready(err => {
+    const collection = this._openCollection(key || null, { name, alias })
+    collection.ready(err => {
       if (err) return cb(err)
       const info = {
-        key: hex(island.key),
+        key: hex(collection.key),
         name,
         alias,
-        // TODO: Add opt to not share island when creating
+        // TODO: Add opt to not share collection when creating
         share: true
       }
-      this.updateIsland(island.key, info, err => {
+      this.updateCollection(collection.key, info, err => {
         if (err) return cb(err)
-        cb(null, island)
+        cb(null, collection)
       })
     })
   }
@@ -199,36 +199,36 @@ module.exports = class IslandStore extends Nanoresource {
 
     if (isKey(keyOrName)) {
       const key = hex(keyOrName)
-      this._islandByKey(key, (err, info) => {
+      this._collectionByKey(key, (err, info) => {
         if (err) return cb(err)
-        if (!info) return cb(new Error(`island ${keyOrName} does not exist.`))
-        const island = this._openIsland(info.key, info)
-        island.ready(() => cb(null, island))
+        if (!info) return cb(new Error(`collection ${keyOrName} does not exist.`))
+        const collection = this._openCollection(info.key, info)
+        collection.ready(() => cb(null, collection))
       })
     } else {
-      this._islandByName(keyOrName, (err, info) => {
+      this._collectionByName(keyOrName, (err, info) => {
         if (err) return cb(err)
-        if (!info) return cb(new Error(`island ${keyOrName} does not exist.`))
-        const island = this._openIsland(info.key, info)
-        island.ready(() => cb(null, island))
+        if (!info) return cb(new Error(`collection ${keyOrName} does not exist.`))
+        const collection = this._openCollection(info.key, info)
+        collection.ready(() => cb(null, collection))
       })
     }
   }
 
   list (cb) {
     this.config.load((err, config) => {
-      err ? cb(err) : cb(null, config.islands)
+      err ? cb(err) : cb(null, config.collections)
     })
   }
 
   share (key) {
     if (!this.network) return
     key = hex(key)
-    if (!this.islands[key]) return
-    const island = this.islands[key]
-    this.network.join(island.discoveryKey)
-    debug('join swarm for discoveryKey %s', island.discoveryKey.toString('hex'))
-    island.fs.status((err, info) => {
+    if (!this.collections[key]) return
+    const collection = this.collections[key]
+    this.network.join(collection.discoveryKey)
+    debug('join swarm for discoveryKey %s', collection.discoveryKey.toString('hex'))
+    collection.fs.status((err, info) => {
       if (err) return
       for (const { discoveryKey } of Object.values(info)) {
         this.network.join(Buffer.from(discoveryKey, 'hex'))
@@ -239,15 +239,15 @@ module.exports = class IslandStore extends Nanoresource {
   unshare (key, cb) {
     if (!this.network) return
     key = hex(key)
-    if (!this.islands[key]) return
-    const island = this.islands[key]
-    debug('leave swarm for discoveryKey %s', island.discoveryKey.toString('hex'))
-    this.network.leave(island.discoveryKey)
+    if (!this.collections[key]) return
+    const collection = this.collections[key]
+    debug('leave swarm for discoveryKey %s', collection.discoveryKey.toString('hex'))
+    this.network.leave(collection.discoveryKey)
   }
 
-  updateIsland (key, info, cb) {
+  updateCollection (key, info, cb) {
     key = hex(key)
-    if (!this.islands[key]) return cb(new Error('Island does not exist'))
+    if (!this.collections[key]) return cb(new Error('Collection does not exist'))
     if (info.share !== undefined) {
       if (info.share) {
         this.share(key)
@@ -256,16 +256,16 @@ module.exports = class IslandStore extends Nanoresource {
       }
     }
     this.config.update(config => {
-      if (!config.islands) config.islands = {}
-      if (!config.islands[key]) config.islands[key] = {}
-      config.islands[key] = { ...config.islands[key], ...info }
+      if (!config.collections) config.collections = {}
+      if (!config.collections[key]) config.collections[key] = {}
+      config.collections[key] = { ...config.collections[key], ...info }
       return config
     }, cb)
   }
 
-  getIslandConfig (key) {
+  getCollectionConfig (key) {
     try {
-      return this.config.getKey(['islands', key])
+      return this.config.getKey(['collections', key])
     } catch (err) {
       return {}
     }
@@ -275,15 +275,15 @@ module.exports = class IslandStore extends Nanoresource {
     const self = this
     this.emit('close')
 
-    let islandspending = Object.values(this.islands).length + 1
-    debug(`waiting for ${islandspending - 1} islands to close`)
-    for (const island of Object.values(this.islands)) {
-      island.close(onislandclosed)
+    let collectionspending = Object.values(this.collections).length + 1
+    debug(`waiting for ${collectionspending - 1} collections to close`)
+    for (const collection of Object.values(this.collections)) {
+      collection.close(oncollectionclosed)
     }
-    onislandclosed()
+    oncollectionclosed()
 
-    function onislandclosed () {
-      if (--islandspending !== 0) return
+    function oncollectionclosed () {
+      if (--collectionspending !== 0) return
 
       let pending = 0
       if (self.network) {
@@ -313,27 +313,27 @@ module.exports = class IslandStore extends Nanoresource {
     }
   }
 
-  _islandByName (name, cb) {
+  _collectionByName (name, cb) {
     this.config.load((err, config) => {
-      if (err || !config.islands) return cb(err)
-      const result = Object.values(config.islands).find(v => v.name === name)
+      if (err || !config.collections) return cb(err)
+      const result = Object.values(config.collections).find(v => v.name === name)
       return cb(null, result)
     })
   }
 
-  _islandByKey (key, cb) {
+  _collectionByKey (key, cb) {
     this.config.load((err, config) => {
-      if (err || !config.islands) return cb(err)
-      const result = config.islands[key]
+      if (err || !config.collections) return cb(err)
+      const result = config.collections[key]
       cb(null, result)
     })
   }
 
-  _openIsland (key, opts) {
-    if (typeof opts === 'function') return this._openIsland(key, {}, opts)
+  _openCollection (key, opts) {
+    if (typeof opts === 'function') return this._openCollection(key, {}, opts)
     let create = false
 
-    // No key means create a new island. We need the key for the storage path,
+    // No key means create a new collection. We need the key for the storage path,
     // so first create a new writable feed.
     if (!key) {
       const feed = this.corestore.get()
@@ -342,7 +342,7 @@ module.exports = class IslandStore extends Nanoresource {
     }
 
     key = hex(key)
-    if (this.islands[key]) return this.islands[key]
+    if (this.collections[key]) return this.collections[key]
 
     const scopeOpts = {
       name: opts.name,
@@ -354,7 +354,7 @@ module.exports = class IslandStore extends Nanoresource {
     // const scope = this.scopes.createScopeWithRootFeed(scopeOpts)
     const scope = this.scopes.get(scopeOpts)
 
-    const islandOpts = {
+    const collectionOpts = {
       ...opts,
       key,
       scope,
@@ -362,19 +362,19 @@ module.exports = class IslandStore extends Nanoresource {
       relations: this.relations,
       level: sub(this.level, key)
     }
-    const island = new Island(key, islandOpts)
+    const collection = new Collection(key, collectionOpts)
 
-    this.islands[key] = island
+    this.collections[key] = collection
 
     if (create) {
-      island.ready(() => {
-        island.init(() => {
+      collection.ready(() => {
+        collection.init(() => {
           // TODO: do anything?
-          debug('init island key %s name %s alias %s', island.key.toString('hex'), opts.name, opts.alias)
+          debug('init collection key %s name %s alias %s', collection.key.toString('hex'), opts.name, opts.alias)
         })
       })
     }
-    return island
+    return collection
   }
 }
 

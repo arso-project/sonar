@@ -2,7 +2,7 @@ import React from 'react'
 import { Switch, Route } from 'react-router-dom'
 
 import Start from './pages/Start'
-import Islands from './pages/Islands'
+import Collections from './pages/Collections'
 import Config from './pages/Config'
 
 import Activity from './pages/Activity'
@@ -17,7 +17,7 @@ export default function Pageroutes () {
   return (
     <Switch>
       <Route exact path='/'><Start /></Route>
-      <Route path='/islands'><Islands /></Route>
+      <Route path='/collections'><Collections /></Route>
       <Route path='/config'><Config /></Route>
       <Route path='/token/:token'><Config /></Route>
 

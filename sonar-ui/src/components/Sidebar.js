@@ -10,30 +10,30 @@ import {
 import config from '../lib/config'
 import client from '../lib/client'
 import useAsync from '../hooks/use-async'
-import { IslandName } from '../components/Island'
+import { CollectionName } from '../components/Collection'
 
-const island = config.get('island')
+const collection = config.get('collection')
 
 export function SidebarContent (props) {
-  const { data: island } = useAsync(() => client.getCurrentIsland())
+  const { data: collection } = useAsync(() => client.getCurrentCollection())
   return (
     <Fragment>
       <List>
         <NavLink exact to='/'>Start</NavLink>
         <NavLink to='/config'>Config</NavLink>
-        <NavLink to='/islands'>Islands</NavLink>
-        {island && (
-          <IslandMenu />
+        <NavLink to='/collections'>Collections</NavLink>
+        {collection && (
+          <CollectionMenu />
         )}
       </List>
     </Fragment>
   )
 }
 
-function IslandMenu (props) {
+function CollectionMenu (props) {
   return (
     <Fragment>
-      <MenuHeading><IslandName /></MenuHeading>
+      <MenuHeading><CollectionName /></MenuHeading>
       <NavLink to='/activity'>Activity</NavLink>
       <NavLink to='/search'>Search</NavLink>
       <NavLink to='/fileimport'>Import files</NavLink>

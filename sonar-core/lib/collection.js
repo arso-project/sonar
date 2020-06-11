@@ -1,7 +1,7 @@
 const pretty = require('pretty-hash')
 const datEncoding = require('dat-encoding')
 const sub = require('subleveldown')
-const debug = require('debug')('sonar-core:island')
+const debug = require('debug')('sonar-core:collection')
 const hcrypto = require('hypercore-crypto')
 const Nanoresource = require('nanoresource/emitter')
 
@@ -12,7 +12,7 @@ const Fs = require('./fs')
 
 const searchView = require('../views/search')
 
-module.exports = class Island extends Nanoresource {
+module.exports = class Collection extends Nanoresource {
   constructor (key, opts) {
     super()
     const self = this
@@ -21,7 +21,7 @@ module.exports = class Island extends Nanoresource {
 
     key = datEncoding.decode(key)
 
-    debug('island open %s (name %s, alias %s)', pretty(key), opts.name, opts.alias)
+    debug('collection open %s (name %s, alias %s)', pretty(key), opts.name, opts.alias)
 
     this.scope = opts.scope
     this.corestore = opts.scope.corestore
@@ -93,7 +93,7 @@ module.exports = class Island extends Nanoresource {
 
       // If the scope is opened for the first time, it is empty. Add our initial feeds.
       if (!this.scope.list().length) {
-        // Add a root feed with the island key.
+        // Add a root feed with the collection key.
         this._root = this.scope.addFeed({ key: this.key, name: 'root' })
         this._root.ready((err) => {
           if (err) return cb(err)
@@ -118,7 +118,7 @@ module.exports = class Island extends Nanoresource {
     function onfeedsinit () {
       self.fs.ready(() => {
         debug(
-          'opened island %s (dkey %s, feeds %d)',
+          'opened collection %s (dkey %s, feeds %d)',
           pretty(self.db.key),
           pretty(self.db.discoveryKey),
           self.scope.status().feeds.length
@@ -134,7 +134,7 @@ module.exports = class Island extends Nanoresource {
     }
     if (this.opts.indexCatalog) {
       this.db.use('search', searchView, {
-        island: this,
+        collection: this,
         indexCatalog: this.opts.indexCatalog
       })
     }
@@ -218,7 +218,7 @@ module.exports = class Island extends Nanoresource {
     })
   }
 
-  // Return some info on the island synchronously.
+  // Return some info on the collection synchronously.
   status (cb) {
     if (!this.opened) return cb(null, { opened: false, name: this.name })
     const localKey = datEncoding.encode(this._local.key)

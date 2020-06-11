@@ -2,7 +2,7 @@ const tape = require('tape')
 const tmp = require('temporary-directory')
 const { runAll } = require('./lib/util')
 
-const { IslandStore } = require('..')
+const { CollectionStore } = require('..')
 
 function createStore (opts, cb) {
   if (typeof opts === 'function') {
@@ -12,13 +12,13 @@ function createStore (opts, cb) {
   tmp('sonar-test', ondircreated)
   function ondircreated (err, dir, cleanupTempdir) {
     if (err) return cb(err)
-    const islands = new IslandStore(dir, opts)
-    islands.ready(err => {
+    const collections = new CollectionStore(dir, opts)
+    collections.ready(err => {
       if (err) return cb(err)
-      cb(null, islands, cleanup)
+      cb(null, collections, cleanup)
     })
     function cleanup (cb) {
-      islands.close(() => {
+      collections.close(() => {
         cleanupTempdir(err => {
           cb(err)
         })
@@ -28,8 +28,8 @@ function createStore (opts, cb) {
 }
 
 tape('open close', t => {
-  createStore({ network: false }, (err, islands, cleanup) => {
-    t.true(islands.opened, 'opened property is set')
+  createStore({ network: false }, (err, collections, cleanup) => {
+    t.true(collections.opened, 'opened property is set')
     t.error(err)
     cleanup(err => {
       t.error(err)
@@ -39,10 +39,10 @@ tape('open close', t => {
 })
 
 tape('batch and query', t => {
-  createStore({ network: false }, (err, islands, cleanup) => {
+  createStore({ network: false }, (err, collections, cleanup) => {
     t.error(err, 'tempdir ok')
-    islands.create('first', (err, island) => {
-      t.error(err, 'island created')
+    collections.create('first', (err, collection) => {
+      t.error(err, 'collection created')
 
       const records = [
         { title: 'Hello world', body: 'so rough' },
@@ -52,14 +52,14 @@ tape('batch and query', t => {
       runAll([
         next => {
           const batch = records.map(value => ({ op: 'put', schema: 'doc', value }))
-          island.batch(batch, (err, res) => {
+          collection.batch(batch, (err, res) => {
             t.error(err, 'batch ok')
             t.equal(res.length, 2)
             next()
           })
         },
         next => {
-          island.query('search', 'hello', { waitForSync: true }, (err, res) => {
+          collection.query('search', 'hello', { waitForSync: true }, (err, res) => {
             t.error(err)
             t.equal(res.length, 2, 'hello search')
             const titles = res.map(r => r.value.title).sort()
@@ -68,7 +68,7 @@ tape('batch and query', t => {
           })
         },
         next => {
-          island.query('search', 'moon', (err, res) => {
+          collection.query('search', 'moon', (err, res) => {
             t.error(err)
             t.equal(res.length, 1, 'moon search')
             const titles = res.map(r => r.value.title).sort()
@@ -77,7 +77,7 @@ tape('batch and query', t => {
           })
         },
         next => {
-          island.query('records', { schema: 'doc' }, (err, res) => {
+          collection.query('records', { schema: 'doc' }, (err, res) => {
             t.error(err)
             t.equal(res.length, 2)
             next()
@@ -90,17 +90,17 @@ tape('batch and query', t => {
 })
 
 tape('put and get', t => {
-  createStore({ network: false }, (err, islands, cleanup) => {
+  createStore({ network: false }, (err, collections, cleanup) => {
     t.error(err, 'tempdir ok')
-    islands.create('default', (err, island) => {
+    collections.create('default', (err, collection) => {
       t.error(err)
-      // island.status((err, status) => {
+      // collection.status((err, status) => {
       //   console.log('STATUS', err, status)
       //   t.end()
       // })
-      island.put({ schema: 'foo', value: { title: 'hello' } }, (err, id) => {
+      collection.put({ schema: 'foo', value: { title: 'hello' } }, (err, id) => {
         t.error(err)
-        island.get({ id }, { waitForSync: true }, (err, records) => {
+        collection.get({ id }, { waitForSync: true }, (err, records) => {
           t.error(err)
           t.equal(records.length, 1)
           t.equal(records[0].value.title, 'hello')
@@ -111,13 +111,13 @@ tape('put and get', t => {
   })
 })
 tape('put and get', t => {
-  createStore({ network: false }, (err, islands, cleanup) => {
+  createStore({ network: false }, (err, collections, cleanup) => {
     t.error(err, 'tempdir ok')
-    islands.create('default', (err, island) => {
+    collections.create('default', (err, collection) => {
       t.error(err)
-      island.put({ schema: 'foo', value: { title: 'hello' } }, (err, id) => {
+      collection.put({ schema: 'foo', value: { title: 'hello' } }, (err, id) => {
         t.error(err)
-        island.get({ id }, { waitForSync: true }, (err, records) => {
+        collection.get({ id }, { waitForSync: true }, (err, records) => {
           t.error(err)
           t.equal(records.length, 1)
           t.equal(records[0].value.title, 'hello')
@@ -128,24 +128,24 @@ tape('put and get', t => {
   })
 })
 
-tape('share and unshare islands', t => {
-  createStore({ network: true }, (err, islands, cleanup) => {
+tape('share and unshare collections', t => {
+  createStore({ network: true }, (err, collections, cleanup) => {
     t.error(err, 'tempdir ok')
-    islands.create('island', (err, island) => {
-      t.error(err, 'island created')
-      const hkey = island.key.toString('hex')
-      const config = islands.getIslandConfig(hkey)
-      t.true(config, 'island config exists')
-      t.true(config.share, 'island config init shared')
-      const status = islands.network.status(island.discoveryKey)
-      t.equal(status.announce, true, 'island network init shared')
-      t.equal(status.lookup, true, 'island network init shared')
-      islands.updateIsland(hkey, { share: false }, (err) => {
+    collections.create('collection', (err, collection) => {
+      t.error(err, 'collection created')
+      const hkey = collection.key.toString('hex')
+      const config = collections.getCollectionConfig(hkey)
+      t.true(config, 'collection config exists')
+      t.true(config.share, 'collection config init shared')
+      const status = collections.network.status(collection.discoveryKey)
+      t.equal(status.announce, true, 'collection network init shared')
+      t.equal(status.lookup, true, 'collection network init shared')
+      collections.updateCollection(hkey, { share: false }, (err) => {
         t.error(err, 'no error at update')
-        const config = islands.getIslandConfig(hkey)
-        t.equal(config.share, false, 'island updated config not shared')
-        const status = islands.network.status(island.discoveryKey)
-        t.equal(status, null, 'island updated network not shared')
+        const config = collections.getCollectionConfig(hkey)
+        t.equal(config.share, false, 'collection updated config not shared')
+        const status = collections.network.status(collection.discoveryKey)
+        t.equal(status, null, 'collection updated network not shared')
         cleanup(err => {
           t.error(err)
           t.end()
@@ -155,15 +155,15 @@ tape('share and unshare islands', t => {
   })
 })
 
-tape('close island', t => {
-  createStore({ network: false }, (err, islands, cleanup) => {
+tape('close collection', t => {
+  createStore({ network: false }, (err, collections, cleanup) => {
     t.error(err, 'tempdir ok')
-    islands.create('island', (err, island) => {
-      t.error(err, 'island created')
-      t.true(island.opened, 'opened property set')
-      island.close(err => {
-        t.error(err, 'island closed')
-        t.true(island.closed, 'closed property set')
+    collections.create('collection', (err, collection) => {
+      t.error(err, 'collection created')
+      t.true(collection.opened, 'opened property set')
+      collection.close(err => {
+        t.error(err, 'collection closed')
+        t.true(collection.closed, 'closed property set')
         cleanup(err => {
           t.error(err)
           t.end()
@@ -173,20 +173,20 @@ tape('close island', t => {
   })
 })
 
-tape('create island with same name', t => {
-  createStore({ network: false }, (err, islands, cleanup) => {
+tape('create collection with same name', t => {
+  createStore({ network: false }, (err, collections, cleanup) => {
     t.error(err)
     runAll([
       next => {
-        islands.create('first', (err, island) => {
-          t.error(err, 'no error for first island')
+        collections.create('first', (err, collection) => {
+          t.error(err, 'no error for first collection')
           next()
         })
       },
       next => {
-        islands.create('first', (err, island) => {
+        collections.create('first', (err, collection) => {
           t.ok(err, 'error with same name')
-          t.equal(err.message, 'island exists', 'correct error message')
+          t.equal(err.message, 'collection exists', 'correct error message')
           next()
         })
       },
@@ -196,13 +196,13 @@ tape('create island with same name', t => {
   })
 })
 
-tape('query empty island', t => {
-  createStore({ network: false }, (err, islands, cleanup) => {
+tape('query empty collection', t => {
+  createStore({ network: false }, (err, collections, cleanup) => {
     t.error(err)
-    islands.create('island', (err, island) => {
+    collections.create('collection', (err, collection) => {
       t.error(err)
-      island.query('search', 'anything', { waitForSync: true }, (err, res) => {
-        t.error(err, 'query on empty island')
+      collection.query('search', 'anything', { waitForSync: true }, (err, res) => {
+        t.error(err, 'query on empty collection')
         t.deepEquals(res, [], 'empty result')
         cleanup(err => {
           t.error(err)

@@ -21,47 +21,47 @@ const client = new Client()
 Create a new SonarClient. `opts` is an object with optional keys:
 
 - `endpoint`: The API endpoint to talk to. Default is `http://localhost:9191/api`
-- `island`: The island to talk to. Default is `default`.
+- `collection`: The collection to talk to. Default is `default`.
 - `cache`: Cache records locally in memory. Default is `true`
 
-### Islands
+### Collections
 
 #### `await client.info()`
 
-Get a list of all islands available on this server.
+Get a list of all collections available on this server.
 
-#### `await client.createIsland(name, [opts])`
+#### `await client.createCollection(name, [opts])`
 
-Creates a island with name `name` on the Sonar server. The name may not contain whitespaces. `opts` is an optional object with:
+Creates a collection with name `name` on the Sonar server. The name may not contain whitespaces. `opts` is an optional object with:
 
-- `key`: Hex string of an existing island. Will then sync this island instead of creating a new, empty island.
-- `alias`: When setting key, `alias` is required and is your nick name within this island.
+- `key`: Hex string of an existing collection. Will then sync this collection instead of creating a new, empty collection.
+- `alias`: When setting key, `alias` is required and is your nick name within this collection.
 
-#### `await client.updateIsland(config, [key])`
+#### `await client.updateCollection(config, [key])`
 
-Updates the config of the current island or the island with the optional parameter *key*.
+Updates the config of the current collection or the collection with the optional parameter *key*.
 
-Currently only the config option *share* (boolean) is supported that controls if an island is shared via p2p.
+Currently only the config option *share* (boolean) is supported that controls if an collection is shared via p2p.
 
 ### Schemas
 
 #### `await client.getSchemas()`
 
-Get all schemas in the current island.
+Get all schemas in the current collection.
 
 #### `await client.getSchema(schemaName)`
 
-Get schema `schemaName` in this island. Throws if the schema does not exist.
+Get schema `schemaName` in this collection. Throws if the schema does not exist.
 
 #### `await client.putSchema(schemaName, schema)`
 
-Add an new schema to the island. `schemaName` is a string, `schema` a [JSON schema](https://json-schema.org/) object.
+Add an new schema to the collection. `schemaName` is a string, `schema` a [JSON schema](https://json-schema.org/) object.
 
 ### Sources
 
 #### `client.putSource(key, info)`
 
-Adds a source new source with key `key` to the island. `key` should be the key of the local writer of a clone of this island.
+Adds a source new source with key `key` to the collection. `key` should be the key of the local writer of a clone of this collection.
 
 ### Database
 
@@ -104,19 +104,19 @@ Wait until all running operations are finished. This returns once all currently 
 
 #### `await client.getDrives()`
 
-Get a list of Hyperdrives that are part of this island.
+Get a list of Hyperdrives that are part of this collection.
 
 #### `await client.writeFile(path, file, [opts])`
 
 Write a file. 
-* `path`: The path to the file. The first path segment must be the key or alias of a hyperdrive registered in this island.
+* `path`: The path to the file. The first path segment must be the key or alias of a hyperdrive registered in this collection.
 * `file`: Either a readable stream or a buffer.
 
 #### `await client.readFile(path, [opts])`
 
 Read a file. 
 
-* `path`: The path to the file. The first path segment must be the key or alias of a hyperdrive registered in this island.
+* `path`: The path to the file. The first path segment must be the key or alias of a hyperdrive registered in this collection.
 
 Returns a readable stream to the file. If `opts.stream` is false returns a Buffer.
 
@@ -177,7 +177,7 @@ Pull the subscription `name`. Returns an object with a batch of messages:
 
 #### `await client.ackSubscription(name, lseq)`
 
-Set the subscription cursor to `lseq`. Note that you cannot acknowledge individual messages, but set the cursor (position in local total log of an island). The `lseq` is available on each record. Usually, you want to process messages linearily as returned from `pullSubscription` and set the cursor after each processed message.
+Set the subscription cursor to `lseq`. Note that you cannot acknowledge individual messages, but set the cursor (position in local total log of an collection). The `lseq` is available on each record. Usually, you want to process messages linearily as returned from `pullSubscription` and set the cursor after each processed message.
 
 ### Commands
 

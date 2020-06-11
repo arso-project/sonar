@@ -13,7 +13,7 @@ const args = yargs
   .command(require('./bin/command.js'))
   .command(require('./bin/db.js'))
   .command(require('./bin/fs.js'))
-  .command(require('./bin/island.js'))
+  .command(require('./bin/collection.js'))
   .command(require('./bin/search.js'))
   .command(require('./bin/status.js'))
   .help()
@@ -37,9 +37,9 @@ const args = yargs
       describe: 'api endpoint url',
       default: process.env.SONAR_ENDPOINT || DEFAULT_ENDPOINT
     },
-    island: {
+    collection: {
       alias: 'i',
-      describe: 'island key or name',
+      describe: 'collection key or name',
       default: process.env.SONAR_ISLAND || DEFAULT_ISLAND
     }
   })

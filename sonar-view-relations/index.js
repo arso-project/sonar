@@ -11,28 +11,28 @@ module.exports = class Relations {
     // this.sparql = new SparqlEngine(this.store)
   }
 
-  createView (island) {
+  createView (collection) {
     const self = this
     return () => ({
       map (messages, cb) {
-        self._map(island, messages, cb)
+        self._map(collection, messages, cb)
       },
       reset (cb) {
-        const match = { graph: island.key.toString('hex') }
+        const match = { graph: collection.key.toString('hex') }
         self.store.del(match, cb)
       },
       api: {
         query (kappa, query, opts) {
-          return self._query(island, query, opts)
+          return self._query(collection, query, opts)
         }
       }
     })
   }
 
-  _map (island, messages, cb) {
+  _map (collection, messages, cb) {
     const quads = []
     for (const message of messages) {
-      quads.push(...messageToQuads(island, message))
+      quads.push(...messageToQuads(collection, message))
     }
     if (!quads.length) return cb()
     this.store.put(quads, (err) => {
@@ -40,13 +40,13 @@ module.exports = class Relations {
     })
   }
 
-  _query (island, query, cb) {
-    query.graph = island.key.toString('hex')
+  _query (collection, query, cb) {
+    query.graph = collection.key.toString('hex')
     const quadStream = this.store.getStream(query)
     const transform = new Transform({
       objectMode: true,
       transform (quad, _enc, next) {
-        island.get({ id: quad.subject }, (err, records) => {
+        collection.get({ id: quad.subject }, (err, records) => {
           if (err || !records.length) return next()
           const record = records[0]
           this.push({
@@ -65,13 +65,13 @@ module.exports = class Relations {
   }
 }
 
-function messageToQuads (island, message, cb) {
-  const schema = island.getSchema(message.schema)
+function messageToQuads (collection, message, cb) {
+  const schema = collection.getSchema(message.schema)
   if (!schema) return []
   // console.log('map', message.id, message.schema, schema)
   const quads = []
   const subject = message.id
-  const graph = island.key.toString('hex')
+  const graph = collection.key.toString('hex')
   for (const { field, name, value } of fields(schema, message)) {
     // console.log({ name, value, field })
     if (!field.index || !field.index.relation) continue
