@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "test": "tape test/*.js",
-    "doc": "jsdoc2md --files lib/client.js lib/collection.js lib/fs.js --param-list-format list --separators --partial doc-gen/scope.hbs --helper doc-gen/helpers.js > api.md"
+    "doc:md": "jsdoc2md --files lib/client.js lib/collection.js lib/fs.js --param-list-format list --separators --partial doc-gen/scope.hbs --helper doc-gen/helpers.js > api.md",
+    "doc:html": "jsdoc --configure doc-gen/jsdoc.json --verbose && mv apidocs/@arso-project/sonar-client/*/* apidocs && rm -r apidocs/@arso-project"
   },
   "author": "",
   "license": "GPL-3.0",
@@ -20,7 +21,9 @@
   },
   "devDependencies": {
     "@arso-project/sonar-server": "^0.3.0-alpha.7",
-    "jsdoc-to-markdown": "^5.0.2",
+    "jsdoc": "^3.6.4",
+    "jsdoc-to-markdown": "^6.0",
+    "minami": "^1.2.3",
     "nanobench-utils": "^0.1.1",
     "tape": "^5.0",
     "tape-plus": "^1.0.0",
