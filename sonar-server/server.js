@@ -80,6 +80,10 @@ module.exports = function SonarServer (opts = {}) {
   const uiStaticPath = p.join(p.dirname(require.resolve('@arso-project/sonar-ui/package.json')), 'build', 'dist')
   app.use(express.static(uiStaticPath))
 
+  // Include the client api docs at /api-docs-client
+  const clientApiDocsPath = p.join(p.dirname(require.resolve('@arso-project/sonar-client/package.json')), 'apidocs')
+  app.use('/api-docs-client', express.static(clientApiDocsPath))
+
   // If in dev mode, serve the webpack dev middleware for the UI at /ui-dev
   if (opts.dev) {
     const devMiddleware = require('@arso-project/sonar-ui/express-dev')
