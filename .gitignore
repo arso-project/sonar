@@ -8,3 +8,5 @@ pnpm-debug.log
 .data*
 _old
 SANDBOX
+yarn.lock
+yarn-error.log
