@@ -1,7 +1,7 @@
 const { HYPERDRIVE_SCHEME } = require('./constants')
 const parseUrl = require('parse-dat-url')
 
-module.exports = class Fs {
+class Fs {
   /**
    * File system for a collection.
    *
@@ -125,3 +125,5 @@ module.exports = class Fs {
     return this.fetch(path)
   }
 }
+
+module.exports = Fs

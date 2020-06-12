@@ -3,7 +3,7 @@ const Schema = require('./schema')
 const Fs = require('./fs')
 const Resources = require('./resources')
 
-module.exports = class Collection {
+class Collection {
   /**
    * Create a collection instance
    *
@@ -154,3 +154,5 @@ module.exports = class Collection {
     return this._client.fetch(path, opts)
   }
 }
+
+module.exports = Collection

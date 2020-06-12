@@ -9,7 +9,7 @@ const {
   DEFAULT_ENDPOINT
 } = require('./constants')
 
-module.exports = class Client {
+class Client {
   /**
    * Creates a new Client to communicate with a Sonar server.
    *
@@ -175,3 +175,5 @@ function isJsonResponse (res) {
   if (!header) return false
   return header.indexOf('application/json') !== -1
 }
+
+module.exports = Client
