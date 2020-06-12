@@ -54,7 +54,7 @@ function startServer (argv) {
     process.exit(code)
   })
 
-  onexit((cb) => {
+  onexit((cb = noop) => {
     closing = true
     if (proc.killed || proc.exitCode !== null) return cb()
     proc.once('exit', cb)
