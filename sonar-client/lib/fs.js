@@ -1,6 +1,9 @@
 const { HYPERDRIVE_SCHEME } = require('./constants')
 const parseUrl = require('parse-dat-url')
 
+/**
+ * File system for a collection.
+ */
 class Fs {
   /**
    * File system for a collection.
@@ -48,7 +51,7 @@ class Fs {
    *
    * @async
    * @param {string} path - A hyper:// URL or a relative path within the collection's file system.
-   * @param {object} [opts} - Options
+   * @param {object} [opts] - Options
    * @param {string} [opts.includeStats=true] - Include metadata for each file
    * @throws Will throw if the path is not found or is not a directory.
    * @return {Promise<Array<object>>} An array of objects with file metadata.

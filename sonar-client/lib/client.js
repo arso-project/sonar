@@ -37,7 +37,7 @@ class Client {
    * Closes the client and all commands that maybe active.
    *
    * @async
-   * @return {Promise} [TODO:description]
+   * @return {Promise}
    */
   async close () {
     return this.commands.close()
@@ -47,7 +47,7 @@ class Client {
    * Get a list of all collections available on this server.
    *
    * @async
-   * @return {Promise} [TODO:description]
+   * @return {Promise.<object[]>} Promise that resolves to an array of collection info objects.
    */
   async listCollections () {
     const info = await this.fetch('/_info')
