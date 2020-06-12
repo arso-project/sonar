@@ -7,6 +7,7 @@ module.exports = class Collection {
   /**
    * Create a collection instance
    *
+   * @constructor
    * @param {Client} client - A client instance.
    * @param {string} name - Name of the collection.
    * @return {Collection}
@@ -36,7 +37,7 @@ module.exports = class Collection {
    * Populates info and schemas for this collection from server.
    *
    * @async
-   * @return {Promise<[TODO:type]>} [TODO:description]
+   * @return {Promise} [TODO:description]
    */
   async open () {
     const info = await this.fetch('/')
@@ -57,7 +58,7 @@ module.exports = class Collection {
    *                         For search: Either a "string" for a simple full-text search, or an tantivy query object (to be documented)
    *                         For indexes: { schema, prop, value, from, to, reverse, limit } (to be documented)
    * @param {object} opts - [TODO:description]
-   * @return {Promise<[TODO:type]>} [TODO:description]
+   * @return {Promise} [TODO:description]
    */
   async query (name, args, opts) {
     if (this._cacheid) {
@@ -85,7 +86,7 @@ module.exports = class Collection {
    * @param {string} record.schema - The schema of the record.
    * @param {string} [record.id] - The entity id of the record. If empoty an id will be created.
    * @param {object} record.value - Value of the record.
-   * @return {Promise<[TODO:type]>} [TODO:description]
+   * @return {Promise} [TODO:description]
    */
   async put (record) {
     return this.fetch('db', {
@@ -98,9 +99,9 @@ module.exports = class Collection {
    * Get records by schema and id. Returns an array of matching records.
    *
    * @async
-   * @param {[TODO:type]} req - [TODO:description]
-   * @param {[TODO:type]} opts - [TODO:description]
-   * @return {Promise<[TODO:type]>} [TODO:description]
+   * @param {object} req - [TODO:description]
+   * @param {object} [opts] - [TODO:description]
+   * @return {Promise} [TODO:description]
    */
   async get (req, opts) {
     // TODO: Implement RecordCache.has
@@ -114,8 +115,8 @@ module.exports = class Collection {
    * Deletes a record.
    *
    * @async
-   * @param {[TODO:type]} record - [TODO:description]
-   * @return {Promise<[TODO:type]>} [TODO:description]
+   * @param {object} record - [TODO:description]
+   * @return {Promise} [TODO:description]
    */
   async del (record) {
     return this.fetch('/db/' + record.id, {
@@ -129,7 +130,7 @@ module.exports = class Collection {
    *
    * @async
    * @param {object} schema - [TODO:description]
-   * @return {Promise<[TODO:type]>} [TODO:description]
+   * @return {Promise} [TODO:description]
    */
   async putSchema (schema) {
     return this.fetch('/schema', {
@@ -142,7 +143,7 @@ module.exports = class Collection {
    * [TODO:description]
    *
    * @async
-   * @return {Promise<[TODO:type]>} [TODO:description]
+   * @return {Promise} [TODO:description]
    */
   async sync () {
     return this.fetch('/sync')

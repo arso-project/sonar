@@ -13,6 +13,7 @@ module.exports = class Client {
   /**
    * Creates a new Client to communicate with a Sonar server.
    *
+   * @constructor
    * @param {object} [opts] - Optional options.
    * @param {string} [opts.endpoint=http://localhost:9191/api] - The API endpoint to talk to.
    * @param {string} [opts.id] - [TODO:description]
@@ -36,7 +37,7 @@ module.exports = class Client {
    * Closes the client and all commands that maybe active.
    *
    * @async
-   * @return {Promise<[TODO:type]>} [TODO:description]
+   * @return {Promise} [TODO:description]
    */
   async close () {
     return this.commands.close()
@@ -46,7 +47,7 @@ module.exports = class Client {
    * Get a list of all collections available on this server.
    *
    * @async
-   * @return {Promise<[TODO:type]>} [TODO:description]
+   * @return {Promise} [TODO:description]
    */
   async listCollections () {
     const info = await this.fetch('/_info')
@@ -80,7 +81,7 @@ module.exports = class Client {
    * @param {string} name - Name of the collection.
    * @param {object} info - [TODO:description]
    * @param {boolean} info.share - Controls whether a collection is shared via p2p.
-   * @return {Promise<[TODO:type]>} [TODO:description]
+   * @return {Promise} [TODO:description]
    */
   async updateCollection (name, info) {
     return this.fetch(name, {

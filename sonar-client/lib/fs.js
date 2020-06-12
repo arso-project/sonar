@@ -5,6 +5,7 @@ module.exports = class Fs {
   /**
    * File system for a collection.
    *
+   * @constructor
    * @param {Collection} collection - Collection
    */
   constructor (collection) {
