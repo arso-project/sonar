@@ -84,7 +84,6 @@ module.exports = class LegacyClient extends Client {
     return collection.query('search', args, opts)
   }
 
-  // TODO: Port!
   // FS methods
   async getDrives () {
     const collection = await this.focusedCollection()

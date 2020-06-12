@@ -59,11 +59,7 @@ module.exports = class Client {
     return collection
   }
 
-  async fetch (path, opts) {
-    return this.fetchFetch(path, opts)
-  }
-
-  async fetchFetch (path, opts = {}) {
+  async fetch (path, opts = {}) {
     if (!path.startsWith('/')) path = '/' + path
     let url = this.endpoint + path
 
