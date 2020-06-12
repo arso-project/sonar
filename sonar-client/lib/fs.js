@@ -2,6 +2,11 @@ const { HYPERDRIVE_SCHEME } = require('./constants')
 const parseUrl = require('parse-dat-url')
 
 module.exports = class Fs {
+  /**
+   * File system for a collection.
+   *
+   * @param {Collection} collection - Collection
+   */
   constructor (collection) {
     this.endpoint = collection.endpoint + '/fs'
     this.collection = collection
@@ -68,6 +73,16 @@ module.exports = class Fs {
     }
   }
 
+  /**
+   * Write a file
+   *
+   * @async
+   * @param {string} path - Path to file. Either a hyper:// URL or a relative path within the collection's file system.
+   * @param {Stream|Buffer} file - File content to write.
+   * @param {object} [opts] - Options. TODO: document.
+   * @throws Will throw if the path cannot be written to.
+   * @return {Promise}
+   */
   async writeFile (path, file, opts = {}) {
     const requestType = opts.requestType || 'buffer'
     const params = {}
@@ -84,6 +99,15 @@ module.exports = class Fs {
     })
   }
 
+  /**
+   * Read a file
+   *
+   * @async
+   * @param {string} path - Path to file. Either a hyper:// URL or a relative path within the collection's file system.
+   * @param {object} [opts] - Options. TODO: document.
+   * @throws Will throw if the path is not found.
+   * @return {Promise<ArrayBuffer|Buffer>} The file content. A Buffer object in Node.js, a ArrayBuffer object in the browser.
+   */
   async readFile (path, opts = {}) {
     opts.responseType = opts.responseType || 'buffer'
     opts.requestType = opts.requestType || 'buffer'

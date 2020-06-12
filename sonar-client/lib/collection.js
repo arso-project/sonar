@@ -5,7 +5,7 @@ const Resources = require('./resources')
 
 module.exports = class Collection {
   /**
-   * Create a collection instance 
+   * Create a collection instance
    *
    * @param {Client} client - A client instance.
    * @param {string} name - Name of the collection.
@@ -46,7 +46,7 @@ module.exports = class Collection {
   }
 
   /**
-   * Query the database. Returns an array of matching records. 
+   * Query the database. Returns an array of matching records.
    * Records may have a meta property that includes query-specific metadata (e.g. the score for search queries).
    *
    * @async
