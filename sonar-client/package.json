@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "tape test/*.js",
+    "doc": "run-p doc:*",
     "doc:md": "jsdoc2md --files lib/client.js lib/collection.js lib/fs.js --param-list-format list --separators --partial doc-gen/scope.hbs --helper doc-gen/helpers.js > api.md",
     "doc:html": "rm -rf apidocs && jsdoc --configure doc-gen/jsdoc.json --verbose && mv apidocs/@arso-project/sonar-client/*/* apidocs && rm -r apidocs/@arso-project"
   },
@@ -25,6 +26,7 @@
     "jsdoc-to-markdown": "^6.0",
     "minami": "^1.2.3",
     "nanobench-utils": "^0.1.1",
+    "npm-run-all": "^4.1.5",
     "tape": "^5.0",
     "tape-plus": "^1.0.0",
     "temporary-directory": "^1.0.2"
