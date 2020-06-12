@@ -1,9 +1,18 @@
 import React, { Fragment } from 'react'
 import { FaRegListAlt } from 'react-icons/fa'
+import { MdHelpOutline as HelpIcon } from 'react-icons/md'
 import {
   ThemeProvider,
   ColorModeProvider,
   Box,
+  Menu,
+  MenuButton,
+  MenuList,
+  MenuItem,
+  MenuGroup,
+  MenuDivider,
+  MenuOptionGroup,
+  MenuItemOption,
   Flex,
   Heading,
   IconButton,
@@ -12,7 +21,6 @@ import {
   useColorMode,
   useDisclosure
 } from '@chakra-ui/core'
-
 import MobileNav from './MobileNav'
 import LogModal from './LogModal'
 
@@ -46,6 +54,8 @@ export default function Header (props) {
         </Heading>
 
         <Flex flex='1' />
+
+        <HelpMenu />
         <LogButton />
         <IconButton
           aria-label={`Switch to ${
@@ -65,23 +75,58 @@ export default function Header (props) {
   )
 }
 
+const headerButtonProps = {
+  variant: 'ghost',
+  color: 'current',
+  ml: '2',
+  fontSize: 'md',
+  height: '2rem'
+}
+
+const HeaderIconButton = Object.assign(IconButton, {
+  defaultProps: {
+    ...IconButton.defaultProps,
+    ...headerButtonProps
+  }
+})
+
+const HeaderButton = Object.assign(Button, {
+  defaultProps: {
+    ...IconButton.defaultProps,
+    ...headerButtonProps
+  }
+})
+
+function HelpMenu (props) {
+  return (
+    <Menu>
+      <MenuButton as={HeaderButton} leftIcon={HelpIcon}>
+        Docs
+      </MenuButton>
+      <MenuList>
+        <MenuItem as='a' href='/api-docs-client' target='_blank'>
+          Javascript API docs
+        </MenuItem>
+        <MenuItem as='a' href='/api-docs' target='_blank'>
+          HTTP API docs
+        </MenuItem>
+      </MenuList>
+    </Menu>
+  )
+}
+
 function LogButton (props) {
   const { isOpen, onOpen, onClose } = useDisclosure()
 
   return (
-    <Fragment>
-      <IconButton
-        aria-label={'Show log'}
-        variant='ghost'
-        color='current'
-        ml='2'
-        fontSize='md'
-        height='2rem'
+    <>
+      <HeaderIconButton
+        aria-label='Show log'
         onClick={onOpen}
         icon={FaRegListAlt}
+        {...props}
       />
       <LogModal isOpen={isOpen} onClose={onClose} />
-    </Fragment>
+    </>
   )
 }
-

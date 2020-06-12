@@ -1,21 +1,17 @@
-import React, { Fragment } from 'react'
+import React from 'react'
 import { HashRouter as Router } from 'react-router-dom'
 import { hot } from 'react-hot-loader/root'
-import { FaRegListAlt } from 'react-icons/fa'
 import {
   ThemeProvider,
   ColorModeProvider,
   Box,
-  IconButton,
-  useColorMode,
-  useDisclosure
+  useColorMode
 } from '@chakra-ui/core'
 
 import Sidebar from './components/Sidebar'
 import Routes from './Routes'
 import Header from './components/Header'
 import CSSReset from './components/CSSReset'
-import { LogModal } from './components/LogModal'
 import createTheme from './theme'
 
 // This sets default props on some chakra components.
