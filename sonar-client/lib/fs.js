@@ -32,12 +32,28 @@ class Fs {
     return this.collection.fetch(path, opts)
   }
 
+  /**
+   * List the drives that are part of this collection.
+   *
+   * @async
+   * @return {Promise<Array<object>>} Array of objects with `{ alias, key, writable }`
+   */
   async listDrives () {
     // TODO: Move route under /fs somehow. Maybe HEAD on /?
     return this.collection.fetch('/fs-info')
   }
 
-  async readdir (path) {
+  /**
+   * Get the contents of a directory.
+   *
+   * @async
+   * @param {string} path - A hyper:// URL or a relative path within the collection's file system.
+   * @param {object} [opts} - Options
+   * @param {string} [opts.includeStats=true] - Include metadata for each file
+   * @throws Will throw if the path is not found or is not a directory.
+   * @return {Promise<Array<object>>} An array of objects with file metadata.
+   */
+  async readdir (path, opts = {}) {
     const self = this
     path = path || '/'
     if (path === '/') {
@@ -78,7 +94,7 @@ class Fs {
    * Write a file
    *
    * @async
-   * @param {string} path - Path to file. Either a hyper:// URL or a relative path within the collection's file system.
+   * @param {string} path - A hyper:// URL or a relative path within the collection's file system.
    * @param {Stream|Buffer} file - File content to write.
    * @param {object} [opts] - Options. TODO: document.
    * @throws Will throw if the path cannot be written to.
@@ -101,10 +117,10 @@ class Fs {
   }
 
   /**
-   * Read a file
+   * Read a file into a buffer.
    *
    * @async
-   * @param {string} path - Path to file. Either a hyper:// URL or a relative path within the collection's file system.
+   * @param {string} path - A hyper:// URL or a relative path within the collection's file system.
    * @param {object} [opts] - Options. TODO: document.
    * @throws Will throw if the path is not found.
    * @return {Promise<ArrayBuffer|Buffer>} The file content. A Buffer object in Node.js, a ArrayBuffer object in the browser.
@@ -115,12 +131,28 @@ class Fs {
     return this.fetch(path, opts)
   }
 
+  /**
+   * Get a read stream for a file.
+   *
+   * @async
+   * @param {string} path - A hyper:// URL or a relative path within the collection's file system.
+   * @param {object} [opts] - Options. TODO: document.
+   * @throws Will throw if the path is not found.
+   * @return {Promise<ReadableStream|Readable>} A `stream.Readable` in Node.js, a `ReadableStream`in the browser.
+   */
   async createReadStream (path, opts = {}) {
-    // opts.stream = true
     opts.responseType = 'stream'
     return this.readFile(path, opts)
   }
 
+  /**
+   * Get metadata about a file.
+   *
+   * @async
+   * @param {string} path - A hyper:// URL or a relative path within the collection's file system.
+   * @throws Will throw if the path is not found.
+   * @return {Promise<object>} A plain object with the stat info.
+   */
   async statFile (path) {
     return this.fetch(path)
   }
