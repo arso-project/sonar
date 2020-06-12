@@ -15,7 +15,7 @@ import { CollectionName } from '../components/Collection'
 const collection = config.get('collection')
 
 export function SidebarContent (props) {
-  const { data: collection } = useAsync(() => client.getCurrentCollection())
+  const { data: collection } = useAsync(() => client.focusedCollection())
   return (
     <Fragment>
       <List>
