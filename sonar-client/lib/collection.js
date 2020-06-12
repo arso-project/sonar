@@ -37,7 +37,8 @@ class Collection {
    * Populates info and schemas for this collection from server.
    *
    * @async
-   * @return {Promise} [TODO:description]
+   * @throws Will throw if this collection does not exist or cannot be accessed.
+   * @return {Promise}
    */
   async open () {
     const info = await this.fetch('/')
@@ -57,8 +58,9 @@ class Collection {
    *                         For history: { from: timestamp, to: timestamp }
    *                         For search: Either a "string" for a simple full-text search, or an tantivy query object (to be documented)
    *                         For indexes: { schema, prop, value, from, to, reverse, limit } (to be documented)
-   * @param {object} opts - [TODO:description]
-   * @return {Promise} [TODO:description]
+   * @param {object} [opts] - Optional options
+   * @param {boolean} [opts.waitForSync=false] Wait for all pending indexing operations to be finished.
+   * @return {Promise<Array<object>>} A promise that resolves to an array of record objects.
    */
   async query (name, args, opts) {
     if (this._cacheid) {
@@ -86,10 +88,11 @@ class Collection {
    * @param {string} record.schema - The schema of the record.
    * @param {string} [record.id] - The entity id of the record. If empoty an id will be created.
    * @param {object} record.value - Value of the record.
-   * @return {Promise} [TODO:description]
+   * @throws Throws if the record is invalid.
+   * @return {Promise<object>} An object with an `{ id }` property.
    */
   async put (record) {
-    return this.fetch('db', {
+    return this.fetch('/db', {
       method: 'PUT',
       body: record
     })
@@ -99,9 +102,10 @@ class Collection {
    * Get records by schema and id. Returns an array of matching records.
    *
    * @async
-   * @param {object} req - [TODO:description]
-   * @param {object} [opts] - [TODO:description]
-   * @return {Promise} [TODO:description]
+   * @param {object} req - The get request. Should either be `{ schema, id }` or `{ key, seq }`.
+   * @param {object} [opts] - Optional options.
+   * @param {boolean} [opts.waitForSync=false] Wait for all pending indexing operations to be finished.
+   * @return {Promise<Array<object>>} A promise that resolves to an array of record objects.
    */
   async get (req, opts) {
     // TODO: Implement RecordCache.has
@@ -115,8 +119,8 @@ class Collection {
    * Deletes a record.
    *
    * @async
-   * @param {object} record - [TODO:description]
-   * @return {Promise} [TODO:description]
+   * @param {object} record - The record to delete. Has to have `{ id, schema }` properties set.
+   * @return {Promise<object> - An object with `{ id, schema }` properties of the deleted record.
    */
   async del (record) {
     return this.fetch('/db/' + record.id, {
@@ -129,8 +133,9 @@ class Collection {
    * Adds a new schema to the collection.
    *
    * @async
-   * @param {object} schema - [TODO:description]
-   * @return {Promise} [TODO:description]
+   * @param {object} schema - A schema object.
+   * @throws Throws if the schema object is invalid or cannot be saved.
+   * @return {Promise<object>} A promise that resolves to the saved schema object.
    */
   async putSchema (schema) {
     return this.fetch('/schema', {
@@ -140,10 +145,10 @@ class Collection {
   }
 
   /**
-   * [TODO:description]
+   * Wait for all pending indexing operations to be finished.
    *
    * @async
-   * @return {Promise} [TODO:description]
+   * @return {Promise}
    */
   async sync () {
     return this.fetch('/sync')

@@ -16,8 +16,8 @@ class Client {
    * @constructor
    * @param {object} [opts] - Optional options.
    * @param {string} [opts.endpoint=http://localhost:9191/api] - The API endpoint to talk to.
-   * @param {string} [opts.id] - [TODO:description]
-   * @param {string} [opts.name] - [TODO:description]
+   * @param {string} [opts.id] - The id for this client. Random by default. Used for for cache ids.
+   * @param {string} [opts.name] - The name of this client. Only relevant if using persistent commands (for bots).
    */
   constructor (opts = {}) {
     this.endpoint = opts.endpoint || DEFAULT_ENDPOINT
@@ -81,7 +81,7 @@ class Client {
    * @param {string} name - Name of the collection.
    * @param {object} info - [TODO:description]
    * @param {boolean} info.share - Controls whether a collection is shared via p2p.
-   * @return {Promise} [TODO:description]
+   * @return {Promise}
    */
   async updateCollection (name, info) {
     return this.fetch(name, {

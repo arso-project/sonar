@@ -16,6 +16,18 @@ class Fs {
     this.collection = collection
   }
 
+  async fetch (path, opts = {}) {
+    path = this.resolveURL(path)
+    return this.collection.fetch(path, opts)
+  }
+
+  /**
+   * Resolve a file URL into a HTTP url.
+   *
+   * @param {string} path - Either a hyper:// URL or a path in the collection's file system.
+   * @throws Throws if the URL cannot be resolved.
+   * @return {string} The HTTP URL to the file.
+   */
   resolveURL (path) {
     // Support hyper:// URLs.
     if (path.startsWith(HYPERDRIVE_SCHEME)) {
@@ -30,16 +42,11 @@ class Fs {
     return this.endpoint + path
   }
 
-  async fetch (path, opts = {}) {
-    path = this.resolveURL(path)
-    return this.collection.fetch(path, opts)
-  }
-
   /**
    * List the drives that are part of this collection.
    *
    * @async
-   * @return {Promise<Array<object>>} Array of objects with `{ alias, key, writable }`
+   * @return {Promise<Array<object>>} Array of drive objects with keys `{ alias, key, writable }`
    */
   async listDrives () {
     // TODO: Move route under /fs somehow. Maybe HEAD on /?
