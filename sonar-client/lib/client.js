@@ -1,499 +1,125 @@
-const axios = require('axios')
-const randombytes = require('randombytes')
-const parseUrl = require('parse-dat-url')
 const debug = require('debug')('sonar-client')
+const randombytes = require('randombytes')
+const fetch = require('isomorphic-fetch')
 
-const SearchQueryBuilder = require('./searchquerybuilder.js')
-const RecordCache = require('./record-cache')
-const CommandStreamClient = require('./commands')
+const Commands = require('./commands')
+const Collection = require('./collection')
 
 const {
-  DEFAULT_ENDPOINT,
-  DEFAULT_ISLAND,
-  SCHEMA_RESOURCE,
-  METADATA_ID,
-  HYPERDRIVE_SCHEME
+  DEFAULT_ENDPOINT
 } = require('./constants')
 
-module.exports = class SonarClient {
+module.exports = class Client {
   constructor (opts = {}) {
     this.endpoint = opts.endpoint || DEFAULT_ENDPOINT
-    this.collection = opts.collection || DEFAULT_ISLAND
-
-    this.id = opts.id || randombytes(16).toString('hex')
-    this.name = opts.name || null
-
-    this._cache = new RecordCache()
-
-    if (opts.cache !== false) {
-      this._cacheid = 'client:' + this.id + ':' + this.collection
+    if (this.endpoint.endsWith('/')) {
+      this.endpoint = this.endpoint.substring(0, this.endpoint.length - 1)
     }
+    this._collections = new Map()
+    this._id = opts.id || randombytes(16).toString('hex')
 
-    debug(`create client: endpoint ${this.endpoint} collection ${this.collection}`)
-  }
-
-  close () {
-    if (this._commandClient) this._commandClient.close()
-  }
-
-  // TODO: Support read-only collections.
-  async isWritable () {
-    return true
-  }
-
-  async info () {
-    return this._request({
-      method: 'GET',
-      path: ['_info']
+    this.commands = new Commands({
+      url: this.endpoint + '/_commands',
+      name: opts.name || 'client:' + this._id
     })
+  }
+
+  async close () {
+    return this.commands.close()
+  }
+
+  async listCollections () {
+    const info = await this.fetch('/_info')
+    return info.collections
   }
 
   async createCollection (name, opts) {
-    const path = ['_create', name]
-    // opts = { key, alias }
-    const res = await this._request({
+    await this.fetch(`/_create/${name}`, {
       method: 'PUT',
-      path,
-      data: opts
+      body: opts
     })
-    return res
+    return this.openCollection(name)
   }
 
-  async focusCollection (name) {
-    if (!name && this.collection) name = this.collection
-    if (!name) throw new Error('Missing collection name')
-    if (name === this.collection && this._info) return this._info
-    if (name === this.collection && this._collectionInfoPromise) return this._collectionInfoPromise
-
-    this._collectionInfoPromise = this._getCollectionInfo(name)
-    return this._collectionInfoPromise
-  }
-
-  async _getCollectionInfo (name) {
-    const res = await this._request({ path: [name] })
-    this._info = res
-
-    if (this._info.name !== this.collection) {
-      this.collection = res.name
-      this._cache.reset()
-    }
-
-    return this._info
-  }
-
-  async getCurrentCollection () {
-    if (!this._info) await this.focusCollection()
-    return this._info
-  }
-
-  async getSchemas () {
-    return this._request({
-      path: [this.collection, 'schema']
-    })
-  }
-
-  async getSchema (schemaName) {
-    return this._request({
-      path: [this.collection, 'schema'],
-      params: { name: schemaName }
-    })
-  }
-
-  // TODO: Remove schemaName arg
-  async putSchema (schemaName, schema) {
-    schema.name = schemaName
-    return this._request({
-      method: 'POST',
-      path: [this.collection, 'schema'],
-      data: schema
-    })
-  }
-
-  async putSource (key, info) {
-    return this._request({
-      method: 'PUT',
-      path: [this.collection, 'source', key],
-      data: info
-    })
-  }
-
-  async _localDriveKey () {
-    // TODO: Don't refetch this info each time.
-    const info = await this.getDrives()
-    const writableDrives = info.filter(f => f.writable)
-    if (!writableDrives.length) throw new Error('No writable drive')
-    return writableDrives[0].key
-  }
-
-  async writeResourceFile (record, file, opts = {}) {
-    if (record.schema !== SCHEMA_RESOURCE) throw new Error('record is not a resource')
-    const fileUrl = this.parseHyperdriveUrl(record.value.contentUrl)
-    if (!fileUrl) throw new Error('resource has invalid contentUrl')
-    const path = fileUrl.host + fileUrl.path
-    return this.writeFile(path, file, {
-      ...opts,
-      metadata: {
-        ...(opts.metadata || {}),
-        'sonar.id': record.id
-      }
-    })
-  }
-
-  async readResourceFile (record, opts = {}) {
-    const fileUrl = this.parseHyperdriveUrl(record.value.contentUrl)
-    if (!fileUrl) throw new Error('resource has invalid contentUrl')
-    const path = fileUrl.host + '/' + fileUrl.path
-    return this.readFile(path, opts)
-  }
-
-  async createResource (value, opts = {}) {
-    const { filename, prefix } = value
-    if (!filename) throw new Error('Filename is required')
-    if (filename.indexOf('/') !== -1) throw new Error('Invalid filename')
-    if (opts.scoped) throw new Error('Scoped option is not supported')
-
-    let filepath
-    if (prefix) filepath = [prefix, filename].join('/')
-    else filepath = filename
-
-    const drivekey = await this._localDriveKey()
-    const fullpath = `${drivekey}/${filepath}`
-    const contentUrl = `${HYPERDRIVE_SCHEME}//${fullpath}`
-
-    let id
-    // TODO: Check for resources also/instead?
-    // This checks only the local drive.
-    try {
-      var existing = await this.statFile(fullpath)
-    } catch (err) {}
-
-    if (existing) {
-      id = existing.metadata[METADATA_ID]
-      if (!id) {
-        if (!opts.force) throw new Error('file exists and has no resource attached. set fore to overwrite.')
-      } else {
-        // TODO: Preserve fields from an old resource?
-        // const oldResource = await this.get({ id: existing.metadata[METADATA_ID] })
-        if (!opts.update) throw new Error(`file exists, with resource ${id}. set update to overwrite.`)
-      }
-    }
-
-    id = id || opts.id
-
-    const res = await this.put({
-      schema: SCHEMA_RESOURCE,
-      id,
-      value: {
-        ...value,
-        contentUrl,
-        filename
-      }
-    })
-    // TODO: This should get by keyseq. Or put should just return the
-    // putted record.
-    const records = await this.get({ id: res.id, schema: SCHEMA_RESOURCE }, { waitForSync: true })
-    if (!records.length) throw new Error('error loading created resource')
-    return records[0]
-  }
-
-  parseHyperdriveUrl (link) {
-    const url = parseUrl(link)
-    if (url.protocol !== HYPERDRIVE_SCHEME) return false
-    return url
-  }
-
-  resourceHttpUrl (record) {
-    const url = this.parseHyperdriveUrl(record.value.contentUrl)
-    if (!url) throw new Error('resource has invalid contentUrl')
-    let filepath = url.path
-    if (filepath.startsWith('/')) filepath = filepath.substring(1)
-    const path = this._url([this.collection, 'fs', url.host, filepath])
-    return path
-  }
-
-  async get ({ schema, id }, opts) {
-    return this.query('records', { schema, id }, opts)
-  }
-
-  async put (record) {
-    // let { schema, id, value } = record
-    const path = [this.collection, 'db']
-    const method = 'PUT'
-    return this._request({ path, method, data: record })
-  }
-
-  async del (record) {
-    const path = [this.collection, 'db', record.id]
-    const method = 'DELETE'
-    const params = { schema: record.schema }
-    return this._request({ path, method, params })
-  }
-
-  async sync (view) {
-    const path = [this.collection, 'sync']
-    const params = {}
-    if (view) params.view = view
-    return this._request({ path, params })
-  }
-
-  async query (name, args, opts = {}) {
-    if (this._cacheid) {
-      opts.cacheid = this._cacheid
-    }
-
-    const records = await this._request({
-      method: 'POST',
-      path: [this.collection, '_query', name],
-      data: args,
-      params: opts
-    })
-
-    if (this._cacheid) {
-      return this._cache.batch(records)
-    }
-
-    return records
-  }
-
-  async search (query) {
-    if (typeof query === 'string') {
-      query = JSON.stringify(query)
-    } else if (query instanceof SearchQueryBuilder) {
-      query = query.getQuery()
-    }
-    return this.query('search', query)
-  }
-
-  async updateCollection (key, config) {
-    key = key || this.collection
-    return this._request({
+  // TODO: Move to Collection.update()?
+  async updateCollection (name, info) {
+    return this.fetch(name, {
       method: 'PATCH',
-      path: [key],
-      data: config
+      body: info
     })
   }
 
-  async getDrives () {
-    return this._request({
-      method: 'GET',
-      path: [this.collection, 'fs-info']
-    })
+  async openCollection (keyOrName) {
+    if (this._collections.get(keyOrName)) return this._collections.get(keyOrName)
+    const collection = new Collection(this, keyOrName)
+    // This will throw if the collection does not exist.
+    await collection.open()
+    this._collections.set(collection.name, collection)
+    this._collections.set(collection.key, collection)
+    return collection
   }
 
-  async readdir (path) {
-    const self = this
-    path = path || '/'
-    if (path === '/') {
-      const drives = await this.getDrives()
-      return drives.map(drive => ({
-        name: drive.alias,
-        link: '',
-        resource: null,
-        length: null,
-        directory: true
-      }))
-    }
-    if (path.length > 2 && path.charAt(0) === '/') path = path.substring(1)
-    const alias = path.split('/')[0]
-    let files = await this._request({ path: [this.collection, 'fs', path] })
-    if (files && files.length) {
-      files = files.map(file => {
-        file.link = makeLink(file)
-        file.resource = getResource(file)
-        return file
-      })
-    }
-    return files
+  async fetch (path, opts = {}) {
+    if (!path.startsWith('/')) path = '/' + path
+    let url = this.endpoint + path
 
-    function makeLink (file) {
-      return `${self.endpoint}/${self.collection}/fs/${alias}/${file.path}`
+    if (!opts.headers) opts.headers = {}
+    if (!opts.requestType) {
+      if (Buffer.isBuffer(opts.body)) opts.requestType = 'buffer'
+      else opts.requestType = 'json'
     }
 
-    function getResource (file) {
-      if (!file || !file.metadata || !file.metadata['sonar.id']) return null
-      return file.metadata['sonar.id']
-    }
-  }
-
-  async writeFile (path, file, opts) {
-    if (!path || !path.length) throw new Error('path is required')
-    if (path.startsWith('/')) path = path.substring(1)
-
-    let onUploadProgress
-    if (opts.onUploadProgress) {
-      onUploadProgress = opts.onUploadProgress
-      delete opts.onUploadProgress
+    if (opts.params) {
+      const searchParams = new URLSearchParams()
+      for (const [key, value] of Object.entries(opts.params)) {
+        searchParams.append(key, value)
+      }
+      url += '?' + searchParams.toString()
     }
 
-    return this._request({
-      path: [this.collection, 'fs', path],
-      data: file,
-      params: opts,
-      method: 'PUT',
-      binary: true,
-      onUploadProgress
-    })
-  }
-
-  async readFile (path, opts = {}) {
-    const { stream = true } = opts
-    if (path.startsWith('/')) path = path.substring(1)
-    const request = {
-      path: [this.collection, 'fs', path],
-      binary: true
+    if (opts.requestType === 'json') {
+      opts.body = JSON.stringify(opts.body)
+      opts.headers['content-type'] = 'application/json'
     }
-    if (stream) request.responseType = 'stream'
-    return this._request(request)
-  }
-
-  async statFile (path) {
-    if (path.startsWith('/')) path = path.substring(1)
-    return this._request({
-      path: [this.collection, 'fs', path]
-    })
-  }
-
-  async pullSubscription (name, opts) {
-    return this._request({
-      path: [this.collection, 'subscription', name],
-      query: opts
-    })
-  }
-
-  async ackSubscription (name, cursor) {
-    return this._request({
-      method: 'post',
-      path: [this.collection, 'subscription', name, cursor]
-    })
-  }
-
-  _url (path) {
-    if (Array.isArray(path)) path = path.join('/')
-    return this.endpoint + '/' + path
-  }
-
-  fileUrl (url) {
-    const path = url.replace('dat://', '')
-    return this.endpoint + '/' + this.collection + '/fs/' + path
-  }
-
-  async _request (opts) {
-    const axiosOpts = {
-      method: opts.method || 'GET',
-      url: opts.url || this._url(opts.path),
-      maxRedirects: 0,
-      headers: {
-        'Content-Type': 'application/json'
-        // [TOKEN_HEADER]: this.token
-      },
-      // axios has a very weird bug that it REMOVES the
-      // Content-Type header if data is empty...
-      data: opts.data || {},
-      responseType: opts.responseType,
-      params: opts.params,
-      onUploadProgress: opts.onUploadProgress
+    if (opts.requestType === 'buffer') {
+      opts.headers['content-type'] = 'application/octet-stream'
     }
-    debug('request: %s %s', axiosOpts.method, axiosOpts.url)
 
-    if (opts.binary) {
-      axiosOpts.headers['content-type'] = 'application/octet-stream'
-      axiosOpts.responseType = opts.responseType
-    }
     try {
-      const result = await axios.request(axiosOpts)
-      debug('response: %s %s (length %s)', result.status, result.statusText, result.headers['content-length'])
-      return result.data
+      debug('fetch', url, opts)
+      const res = await fetch(url, opts)
+      if (!res.ok) {
+        let message
+        if (isJsonResponse(res)) {
+          message = (await res.json()).error
+        } else {
+          message = await res.text()
+        }
+        throw new Error('Remote error (code ' + res.status + '): ' + message)
+      }
+
+      if (opts.responseType === 'stream') {
+        return res.body
+      }
+      if (opts.responseType === 'buffer') {
+        if (res.buffer) return await res.buffer()
+        else return await res.arrayBuffer()
+      }
+
+      if (isJsonResponse(res)) {
+        return await res.json()
+      }
+
+      return await res.text()
     } catch (err) {
-      const wrappedError = wrapAxiosError(err)
-      debug('response: %o', wrappedError.message)
-      throw wrappedError
+      debug('fetch error', err)
+      throw err
     }
-  }
-
-  async initCommandClient (opts = {}) {
-    if (this._commandClient) throw new Error('Command client already initialized')
-    opts = {
-      url: this._url(['_commands']),
-      ...opts,
-      env: {
-        ...opts.env || {},
-        collection: this.collection
-      },
-      name: opts.name || 'client:' + this.id,
-      commands: opts.commands || {}
-    }
-    this._commandClient = new CommandStreamClient(opts)
-    await this._commandClient.open()
-  }
-
-  async callCommand (command, args) {
-    if (!this._commandClient) await this.initCommandClient()
-    return this._commandClient.call(command, args)
-  }
-
-  async callCommandStreaming (command, args) {
-    if (!this._commandClient) await this.initCommandClient()
-    return this._commandClient.callStreaming(command, args)
-  }
-
-  async createQueryStream (name, args, opts = {}) {
-    // if (opts.cacheid === undefined && this._cacheid) {
-    //   opts.cacheid = this._cacheid
-    // }
-    const channel = await this.callCommandStreaming('@collection query', [name, args, opts])
-    // const transform = this._cache.transform()
-    // return channel.pipe(transform)
-    return channel
-  }
-
-  async createSubscriptionStream (name, opts = {}) {
-    // if (opts.cacheid === undefined && this._cacheid) {
-    //   opts.cacheid = this._cacheid
-    // }
-    const channel = await this.callCommandStreaming('@collection subscribe', [name, opts])
-    // const transform = this._cache.transform()
-    // return channel.pipe(transform)
-    return channel
   }
 }
 
-function wrapAxiosError (err) {
-  const log = {}
-  const { request, response, config } = err
-  if (config) {
-    log.config = {
-      url: config.url,
-      method: config.method,
-      headers: config.headers,
-      data: config.data
-    }
-    err.config = log.config
-  }
-  if (request) {
-    log.request = {
-      method: request.method,
-      path: request.path
-    }
-    err.request = log.request
-  }
-  if (response) {
-    log.response = {
-      status: response.status,
-      statusText: response.statusText,
-      headers: response.headers,
-      data: response.data
-    }
-    err.response = log.response
-  }
-  // debug(log)
-
-  let msg
-  if (err && err.response && typeof err.response.data === 'object' && err.response.data.error) {
-    msg = err.response.data.error
-  } else {
-    msg = err.message
-  }
-  err.remoteError = msg
-  if (msg) err.message = err.message + ` (reason: ${msg})`
-  return err
+function isJsonResponse (res) {
+  const header = res.headers.get('content-type')
+  if (!header) return false
+  return header.indexOf('application/json') !== -1
 }

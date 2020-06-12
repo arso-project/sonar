@@ -10,6 +10,7 @@ module.exports = class CommandStreamClient {
     this._commands = opts.commands
     this._socket = null
     this._endpoint = null
+    this.opened = false
   }
 
   setEnv (key, value) {
@@ -23,27 +24,44 @@ module.exports = class CommandStreamClient {
     if (this._socket) this._socket.destroy()
   }
 
-  async call (command, args) {
+  async call (command, args, env = {}) {
     if (this._closed) throw new Error('Stream closed')
     await this.open()
+    env = { ...this._env, ...env }
     return new Promise((resolve, reject) => {
-      this._endpoint.call(command, args, this._env, (err, msg, channel) => {
+      this._endpoint.call(command, args, env, (err, msg, channel) => {
         if (err) return reject(err)
         resolve([channel, msg])
       })
     })
   }
 
-  async callStreaming (command, args) {
+  async callStreaming (command, args, env) {
     if (this._closed) throw new Error('Stream closed')
     await this.open()
-    return this._endpoint.callStream(command, args, this._env)
+    env = { ...this._env, ...env }
+    return this._endpoint.callStream(command, args, env)
   }
 
   async open () {
     if (!this._initPromise) this._initPromise = this._init()
     await this._initPromise
     debug('command stream open')
+  }
+
+  async setName (name) {
+    this._name = name
+    await this.open()
+    // TODO: Don't reannounce if commands were sent during open.
+    this._endpoint.announce()
+  }
+
+  async defineCommands (commands) {
+    this._commands = { ...this._commands, ...commands }
+    await this.open()
+    // TODO: Don't reannounce if commands were sent during open.
+    this._endpoint.commands(this._commands)
+    this._endpoint.announce()
   }
 
   _init () {
@@ -68,6 +86,7 @@ module.exports = class CommandStreamClient {
           self._remoteManifest = manifest
           if (!resolved) {
             resolved = true
+            self.opened = true
             resolve()
           }
         })

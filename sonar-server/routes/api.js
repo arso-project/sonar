@@ -44,7 +44,10 @@ module.exports = function apiRoutes (api) {
   collectionRouter.get('/sync', handlers.sync)
 
   // Search/Query
+  collectionRouter.post('/query/:name', handlers.query)
+  // TODO: backwards-compat only, remove.
   collectionRouter.post('/_query/:name', handlers.query)
+
   // List schemas
   collectionRouter.get('/schema', handlers.getSchemas)
   // Put schema

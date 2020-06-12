@@ -8,20 +8,17 @@ test('commands', async t => {
   const [context, client1] = await createServerClient()
   const client2 = context.createClient()
 
-  // A client with a command
-  await client1.initCommandClient({
-    name: 'pinger',
-    commands: {
-      ping: {
-        mode: 'streaming',
-        oncall (args, channel) {
-          t.equal(args, 'hi from client2', 'args ok')
-          // channel.reply('hi from 2')
-          channel.once('data', d => {
-            t.equal(d.toString(), 'ping', 'ping ok')
-            channel.write('pong')
-          })
-        }
+  await client1.commands.setName('pinger')
+  await client1.commands.defineCommands({
+    ping: {
+      mode: 'streaming',
+      oncall (args, channel) {
+        t.equal(args, 'hi from client2', 'args ok')
+        // channel.reply('hi from 2')
+        channel.once('data', d => {
+          t.equal(d.toString(), 'ping', 'ping ok')
+          channel.write('pong')
+        })
       }
     }
   })

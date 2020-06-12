@@ -1,7 +1,7 @@
 const createServer = require('@arso-project/sonar-server')
 const tmp = require('temporary-directory')
 const fp = require('find-free-port')
-const SonarClient = require('../../lib/client')
+const { SonarClient } = require('../..')
 const debug = require('debug')('test')
 
 // Increase stack trace limit during tests to get meaningful backtraces when CI breaks
