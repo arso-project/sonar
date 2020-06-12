@@ -16,7 +16,7 @@ import {
 import useLog from '../hooks/use-log'
 import { format } from 'date-fns'
 
-export function LogModal (props) {
+export default function LogModal (props) {
   const { isOpen, onClose } = props
   return (
     <Modal isOpen={isOpen} onClose={onClose} scrollBehavior='inside'>
