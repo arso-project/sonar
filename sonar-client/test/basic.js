@@ -33,7 +33,7 @@ tape('db basic put and query', async t => {
   await context.stop()
 })
 
-tape.only('get and delete record', async t => {
+tape('get and delete record', async t => {
   const [context, client] = await prepare()
   const collection = await client.createCollection('myCollection')
   const nuRecord = {
