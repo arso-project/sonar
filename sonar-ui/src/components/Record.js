@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { format, formatRelative } from 'date-fns'
 import JsonTree from 'react-json-tree'
 import { Link } from 'react-router-dom'
+import useCollection from '../hooks/use-collection'
 
 import { MetaItem, MetaItems } from '../components/MetaItem'
 import client from '../lib/client'
@@ -143,6 +144,9 @@ export function RecordRawDisplay (props) {
 
 export function RecordFieldDisplay (props) {
   const { record, schema } = props
+  const { collection } = useCollection()
+  console.log('collection', collection)
+  if (!collection) return null
 
   if (!schema) return <NoSchemaError record={record} message='Schema not found' />
   if (!schema.properties) return <NoSchemaError record={record} message='Invalid schema' />
@@ -154,7 +158,7 @@ export function RecordFieldDisplay (props) {
       format: 'uri',
       title: 'HTTP URL to file'
     }
-    record.value.httpUrl = client.resourceHttpUrl(record)
+    record.value.httpUrl = collection.resources.resolveFileURL(record)
   }
 
   console.log('RecordFieldDisplay', { record, schema })
@@ -337,21 +341,11 @@ async function fetchRecordData (id) {
   }))
   return { records, schemas }
 }
-// TODO: Move to Resource.js
+// TODO: This is hacky and should not be here.
 async function fetchFileUrls (records) {
-  const links = {}
-  await Promise.all(records.map(async r => {
-    if (r.value.contentUrl) {
-      const contentUrl = r.value.contentUrl
-      const httpLink = await client.fileUrl(contentUrl)
-      links[contentUrl] = httpLink
-    } else return records
+  for (const record of records) {
+    record.value.fileUrl = await client.resolveResourceURL(record)
   }
-  )
-  )
-  records.map(r => {
-    r.value.fileUrl = links[r.value.contentUrl]
-  })
   return records
 }
 

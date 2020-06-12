@@ -1,23 +1,19 @@
 const RecordCache = require('./record-cache')
 const Schema = require('./schema')
 const Fs = require('./fs')
+const Resources = require('./resources')
 
 module.exports = class Collection {
   constructor (client, name) {
+    this.endpoint = client.endpoint + '/' + name
     this._client = client
     this._info = {}
-    this._cache = new RecordCache()
-    this._schema = new Schema()
-    this._fs = new Fs(this)
     this._name = name
-  }
+    this._cache = new RecordCache()
 
-  get fs () {
-    return this._fs
-  }
-
-  get schema () {
-    return this._schema
+    this.schema = new Schema()
+    this.fs = new Fs(this)
+    this.resources = new Resources(this)
   }
 
   get name () {
@@ -33,7 +29,7 @@ module.exports = class Collection {
     const info = await this.fetch('/')
     this._info = info
     const schemas = await this.fetch('/schema')
-    this._schema.add(schemas)
+    this.schema.add(schemas)
   }
 
   async query (name, args, opts) {
@@ -87,9 +83,8 @@ module.exports = class Collection {
     return this.fetch('/sync')
   }
 
-  async fetch (path, opts) {
-    if (!path.startsWith('/')) path = '/' + path
-    path = '/' + this._name + path
+  async fetch (path, opts = {}) {
+    if (!opts.endpoint) opts.endpoint = this.endpoint
     return this._client.fetch(path, opts)
   }
 }

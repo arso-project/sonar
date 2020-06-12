@@ -1,11 +1,28 @@
+const { HYPERDRIVE_SCHEME } = require('./constants')
+const parseUrl = require('parse-dat-url')
+
 module.exports = class Fs {
   constructor (collection) {
+    this.endpoint = collection.endpoint + '/fs'
     this.collection = collection
   }
 
-  async fetch (path, opts) {
+  resolveURL (path) {
+    // Support hyper:// URLs.
+    if (path.startsWith(HYPERDRIVE_SCHEME)) {
+      const url = parseUrl(path)
+      path = url.host + url.path
+    // Support no other absolute URLs for now.
+    } else if (path.indexOf('://') !== -1) {
+      throw new Error('Invalid path: Only hyper:// URLs or paths are supported')
+    }
+    // Assume it's a path to a file in the island fs, will fail if not found.
     if (!path.startsWith('/')) path = '/' + path
-    path = '/fs' + path
+    return this.endpoint + path
+  }
+
+  async fetch (path, opts = {}) {
+    path = this.resolveURL(path)
     return this.collection.fetch(path, opts)
   }
 
@@ -53,12 +70,13 @@ module.exports = class Fs {
 
   async writeFile (path, file, opts = {}) {
     const requestType = opts.requestType || 'buffer'
-    opts.requestType = undefined
+    const params = {}
+    if (opts.metadata) params.metadata = JSON.stringify(opts.metadata)
 
     return this.fetch(path, {
       method: 'PUT',
       body: file,
-      params: opts,
+      params,
       responseType: 'text',
       requestType,
       // binary: true,

@@ -59,9 +59,13 @@ module.exports = class Client {
     return collection
   }
 
-  async fetch (path, opts = {}) {
-    if (!path.startsWith('/')) path = '/' + path
-    let url = this.endpoint + path
+  async fetch (url, opts = {}) {
+    if (!url.match(/^https?:\/\//)) {
+      if (url.indexOf('://') !== -1) throw new Error('Only http: and https: protocols are supported.')
+      if (!url.startsWith('/')) url = '/' + url
+      if (opts.endpoint) url = opts.endpoint + url
+      else url = this.endpoint + url
+    }
 
     if (!opts.headers) opts.headers = {}
     if (!opts.requestType) {

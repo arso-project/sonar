@@ -15,7 +15,7 @@ module.exports = class LegacyClient extends Client {
 
   async focusedCollection () {
     if (!this._focus && this._defaultCollection) this.focusCollection(this._defaultCollection)
-    await this._focus
+    this._focusedCollection = await this._focus
     return this._focus
   }
 
@@ -110,9 +110,28 @@ module.exports = class LegacyClient extends Client {
     return collection.fs.stat(path)
   }
 
-  async fileUrl (url) {
+  // Resources
+  // TODO: Rethink the resource API and model
+  async createResource (value, opts) {
+    console.log('CREATE IN', value, opts)
     const collection = await this.focusedCollection()
-    return collection.fs.url(url)
+    console.log('here', collection)
+    return collection.resources.create(value, opts)
+  }
+
+  async readResourceFile (record, opts) {
+    const collection = await this.focusedCollection()
+    return collection.resources.readFile(record, opts)
+  }
+
+  async writeResourceFile (record, file, opts) {
+    const collection = await this.focusedCollection()
+    return collection.resources.writeFile(record, file, opts)
+  }
+
+  async resolveResourceURL (record) {
+    const collection = await this.focusedCollection()
+    return collection.resources.resolveFileURL(record)
   }
 
   // Subscriptions

@@ -6,8 +6,8 @@ module.exports = class RecordCache {
   }
 
   reset () {
-    this.records = {}
-    this._byId = {}
+    this._records = new Map()
+    this._byId = new Map()
   }
 
   batch (records) {
@@ -22,9 +22,21 @@ module.exports = class RecordCache {
 
   add (record) {
     const cacheid = this.cacheid(record)
-    this.records[cacheid] = record
-    this._byId[record.id] = this._byId[record.id] || []
-    this._byId[record.id].push(record)
+    this._records.set(cacheid, record)
+    const id = record.id
+    if (!this._byId.get(id)) this._byId.set(id, [])
+    this._byId.get(id).push(cacheid)
+  }
+
+  getById (id) {
+    if (!this._byId.has(id)) return []
+    return Array.from(this._byId.get(id))
+  }
+
+  has (req) {
+    if (req.key === undefined || req.seq === undefined) return false
+    const cacheid = this.cacheid(req)
+    return this._records.has(cacheid)
   }
 
   upgrade (record) {
@@ -47,6 +59,6 @@ module.exports = class RecordCache {
   }
 
   cacheid (record) {
-    return record.lseq
+    return record.key + '@' + record.seq
   }
 }
