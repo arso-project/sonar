@@ -33,6 +33,26 @@ tape('db basic put and query', async t => {
   await context.stop()
 })
 
+tape.only('get and delete record', async t => {
+  const [context, client] = await prepare()
+  const collection = await client.createCollection('myCollection')
+  const nuRecord = {
+    schema: 'foo',
+    id: 'bar',
+    value: { title: 'bar' }
+  }
+  const res = await collection.put(nuRecord)
+  console.log(res)
+  const id = res.id
+  const records = await collection.get({ id }, { waitForSync: true })
+  t.equals(records.length, 1)
+  await collection.del(nuRecord)
+  const nuRecords = await collection.get({ id }, { waitForSync: true })
+  t.equals(nuRecords.length, 0)
+
+  await context.stop()
+})
+
 tape('fs with strings', async t => {
   const [context, client] = await prepare()
   const collection = await client.createCollection('test')
