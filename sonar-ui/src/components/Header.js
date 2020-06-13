@@ -83,24 +83,34 @@ const headerButtonProps = {
   height: '2rem'
 }
 
-const HeaderIconButton = Object.assign(IconButton, {
-  defaultProps: {
-    ...IconButton.defaultProps,
-    ...headerButtonProps
-  }
+
+const HeaderIconButton = React.forwardRef((props, ref) => {
+  return (
+    <IconButton
+      {...headerButtonProps}
+      ref={ref}
+      {...props}
+    />
+  )
 })
 
-const HeaderButton = Object.assign(Button, {
-  defaultProps: {
-    ...IconButton.defaultProps,
-    ...headerButtonProps
-  }
+const HeaderButton = React.forwardRef((props, ref) => {
+  return (
+    <Button
+      {...headerButtonProps}
+      ref={ref}
+      {...props}
+    />
+  )
 })
 
 function HelpMenu (props) {
   return (
     <Menu>
-      <MenuButton as={HeaderButton} leftIcon={HelpIcon}>
+      <MenuButton
+        as={HeaderButton}
+        leftIcon={HelpIcon}
+      >
         Docs
       </MenuButton>
       <MenuList>
