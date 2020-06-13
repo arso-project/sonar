@@ -88,7 +88,9 @@ module.exports = class Collection extends Nanoresource {
   _open (cb) {
     const self = this
     cb = once(cb)
-    this.scope.open(() => {
+    // db.open also calls scope.open.
+    this.db.open(err => {
+      if (err) return cb(err)
       this._mountViews()
 
       // If the scope is opened for the first time, it is empty. Add our initial feeds.
@@ -103,7 +105,8 @@ module.exports = class Collection extends Nanoresource {
       } else {
         this._root = this.scope.feed('root')
       }
-      this._root.ready(() => {
+      this._root.ready(err => {
+        if (err) return cb(err)
         // root is writable: it is also our local feed.
         if (this._root.writable) {
           this._local = this.scope.addFeed({ key: this._root.key, name: 'local' })
@@ -116,7 +119,8 @@ module.exports = class Collection extends Nanoresource {
     })
 
     function onfeedsinit () {
-      self.fs.ready(() => {
+      self.fs.ready(err => {
+        if (err) return cb(err)
         debug(
           'opened collection %s (dkey %s, feeds %d)',
           pretty(self.db.key),

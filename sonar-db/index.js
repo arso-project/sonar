@@ -2,6 +2,7 @@ const debug = require('debug')('db')
 const pretty = require('pretty-hash')
 const thunky = require('thunky')
 const sub = require('subleveldown')
+const Nanoresource = require('nanoresource')
 
 const { uuid, sink, noop } = require('./lib/util')
 const createKvView = require('./views/kv')
@@ -15,13 +16,13 @@ const FEED_TYPE = 'sonar.db'
 const FEED_NAME = 'local.db'
 const SCHEMA_SOURCE = 'core/source'
 
-module.exports = class Database {
+module.exports = class Database extends Nanoresource {
   constructor (opts) {
+    super()
     this.opts = opts
     this.scope = opts.scope
     this.schemas = new Schema()
     this.scope.registerFeedType(FEED_TYPE, {
-      onopen: this._onopen.bind(this),
       onload: this._onload.bind(this),
       onappend: this._onappend.bind(this)
     })
@@ -59,9 +60,13 @@ module.exports = class Database {
     this.scope.use(name, view, opts)
   }
 
-  _onopen (cb) {
-    initSchemas(this.scope, this.schemas, () => {
-      initSources(this.scope, cb)
+  open (cb) {
+    this.scope.open(err => {
+      if (err) return cb(err)
+      initSchemas(this.scope, this.schemas, err => {
+        if (err) return cb(err)
+        initSources(this.scope, cb)
+      })
     })
   }
 
@@ -180,6 +185,7 @@ function initSchemas (scope, schemas, cb) {
   schemas.setKey(scope.key)
   const qs = scope.createQueryStream('records', { schema: 'core/schema' }, { live: true })
   qs.once('sync', cb)
+  qs.on('error', err => scope.emit('error', err))
   qs.pipe(sink((record, next) => {
     schemas.put(record.value)
     next()

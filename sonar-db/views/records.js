@@ -72,7 +72,6 @@ function query (db, opts) {
   opts.keyEncoding = keyEncoding
   const transform = parseRow()
   let rs
-  // console.log('Q', { gte: opts.gte, lte: opts.lte })
   if (opts.live) {
     rs = new Live(db, opts)
     rs.once('sync', () => transform.emit('sync'))
