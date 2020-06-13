@@ -22,6 +22,7 @@
   },
   "devDependencies": {
     "@arso-project/sonar-server": "^0.3.0-alpha.7",
+    "@hyperswarm/dht": "^3.6.5",
     "jsdoc": "^3.6.4",
     "jsdoc-to-markdown": "^6.0",
     "minami": "^1.2.3",

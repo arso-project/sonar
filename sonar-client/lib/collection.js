@@ -33,6 +33,10 @@ class Collection {
     return this._info && this._info.key
   }
 
+  get info () {
+    return this._info
+  }
+
   /**
    * Populates info and schemas for this collection from server.
    *
@@ -45,6 +49,21 @@ class Collection {
     this._info = info
     const schemas = await this.fetch('/schema')
     this.schema.add(schemas)
+  }
+
+  /**
+   * Add a new feed to the collection.
+   *
+   * @async
+   * @param {string} key - The hex-encoded key of the feed to add.
+   * @param {object} [info] - Optional information about the feed.
+   *                          TODO: Document
+   */
+  async addFeed (key, info = {}) {
+    return this.fetch('/source/' + key, {
+      method: 'PUT',
+      body: info
+    })
   }
 
   /**

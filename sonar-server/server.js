@@ -26,7 +26,10 @@ module.exports = function SonarServer (opts = {}) {
   if (!opts.dev) opts.dev = process.env.NODE_ENV === 'development'
 
   const storeOpts = {
-    network: opts.network === undefined ? true : opts.network
+    network: opts.network === undefined ? true : opts.network,
+    swarm: {
+      bootstrap: opts.bootstrap
+    }
   }
 
   const api = {

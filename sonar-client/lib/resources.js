@@ -29,7 +29,6 @@ module.exports = class Resources {
   }
 
   async create (value, opts = {}) {
-    console.log('CREATE real')
     const { filename, prefix } = value
     if (!filename) throw new Error('Filename is required')
     if (filename.indexOf('/') !== -1) throw new Error('Invalid filename')
@@ -41,7 +40,6 @@ module.exports = class Resources {
 
     const drivekey = await this._localDriveKey()
     const contentUrl = createHyperdriveUrl(drivekey, filepath)
-    console.log('create', { value, opts, drivekey, contentUrl })
 
     let id
     // TODO: Check for resources also/instead?
