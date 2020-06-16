@@ -123,8 +123,8 @@ module.exports = class Collection extends Nanoresource {
         if (err) return cb(err)
         debug(
           'opened collection %s (dkey %s, feeds %d)',
-          pretty(self.db.key),
-          pretty(self.db.discoveryKey),
+          pretty(self.key),
+          pretty(self.discoveryKey),
           self.scope.status().feeds.length
         )
         cb()
