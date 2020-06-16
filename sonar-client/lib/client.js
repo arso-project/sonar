@@ -9,7 +9,16 @@ const {
   DEFAULT_ENDPOINT
 } = require('./constants')
 
-module.exports = class Client {
+class Client {
+  /**
+   * Creates a new Client to communicate with a Sonar server.
+   *
+   * @constructor
+   * @param {object} [opts] - Optional options.
+   * @param {string} [opts.endpoint=http://localhost:9191/api] - The API endpoint to talk to.
+   * @param {string} [opts.id] - The id for this client. Random by default. Used for for cache ids.
+   * @param {string} [opts.name] - The name of this client. Only relevant if using persistent commands (for bots).
+   */
   constructor (opts = {}) {
     this.endpoint = opts.endpoint || DEFAULT_ENDPOINT
     if (this.endpoint.endsWith('/')) {
@@ -24,15 +33,37 @@ module.exports = class Client {
     })
   }
 
+  /**
+   * Closes the client and all commands that maybe active.
+   *
+   * @async
+   * @return {Promise}
+   */
   async close () {
     return this.commands.close()
   }
 
+  /**
+   * Get a list of all collections available on this server.
+   *
+   * @async
+   * @return {Promise.<object[]>} Promise that resolves to an array of collection info objects.
+   */
   async listCollections () {
     const info = await this.fetch('/_info')
     return info.collections
   }
 
+  /**
+   * Creates a collection with name name on the Sonar server. The name may not contain whitespaces. opts is an optional object with:
+   *
+   * @async
+   * @param {string} name - Name of the new collection, may not contain whitespaces.
+   * @param {object} [opts] - Optional options object.
+   * @param {string} [opts.key] - Hex string of an existing collection. Will then sync this collection instead of creating a new, empty collection.
+   * @param {string} [opts.alias] - When setting key, alias is required and is your nick name within this collection.
+   * @return {Promise<Collection>} The created collection.
+   */
   async createCollection (name, opts) {
     await this.fetch(`/_create/${name}`, {
       method: 'PUT',
@@ -42,6 +73,16 @@ module.exports = class Client {
   }
 
   // TODO: Move to Collection.update()?
+  // TODO: info == config?
+  /**
+   * Updates the config of a collection.
+   *
+   * @async
+   * @param {string} name - Name of the collection.
+   * @param {object} info - [TODO:description]
+   * @param {boolean} info.share - Controls whether a collection is shared via p2p.
+   * @return {Promise}
+   */
   async updateCollection (name, info) {
     return this.fetch(name, {
       method: 'PATCH',
@@ -49,6 +90,13 @@ module.exports = class Client {
     })
   }
 
+  /**
+   * Returns a Collection object for a given key or name of a collection.
+   *
+   * @async
+   * @param {string} keyOrName - Key or name of the collection to open/return.
+   * @return {Promise<Collection>} 
+   */
   async openCollection (keyOrName) {
     if (this._collections.get(keyOrName)) return this._collections.get(keyOrName)
     const collection = new Collection(this, keyOrName)
@@ -127,3 +175,5 @@ function isJsonResponse (res) {
   if (!header) return false
   return header.indexOf('application/json') !== -1
 }
+
+module.exports = Client
