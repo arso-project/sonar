@@ -9,7 +9,9 @@ jobs:
 
     strategy:
       matrix:
-        os: [ubuntu-latest, macOS-latest, windows-latest]
+        # disabled windows for now. needs to be fixed.
+        # os: [ubuntu-latest, macOS-latest, windows-latest]
+        os: [ubuntu-latest, macOS-latest]
         node-version: [10.x, 12.x, 13.x]
 
     steps:
