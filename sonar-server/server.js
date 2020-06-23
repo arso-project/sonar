@@ -26,7 +26,10 @@ module.exports = function SonarServer (opts = {}) {
   if (!opts.dev) opts.dev = process.env.NODE_ENV === 'development'
 
   const storeOpts = {
-    network: opts.network === undefined ? true : opts.network
+    network: opts.network === undefined ? true : opts.network,
+    swarm: {
+      bootstrap: opts.bootstrap
+    }
   }
 
   const api = {
@@ -79,6 +82,10 @@ module.exports = function SonarServer (opts = {}) {
   // Include the static UI at /
   const uiStaticPath = p.join(p.dirname(require.resolve('@arso-project/sonar-ui/package.json')), 'build', 'dist')
   app.use(express.static(uiStaticPath))
+
+  // Include the client api docs at /api-docs-client
+  const clientApiDocsPath = p.join(p.dirname(require.resolve('@arso-project/sonar-client/package.json')), 'apidocs')
+  app.use('/api-docs-client', express.static(clientApiDocsPath))
 
   // If in dev mode, serve the webpack dev middleware for the UI at /ui-dev
   if (opts.dev) {

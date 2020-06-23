@@ -8,7 +8,7 @@
 
 This is the main repository of Sonar. The usual setup is that you run `sonar-server` on localhost and then interact with Sonar through the [client](sonar-client/REAMDE.md), the UI running on [http://localhost:9191](http://localhost:9191) or the [CLI](sonar-cli/README.md). The CLI can be invoked with `./sonar` from the root of this repository, and is also used to start the server.
 
-The **[Sonar book](https://arso-project.github.io/sonar-book/)** has more documentation (soon).
+The **[Docs website](https://sonar.dev.arso.xyz)** has more documentation (WIP).
 
 ## Installation
 
@@ -29,6 +29,8 @@ git clone https://github.com/arso-project/sonar.git
 cd sonar
 # install dependencies of all workspaces
 yarn
+# (re)build the user interface and docs
+yarn run rebuild
 ```
 
 Instead of yarn, lerna works too:
@@ -47,9 +49,6 @@ yarn run build:sonar-tantivy
 ```
 
 ```sh
-# build the UI (required)
-./sonar ui build
-
 # start the sonar server
 ./sonar start
 

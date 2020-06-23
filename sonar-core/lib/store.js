@@ -32,6 +32,7 @@ module.exports = class CollectionStore extends Nanoresource {
       tantivy: p.join(storage, 'tantivy')
     }
     this.opts = opts
+    if (!this.opts.swarm) this.opts.swarm = {}
 
     // Actual initialization of resources happens in this._open()
 
@@ -91,7 +92,8 @@ module.exports = class CollectionStore extends Nanoresource {
 
       if (this.opts.network !== false) {
         this.network = new SwarmNetworker(this.corestore, {
-          announceLocalAddress: true
+          announceLocalAddress: true,
+          ...this.opts.swarm
         })
       }
 
