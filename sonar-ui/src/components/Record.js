@@ -49,6 +49,7 @@ function getDisplays () {
 
 export function RecordLink (props) {
   let { record, schema, children } = props
+  if (!props.record) return <MissingRecordError />
   const { id } = record
   children = children || (
     <RecordLabelDisplay record={record} schema={schema} />
@@ -115,9 +116,14 @@ export function Record (props) {
 
 export function RecordLabelDisplay (props) {
   const { record } = props
+  const label = findLabel(record)
   return (
-    <span>{record.value.title || record.id}</span>
+    <span>{label}</span>
   )
+}
+
+function findLabel (record) {
+  return record.value.title || record.value.name || record.value.filename || record.id
 }
 
 export function RecordJsonDisplay (props) {
@@ -311,6 +317,12 @@ function InvalidValueError (props) {
     <div>
       Invalid value.
     </div>
+  )
+}
+
+function MissingRecordError (props) {
+  return (
+    <div>No record</div>
   )
 }
 
