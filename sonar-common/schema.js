@@ -36,7 +36,6 @@ class Record {
     }
 
     // Prevent double-upcasting
-    record[RECORD] = this
     // TODO: Find out if this is a performance concern.
     this[RECORD] = this
   }
@@ -101,8 +100,43 @@ class Record {
     return this.fields(name).length > 0
   }
 
+  // TODO: Depcreate in favor of getOne/getMany.
   get (name, single = true) {
     return this.field(name, single).value
+  }
+
+  getOne (name) {
+    return this.get(name, true)
+  }
+
+  getMany (name) {
+    return this.get(name, false)
+  }
+
+  gotoOne (name) {
+    return this._goto(name, true)
+  }
+
+  gotoMany (name) {
+    return this._goto(name, false)
+  }
+
+  _goto (name, single = false) {
+    const field = this.field(name)
+    // TODO: This means crash.
+    if (!field) throw new Error('Field not found: ' + name)
+    if (!field.type === 'relation') {
+      throw new Error('Not a relation field: ' + name)
+    }
+    // TODO: Deal with multiple values
+    // console.log(field)
+    const targetAddresses = field.values()
+    const targetEntities = targetAddresses.map(address => {
+      return this._schema.getEntity(address)
+    })
+    const fieldValues = new FieldValueList(...targetEntities)
+    if (single) return fieldValues.first()
+    return fieldValues
   }
 
   values (name) {
@@ -194,7 +228,7 @@ class FieldValue {
     return this._value
   }
 
-  get values () {
+  values () {
     const value = this.value
     return Array.isArray(value) ? value : [value]
   }
@@ -546,12 +580,39 @@ class Entity {
   }
 }
 
+class RecordCache {
+  constructor (schema) {
+    this._schema = schema
+    this._records = new Map()
+    this._entities = new Map()
+  }
+
+  add (record) {
+    this._records.set(record.address, record)
+    if (!this._entities.has(record.id)) {
+      this._entities.set(record.id, this._schema.Entity())
+    }
+    this._entities.get(record.id).add(record)
+  }
+
+  getRecord (address) {
+    return this._records.get(address)
+  }
+
+  getEntity (id) {
+    return this._entities.get(id)
+  }
+}
+
 module.exports = class Schema {
   constructor (opts = {}) {
     this._types = new Map()
     this._fields = new Map()
     this._typeVersions = new MapSet()
     this._defaultNamespace = opts.defaultNamespace
+    if (opts.recordCache !== false) {
+      this._recordCache = new RecordCache(this)
+    }
   }
 
   Entity (records) {
@@ -560,7 +621,9 @@ module.exports = class Schema {
 
   Record (record) {
     if (record[RECORD]) return record[RECORD]
-    return new Record(this, record)
+    record[RECORD] = new Record(this, record)
+    if (this._recordCache) this._recordCache.add(record[RECORD])
+    return record[RECORD]
   }
 
   Type (spec) {
@@ -621,6 +684,16 @@ module.exports = class Schema {
     return this._types.has(address) || this._types.has(this.resolveTypeAddress(address))
   }
 
+  getRecord (address) {
+    if (!this._recordCache) throw new Error('Cannot get records: Record cache disabled')
+    return this._recordCache.getRecord(address)
+  }
+
+  getEntity (id) {
+    if (!this._recordCache) throw new Error('Cannot get records: Record cache disabled')
+    return this._recordCache.getEntity(id)
+  }
+
   // This is called by the Type constructor.
   _addFieldForType (type, spec) {
     if (!(type instanceof Type)) throw new Error('Cannot add field: invalid type argument')
@@ -643,10 +716,10 @@ module.exports = class Schema {
     return this._fields.get(address) || this._fields.get(this.resolveFieldAddress(address))
   }
 
-  fields (record) {
-    record = this.Record(record)
-    return record.fields()
-  }
+  // fields (record) {
+  //   record = this.Record(record)
+  //   return record.fields()
+  // }
 
   build (strict = true) {
     for (const field of this._fields.values()) {
