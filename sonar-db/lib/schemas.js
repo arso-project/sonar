@@ -1,18 +1,21 @@
 const SCHEMA_SCHEMA = {
-  $id: 'core/schema',
-  type: 'object',
-  properties: {
+  namespace: 'core',
+  name: 'schema',
+  fields: {
     name: {
       type: 'string',
-      index: true
+      index: {
+        basic: true,
+        search: { mode: 'field' }
+      }
     }
   }
 }
 
 const SOURCE_SCHEMA = {
-  $id: 'core/source',
-  type: 'object',
-  properties: {
+  namespace: 'core',
+  name: 'source',
+  fields: {
     type: { type: 'string', title: 'Type' },
     key: { type: 'string', pattern: '^[0-9a-f]{64}$', title: 'key' },
     alias: { type: 'string', title: 'Alias' },

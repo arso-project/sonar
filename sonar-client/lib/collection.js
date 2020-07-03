@@ -1,9 +1,19 @@
-const RecordCache = require('./record-cache')
-const Schema = require('./schema')
+const base32 = require('base32')
+const randomBytes = require('randombytes')
+
+const Schema = require('@arso-project/sonar-common/schema')
 const Fs = require('./fs')
 const Resources = require('./resources')
 
+function uuid () {
+  return base32.encode(randomBytes(16))
+}
+
 class Collection {
+  static uuid () {
+    return uuid()
+  }
+
   /**
    * Create a collection instance
    *
@@ -17,9 +27,7 @@ class Collection {
     this._client = client
     this._info = {}
     this._name = name
-    this._cache = new RecordCache()
 
-    this.schema = new Schema()
     this.fs = new Fs(this)
     this.resources = new Resources(this)
   }
@@ -42,13 +50,18 @@ class Collection {
    *
    * @async
    * @throws Will throw if this collection does not exist or cannot be accessed.
-   * @return {Promise}
+   * @return {Promise<void>}
    */
   async open () {
-    const info = await this.fetch('/')
-    this._info = info
-    const schemas = await this.fetch('/schema')
-    this.schema.add(schemas)
+    this._info = await this.fetch('/')
+
+    this.schema = new Schema()
+    this.schema.setDefaultNamespace(this.key)
+
+    const typeSpecs = await this.fetch('/schema')
+    for (const typeSpec of Object.values(typeSpecs)) {
+      this.schema.addType(typeSpec)
+    }
   }
 
   /**
@@ -86,15 +99,17 @@ class Collection {
       opts.cacheid = this._cacheid
     }
 
-    const records = await this.fetch('/query/' + name, {
+    let records = await this.fetch('/query/' + name, {
       method: 'POST',
       body: args,
       params: opts
     })
 
-    if (this._cacheid) {
-      return this._cache.batch(records)
-    }
+    records = records.map(record => this.schema.Record(record))
+
+    // if (this._cacheid) {
+    //   return this._cache.batch(records)
+    // }
 
     return records
   }
@@ -111,6 +126,8 @@ class Collection {
    * @return {Promise<object>} An object with an `{ id }` property.
    */
   async put (record) {
+    if (!record.id) record.id = uuid()
+    record = this.schema.Record(record)
     return this.fetch('/db', {
       method: 'PUT',
       body: record
@@ -139,7 +156,7 @@ class Collection {
    *
    * @async
    * @param {object} record - The record to delete. Has to have `{ id, schema }` properties set.
-   * @return {Promise<object> - An object with `{ id, schema }` properties of the deleted record.
+   * @return {Promise<object>} - An object with `{ id, schema }` properties of the deleted record.
    */
   async del (record) {
     return this.fetch('/db/' + record.id, {
@@ -157,9 +174,10 @@ class Collection {
    * @return {Promise<object>} A promise that resolves to the saved schema object.
    */
   async putSchema (schema) {
+    const type = this.schema.addType(schema)
     return this.fetch('/schema', {
       method: 'POST',
-      body: schema
+      body: type.toJSONSchema()
     })
   }
 
@@ -167,10 +185,40 @@ class Collection {
    * Wait for all pending indexing operations to be finished.
    *
    * @async
-   * @return {Promise}
+   * @return {Promise<void>}
    */
   async sync () {
     return this.fetch('/sync')
+  }
+
+  async _pullSubscription (name, opts) {
+    return this.fetch('/subscription/' + name, {
+      query: opts
+    })
+  }
+
+  async _ackSubscription (name, cursor) {
+    return this.fetch('/subscription/' + name + '/' + cursor, {
+      method: 'post'
+    })
+  }
+
+  async subscribe (name, onmessage) {
+    const self = this
+    run().catch(err => {
+      console.error('subscription error', err)
+    })
+    return true
+
+    async function run () {
+      const result = await self._pullSubscription(name)
+      for (const message of result.messages) {
+        await onmessage(message)
+        self._ackSubscription(name, message.lseq)
+      }
+      if (!result.finished) setTimeout(run, 0)
+      else setTimeout(run, 1000)
+    }
   }
 
   async fetch (path, opts = {}) {

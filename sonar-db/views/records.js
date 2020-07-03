@@ -1,23 +1,22 @@
 const through = require('through2')
 const keyEncoding = require('charwise')
-const { mapRecordsIntoLevelDB } = require('./helpers')
+const { mapRecordsIntoOps } = require('./helpers')
 const Live = require('level-live')
 // const debug = require('debug')('db')
 // const collect = require('stream-collector')
 
 const INDEXES = {
-  is: ['id', 'schema', 'key'],
-  si: ['schema', 'id', 'key']
+  is: ['id', 'type', 'key'],
+  si: ['type', 'id', 'key']
 }
 
 module.exports = function createRecordView (lvl, db, opts) {
-  const schemas = opts.schemas
+  const schema = opts.schema
   return {
     map (records, next) {
-      mapRecordsIntoLevelDB({
-        db, records, map: mapToPutOp, level: lvl
-      }, () => {
-        next()
+      mapRecordsIntoOps(db, records, mapToPutOp, (err, ops) => {
+        if (err) { console.error(err) }
+        lvl.batch(ops, next)
       })
     },
 
@@ -25,19 +24,19 @@ module.exports = function createRecordView (lvl, db, opts) {
       query (kappa, req, opts = {}) {
         if (!req) return this.view.all(opts)
         if (typeof req === 'string') req = { id: req }
-        let { schema, id, key, seq, all } = req
+        let { type, id, key, seq, all } = req
 
-        if (schema) schema = schemas.resolveName(schema)
+        if (type) type = schema.resolveTypeAddress(type)
 
         let filter
         if (all) {
           filter = includerange(['is'])
-        } else if (schema && !id) {
-          filter = includerange(['si', schema])
-        } else if (!schema && id) {
+        } else if (type && !id) {
+          filter = includerange(['si', type])
+        } else if (!type && id) {
           filter = includerange(['is', id])
         } else {
-          filter = includerange(['is', id, schema])
+          filter = includerange(['is', id, type])
         }
 
         let rs = query(lvl, { ...opts, ...filter })
@@ -53,16 +52,16 @@ module.exports = function createRecordView (lvl, db, opts) {
         return query(lvl, includerange(['is']), opts)
       },
 
-      bySchema (kappa, schema, opts) {
-        return this.view.query({ schema }, opts)
+      byType (kappa, type, opts) {
+        return this.view.query({ type }, opts)
       },
 
       byId (kappa, id, opts) {
         return this.view.query({ id }, opts)
       },
 
-      byIdAndSchema (kappa, id, schema, opts) {
-        return this.view.query({ id, schema }, opts)
+      byIdAndSchema (kappa, id, type, opts) {
+        return this.view.query({ id, type }, opts)
       }
     }
   }
@@ -82,7 +81,7 @@ function query (db, opts) {
 }
 
 function validate (msg) {
-  const result = msg.id && msg.schema && msg.key && typeof msg.seq !== 'undefined'
+  const result = msg.id && msg.type && msg.key && typeof msg.seq !== 'undefined'
   return result
 }
 
@@ -104,7 +103,6 @@ function mapToPutOp (msg, db) {
 function parseRow () {
   return through.obj(function (row, enc, next) {
     const { key, value: seq } = row
-    // console.log('R', { key, seq })
     const idx = key.shift()
     const index = INDEXES[idx]
     if (!index) return next()

@@ -36,7 +36,7 @@ tape('subscription stream', async t => {
     })
 
     timer = clock()
-    await pify(cb => collection.put({ schema: 'foo', value: { title: 'hello' } }, cb))
+    await pify(cb => collection.put({ type: 'foo', value: { title: 'hello' } }, cb))
     debug('put took', timer())
     timer = clock()
     await promise

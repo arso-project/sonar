@@ -1,7 +1,8 @@
 exports.RESOURCE_SCHEMA = {
-  name: 'sonar/resource',
+  name: 'resource',
+  namespace: 'sonar',
   title: 'Resource',
-  properties: {
+  fields: {
     label: {
       type: 'string',
       title: 'Label'
@@ -22,12 +23,17 @@ exports.RESOURCE_SCHEMA = {
     contentHash: {
       type: 'string',
       title: 'Content hash',
-      index: true
+      index: {
+        basic: true
+      }
     },
     encodingFormat: {
       type: 'string',
       title: 'Encoding format (MIME type)',
-      index: true
+      index: {
+        basic: true,
+        search: { mode: 'facet' }
+      }
     },
     duration: {
       type: 'number',
@@ -38,7 +44,10 @@ exports.RESOURCE_SCHEMA = {
       type: 'string',
       title: 'Media type',
       enum: ['audio', 'video', 'image', 'document', 'other'],
-      index: true
+      index: {
+        basic: true,
+        search: { mode: 'facet' }
+      }
     }
   }
 }

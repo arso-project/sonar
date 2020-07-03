@@ -17,6 +17,10 @@ module.exports = class Record {
       record.seq = Number(props.seq)
     }
     record = { ...props, ...record }
+    record.deleted = false
+    if (record.op === Record.DEL) {
+      record.deleted = true
+    }
     return record
   }
 

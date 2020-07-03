@@ -14,7 +14,7 @@ function searchView (level, _scope, opts) {
     catalog: opts.indexCatalog
   })
 
-  const schemas = {}
+  // const types = {}
 
   return {
     version: 2,
@@ -35,7 +35,16 @@ function searchView (level, _scope, opts) {
     }
   }
 
-  async function map (msgs, next) {
+  function map (records, cb) {
+    asyncMap(records)
+      .then(cb)
+      .catch(err => {
+        console.error('Map error', err)
+        cb(err)
+      })
+  }
+
+  async function asyncMap (msgs) {
     const time = clock()
     await manager.ready()
 
@@ -48,7 +57,7 @@ function searchView (level, _scope, opts) {
     for (const msg of msgs) {
       try {
         await pushToTexdump(msg)
-        await pushToNamedIndex(msg)
+        // await pushToNamedIndex(msg)
       } catch (err) {
         log.error('Could not prepare message:', msg, err)
       }
@@ -60,49 +69,58 @@ function searchView (level, _scope, opts) {
         await index.addDocuments(currentDocs)
       } catch (e) {
         log.error(e)
-        return next(e)
+        throw e
       }
     }
 
     log.debug('Indexed %d records [time: %s]', msgs.length, time())
 
-    next()
+    // return docs
 
     async function pushToTexdump (msg) {
-      const { schema: schemaName, id, value, key: source, seq } = msg
-      const body = objectToString(value)
       let title = ''
-      if (value.title) title = objectToString(value.title)
-      else if (value.label) title = objectToString(value.label)
+      let body = ''
+      if (msg.hasField('title')) title = msg.getOne('title')
+      if (msg.hasField('label')) title = msg.getOne('label')
 
-      docs.textdump.push({ body, title, id, source, seq, schema: schemaName })
+      for (const fieldValue of msg.fields()) {
+        body += ' ' + objectToString(fieldValue.value)
+      }
+      docs.textdump.push({
+        title,
+        body,
+        source: msg.key,
+        seq: msg.seq,
+        type: msg.type
+      })
     }
 
-    async function pushToNamedIndex (msg) {
-      const { schema: schemaName, id, value, key: source, seq } = msg
-      // const schema = await loadSchema(schemaName, msg)
-      const schema = schemas[schemaName]
-      if (!schema) return
+    // TODO: Update for schema API.
+    // async function pushToNamedIndex (msg) {
+    //   const { schema: schemaName, id, value, key: source, seq } = msg
+    //   // const schema = await loadSchema(schemaName, msg)
+    //   const schema = schemas[schemaName]
+    //   if (!schema) return
 
-      await manager.make(schemaName, schema)
+    //   await manager.make(schemaName, schema)
 
-      const indexSchema = manager.getSchema(schemaName)
-      const fields = indexSchema.map(f => f.name)
+    //   const indexSchema = manager.getSchema(schemaName)
+    //   const fields = indexSchema.map(f => f.name)
 
-      const doc = Object.entries(value).reduce((acc, [key, value]) => {
-        if (fields.indexOf(key) !== -1) acc[key] = value
-        return acc
-      }, {})
+    //   const doc = Object.entries(value).reduce((acc, [key, value]) => {
+    //     if (fields.indexOf(key) !== -1) acc[key] = value
+    //     return acc
+    //   }, {})
 
-      doc.id = id
-      doc.source = source
-      doc.seq = seq
-      doc.schema = schemaName
-      // console.log('index', schema, doc)
+    //   doc.id = id
+    //   doc.source = source
+    //   doc.seq = seq
+    //   doc.schema = schemaName
+    //   // console.log('index', schema, doc)
 
-      docs[schemaName] = docs[schemaName] || []
-      docs[schemaName].push(doc)
-    }
+    //   docs[schemaName] = docs[schemaName] || []
+    //   docs[schemaName].push(doc)
+    // }
   }
 
   function loadSchema (name, record) {

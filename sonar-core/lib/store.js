@@ -288,10 +288,6 @@ module.exports = class CollectionStore extends Nanoresource {
       if (--collectionspending !== 0) return
 
       let pending = 0
-      if (self.network) {
-        const close = onclose('network')
-        self.network.close().then(close).catch(close)
-      }
       self.indexCatalog.close(onclose('index catalog'))
       self.config.close(onclose('config'))
       self.corestore.close(onclose('corestore'))
@@ -301,14 +297,28 @@ module.exports = class CollectionStore extends Nanoresource {
         debug(`waiting for ${name} to close`)
         ++pending
         return function () {
-          process.nextTick(finish.bind(null, name))
+          process.nextTick(onservicesclosed.bind(null, name))
         }
       }
 
-      function finish (name, err) {
+      function onservicesclosed (name, err) {
         debug(`closed ${name}`)
         if (err) debug(err)
         if (--pending !== 0) return
+        closenetwork()
+      }
+
+      function closenetwork () {
+        if (self.network) {
+          debug('waiting for network to close')
+          self.network.close().then(finish).catch(finish)
+        } else {
+          finish()
+        }
+      }
+
+      function finish (err) {
+        if (err) debug(err)
         debug('closed everything')
         cb()
       }

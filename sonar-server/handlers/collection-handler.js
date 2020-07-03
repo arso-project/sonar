@@ -93,7 +93,7 @@ module.exports = function createCollectionHandler (collections) {
           err.statusCode = 400
           return next(err)
         }
-        collection.getSchema(name, (err, result) => {
+        collection.getSchema(id, (err, result) => {
           if (err) return next(err)
           res.send(result)
         })

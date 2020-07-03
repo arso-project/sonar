@@ -48,7 +48,7 @@
     "nodeVersion": "current"
   },
   "pkg": {
-    "scripts": "*/**"
+    "scripts": "launch.js"
   },
   "publishConfig": {
     "access": "public"

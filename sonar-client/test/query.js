@@ -6,8 +6,8 @@ const createServerClient = require('./util/server')
 async function prepare (t) {
   const [context, client] = await createServerClient()
   try {
-    await client.put({ schema: 'doc', value: { title: 'hello world' } })
-    await client.put({ schema: 'doc', value: { title: 'hello moon' } })
+    await client.put({ type: 'doc', value: { title: 'hello world' } })
+    await client.put({ type: 'doc', value: { title: 'hello moon' } })
     await client.sync()
   } catch (e) {
     t.fail(e)

@@ -57,7 +57,7 @@ module.exports = class Collection extends Nanoresource {
         })
       },
       resolveAlias (alias, cb) {
-        self.query('records', { schema: 'core/source' }, (err, records) => {
+        self.query('records', { type: 'core/source' }, (err, records) => {
           if (err) return cb(err)
           const aliases = records
             .map(r => r.value)
@@ -83,6 +83,10 @@ module.exports = class Collection extends Nanoresource {
   get writable () {
     if (this._local && this._local.writable) return true
     return false
+  }
+
+  get schema () {
+    return this.db.schema
   }
 
   _open (cb) {

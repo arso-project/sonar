@@ -9,8 +9,8 @@ const createKvView = require('./views/kv')
 const createRecordsView = require('./views/records')
 const createIndexView = require('./views/indexes')
 const createHistoryView = require('./views/history')
+const Schema = require('@arso-project/sonar-common/schema')
 const Record = require('./lib/record')
-const Schema = require('./lib/schema')
 
 const FEED_TYPE = 'sonar.db'
 const FEED_NAME = 'local.db'
@@ -21,7 +21,7 @@ module.exports = class Database extends Nanoresource {
     super()
     this.opts = opts
     this.scope = opts.scope
-    this.schemas = new Schema()
+    this.schema = new Schema()
     this.scope.registerFeedType(FEED_TYPE, {
       onload: this._onload.bind(this),
       onappend: this._onappend.bind(this)
@@ -33,14 +33,14 @@ module.exports = class Database extends Nanoresource {
       sub(opts.db, 'records'),
       this,
       {
-        schemas: this.schemas
+        schema: this.schema
       }
     ))
     this.scope.use('index', createIndexView(
       sub(opts.db, 'index'),
       this,
       {
-        schemas: this.schemas
+        schema: this.schema
       }
     ))
     this.scope.use('history', createHistoryView(
@@ -63,7 +63,7 @@ module.exports = class Database extends Nanoresource {
   open (cb) {
     this.scope.open(err => {
       if (err) return cb(err)
-      initSchemas(this.scope, this.schemas, err => {
+      initSchema(this.scope, this.schema, err => {
         if (err) return cb(err)
         initSources(this.scope, cb)
       })
@@ -72,18 +72,34 @@ module.exports = class Database extends Nanoresource {
 
   _onload (message, opts, cb) {
     const { key, seq, lseq, value, feedType } = message
-    const record = Record.decode(value, { key, seq, lseq, feedType })
-    cb(null, record)
+    const decodedRecord = Record.decode(value, { key, seq, lseq, feedType })
+    // decodedRecord.type = decodedRecord.schema
+    // console.log('onload out', decodedRecord)
+    try {
+      const record = this.schema.Record(decodedRecord)
+      cb(null, record)
+    } catch (err) {
+      cb(err)
+      // TODO: Error here?
+      // this.schema.addType({
+      //   address: decodedRecord.type
+      // })
+      // const record = this.schema.Record(decodedRecord)
+      // cb(null, record)
+      // console.error(err)
+      // console.error(message)
+      // console.error(this.schema)
+    }
   }
 
   _onappend (record, opts, cb) {
-    if (!record.schema) return cb(new Error('schema is required'))
+    if (!record.type) return cb(new Error('type is required'))
     if (record.op === undefined) record.op = Record.PUT
     if (record.op === 'put') record.op = Record.PUT
     if (record.op === 'del') record.op = Record.DEL
     if (!record.id) record.id = uuid()
 
-    record.schema = this.schemas.resolveName(record.schema)
+    record.type = this.schema.resolveTypeAddress(record.schema || record.type)
 
     if (record.op === Record.PUT) {
       let validate = false
@@ -91,7 +107,8 @@ module.exports = class Database extends Nanoresource {
       if (typeof opts.validate !== 'undefined') validate = !!opts.validate
 
       if (validate) {
-        if (!this.schemas.validate(record)) return cb(this.schemas.error)
+        // TODO: add validate
+        // if (!this.schemas.validate(record)) return cb(this.schemas.error)
       }
     }
 
@@ -127,25 +144,41 @@ module.exports = class Database extends Nanoresource {
     this.scope.append(record, opts, cb)
   }
 
-  putSchema (name, schema, cb) {
+  putSchema (name, spec, cb) {
     this.scope.ready(() => {
-      const value = this.schemas.parseSchema(name, schema)
-      if (!value) return cb(this.schemas.error)
-      const record = {
-        schema: 'core/schema',
-        value
+      spec.name = name
+      try {
+        const type = this.schema.addType(spec)
+        const record = {
+          type: 'core/schema',
+          id: type.address,
+          value: type.toJSONSchema()
+        }
+        this.put(record, cb)
+      } catch (err) {
+        cb(err)
       }
-      this.schemas.put(value)
-      this.put(record, cb)
     })
   }
 
+  // TODO: Rename to getType or remove.
+  // TODO: Rethink if schema.getType() should throw or return null.
   getSchema (name) {
-    return this.schemas.get(name)
+    try {
+      return this.schema.getType(name)
+    } catch (err) {
+      return null
+    }
   }
 
-  getSchemas () {
-    return this.schemas.list()
+  // TODO: Rename to encodeSchema
+  getSchemas (opts = {}) {
+    const types = this.schema.getTypes()
+    const spec = types.reduce((spec, type) => {
+      spec[type.address] = type
+      return spec
+    }, {})
+    return spec
   }
 
   putSource (key, info = {}, cb) {
@@ -156,7 +189,7 @@ module.exports = class Database extends Nanoresource {
     }
     if (Buffer.isBuffer(key)) key = key.toString('hex')
     const record = {
-      schema: SCHEMA_SOURCE,
+      type: SCHEMA_SOURCE,
       id: key,
       value: {
         type: FEED_TYPE,
@@ -169,7 +202,7 @@ module.exports = class Database extends Nanoresource {
 }
 
 function initSources (scope, cb) {
-  const qs = scope.createQueryStream('records', { schema: 'core/source' }, { live: true })
+  const qs = scope.createQueryStream('records', { type: 'core/source' }, { live: true })
   qs.once('sync', cb)
   qs.pipe(sink((record, next) => {
     const { alias, key, type, ...info } = record.value
@@ -181,13 +214,19 @@ function initSources (scope, cb) {
   }))
 }
 
-function initSchemas (scope, schemas, cb) {
-  schemas.setKey(scope.key)
-  const qs = scope.createQueryStream('records', { schema: 'core/schema' }, { live: true })
+function initSchema (scope, schemas, cb) {
+  schemas.setDefaultNamespace(scope.key)
+  const qs = scope.createQueryStream('records', { type: 'core/schema' }, { live: true })
   qs.once('sync', cb)
   qs.on('error', err => scope.emit('error', err))
   qs.pipe(sink((record, next) => {
-    schemas.put(record.value)
+    try {
+      schemas.addTypeFromJsonSchema(record.value)
+    } catch (err) {
+      console.error('Error: Trying to add invalid type: ' + record.id)
+      console.error(err)
+      console.error(record)
+    }
     next()
   }))
 }

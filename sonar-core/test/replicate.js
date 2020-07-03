@@ -11,13 +11,13 @@ tape('put query without replication', async t => {
   const collection = await promisify(collections.create.bind(collections))('foo')
   await runAll([
     cb => collection.ready(cb),
-    cb => collection.put({ schema: 'doc', value: 'foo' }, (err, _id) => {
+    cb => collection.put({ type: 'doc', value: 'foo' }, (err, _id) => {
       t.error(err)
       id = _id
       cb()
     }),
-    cb => collection.put({ schema: 'doc', value: 'bar', id }, cb),
-    cb => collection.query('records', { schema: 'doc' }, { waitForSync: true }, (err, records) => {
+    cb => collection.put({ type: 'doc', value: 'bar', id }, cb),
+    cb => collection.query('records', { type: 'doc' }, { waitForSync: true }, (err, records) => {
       t.error(err)
       t.equal(records.length, 1)
       t.equal(records[0].value, 'bar')
@@ -28,8 +28,8 @@ tape('put query without replication', async t => {
   t.end()
 })
 
-function doc (value, id) {
-  return { schema: 'doc', value, id }
+function doc (title, id) {
+  return { type: 'doc', value: { title }, id }
 }
 
 tape('simple replication', async t => {
@@ -56,7 +56,7 @@ tape('simple replication', async t => {
         collection2.ready(cb)
       })
     },
-    cb => checkOne(t, collection, { schema: 'doc' }, '1rev2', 'init collection1 ok', cb),
+    cb => checkOne(t, collection, { type: 'doc' }, '1rev2', 'init collection1 ok', cb),
     cb => {
       // console.log('STATUS MID')
       // console.log('collection1', collection.scope)
@@ -65,7 +65,13 @@ tape('simple replication', async t => {
     },
     cb => replicate(collection, collection2, cb),
     cb => collection2.sync(cb),
-    cb => checkOne(t, collection2, { schema: 'doc' }, '1rev2', 'init collection2 ok', cb),
+    cb => setTimeout(cb, 100),
+    cb => {
+      // console.log('STATUS')
+      // console.log({ collection, collection2 })
+      cb()
+    },
+    cb => checkOne(t, collection2, { type: 'doc' }, '1rev2', 'init collection2 ok', cb),
     cb => {
       const collection2localkey = collection2._local.key
       collection.putSource(collection2localkey, { alias: 'w2' }, cb)
@@ -77,25 +83,29 @@ tape('simple replication', async t => {
     cb => collection.once('remote-update', cb),
     cb => collection.sync(cb),
     cb => setTimeout(cb, 100),
-    cb => checkOne(t, collection, { schema: 'doc' }, '2rev1', 'end collection1 ok', cb),
-    cb => checkOne(t, collection2, { schema: 'doc' }, '2rev1', 'end collection2 ok', cb),
     cb => {
-      // console.log('STATUS END')
+      // console.log('STATUS')
+      // console.log({ collection, collection2 })
+      cb()
+    },
+    cb => checkOne(t, collection, { type: 'doc' }, '2rev1', 'end collection1 ok', cb),
+    cb => checkOne(t, collection2, { type: 'doc' }, '2rev1', 'end collection2 ok', cb),
+    cb => {
       // console.log('collection1', collection.scope)
       // console.log('collection2', collection2.scope)
       cb()
     }
   ])
-  await cleanup1()
-  await cleanup2()
+
+  await Promise.all([cleanup1(), cleanup2()])
 })
 
-function checkOne (t, collection, query, value, msg, cb) {
+function checkOne (t, collection, query, title, msg, cb) {
   collection.query('records', query, { waitForSync: true }, (err, records) => {
     // console.log({ msg, query, value, records })
     t.error(err, msg + ' (no err)')
     t.equal(records.length, 1, msg + ' (result len)')
-    t.equal(records[0].value, value, msg + '(value)')
+    t.equal(records[0].value.title, title, msg + '(value)')
     cb()
   })
 }

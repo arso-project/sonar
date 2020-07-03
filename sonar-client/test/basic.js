@@ -29,16 +29,53 @@ tape('db basic put and query', async t => {
   const [cleanup, client] = await prepare({ network: false })
 
   const collection = await client.createCollection('foobar')
+  await collection.putSchema({
+    name: 'doc',
+    fields: {
+      title: {
+        type: 'string'
+      }
+    }
+  })
+  await collection.putSchema({
+    name: 'fun',
+    title: 'Fun things',
+    fields: {
+      color: {
+        type: 'string'
+      }
+    }
+  })
+  await collection.open()
   const res = await collection.put({
-    schema: 'doc',
+    type: 'doc',
     value: { title: 'hello world' }
   })
-  const id = res.id
+  const res2 = await collection.put({
+    type: 'fun',
+    id: res.id,
+    value: { color: 'red' }
+  })
+  // const id = res.id
   // await collection.sync()
-  const results = await collection.query('records', { id }, { waitForSync: true })
-  t.equal(results.length, 1)
-  t.equal(results[0].id, id)
-  t.equal(results[0].value.title, 'hello world')
+  const results = await collection.query('records', { id: res.id }, { waitForSync: true })
+  t.equal(results.length, 2)
+  // t.equal(results[0].id, id)
+  // t.equal(results[0].value.title, 'hello world')
+  // console.log(results.map(record => record.get('title')))
+  console.log(results.map(record => record.address))
+  console.log(results.map(record => record.id))
+  console.log(results.map(record => record.fields().map(f => f.fieldAddress).join('  !!  ')))
+  const record = results[0]
+  // const record2 = results[1]
+  t.equal(record.entity.id, res.id)
+  t.equal(record.entity.get('fun#color'), 'red')
+  t.equal(record.entity.get('doc#title'), 'hello world')
+  // t.equal(record.get('color'), 'red')
+  // t.equal(record.get('fun#color'), 'red')
+  // t.equal(record.get('fun#color'), 'red')
+  console.log(record.entity.types().map(t => t.title))
+  t.equal(record.entity.id, res.id)
 
   await cleanup()
 })
@@ -146,7 +183,7 @@ tape('replicate resources', async t => {
 async function readResources (collection) {
   const records = await collection.query(
     'records',
-    { schema: 'sonar/resource' },
+    { type: 'sonar/resource' },
     { waitForSync: true }
   )
   const contents = await Promise.all(records.map(r => {

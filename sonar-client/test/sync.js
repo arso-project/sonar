@@ -5,7 +5,7 @@ tape('sync', async t => {
   const [context, client] = await createServerClient()
   try {
     const { id } = await client.put({
-      schema: 'foo',
+      type: 'foo',
       id: 'bar',
       value: { title: 'bar' }
     })
