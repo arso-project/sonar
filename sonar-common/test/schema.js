@@ -76,8 +76,8 @@ tape('basics', t => {
   console.log('record size', record.get('size'))
   // console.log('record json', record.toJSON())
   // console.log('record value', record.value)
-  console.log('record is video', record.is('video'))
-  console.log('record is file', record.is('file'))
+  console.log('record is video', record.hasType('video'))
+  console.log('record is file', record.hasType('file'))
 
   const file = schema.Record({
     id: 'avideo',
@@ -100,7 +100,7 @@ tape('basics', t => {
 
   console.log('entity triples', toTriples(entity))
   console.log('entity turtle', toTurtle(entity))
-  console.log('entity is video', entity.is('sonar/video'))
+  console.log('entity is video', entity.hasType('sonar/video'))
   // console.log(entity)
   // console.log('type json schema', schema.getType('video').toJSONSchema())
   // const s2 = new Schema()
@@ -162,7 +162,7 @@ tape('relations', t => {
     type: 'tag',
     value: {
       name: '#cool',
-      target: ['afile', 'bfile']
+      target: ['afile', 'bfile', 'cfile']
     }
   })
   console.log(
@@ -175,7 +175,7 @@ tape('relations', t => {
   )
   console.log(
     'tag: target many',
-    tag.gotoMany('target').map(e => e.get('label'))
+    tag.gotoMany('target').map(e => [e.id, e.get('label')])
   )
 
   // console.log('tag: target', tag.goto('target').map(entity => entity.id))

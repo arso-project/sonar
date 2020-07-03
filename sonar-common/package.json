@@ -12,7 +12,10 @@
     "tape": "^5.0",
     "text-table": "^0.2.0"
   },
-  "dependencies": {},
+  "dependencies": {
+    "inspect-custom-symbol": "^1.1.1",
+    "object-path": "^0.11.4"
+  },
   "publishConfig": {
     "access": "public"
   }

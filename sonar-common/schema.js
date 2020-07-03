@@ -1,10 +1,14 @@
+const objectPath = require('object-path')
+const inspect = require('inspect-custom-symbol')
+
 const RECORD = Symbol('sonar-record')
 const TYPE = Symbol('sonar-type')
 const FIELD = Symbol('sonar-field')
 
 class FieldValueList extends Array {
-  setField (field) {
-    this._field = field
+  constructor (schema, ...values) {
+    super(...values)
+    this._schema = schema
   }
 
   get value () {
@@ -26,18 +30,33 @@ class Record {
   constructor (schema, record) {
     if (record instanceof Record) record = record._record
 
+    if (!record.type) {
+      throw new Error('Cannot upcast record: Missing type')
+    }
+    if (!record.id) {
+      throw new Error('Cannot upcast record: Missing id')
+    }
+
+    // TODO: Decide how to deal with unknown types - likely we want to error here.
+    // This breaks a few tests because they are written without creating types first.
+    // Maybe we also want to support deriving types on first use? Or allow to deal
+    // with records with an unknown type in a limited fashion.
+    // if (!schema.getType(record.type)) {
+    //   throw new Error(`Cannot upgrade record: Unknown type "${this._record.type}"`)
+    // }
+
     this._record = record
     this._schema = schema
-    this._type = this._schema.getType(this._record.type)
     this._dirty = true
-
-    if (!this._type) {
-      throw new Error(`Cannot upgrade record: Unknown type "${this._record.type}"`)
-    }
 
     // Prevent double-upcasting
     // TODO: Find out if this is a performance concern.
     this[RECORD] = this
+    record[RECORD] = this
+  }
+
+  get entity () {
+    return this._schema.getEntity(this.id)
   }
 
   get id () {
@@ -49,11 +68,15 @@ class Record {
   }
 
   get type () {
-    return this._type.address
+    return this._record.type
   }
 
   get address () {
     return this._record.key + '+' + this._record.seq
+  }
+
+  get deleted () {
+    return this._record.deleted
   }
 
   // TODO: Remove?
@@ -73,22 +96,29 @@ class Record {
     return this._record.lseq
   }
 
+  // TODO: kappa-scopes/scopes.js:518 calls this to add lseq from indexer state.
+  // Review how adding this info should work.
+  set lseq (lseq) {
+    this._record.lseq = lseq
+  }
+
   get links () {
     return this._record.links
   }
 
   getType () {
-    return this._type
+    return this._schema.getType(this.type) || new MissingType(this._schema)
   }
 
-  is (typeAddress) {
+  hasType (typeAddress) {
     typeAddress = this._schema.resolveTypeAddress(typeAddress)
     const allTypes = this.getType().allParents()
     return allTypes.indexOf(typeAddress) !== -1
   }
 
   fields (fieldName) {
-    return this._filterFieldValues(fieldName)
+    const fields = this._filterFieldValues(fieldName)
+    return fields
   }
 
   field (fieldName, single = true) {
@@ -97,7 +127,11 @@ class Record {
   }
 
   hasField (name) {
-    return this.fields(name).length > 0
+    try {
+      return this.fields(name).length > 0
+    } catch (err) {
+      return false
+    }
   }
 
   // TODO: Depcreate in favor of getOne/getMany.
@@ -129,14 +163,18 @@ class Record {
       throw new Error('Not a relation field: ' + name)
     }
     // TODO: Deal with multiple values
-    // console.log(field)
     const targetAddresses = field.values()
     const targetEntities = targetAddresses.map(address => {
-      return this._schema.getEntity(address)
+      let entity = this._schema.getEntity(address)
+      if (!entity) entity = new MissingEntity(this._schema, address)
+      return entity
     })
-    const fieldValues = new FieldValueList(...targetEntities)
+    // TODO: targetEntities are Entity not FieldValue objects,
+    // not sure if that is good or if it should be a Proxy or so
+    // on FieldValue.
+    const fieldValues = new FieldValueList(this._schema, ...targetEntities)
     if (single) return fieldValues.first()
-    return fieldValues
+    else return fieldValues.filter(f => !f.empty())
   }
 
   values (name) {
@@ -158,8 +196,8 @@ class Record {
   }
 
   _buildFieldValues () {
-    const fields = this._type.fields()
-    this._fieldValues = new FieldValueList()
+    const fields = this.getType().fields()
+    this._fieldValues = new FieldValueList(this._schema)
     for (const field of fields) {
       if (this._record.value[field.name] !== undefined) {
         // const fieldValue = new FieldValue(field, this._record.value[field.name])
@@ -184,15 +222,16 @@ class Record {
     if (!fieldName) return this._fieldValues
 
     const field = this._findField(fieldName)
-    if (!field) return new FieldValueList()
+    if (!field) return new FieldValueList(this._schema)
 
     const validAddresses = field.allVariants()
     return this._fieldValues.filter(field => {
-      return validAddresses.indexOf(field.address) !== -1
+      return validAddresses.indexOf(field.fieldAddress) !== -1
     })
   }
 
   toJSON () {
+    // TODO: Add opts to skip encoding lseq on put.
     return {
       address: this.address,
       id: this.id,
@@ -237,7 +276,7 @@ class FieldValue {
     return this._field
   }
 
-  get address () {
+  get fieldAddress () {
     return this._field.address
   }
 
@@ -276,28 +315,36 @@ class MissingFieldValue extends FieldValue {
   }
 }
 
-class Type {
-  static fromJSONSchema (schema, spec) {
-    if (!spec.fields) spec.fields = {}
-    if (spec.properties) {
-      for (let [name, fieldSpec] of Object.entries(spec.properties)) {
-        if (fieldSpec._sonar) {
-          fieldSpec = Object.assign(fieldSpec, fieldSpec._sonar)
-          fieldSpec._sonar = undefined
-        }
-        spec.fields[name] = fieldSpec
+function jsonSchemaToSpec (spec) {
+  if (!spec.fields) spec.fields = {}
+  if (spec.properties) {
+    for (let [name, fieldSpec] of Object.entries(spec.properties)) {
+      if (fieldSpec.sonar) {
+        fieldSpec = Object.assign(fieldSpec, fieldSpec.sonar)
+        fieldSpec.sonar = undefined
       }
-      spec.properties = undefined
+      spec.fields[name] = fieldSpec
     }
-    if (spec.$id) {
-      spec.address = spec.$id
-      spec.$id = undefined
-    }
-    if (spec._sonar) {
-      spec = Object.assign(spec, spec._sonar)
-      spec._sonar = undefined
-    }
-    return new Type(schema, spec)
+    spec.properties = undefined
+  }
+  if (spec.$id) {
+    spec.address = spec.$id
+    spec.$id = undefined
+  }
+  if (spec.sonar) {
+    spec = Object.assign(spec, spec.sonar)
+    spec.sonar = undefined
+  }
+  return spec
+}
+
+class Type {
+  static jsonSchemaToSpec (spec) {
+    return jsonSchemaToSpec(spec)
+  }
+
+  static fromJSONSchema (schema, spec) {
+    return new Type(schema, jsonSchemaToSpec(spec))
   }
 
   constructor (schema, spec) {
@@ -324,10 +371,12 @@ class Type {
       version: this._version
     })
 
-    for (const [name, fieldSpec] of Object.entries(spec.fields)) {
-      fieldSpec.name = name
-      const field = this._schema._addFieldForType(this, fieldSpec)
-      this._fields.add(field.address)
+    if (spec.fields) {
+      for (const [name, fieldSpec] of Object.entries(spec.fields)) {
+        fieldSpec.name = name
+        const field = this._schema._addFieldForType(this, fieldSpec)
+        this._fields.add(field.address)
+      }
     }
 
     if (spec.refines) {
@@ -405,6 +454,25 @@ class Type {
     }
     return spec
   }
+
+  toJSON () {
+    return {
+      address: this.address,
+      title: this.title,
+      description: this.description,
+      refines: this._parent,
+      fields: this.fields().reduce((all, field) => {
+        all[field.name] = field.toJSON()
+        return all
+      }, {})
+    }
+  }
+}
+
+class MissingType extends Type {
+  constructor (schema) {
+    super(schema, { name: '_missing', missing: true })
+  }
 }
 
 class Field {
@@ -436,6 +504,10 @@ class Field {
 
   get address () {
     return this._address
+  }
+
+  get index () {
+    return this._spec.index || {}
   }
 
   allVariants () {
@@ -484,25 +556,59 @@ class Field {
     return this._schema.getType(typeAddress)
   }
 
+  setProp (path, value) {
+    objectPath.set(this._spec, path, value)
+  }
+
+  getProp (path) {
+    objectPath.get(this._spec)
+  }
+
   toJSONSchema () {
     const spec = {}
     spec.title = this.title
     spec.description = this.description
-    const details = {}
-    if (this.type === 'relation') {
+
+    // TODO: Define list of properties allowed.
+    const sonarInfo = {
+      refines: this._parent,
+      index: this._spec.index
+    }
+
+    // TODO: Likely we want to have this handled by field type classes,
+    // so this.fieldType.jsonType()
+    if (this.fieldType === 'relation') {
       spec.type = 'string'
-      details.type = 'relation'
+      sonarInfo.fieldType = this.fieldType
     } else {
-      spec.type = 'string'
+      spec.type = this.fieldType
     }
-    if (this._parent) {
-      details.refines = this._parent
-    }
-    if (Object.keys(details).length) {
-      spec._sonar = details
-    }
+    spec.sonar = sonarInfo
     return spec
   }
+
+  toJSON () {
+    return this._spec
+  }
+
+  // static fromJSONSchema (schema, json) {
+  //   const spec = {
+  //     ...json,
+  //     fields: {},
+  //     ...json.sonar || {}
+  //   }
+  //   for (const [name, fieldSpec] of Object.entries(spec)) {
+  //     spec.fields[name] = {
+  //       ...fieldSpec,
+  //       ...fieldSpec.sonar || {}
+  //     }
+  //     if (!fieldSpec.fieldType && fieldSpec.type) {
+  //       fieldSpec.fieldType = fieldSpec.type
+  //     }
+  //   }
+  //   spec.properties = undefined
+  //   return new Field(schema, spec)
+  // }
 }
 
 class Entity {
@@ -522,9 +628,17 @@ class Entity {
     return this._id
   }
 
-  is (typeAddress) {
+  get address () {
+    return this._id
+  }
+
+  empty () {
+    return !this._missing && !this._records.size
+  }
+
+  hasType (typeAddress) {
     for (const record of this._records) {
-      if (record.is(typeAddress)) return true
+      if (record.hasType(typeAddress)) return true
     }
     return false
   }
@@ -545,7 +659,7 @@ class Entity {
   }
 
   field (fieldName, single = true) {
-    const fieldValues = new FieldValueList()
+    const fieldValues = new FieldValueList(this._schema)
 
     for (const record of this._records) {
       if (fieldName && record.hasField(fieldName)) {
@@ -580,6 +694,14 @@ class Entity {
   }
 }
 
+class MissingEntity extends Entity {
+  constructor (schema, id) {
+    super(schema)
+    this._missing = true
+    this._id = id
+  }
+}
+
 class RecordCache {
   constructor (schema) {
     this._schema = schema
@@ -587,20 +709,29 @@ class RecordCache {
     this._entities = new Map()
   }
 
+  records () {
+    return Array.from(this._records.values())
+  }
+
+  entities () {
+    return Array.from(this._entities.values())
+  }
+
   add (record) {
     this._records.set(record.address, record)
-    if (!this._entities.has(record.id)) {
-      this._entities.set(record.id, this._schema.Entity())
-    }
-    this._entities.get(record.id).add(record)
+
+    let entity = this._entities.get(record.id)
+    if (!entity) entity = this._schema.Entity()
+    entity.add(record)
+    this._entities.set(entity.address, entity)
   }
 
   getRecord (address) {
     return this._records.get(address)
   }
 
-  getEntity (id) {
-    return this._entities.get(id)
+  getEntity (address) {
+    return this._entities.get(address)
   }
 }
 
@@ -619,22 +750,27 @@ module.exports = class Schema {
     return new Entity(this, records)
   }
 
-  Record (record) {
-    if (record[RECORD]) return record[RECORD]
-    record[RECORD] = new Record(this, record)
-    if (this._recordCache) this._recordCache.add(record[RECORD])
-    return record[RECORD]
+  Record (spec) {
+    if (spec[RECORD]) return spec[RECORD]
+    const record = new Record(this, spec)
+    if (this._recordCache) this._recordCache.add(record)
+    return record
   }
 
   Type (spec) {
     if (spec[TYPE]) return spec[TYPE]
-    // return new Type(this, spec)
-    return Type.fromJSONSchema(this, spec)
+    // Hacky check if it's a JSON schema or sonar spec.
+    if (spec.properties) return Type.fromJSONSchema(this, spec)
+    return new Type(this, spec)
   }
 
   Field (spec) {
     if (spec[FIELD]) return spec[FIELD]
     return new Field(this, spec)
+  }
+
+  FieldValueList (values) {
+    return new FieldValueList(this, values)
   }
 
   setDefaultNamespace (namespace) {
@@ -668,12 +804,19 @@ module.exports = class Schema {
   }
 
   addType (spec) {
+    if (this._types.has(spec.address)) {
+      return this._types.get(spec.address)
+    }
     const type = this.Type(spec)
-    // TODO: Allow if version is increased.
-    if (this._types.has(type.address)) throw new Error('Type exists: ' + type.address)
+    // TODO: Make sure types are immutable.
     this._types.set(type.address, type)
     this._typeVersions.add(type.namespace + '/' + type.name, type.version)
     return type
+  }
+
+  addTypeFromJsonSchema (spec) {
+    spec = Type.jsonSchemaToSpec(spec)
+    return this.addType(spec)
   }
 
   getType (address) {
@@ -682,6 +825,10 @@ module.exports = class Schema {
 
   hasType (address) {
     return this._types.has(address) || this._types.has(this.resolveTypeAddress(address))
+  }
+
+  getTypes () {
+    return Array.from(this._types.values())
   }
 
   getRecord (address) {
@@ -700,7 +847,9 @@ module.exports = class Schema {
     if (!spec.name) throw new Error('Cannot add field: name is missing')
 
     const address = type.address + '#' + spec.name
-    if (this.hasField(address)) throw new Error('Field exists: ' + address)
+    if (this.hasField(address)) {
+      throw new Error('Field exists: ' + address)
+    }
     spec.address = address
 
     const field = this.Field(spec)
@@ -709,7 +858,11 @@ module.exports = class Schema {
   }
 
   hasField (address) {
-    return this._fields.has(address) || this._fields.has(this.resolveFieldAddress(address))
+    try {
+      return this._fields.has(address) || this._fields.has(this.resolveFieldAddress(address))
+    } catch (err) {
+      return false
+    }
   }
 
   getField (address) {
@@ -726,6 +879,24 @@ module.exports = class Schema {
       field._build(strict)
     }
   }
+
+  // [inspect] (depth, opts) {
+  //   const { stylize } = opts
+  //   var indent = ''
+  //   if (typeof opts.indentationLvl === 'number') {
+  //     while (indent.length < opts.indentationLvl) indent += ' '
+  //   }
+
+  //   const types = this.getTypes().map(type => {
+  //     const fields = type.fields().map(field => `${field.name} (${field.fieldType})`)
+  //       .join(', ')
+  //     return indent + `${type.address}:\n` + indent + '    ' + fields.substring(0, fields.length - 2)
+  //   }).join('\n')
+
+  //   return 'Schema(\n' +
+  //         indent + '  defaultNamespace: ' + stylize(this._defaultNamespace, 'string') + '\n' +
+  //         types + ')'
+  // }
 }
 
 class MapSet {
@@ -755,7 +926,18 @@ class MapSet {
 }
 
 function parseAddress (address) {
-  if (typeof address === 'object') return parseAddress(encodeAddress(address))
+  if (!address) throw new Error('Cannot parse empty address')
+
+  // Allow an object with address property
+  if (typeof address === 'object' && typeof address.address === 'string') {
+    address = address.address
+  // Allow an object with { namespace, type, field, version } properties
+  } else if (typeof address === 'object') {
+    return parseAddress(encodeAddress(address))
+  }
+
+  // Parse the address format. Example:
+  // sonar/Entity@3#label
   const regex = /^(?:([^/#@]+)\/)?([^@#/]+)(?:@(\d+))?(?:#([^/#@]+))?$/
   const matches = address.match(regex)
   if (!matches) throw new Error('Invalid address')
@@ -767,7 +949,15 @@ function parseAddress (address) {
 
 function encodeAddress (parts) {
   let { namespace, type, field, version } = parts
-  if (!type) throw new Error('Cannot encode address: type is missing')
+  if (!type || !validSegment(type)) {
+    throw new Error('Cannot encode address: invalid type name')
+  }
+  if (namespace && !validSegment(namespace)) {
+    throw new Error('Cannot encode address: invalid namespace')
+  }
+  if (field && !validSegment(field)) {
+    throw new Error('Cannot encode address: invalid field name')
+  }
   if (!version) version = 0
   let address = ''
   if (namespace) address += namespace + '/'
@@ -775,4 +965,12 @@ function encodeAddress (parts) {
   if (version !== undefined) address += '@' + version
   if (field) address += '#' + field
   return address
+}
+
+function validSegment (segment) {
+  return !hasChar(segment, '/') && !hasChar(segment, '#') && !hasChar(segment, '@')
+}
+
+function hasChar (str, char) {
+  return str.indexOf(char) !== -1
 }
