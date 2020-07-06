@@ -130,8 +130,8 @@ async function importfile(argv) {
   const client = makeClient(argv)
   const path = p.resolve(argv.path)
 
-  const writable = await client.isWritable()
-  if (!writable) throw new Error('collection is not writable')
+  // const writable = await client.isWritable()
+  // if (!writable) throw new Error('collection is not writable')
 
   return _importfile({ client, path, opts: argv })
 }

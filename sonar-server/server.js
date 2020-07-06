@@ -45,8 +45,12 @@ module.exports = function SonarServer (opts = {}) {
   expressWebSocket(app)
 
   // Bodyparser
-  app.use(bodyParser.urlencoded({ extended: true, limit: '10MB' }))
+  app.use(bodyParser.urlencoded({
+    limit: '10MB',
+    extended: true
+  }))
   app.use(bodyParser.json({
+    limit: '10MB',
     // Currently, the _search route accepts json encoded strings.
     // Remove once that changes.
     strict: false
