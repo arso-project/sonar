@@ -25,9 +25,10 @@ module.exports = class SchemaStore {
     schema = this.parseSchema(name, schema)
     // TODO: Handle error
     try {
-      const valid = this.ajv.addSchema(schema, name)
+      const valid = this.ajv.validateSchema(schema)
       if (!valid) this._lastError = new ValidationError(this.ajv.errorsText(), this.ajv.errors)
       if (!valid) return false
+      this.ajv.addSchema(schema, name)
       this.schemas[name] = schema
       return true
     } catch (err) {

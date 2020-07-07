@@ -72,9 +72,9 @@ function messageToQuads (collection, message, cb) {
   const quads = []
   const subject = message.id
   const graph = collection.key.toString('hex')
-  for (const { field, name, value } of fields(schema, message)) {
+  for (const { field, index, name, value } of fields(schema, message)) {
     // console.log({ name, value, field })
-    if (!field.index || !field.index.relation) continue
+    if (!index || !index.relation) continue
     if (!Array.isArray(value)) continue
     for (const item of value) {
       quads.push({
@@ -92,9 +92,12 @@ function fields (schema, message) {
   if (!schema.properties || !message.value) return []
   const fields = []
   for (const [name, field] of Object.entries(schema.properties)) {
+    let value = message.value[name]
+    if (!Array.isArray(value)) value = [value]
     fields.push({
       name: schema.name + '#' + name,
-      value: message.value[name],
+      value,
+      index: field.index,
       field
     })
   }
