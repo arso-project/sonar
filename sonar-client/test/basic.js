@@ -43,7 +43,7 @@ tape('db basic put and query', async t => {
   await cleanup()
 })
 
-tape.only('get and delete record', async t => {
+tape('get and delete record', async t => {
   const [cleanup, client] = await prepare()
   const collection = await client.createCollection('myCollection')
   const nuRecord = {
@@ -52,7 +52,6 @@ tape.only('get and delete record', async t => {
     value: { title: 'bar' }
   }
   const res = await collection.put(nuRecord)
-  console.log(res)
   const id = res.id
   const records = await collection.get({ id }, { waitForSync: true })
   t.equals(records.length, 1)
