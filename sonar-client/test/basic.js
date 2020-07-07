@@ -43,8 +43,8 @@ tape('db basic put and query', async t => {
   await cleanup()
 })
 
-tape('get and delete record', async t => {
-  const [context, client] = await prepare()
+tape.only('get and delete record', async t => {
+  const [cleanup, client] = await prepare()
   const collection = await client.createCollection('myCollection')
   const nuRecord = {
     schema: 'foo',
@@ -60,7 +60,7 @@ tape('get and delete record', async t => {
   const nuRecords = await collection.get({ id }, { waitForSync: true })
   t.equals(nuRecords.length, 0)
 
-  await context.stop()
+  await cleanup()
 })
 
 tape('fs with strings', async t => {
