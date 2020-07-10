@@ -41,9 +41,10 @@ class Record {
     // This breaks a few tests because they are written without creating types first.
     // Maybe we also want to support deriving types on first use? Or allow to deal
     // with records with an unknown type in a limited fashion.
-    // if (!schema.getType(record.type)) {
-    //   throw new Error(`Cannot upgrade record: Unknown type "${this._record.type}"`)
-    // }
+    if (!schema.getType(record.type)) {
+      throw new Error(`Cannot upgrade record: Unknown type "${record.type}"`)
+    }
+    record.type = schema.resolveTypeAddress(record.type)
 
     this._record = record
     this._schema = schema
@@ -107,12 +108,15 @@ class Record {
   }
 
   getType () {
-    return this._schema.getType(this.type) || new MissingType(this._schema)
+    return this._schema.getType(this.type)
   }
 
   hasType (typeAddress) {
     typeAddress = this._schema.resolveTypeAddress(typeAddress)
-    const allTypes = this.getType().allParents()
+    if (this.type === typeAddress) return true
+    const type = this.getType()
+    if (!type) return false
+    const allTypes = type.allParents()
     return allTypes.indexOf(typeAddress) !== -1
   }
 
@@ -232,13 +236,16 @@ class Record {
 
   toJSON () {
     // TODO: Add opts to skip encoding lseq on put.
+    // TODO: We don't need both address and key, seq.
     return {
       address: this.address,
       id: this.id,
       lseq: this.lseq,
       type: this.type,
       value: this.value,
-      links: this.links
+      links: this.links,
+      key: this.key,
+      seq: this.seq
     }
   }
 
@@ -281,7 +288,7 @@ class FieldValue {
   }
 
   get fieldType () {
-    return this._field.type
+    return this._field.fieldType
   }
 
   get name () {
@@ -420,7 +427,8 @@ class Type {
 
   allParents () {
     const addresses = [this.address]
-    if (this._parent) addresses.push(...this.parentType().allParents())
+    const parentType = this.parentType()
+    if (parentType) addresses.push(...parentType.allParents())
     return addresses
   }
 
