@@ -65,7 +65,7 @@ module.exports = function apiRoutes (api) {
 
   collectionRouter.get('/fs-info', function (req, res, next) {
     const { collection } = req
-    collection.query('records', { schema: 'core/source' }, (err, records) => {
+    collection.query('records', { type: 'core/source' }, (err, records) => {
       if (err) return next(err)
       const drives = records
         .filter(record => record.value.type === 'hyperdrive')

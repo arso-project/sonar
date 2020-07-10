@@ -89,6 +89,10 @@ module.exports = class Collection extends Nanoresource {
     return this.db.schema
   }
 
+  get localKey () {
+    return this._local && this._local.key
+  }
+
   _open (cb) {
     const self = this
     cb = once(cb)

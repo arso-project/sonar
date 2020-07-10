@@ -41,6 +41,7 @@ module.exports = class Relations {
   }
 
   _query (collection, query, cb) {
+    query.predicate = collection.schema.resolveFieldAddress(query.predicate)
     query.graph = collection.key.toString('hex')
     const quadStream = this.store.getStream(query)
     const transform = new Transform({

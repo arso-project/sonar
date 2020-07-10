@@ -16,12 +16,15 @@ const FEED_TYPE = 'sonar.db'
 const FEED_NAME = 'local.db'
 const SCHEMA_SOURCE = 'core/source'
 
+const SCHEMAS = require('./lib/schemas')
+
 module.exports = class Database extends Nanoresource {
   constructor (opts) {
     super()
     this.opts = opts
     this.scope = opts.scope
     this.schema = new Schema()
+
     this.scope.registerFeedType(FEED_TYPE, {
       onload: this._onload.bind(this),
       onappend: this._onappend.bind(this)
@@ -93,26 +96,33 @@ module.exports = class Database extends Nanoresource {
   }
 
   _onappend (record, opts, cb) {
-    if (!record.type) return cb(new Error('type is required'))
-    if (record.op === undefined) record.op = Record.PUT
-    if (record.op === 'put') record.op = Record.PUT
-    if (record.op === 'del') record.op = Record.DEL
     if (!record.id) record.id = uuid()
-
-    record.type = this.schema.resolveTypeAddress(record.schema || record.type)
-
-    if (record.op === Record.PUT) {
-      let validate = false
-      if (this.opts.validate) validate = true
-      if (typeof opts.validate !== 'undefined') validate = !!opts.validate
-
-      if (validate) {
-        // TODO: add validate
-        // if (!this.schemas.validate(record)) return cb(this.schemas.error)
-      }
+    try {
+      record = this.schema.Record(record)
+    } catch (err) {
+      return cb(err)
     }
 
+    record = record.toJSON()
+    record.op = record.deleted ? Record.DEL : Record.PUT
     record.timestamp = Date.now()
+
+    // if (!record.type) return cb(new Error('type is required'))
+    // if (record.op === undefined) record.op = Record.PUT
+    // if (record.op === 'put') record.op = Record.PUT
+    // if (record.op === 'del') record.op = Record.DEL
+    // record.type = this.schema.resolveTypeAddress(record.schema || record.type)
+
+    // if (record.op === Record.PUT) {
+    //   let validate = false
+    //   if (this.opts.validate) validate = true
+    //   if (typeof opts.validate !== 'undefined') validate = !!opts.validate
+
+    //   if (validate) {
+    //     // TODO: add validate
+    //     // if (!this.schemas.validate(record)) return cb(this.schemas.error)
+    //   }
+    // }
 
     this.scope.view.kv.getLinks(record, (err, links) => {
       if (err && err.status !== 404) return cb(err)
@@ -214,14 +224,19 @@ function initSources (scope, cb) {
   }))
 }
 
-function initSchema (scope, schemas, cb) {
-  schemas.setDefaultNamespace(scope.key)
+function initSchema (scope, schema, cb) {
+  schema.setDefaultNamespace(scope.key)
+
+  for (const spec of Object.values(SCHEMAS)) {
+    schema.addType(spec)
+  }
+
   const qs = scope.createQueryStream('records', { type: 'core/schema' }, { live: true })
   qs.once('sync', cb)
   qs.on('error', err => scope.emit('error', err))
   qs.pipe(sink((record, next) => {
     try {
-      schemas.addTypeFromJsonSchema(record.value)
+      schema.addTypeFromJsonSchema(record.value)
     } catch (err) {
       console.error('Error: Trying to add invalid type: ' + record.id)
       console.error(err)

@@ -23,10 +23,10 @@ const SOURCE_SCHEMA = {
   }
 }
 
-const ANY_SCHEMA = {
-  $id: 'core/any', type: 'object'
-}
+// const ANY_SCHEMA = {
+//   $id: 'core/any', type: 'object'
+// }
 
 module.exports = [
-  SCHEMA_SCHEMA, SOURCE_SCHEMA, ANY_SCHEMA
+  SCHEMA_SCHEMA, SOURCE_SCHEMA
 ]
