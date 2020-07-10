@@ -50,11 +50,13 @@ test('subscription commands', async t => {
 
   process.nextTick(async () => {
     try {
+      await client.putSchema('foo', { fields: { title: { type: 'string' } } })
       for (let i = 0; i < count; i++) {
         await client.put({ type: 'foo', value: { title: 'hello' } })
         debug(timer.log('put' + i, true))
       }
     } catch (err) {
+      console.error(err)
       t.fail(err)
     }
   })
@@ -90,6 +92,7 @@ test('query commands', async t => {
   const count = 5
   const type = 'foo'
 
+  await client.putSchema(type, { fields: { title: { type: 'string' } } })
   for (let i = 0; i < count; i++) {
     await client.put({ type, value: { title: 'hello' } })
     debug(timer.log('put' + i, true))

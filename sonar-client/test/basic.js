@@ -157,9 +157,14 @@ tape('replicate resources', async t => {
   t.notEqual(collection2.info.key, collection2.info.localKey)
 
   const resource1 = await writeResource(collection1, 'one', 'onfirst')
+
+  // TODO: This refetches the schema. We should automate this.
+  await timeout(200)
+  await collection2.open()
+
   const resource2 = await writeResource(collection2, 'two', 'onsecond')
-  t.equal(resource1.key, collection1.info.key)
-  t.equal(resource2.key, collection2.info.localKey)
+  t.equal(resource1.key, collection1.key)
+  t.equal(resource2.key, collection2.localKey)
 
   await timeout(200)
 

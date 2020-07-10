@@ -62,7 +62,7 @@ module.exports = class Resources {
     id = id || opts.id
 
     const res = await this.collection.put({
-      schema: SCHEMA_RESOURCE,
+      type: SCHEMA_RESOURCE,
       id,
       value: {
         ...value,
@@ -74,7 +74,7 @@ module.exports = class Resources {
     // putted record.
     const records = await this.collection.get({
       id: res.id,
-      schema: SCHEMA_RESOURCE
+      type: SCHEMA_RESOURCE
     }, { waitForSync: true })
     if (!records.length) {
       throw new Error('error loading created resource')
@@ -93,7 +93,7 @@ function createHyperdriveUrl (key, path) {
 }
 
 function getContentUrl (record) {
-  if (record.schema !== SCHEMA_RESOURCE) return null
+  if (!record.hasType(SCHEMA_RESOURCE)) return null
   if (!record.value.contentUrl) return null
   return record.value.contentUrl
 }

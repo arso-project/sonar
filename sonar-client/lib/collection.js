@@ -41,6 +41,10 @@ class Collection {
     return this._info && this._info.key
   }
 
+  get localKey () {
+    return this._info && this._info.localKey
+  }
+
   get info () {
     return this._info
   }
