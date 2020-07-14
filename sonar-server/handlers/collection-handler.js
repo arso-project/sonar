@@ -27,10 +27,10 @@ module.exports = function createCollectionHandler (collections) {
 
     del (req, res, next) {
       const { id } = req.params
-      const { schema } = req.query
-      req.collection.del({ id, schema }, (err, result) => {
+      const { type } = req.query
+      req.collection.del({ id, type }, (err, result) => {
         if (err) return next(err)
-        res.send({ id, schema, deleted: true })
+        res.send({ id, type, deleted: true })
       })
     },
 

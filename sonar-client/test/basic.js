@@ -83,8 +83,9 @@ tape('db basic put and query', async t => {
 tape('get and delete record', async t => {
   const [cleanup, client] = await prepare()
   const collection = await client.createCollection('myCollection')
+  await collection.putType({ name: 'foo', fields: { title: { type: 'string' } } })
   const nuRecord = {
-    schema: 'foo',
+    type: 'foo',
     id: 'bar',
     value: { title: 'bar' }
   }
@@ -159,14 +160,14 @@ tape('replicate resources', async t => {
   const resource1 = await writeResource(collection1, 'one', 'onfirst')
 
   // TODO: This refetches the schema. We should automate this.
-  await timeout(200)
+  await timeout(500)
   await collection2.open()
 
   const resource2 = await writeResource(collection2, 'two', 'onsecond')
-  t.equal(resource1.key, collection1.key)
-  t.equal(resource2.key, collection2.localKey)
+  t.equal(resource1.key, collection1.info.dataKey, 'key of resource1 ok')
+  t.equal(resource2.key, collection2.info.dataKey, 'key of resourc2 ok')
 
-  await timeout(200)
+  await timeout(500)
 
   let contents1 = await readResources(collection1)
   t.deepEqual(contents1.sort(), ['onfirst'], 'collection 1 ok')
@@ -175,7 +176,7 @@ tape('replicate resources', async t => {
 
   await collection1.addFeed(collection2.info.localKey, { alias: 'seconda' })
 
-  await timeout(200)
+  await timeout(500)
 
   contents1 = await readResources(collection1)
   t.deepEqual(contents1.sort(), ['onfirst', 'onsecond'], 'collection 1 ok')

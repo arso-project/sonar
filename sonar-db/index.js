@@ -96,8 +96,11 @@ module.exports = class Database extends Nanoresource {
           if (record.hasType(TYPE.FEED)) {
             // console.log(self.name, 'ADD FEED', record.value)
             const { alias, key, type, ...info } = record.value
-            const feedOpts = { alias, key, type, info }
-            self.scope.addFeed(feedOpts)
+            // TODO: Make it configurable which feeds are considered "record feeds".
+            if (type === FEED_TYPE.ROOT || type === FEED_TYPE.DATA) {
+              const feedOpts = { alias, key, type, info }
+              self.scope.addFeed(feedOpts)
+            }
           }
           if (record.hasType(TYPE.TYPE)) {
             // console.log(self.name, 'ADD TYPE', record.id)
@@ -143,6 +146,10 @@ module.exports = class Database extends Nanoresource {
 
   get localKey () {
     return this._local && this._local.key
+  }
+
+  get dataKey () {
+    return this._data && this._data.key
   }
 
   open (cb) {
@@ -211,7 +218,9 @@ module.exports = class Database extends Nanoresource {
     // decodedRecord.type = decodedRecord.schema
     // console.log('onload out', decodedRecord)
     try {
+      // console.log('onload pre upcast', decodedRecord)
       const record = this.schema.Record(decodedRecord)
+      // TODO: Rethink where / how the delete property works.
       cb(null, record)
     } catch (err) {
       console.error('onload error', err)
@@ -297,6 +306,33 @@ module.exports = class Database extends Nanoresource {
     this.scope.loadRecord(req, cb)
   }
 
+  batch (records, opts, cb) {
+    if (typeof opts === 'function') { cb = opts; opts = {} }
+    cb = once(cb)
+    let pending = records.length
+    const errors = []
+    const results = []
+    // TODO: Readd proper batching as a single op.
+    // This will need to sort the records into batches per feed, and then do a single append with an array on each feed.
+    for (const record of records) {
+      this.put(record, opts, done)
+    }
+
+    function done (err, res) {
+      if (err) errors.push(err)
+      else results.push(res)
+
+      if (--pending !== 0) return
+
+      if (errors.length) {
+        const error = new Error(`Batch failed with ${errors.length} errors. First error: ${errors[0].message}`)
+        error.errors = errors
+        cb(error, results)
+      }
+      return cb(null, results)
+    }
+  }
+
   put (record, opts, cb) {
     if (typeof opts === 'function') { cb = opts; opts = {} }
     // if (opts.root) {
@@ -376,7 +412,11 @@ module.exports = class Database extends Nanoresource {
       cb = info
       info = {}
     }
-    this.putRootFeed(key, info, cb)
+    if (!info.type) {
+      this.putRootFeed(key, info, cb)
+    } else {
+      this._putFeed(key, info, cb)
+    }
   }
 
   putRootFeed (key, info = {}, cb) {
@@ -451,4 +491,12 @@ function initSchema (scope, schema, cb) {
     }
     next()
   }))
+}
+
+function once (fn) {
+  let called = false
+  return (...args) => {
+    if (!called) fn(...args)
+    called = true
+  }
 }

@@ -165,24 +165,31 @@ class Collection {
   async del (record) {
     return this.fetch('/db/' + record.id, {
       method: 'DELETE',
-      params: { schema: record.schema }
+      params: { type: record.type }
     })
   }
 
   /**
-   * Adds a new schema to the collection.
+   * Adds a new type to the collection.
    *
    * @async
    * @param {object} schema - A schema object.
    * @throws Throws if the schema object is invalid or cannot be saved.
    * @return {Promise<object>} A promise that resolves to the saved schema object.
    */
-  async putSchema (schema) {
-    const type = this.schema.addType(schema)
+  async putType (spec) {
+    const type = this.schema.addType(spec)
     return this.fetch('/schema', {
       method: 'POST',
       body: type.toJSONSchema()
     })
+  }
+
+  /**
+   * @deprecated use putType.
+   */
+  async putSchema (schema) {
+    this.putType(schema)
   }
 
   /**

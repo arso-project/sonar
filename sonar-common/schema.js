@@ -202,6 +202,9 @@ class Record {
   _buildFieldValues () {
     const fields = this.getType().fields()
     this._fieldValues = new FieldValueList(this._schema)
+    if (!this._record.value || typeof this._record.value !== 'object') {
+      return
+    }
     for (const field of fields) {
       if (this._record.value[field.name] !== undefined) {
         // const fieldValue = new FieldValue(field, this._record.value[field.name])
@@ -245,7 +248,8 @@ class Record {
       value: this.value,
       links: this.links,
       key: this.key,
-      seq: this.seq
+      seq: this.seq,
+      deleted: this.deleted
     }
   }
 

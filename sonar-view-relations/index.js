@@ -66,9 +66,13 @@ module.exports = class Relations {
   }
 }
 
-function messageToQuads (collection, message, cb) {
+function messageToQuads (collection, message) {
   const quads = []
   const graph = collection.key.toString('hex')
+  if (message.deleted) {
+    // TODO: Support deletes.
+    return []
+  }
   const relationValues = message.fields().filter(fieldValue => {
     return fieldValue.fieldType === 'relation'
   })

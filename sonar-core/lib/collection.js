@@ -52,7 +52,7 @@ module.exports = class Collection extends Nanoresource {
       corestore: this.corestore,
       db: this._level.fs,
       oninit (localkey, info) {
-        self.db.putSource(localkey, {
+        self.db.putFeed(localkey, {
           type: 'hyperdrive',
           alias: opts.alias
         }, (err) => {
@@ -60,7 +60,7 @@ module.exports = class Collection extends Nanoresource {
         })
       },
       resolveAlias (alias, cb) {
-        self.query('records', { type: 'core/source' }, (err, records) => {
+        self.query('records', { type: 'sonar/feed' }, (err, records) => {
           if (err) return cb(err)
           const aliases = records
             .map(r => r.value)
@@ -152,7 +152,7 @@ module.exports = class Collection extends Nanoresource {
   }
 
   batch (batch, cb) {
-    this.scope.batch(batch, cb)
+    this.db.batch(batch, cb)
   }
 
   loadRecord (key, seq, cb) {
@@ -228,6 +228,7 @@ module.exports = class Collection extends Nanoresource {
       discoveryKey: this.discoveryKey.toString('hex'),
       localKey: datEncoding.encode(this.db.localKey),
       rootKey: datEncoding.encode(this.db.rootKey),
+      dataKey: datEncoding.encode(this.db.dataKey),
       localDrive: localDriveKey
     }
 
