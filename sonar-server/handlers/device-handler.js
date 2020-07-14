@@ -8,8 +8,7 @@ module.exports = function createDeviceHandler (collections) {
     },
 
     createCollection (req, res, next) {
-      const { name } = req.params
-      const { key, alias } = req.body
+      const { name, key, alias } = req.body
       collections.create(name, { key, alias }, (err, collection) => {
         if (err) return next(err)
         res.send({

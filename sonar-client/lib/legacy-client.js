@@ -25,7 +25,7 @@ module.exports = class LegacyClient extends Client {
   }
 
   async info () {
-    return this.fetch('/_info')
+    return this.fetch('/info')
   }
 
   async getSchemas () {

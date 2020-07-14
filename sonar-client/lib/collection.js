@@ -23,7 +23,7 @@ class Collection {
    * @return {Collection}
    */
   constructor (client, name) {
-    this.endpoint = client.endpoint + '/' + name
+    this.endpoint = client.endpoint + '/collection/' + name
     this._client = client
     this._info = {}
     this._name = name
@@ -77,7 +77,7 @@ class Collection {
    *                          TODO: Document
    */
   async addFeed (key, info = {}) {
-    return this.fetch('/source/' + key, {
+    return this.fetch('/feed/' + key, {
       method: 'PUT',
       body: info
     })
@@ -183,13 +183,6 @@ class Collection {
       method: 'POST',
       body: type.toJSONSchema()
     })
-  }
-
-  /**
-   * @deprecated use putType.
-   */
-  async putType (schema) {
-    this.putType(schema)
   }
 
   /**
