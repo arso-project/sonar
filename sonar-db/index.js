@@ -60,12 +60,10 @@ module.exports = class Database extends Nanoresource {
     }
 
     this.scope.registerFeedType(FEED_TYPE.DATA, {
-      onload: this._onload.bind(this),
-      onappend: this._onappend.bind(this)
+      onload: this._onload.bind(this)
     })
     this.scope.registerFeedType(FEED_TYPE.ROOT, {
-      onload: this._onload.bind(this),
-      onappend: this._onappend.bind(this)
+      onload: this._onload.bind(this)
     })
 
     this.scope.use('kv', createKvView(
@@ -116,7 +114,7 @@ module.exports = class Database extends Nanoresource {
         self.schema.persist(next)
       }
     }, {
-      scopeFeed (info) {
+      scopeFeed (key, info) {
         return info.type === FEED_TYPE.ROOT
       }
     })
@@ -303,7 +301,7 @@ module.exports = class Database extends Nanoresource {
   }
 
   loadRecord (req, cb) {
-    this.scope.loadRecord(req, cb)
+    this.scope.load(req, cb)
   }
 
   batch (records, opts, cb) {
