@@ -238,7 +238,7 @@ class Record {
     // TODO: Add opts to skip encoding lseq on put.
     // TODO: We don't need both address and key, seq.
     return {
-      address: this.address,
+      // address: this.address,
       id: this.id,
       lseq: this.lseq,
       type: this.type,
@@ -885,6 +885,20 @@ module.exports = class Schema {
   build (strict = true) {
     for (const field of this._fields.values()) {
       field._build(strict)
+    }
+  }
+
+  toJSON () {
+    const spec = {}
+    for (const type of this._types.values()) {
+      spec[type.address] = type.toJSONSchema()
+    }
+    return spec
+  }
+
+  fromJSON (spec) {
+    for (const type of Object.values(spec)) {
+      this.addType(type)
     }
   }
 

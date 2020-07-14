@@ -40,7 +40,10 @@ module.exports = class Collection extends Nanoresource {
     this.discoveryKey = hcrypto.discoveryKey(this.key)
 
     this.db = new Database({
+      collection: this,
+      rootKey: this.key,
       scope: this.scope,
+      corestore: this.corestore,
       db: this._level.db,
       validate: false
     })
@@ -90,54 +93,30 @@ module.exports = class Collection extends Nanoresource {
   }
 
   get localKey () {
-    return this._local && this._local.key
+    return this.db.localKey
+  }
+
+  get rootKey () {
+    return this.db.rootKey
   }
 
   _open (cb) {
-    const self = this
     cb = once(cb)
     // db.open also calls scope.open.
     this.db.open(err => {
       if (err) return cb(err)
       this._mountViews()
-
-      // If the scope is opened for the first time, it is empty. Add our initial feeds.
-      if (!this.scope.list().length) {
-        // Add a root feed with the collection key.
-        this._root = this.scope.addFeed({ key: this.key, name: 'root' })
-        this._root.ready((err) => {
-          if (err) return cb(err)
-          onfeedsinit()
-        })
-      // If the scope is reopened, alias our root feed.
-      } else {
-        this._root = this.scope.feed('root')
-      }
-      this._root.ready(err => {
-        if (err) return cb(err)
-        // root is writable: it is also our local feed.
-        if (this._root.writable) {
-          this._local = this.scope.addFeed({ key: this._root.key, name: 'local' })
-          // root is not writable: create a local feed and add it to the scope.
-        } else {
-          this._local = this.scope.addFeed({ name: 'local' })
-        }
-        onfeedsinit()
-      })
-    })
-
-    function onfeedsinit () {
-      self.fs.ready(err => {
+      this.fs.ready(err => {
         if (err) return cb(err)
         debug(
           'opened collection %s (dkey %s, feeds %d)',
-          pretty(self.key),
-          pretty(self.discoveryKey),
-          self.scope.status().feeds.length
+          pretty(this.key),
+          pretty(this.discoveryKey),
+          this.scope.status().feeds.length
         )
         cb()
       })
-    }
+    })
   }
 
   _mountViews () {
@@ -180,6 +159,11 @@ module.exports = class Collection extends Nanoresource {
     this.scope.loadRecord(key, seq, cb)
   }
 
+  putType (spec, cb) {
+    this.db.putType(spec, cb)
+  }
+
+  // @deprecated: use putType.
   putSchema (name, schema, cb) {
     this.db.putSchema(name, schema, cb)
   }
@@ -233,7 +217,6 @@ module.exports = class Collection extends Nanoresource {
   // Return some info on the collection synchronously.
   status (cb) {
     if (!this.opened) return cb(null, { opened: false, name: this.name })
-    const localKey = datEncoding.encode(this._local.key)
     const localDrive = this.fs.localwriter
     if (localDrive) var localDriveKey = datEncoding.encode(localDrive.key)
 
@@ -243,7 +226,8 @@ module.exports = class Collection extends Nanoresource {
       opened: true,
       key: this.key.toString('hex'),
       discoveryKey: this.discoveryKey.toString('hex'),
-      localKey,
+      localKey: datEncoding.encode(this.db.localKey),
+      rootKey: datEncoding.encode(this.db.rootKey),
       localDrive: localDriveKey
     }
 

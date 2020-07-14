@@ -34,14 +34,17 @@ function doc (title, id) {
   return { type: 'doc', value: { title }, id }
 }
 
-tape.only('simple replication', async t => {
+tape('simple replication', async t => {
   const [collections1, cleanup1] = await createStore({ network: true })
   const [collections2, cleanup2] = await createStore({ network: true })
   const collection = await promisify(collections1.create.bind(collections1))('collection1')
   let collection2, id
   await runAll([
+    // cb => logCollection(collection, cb),
     cb => collection.ready(cb),
-    cb => collection.putSchema('doc', { field: { title: { type: 'string' } } }, cb),
+    // cb => { console.log('COLLECTION 1 READY!!'); cb() },
+    cb => collection.putType({ name: 'doc', fields: { title: { type: 'string' } } }, cb),
+    // cb => { console.log('COLLECTION 1 TYPE PUT DONE, NOW PUT DOC !!'); cb() },
     cb => collection.put(doc('1rev1'), (err, _id) => {
       t.error(err)
       id = _id
@@ -66,7 +69,7 @@ tape.only('simple replication', async t => {
       // console.log('collection2', collection2.scope)
       cb()
     },
-    cb => logCollection(collection2, cb),
+    // cb => logCollection(collection2, cb),
     cb => replicate(collection, collection2, cb),
     cb => setTimeout(cb, 100),
     cb => collection2.sync(cb),
@@ -75,10 +78,11 @@ tape.only('simple replication', async t => {
       // console.log({ collection, collection2 })
       cb()
     },
-    // cb => setTimeout(cb, 1000),
+    // TODO: Find an event callback that tells us when colleciton2 has updated.
+    cb => setTimeout(cb, 1000),
     cb => checkOne(t, collection2, { type: 'doc' }, '1rev2', 'init collection2 ok', cb),
     cb => {
-      const collection2localkey = collection2._local.key
+      const collection2localkey = collection2.localKey
       collection.putSource(collection2localkey, { alias: 'w2' }, cb)
     },
     cb => collection.sync(cb),
@@ -87,7 +91,7 @@ tape.only('simple replication', async t => {
     },
     cb => collection.once('remote-update', cb),
     cb => collection.sync(cb),
-    cb => setTimeout(cb, 100),
+    cb => setTimeout(cb, 1000),
     cb => {
       // console.log('STATUS')
       // console.log({ collection, collection2 })
