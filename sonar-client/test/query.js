@@ -6,7 +6,7 @@ const createServerClient = require('./util/server')
 async function prepare (t) {
   const [context, client] = await createServerClient()
   try {
-    await client.putSchema('doc', { fields: { title: { type: 'string' } } })
+    await client.putType('doc', { fields: { title: { type: 'string' } } })
     await client.put({ type: 'doc', value: { title: 'hello world' } })
     await client.put({ type: 'doc', value: { title: 'hello moon' } })
     await client.sync()

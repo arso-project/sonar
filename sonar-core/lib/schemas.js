@@ -1,4 +1,4 @@
-exports.RESOURCE_SCHEMA = {
+exports.RESOURCE = {
   name: 'resource',
   namespace: 'sonar',
   title: 'Resource',

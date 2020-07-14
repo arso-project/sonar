@@ -102,7 +102,7 @@ tape('put and get 1', t => {
     t.error(err, 'tempdir ok')
     collections.create('default', (err, collection) => {
       t.error(err)
-      collection.putSchema('doc', { fields: { title: { type: 'string' } } }, err => {
+      collection.putType({ name: 'doc', fields: { title: { type: 'string' } } }, err => {
         t.error(err)
         collection.put({ type: 'doc', value: { title: 'hello' } }, (err, id) => {
           t.error(err)

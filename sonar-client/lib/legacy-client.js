@@ -38,10 +38,10 @@ module.exports = class LegacyClient extends Client {
     return collection.schema.getType(name)
   }
 
-  async putSchema (name, schema) {
+  async putType (name, schema) {
     schema.name = name
     const collection = await this.focusedCollection()
-    return collection.putSchema(schema)
+    return collection.putType(schema)
   }
 
   async putSource (key, opts) {

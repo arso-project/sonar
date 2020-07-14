@@ -49,12 +49,12 @@ module.exports = function apiRoutes (api) {
   collectionRouter.post('/_query/:name', handlers.query)
 
   // List schemas
-  collectionRouter.get('/schema', handlers.getSchemas)
+  collectionRouter.get('/schema', handlers.getTypes)
   // Put schema
-  collectionRouter.post('/schema', handlers.putSchema)
+  collectionRouter.post('/schema', handlers.putType)
   // Put source
   // TODO: This route should have the same pattern as the others.
-  collectionRouter.put('/source/:key', handlers.putSource)
+  collectionRouter.put('/source/:key', handlers.putFeed)
 
   collectionRouter.get('/debug', handlers.debug)
 

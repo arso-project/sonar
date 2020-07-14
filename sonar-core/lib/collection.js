@@ -5,7 +5,7 @@ const debug = require('debug')('sonar-core:collection')
 const hcrypto = require('hypercore-crypto')
 const Nanoresource = require('nanoresource/emitter')
 
-const { RESOURCE_SCHEMA } = require('./schemas.js')
+const TYPE_SPECS = require('./schemas.js')
 
 const Database = require('@arso-project/sonar-db')
 const Fs = require('./fs')
@@ -132,7 +132,7 @@ module.exports = class Collection extends Nanoresource {
   }
 
   init (cb) {
-    this.db.putSchema(RESOURCE_SCHEMA.name, RESOURCE_SCHEMA, cb)
+    this.db.putType(TYPE_SPECS.RESOURCE, cb)
   }
 
   replicate (isInitator, opts) {
@@ -163,25 +163,16 @@ module.exports = class Collection extends Nanoresource {
     this.db.putType(spec, cb)
   }
 
-  // @deprecated: use putType.
-  putSchema (name, schema, cb) {
-    this.db.putSchema(name, schema, cb)
+  getType (name) {
+    return this.db.getType(name)
   }
 
-  getSchemas (cb) {
-    const schemas = this.db.getSchemas()
-    if (cb) cb(null, schemas)
-    else return schemas
+  serializeSchema () {
+    return this.db.schema.toJSON()
   }
 
-  getSchema (name, cb) {
-    const schema = this.db.getSchema(name)
-    if (cb) cb(schema ? null : new Error('Schema not found'), schema)
-    else return schema
-  }
-
-  putSource (key, info, cb) {
-    this.db.putSource(key, info, cb)
+  putFeed (key, info, cb) {
+    this.db.putFeed(key, info, cb)
   }
 
   query (name, args, opts, cb) {

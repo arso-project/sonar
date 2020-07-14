@@ -12,7 +12,7 @@ tape('put query without replication', async t => {
   const collection = await promisify(collections.create.bind(collections))('foo')
   await runAll([
     cb => collection.ready(cb),
-    cb => collection.putSchema('doc', { field: { title: { type: 'string' } } }, cb),
+    cb => collection.putType({ name: 'doc', fields: { title: { type: 'string' } } }, cb),
     cb => collection.put({ type: 'doc', value: { title: 'foo' } }, (err, _id) => {
       t.error(err)
       id = _id
@@ -83,7 +83,7 @@ tape('simple replication', async t => {
     cb => checkOne(t, collection2, { type: 'doc' }, '1rev2', 'init collection2 ok', cb),
     cb => {
       const collection2localkey = collection2.localKey
-      collection.putSource(collection2localkey, { alias: 'w2' }, cb)
+      collection.putFeed(collection2localkey, { alias: 'w2' }, cb)
     },
     cb => collection.sync(cb),
     cb => {

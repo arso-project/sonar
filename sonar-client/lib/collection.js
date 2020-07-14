@@ -188,7 +188,7 @@ class Collection {
   /**
    * @deprecated use putType.
    */
-  async putSchema (schema) {
+  async putType (schema) {
     this.putType(schema)
   }
 

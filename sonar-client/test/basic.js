@@ -29,7 +29,7 @@ tape('db basic put and query', async t => {
   const [cleanup, client] = await prepare({ network: false })
 
   const collection = await client.createCollection('foobar')
-  await collection.putSchema({
+  await collection.putType({
     name: 'doc',
     fields: {
       title: {
@@ -37,7 +37,7 @@ tape('db basic put and query', async t => {
       }
     }
   })
-  await collection.putSchema({
+  await collection.putType({
     name: 'fun',
     title: 'Fun things',
     fields: {

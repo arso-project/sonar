@@ -375,27 +375,11 @@ module.exports = class Database extends Nanoresource {
   }
 
   getType (address) {
-    this.schema.getType(address)
-  }
-
-  // TODO: Rename to getType or remove.
-  // TODO: Rethink if schema.getType() should throw or return null.
-  getSchema (name) {
     try {
-      return this.schema.getType(name)
-    } catch (err) {
+      return this.schema.getType(address)
+    } catch (e) {
       return null
     }
-  }
-
-  // TODO: Rename to encodeSchema
-  getSchemas (opts = {}) {
-    const types = this.schema.getTypes()
-    const spec = types.reduce((spec, type) => {
-      spec[type.address] = type
-      return spec
-    }, {})
-    return spec
   }
 
   // TODO: Remove, replace with putFeed

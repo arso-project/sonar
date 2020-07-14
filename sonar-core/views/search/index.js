@@ -48,8 +48,6 @@ function searchView (level, _scope, opts) {
     const time = clock()
     await manager.ready()
 
-    const schemas = collection.getSchemas()
-
     const docs = {
       textdump: []
     }
@@ -123,18 +121,18 @@ function searchView (level, _scope, opts) {
     // }
   }
 
-  function loadSchema (name, record) {
-    if (!schemas[name]) {
-      schemas[name] = new Promise((resolve, reject) => {
-        collection.getSchema(name, (err, schema) => {
-          if (err) reject(err)
-          if (schema) resolve(schema)
-          else resolve(null)
-        })
-      })
-    }
-    return schemas[name]
-  }
+  // function loadSchema (name, record) {
+  //   if (!schemas[name]) {
+  //     schemas[name] = new Promise((resolve, reject) => {
+  //       collection.getSchema(name, (err, schema) => {
+  //         if (err) reject(err)
+  //         if (schema) resolve(schema)
+  //         else resolve(null)
+  //       })
+  //     })
+  //   }
+  //   return schemas[name]
+  // }
 }
 
 function objectToString (obj) {

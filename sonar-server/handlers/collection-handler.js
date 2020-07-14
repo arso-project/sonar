@@ -73,37 +73,35 @@ module.exports = function createCollectionHandler (collections) {
       })
     },
 
-    getSchemas (req, res, next) {
+    getTypes (req, res, next) {
       if (req.query && req.query.name) {
-        const schema = req.collection.getSchema(req.query.name)
-        if (!schema) return next(HttpError(404, 'Schema not found'))
-        else res.send(schema)
+        const type = req.collection.getType(req.query.name)
+        if (!type) return next(HttpError(404, 'Type not found'))
+        else res.send(type.toJSONSchema())
       } else {
-        const schemas = req.collection.getSchemas()
-        res.send(schemas)
+        const types = req.collection.serializeSchema()
+        res.send(types)
       }
     },
 
-    putSchema (req, res, next) {
-      const schema = req.body
-      const name = schema.name
+    putType (req, res, next) {
+      const spec = req.body
       const collection = req.collection
-      collection.putSchema(name, schema, (err, id) => {
+      collection.putType(spec, (err, id) => {
         if (err) {
           err.statusCode = 400
           return next(err)
         }
-        collection.getSchema(id, (err, result) => {
-          if (err) return next(err)
-          res.send(result)
-        })
+        const type = collection.getType(id)
+        if (!type) return next(HttpError(404, 'Type not found after put - please report bug'))
+        res.send(type.toJSONSchema())
       })
     },
 
-    putSource (req, res, next) {
+    putFeed (req, res, next) {
       const { key } = req.params
       const info = req.body
-      req.collection.putSource(key, info, (err) => {
+      req.collection.putFeed(key, info, (err) => {
         if (err) return next(err)
         return res.send({ msg: 'ok' })
       })
