@@ -37,7 +37,7 @@ class Client {
    * Closes the client and all commands that maybe active.
    *
    * @async
-   * @return {Promise}
+   * @return {Promise<void>}
    */
   async close () {
     return this.commands.close()
@@ -81,7 +81,7 @@ class Client {
    * @param {string} name - Name of the collection.
    * @param {object} info - [TODO:description]
    * @param {boolean} info.share - Controls whether a collection is shared via p2p.
-   * @return {Promise}
+   * @return {Promise<void>}
    */
   async updateCollection (name, info) {
     return this.fetch(name, {
@@ -95,7 +95,7 @@ class Client {
    *
    * @async
    * @param {string} keyOrName - Key or name of the collection to open/return.
-   * @return {Promise<Collection>} 
+   * @return {Promise<Collection>}
    */
   async openCollection (keyOrName) {
     if (this._collections.get(keyOrName)) return this._collections.get(keyOrName)
@@ -107,6 +107,26 @@ class Client {
     return collection
   }
 
+  /**
+   * Fetch a resource.
+   *
+   * This is a wrapper around the fetch web API. It should be API compatible to fetch,
+   * with the following changes:
+   *
+   * @async
+   * @param {string} [opts.requestType='json'] Request encoding and content type.
+   *   Supported values are 'json' and 'binary'
+   * @param {string} [opts.responseType='text'] Response encoding. If the response
+   *    has a JSON content type, will always be set to 'json'.
+   *    Supported values are 'text', 'binary' and 'stream'.
+   * @param {object} [opts.params] Query string parameters (will be encoded correctly).
+   *
+   * @return {Promise<object>} If the response has a JSON content type header, the
+   *    decoded JSON will be returned. if opts.responseType is 'binary' or 'text',
+   *    the response will be returned as a buffer or text.
+   *
+   * TODO: Rethink the default responseType cascade.
+   */
   async fetch (url, opts = {}) {
     if (!url.match(/^https?:\/\//)) {
       if (url.indexOf('://') !== -1) throw new Error('Only http: and https: protocols are supported.')
@@ -154,7 +174,9 @@ class Client {
         return res.body
       }
       if (opts.responseType === 'buffer') {
+        // nodejs only: res.buffer() returns a Buffer instance.
         if (res.buffer) return await res.buffer()
+        // browser: Fetch API res.arrayBuffer returns ArrayBuffer.
         else return await res.arrayBuffer()
       }
 
