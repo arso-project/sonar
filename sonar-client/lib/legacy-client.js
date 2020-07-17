@@ -30,7 +30,7 @@ module.exports = class LegacyClient extends Client {
 
   async getSchemas () {
     const collection = await this.focusedCollection()
-    return collection.schema.listTypes()
+    return collection.schema.getTypes()
   }
 
   async getSchema (name) {

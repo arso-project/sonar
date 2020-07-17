@@ -43,7 +43,7 @@ module.exports = class Database extends Nanoresource {
       schemaDb.put('spec', JSON.stringify(spec), cb)
     }
     this.schema.load = cb => {
-      this.schema.setDefaultNamespace(this.opts.rootKey.toString('hex'))
+      this.schema.setDefaultNamespace(this._root.key.toString('hex'))
       schemaDb.get('spec', (err, str) => {
         if (err && !err.notFound) return cb(err)
         if (!err) {
@@ -153,11 +153,11 @@ module.exports = class Database extends Nanoresource {
   open (cb) {
     this.scope.open(err => {
       if (err) return cb(err)
-      this.schema.load(err => {
+      this._initFeeds(err => {
         if (err) return cb(err)
-        this._initFeeds(err => {
+        this.schema.load(err => {
           if (err) return cb(err)
-          initSources(this.scope, cb)
+          cb()
         })
       })
     })
@@ -211,32 +211,19 @@ module.exports = class Database extends Nanoresource {
   }
 
   _onload (message, opts, cb, retry = false) {
-    const { key, seq, lseq, value, feedType } = message
-    const decodedRecord = Record.decode(value, { key, seq, lseq, feedType })
-    // decodedRecord.type = decodedRecord.schema
-    // console.log('onload out', decodedRecord)
+    const { key, seq, lseq, value } = message
+    const decodedRecord = Record.decode(value, { key, seq, lseq })
     try {
-      // console.log('onload pre upcast', decodedRecord)
       const record = this.schema.Record(decodedRecord)
       // TODO: Rethink where / how the delete property works.
       cb(null, record)
     } catch (err) {
-      console.error('onload error', err)
       if (retry) return cb(err)
       // TODO: Make sure this doesn't loop infinitely.
-      this.scope.ready('root', err => {
-        console.error('root scope ready', err)
+      this.scope.sync('root', err => {
+        if (err) return cb(err)
         this._onload(message, opts, cb, true)
       })
-      // TODO: Error here?
-      // this.schema.addType({
-      //   address: decodedRecord.type
-      // })
-      // const record = this.schema.Record(decodedRecord)
-      // cb(null, record)
-      // console.error(err)
-      // console.error(message)
-      // console.error(this.schema)
     }
   }
 
@@ -247,6 +234,8 @@ module.exports = class Database extends Nanoresource {
     } catch (err) {
       return cb(err)
     }
+
+    // TODO: Validate record value.
 
     this.scope.view.kv.getLinks(record, (err, links) => {
       if (err && err.status !== 404) return cb(err)
@@ -264,23 +253,6 @@ module.exports = class Database extends Nanoresource {
       const buf = Record.encode(record)
       cb(null, buf, record.id)
     })
-
-    // if (!record.type) return cb(new Error('type is required'))
-    // if (record.op === undefined) record.op = Record.PUT
-    // if (record.op === 'put') record.op = Record.PUT
-    // if (record.op === 'del') record.op = Record.DEL
-    // record.type = this.schema.resolveTypeAddress(record.schema || record.type)
-
-    // if (record.op === Record.PUT) {
-    //   let validate = false
-    //   if (this.opts.validate) validate = true
-    //   if (typeof opts.validate !== 'undefined') validate = !!opts.validate
-
-    //   if (validate) {
-    //     // TODO: add validate
-    //     // if (!this.schemas.validate(record)) return cb(this.schemas.error)
-    //   }
-    // }
   }
 
   append (record, opts, cb) {
@@ -333,13 +305,6 @@ module.exports = class Database extends Nanoresource {
 
   put (record, opts, cb) {
     if (typeof opts === 'function') { cb = opts; opts = {} }
-    // if (opts.root) {
-    //   opts.feedType = FEED_TYPE.ROOT
-    //   opts.name = FEED_NAME.ROOT
-    // } else if (!opts.name) {
-    //   opts.feedType = FEED_TYPE.DATA
-    //   opts.name = FEED_NAME.DATA
-    // }
     this.append(record, opts, cb)
   }
 
@@ -347,12 +312,6 @@ module.exports = class Database extends Nanoresource {
     if (typeof opts === 'function') { cb = opts; opts = {} }
     const record = { id, type, deleted: true }
     this.put(record, opts, cb)
-  }
-
-  // TODO: Remove
-  putSchema (name, spec, cb) {
-    spec.name = name
-    this.putType(spec, cb)
   }
 
   putType (spec, cb) {
@@ -380,20 +339,8 @@ module.exports = class Database extends Nanoresource {
     }
   }
 
-  // TODO: Remove, replace with putFeed
-  putSource (key, info = {}, cb) {
-    if (typeof info === 'function') {
-      cb = info
-      info = {}
-    }
-    this.putFeed(key, info, cb)
-  }
-
   putFeed (key, info = {}, cb) {
-    if (typeof info === 'function') {
-      cb = info
-      info = {}
-    }
+    if (typeof info === 'function') { cb = info; info = {} }
     if (!info.type) {
       this.putRootFeed(key, info, cb)
     } else {
@@ -402,29 +349,19 @@ module.exports = class Database extends Nanoresource {
   }
 
   putRootFeed (key, info = {}, cb) {
-    if (typeof info === 'function') {
-      cb = info
-      info = {}
-    }
+    if (typeof info === 'function') { cb = info; info = {} }
     info.type = FEED_TYPE.ROOT
     this._putFeed(key, info, cb)
   }
 
   putDataFeed (key, info = {}, cb) {
-    if (typeof info === 'function') {
-      cb = info
-      info = {}
-    }
+    if (typeof info === 'function') { cb = info; info = {} }
     info.type = FEED_TYPE.DATA
     this._putFeed(key, info, cb)
   }
 
   _putFeed (key, info = {}, cb) {
-    // opts should/can include: { alias }
-    if (typeof info === 'function') {
-      cb = info
-      info = {}
-    }
+    if (typeof info === 'function') { cb = info; info = {} }
     if (Buffer.isBuffer(key)) key = key.toString('hex')
     if (!info.type) return cb(new Error('Type is required'))
     const record = {
@@ -438,41 +375,6 @@ module.exports = class Database extends Nanoresource {
     const opts = { root: true }
     this.put(record, opts, cb)
   }
-}
-
-function initSources (scope, cb) {
-  const qs = scope.createQueryStream('records', { type: 'core/source' }, { live: true })
-  qs.once('sync', cb)
-  qs.pipe(sink((record, next) => {
-    const { alias, key, type, ...info } = record.value
-    if (type !== FEED_TYPE) return next()
-    debug('[%s] source:add key %s alias %s type %s', scope._name, pretty(key), alias, type)
-    const feedOpts = { alias, key, type, info }
-    scope.addFeed(feedOpts)
-    next()
-  }))
-}
-
-function initSchema (scope, schema, cb) {
-  schema.setDefaultNamespace(scope.key)
-
-  for (const spec of Object.values(SCHEMAS)) {
-    schema.addType(spec)
-  }
-
-  const qs = scope.createQueryStream('records', { type: 'core/schema' }, { live: true })
-  qs.once('sync', cb)
-  qs.on('error', err => scope.emit('error', err))
-  qs.pipe(sink((record, next) => {
-    try {
-      schema.addTypeFromJsonSchema(record.value)
-    } catch (err) {
-      console.error('Error: Trying to add invalid type: ' + record.id)
-      console.error(err)
-      console.error(record)
-    }
-    next()
-  }))
 }
 
 function once (fn) {

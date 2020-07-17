@@ -94,13 +94,13 @@ export function SearchResults (props) {
 }
 
 function SearchResult (props) {
-  const { value, id, schema, key } = props.row
+  const { value, id, type, key } = props.row
   return (
     <Box mb='4'>
       <Heading fontSize='md' color='pink.500'>{entityLink()}</Heading>
       <MetaItems>
         <MetaItem name='ID' value={id} />
-        <MetaItem name='Schema' value={formatSchema(schema)} />
+        <MetaItem name='Schema' value={formatType(type)} />
         <MetaItem name='Source' value={formatSource(key)} />
       </MetaItems>
       <div
@@ -122,8 +122,8 @@ function recordPath (id) {
 
 // TODO: This is likely too hacky. Propably we'll want
 // a full component with a tooltip for details.
-function formatSchema (schemaName) {
-  return schemaName.split('/').slice(1).join('/')
+function formatType (typeName) {
+  return typeName.split('/').slice(1).join('/')
 }
 
 function formatSource (source) {

@@ -1,4 +1,4 @@
-const base32 = require('base32')
+const base32Encode = require('base32-encode')
 const randomBytes = require('randombytes')
 
 const Schema = require('@arso-project/sonar-common/schema')
@@ -6,7 +6,7 @@ const Fs = require('./fs')
 const Resources = require('./resources')
 
 function uuid () {
-  return base32.encode(randomBytes(16))
+  return base32Encode(randomBytes(16), 'Crockford').toLowerCase()
 }
 
 class Collection {
