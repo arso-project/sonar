@@ -48,7 +48,7 @@ class Record {
 
     this._record = record
     this._schema = schema
-    this._dirty = true
+    this._built = false
 
     // Prevent double-upcasting
     // TODO: Find out if this is a performance concern.
@@ -95,6 +95,14 @@ class Record {
 
   get lseq () {
     return this._record.lseq
+  }
+
+  get timestamp () {
+    return this._record.timestamp
+  }
+
+  get meta () {
+    return this._record.meta || {}
   }
 
   // TODO: kappa-scopes/scopes.js:518 calls this to add lseq from indexer state.
@@ -194,9 +202,9 @@ class Record {
   }
 
   _update (force = false) {
-    if (!force && !this._dirty) return
+    if (!force && this._built) return
     this._buildFieldValues()
-    this._dirty = false
+    this._built = true
   }
 
   _buildFieldValues () {
@@ -249,7 +257,8 @@ class Record {
       links: this.links,
       key: this.key,
       seq: this.seq,
-      deleted: this.deleted
+      deleted: this.deleted,
+      timestamp: this.timestamp
     }
   }
 
@@ -860,7 +869,8 @@ module.exports = class Schema {
 
     const address = type.address + '#' + spec.name
     if (this.hasField(address)) {
-      throw new Error('Field exists: ' + address)
+      return this._fields.get(address)
+      // throw new Error('Field exists: ' + address)
     }
     spec.address = address
 

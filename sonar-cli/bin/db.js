@@ -15,9 +15,9 @@ exports.builder = function (yargs) {
       command: 'get <id>',
       describe: 'get records',
       builder: {
-        schema: {
-          alias: 's',
-          describe: 'schema'
+        type: {
+          alias: 't',
+          describe: 'type'
         }
       },
       handler: get
@@ -26,9 +26,9 @@ exports.builder = function (yargs) {
       command: 'put [id]',
       describe: 'put record from stdin',
       builder: {
-        schema: {
-          alias: 's',
-          describe: 'schema',
+        type: {
+          alias: 't',
+          describe: 'type',
           required: true
         },
         data: {
@@ -44,39 +44,39 @@ exports.builder = function (yargs) {
       handler: query
     })
     .command({
-      command: 'put-schema [name]',
-      describe: 'put schema from stdin',
-      handler: putSchema
+      command: 'put-type',
+      describe: 'put type (JSON from stdin)',
+      handler: putType
     })
     .command({
-      command: 'get-schema [name]',
-      describe: 'get schemas',
-      handler: getSchema
+      command: 'get-type [name]',
+      describe: 'get type',
+      handler: getType
     })
     .command({
-      command: 'list-schemas',
-      describe: 'list schemas',
-      handler: listSchemas
+      command: 'list-types',
+      describe: 'list types',
+      handler: listTypes
     })
     .help()
 }
 
 async function get (argv) {
   const client = makeClient(argv)
-  const { id, schema } = argv
-  const records = await client.get({ id, schema })
+  const { id, type } = argv
+  const records = await client.get({ id, type })
   console.log(JSON.stringify(records))
 }
 
 async function put (argv) {
   const client = makeClient(argv)
-  let { schema, id, data } = argv
+  let { type, id, data } = argv
   if (!data) {
     data = await collectJson(process.stdin)
   } else {
     data = JSON.parse(data)
   }
-  const record = { schema, id, value: data }
+  const record = { type, id, value: data }
   const result = await client.put(record)
   console.log(result.id)
 }
@@ -89,26 +89,26 @@ async function query (argv) {
   console.log(results)
 }
 
-async function putSchema (argv) {
+async function putType (argv) {
   const client = makeClient(argv)
-  const { name } = argv
+  const collection = await client.focusedCollection()
   const value = await collectJson(process.stdin)
-  const result = await client.putSchema(name, value)
+  const result = await collection.putType(value)
   console.log(result)
 }
 
-async function getSchema (argv) {
+async function getType (argv) {
   const client = makeClient(argv)
   const { name } = argv
-  const result = await client.getSchema(name)
+  const result = await client.getType(name)
   console.log(JSON.stringify(result))
 }
 
-async function listSchemas (argv) {
+async function listTypes (argv) {
   const client = makeClient(argv)
-  const schemas = await client.getSchemas()
-  if (!schemas) return console.error('No schemas')
-  console.log(Object.keys(schemas).join('\n'))
+  const types = await client.getTypes()
+  if (!types) return console.error('No types')
+  console.log(Object.keys(types).join('\n'))
 }
 
 function collectJson () {

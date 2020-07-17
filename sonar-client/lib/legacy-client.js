@@ -28,12 +28,12 @@ module.exports = class LegacyClient extends Client {
     return this.fetch('/info')
   }
 
-  async getSchemas () {
+  async getTypes () {
     const collection = await this.focusedCollection()
     return collection.schema.getTypes()
   }
 
-  async getSchema (name) {
+  async getType (name) {
     const collection = await this.focusedCollection()
     return collection.schema.getType(name)
   }
@@ -44,7 +44,15 @@ module.exports = class LegacyClient extends Client {
     return collection.putType(schema)
   }
 
-  async putSource (key, opts) {
+  // TODO: Remove.
+  getSchemas () {
+    return this.getTypes()
+  }
+  getSchema (name) {
+    return this.getSchema(name)
+  }
+
+  async putFeed (key, opts) {
     const collection = await this.focusedCollection()
     return collection.putFeed(key, opts)
   }
