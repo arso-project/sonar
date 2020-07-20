@@ -24,7 +24,7 @@ async function loadSchemas () {
 }
 
 async function loadRecords ({ schema }) {
-  return client.query('records', { schema })
+  return client.query('records', { type: schema })
 }
 
 const useGlobalState = makeGlobalStateHook('tables')
@@ -32,7 +32,7 @@ const useGlobalState = makeGlobalStateHook('tables')
 export default function TablesPage (props) {
   const [records, setRecords] = useGlobalState('records', null)
   const [schema, setSchema] = useGlobalState('schema', null)
-  const schemaname = schema ? schema.name : null
+  const schemaname = schema ? schema.address : null
 
   useEffect(() => {
     if (!schemaname) return
@@ -94,9 +94,9 @@ function createHeaderFormatter (column) {
   return title || id
 }
 
-function schemaColumns (schema) {
-  return Object.entries(schema.properties).map(([key, fieldSchema]) => {
-    return fieldColumn(key, fieldSchema)
+function schemaColumns (type) {
+  return type.fields().map(field => {
+    return fieldColumn(field.address, field)
   })
 }
 

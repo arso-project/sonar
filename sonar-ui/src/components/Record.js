@@ -290,10 +290,10 @@ function DateViewer (props) {
 
 function RecordMeta (props) {
   const { record, schema } = props
-  const { id, key, timestamp, schema: schemaName } = record
+  const { id, key, timestamp, type } = record
   return (
     <MetaItems>
-      <MetaItem stacked name='Schema' value={formatSchema(schemaName)} />
+      <MetaItem stacked name='Schema' value={formatSchema(type)} />
       <MetaItem stacked name='ID' value={id} />
       <MetaItem stacked name='Source' value={formatSource(key)} />
       <MetaItem stacked name='Created' value={formatDate(timestamp)} />
@@ -327,6 +327,7 @@ function MissingRecordError (props) {
 }
 
 function formatDate (ts) {
+  if (!ts) return null
   const date = new Date(ts)
   return formatRelative(date, Date.now())
 }

@@ -144,7 +144,7 @@ function commonFields (prefix) {
       }
     },
     {
-      name: prefix + 'schema',
+      name: prefix + 'type',
       type: 'text',
       options: {
         indexing: {

@@ -1,11 +1,12 @@
 const pretty = require('pretty-hash')
+const { Readable } = require('streamx')
 const datEncoding = require('dat-encoding')
 const sub = require('subleveldown')
 const debug = require('debug')('sonar-core:collection')
 const hcrypto = require('hypercore-crypto')
 const Nanoresource = require('nanoresource/emitter')
 
-const { RESOURCE_SCHEMA } = require('./schemas.js')
+const TYPE_SPECS = require('./schemas.js')
 
 const Database = require('@arso-project/sonar-db')
 const Fs = require('./fs')
@@ -27,9 +28,6 @@ module.exports = class Collection extends Nanoresource {
     this.corestore = opts.scope.corestore
     this.name = opts.name
 
-    this.scope.on('remote-update', () => this.emit('remote-update'))
-    this.scope.on('feed', feed => this.emit('feed', feed))
-
     this._subscriptions = {}
     this._level = {
       db: sub(opts.level, 'd'),
@@ -40,7 +38,10 @@ module.exports = class Collection extends Nanoresource {
     this.discoveryKey = hcrypto.discoveryKey(this.key)
 
     this.db = new Database({
+      collection: this,
+      rootKey: this.key,
       scope: this.scope,
+      corestore: this.corestore,
       db: this._level.db,
       validate: false
     })
@@ -49,7 +50,7 @@ module.exports = class Collection extends Nanoresource {
       corestore: this.corestore,
       db: this._level.fs,
       oninit (localkey, info) {
-        self.db.putSource(localkey, {
+        self.db.putFeed(localkey, {
           type: 'hyperdrive',
           alias: opts.alias
         }, (err) => {
@@ -57,7 +58,7 @@ module.exports = class Collection extends Nanoresource {
         })
       },
       resolveAlias (alias, cb) {
-        self.query('records', { schema: 'core/source' }, (err, records) => {
+        self.query('records', { type: 'sonar/feed' }, (err, records) => {
           if (err) return cb(err)
           const aliases = records
             .map(r => r.value)
@@ -77,7 +78,33 @@ module.exports = class Collection extends Nanoresource {
       }
     })
 
+    // Forward some events.
+    this.scope.on('remote-update', () => this.emit('remote-update'))
+    this.scope.on('feed', feed => this.emit('feed', feed))
+    this.scope.indexer.on('update', () => this.emit('update', this.scope.indexer.length))
+    this.db.on('schema-update', () => this.emit('schema-update'))
+
     this.ready = this.open.bind(this)
+    this._eventStreams = new Set()
+    this._eventCounter = 0
+  }
+
+  emit (event, ...args) {
+    const id = ++this._eventCounter
+    let data
+    if (event === 'update') data = { lseq: args[0] }
+    if (event === 'feed') data = { key: args[0].key.toString('hex') }
+    for (const stream of this._eventStreams) {
+      stream.push({ event, data, id })
+    }
+    super.emit(event, ...args)
+  }
+
+  createEventStream () {
+    const stream = new Readable()
+    this._eventStreams.add(stream)
+    stream.on('destroy', () => this._eventStreams.delete(stream))
+    return stream
   }
 
   get writable () {
@@ -85,51 +112,35 @@ module.exports = class Collection extends Nanoresource {
     return false
   }
 
+  get schema () {
+    return this.db.schema
+  }
+
+  get localKey () {
+    return this.db.localKey
+  }
+
+  get rootKey () {
+    return this.db.rootKey
+  }
+
   _open (cb) {
-    const self = this
     cb = once(cb)
     // db.open also calls scope.open.
     this.db.open(err => {
       if (err) return cb(err)
       this._mountViews()
-
-      // If the scope is opened for the first time, it is empty. Add our initial feeds.
-      if (!this.scope.list().length) {
-        // Add a root feed with the collection key.
-        this._root = this.scope.addFeed({ key: this.key, name: 'root' })
-        this._root.ready((err) => {
-          if (err) return cb(err)
-          onfeedsinit()
-        })
-      // If the scope is reopened, alias our root feed.
-      } else {
-        this._root = this.scope.feed('root')
-      }
-      this._root.ready(err => {
-        if (err) return cb(err)
-        // root is writable: it is also our local feed.
-        if (this._root.writable) {
-          this._local = this.scope.addFeed({ key: this._root.key, name: 'local' })
-          // root is not writable: create a local feed and add it to the scope.
-        } else {
-          this._local = this.scope.addFeed({ name: 'local' })
-        }
-        onfeedsinit()
-      })
-    })
-
-    function onfeedsinit () {
-      self.fs.ready(err => {
+      this.fs.ready(err => {
         if (err) return cb(err)
         debug(
           'opened collection %s (dkey %s, feeds %d)',
-          pretty(self.key),
-          pretty(self.discoveryKey),
-          self.scope.status().feeds.length
+          pretty(this.key),
+          pretty(this.discoveryKey),
+          this.scope.status().feeds.length
         )
         cb()
       })
-    }
+    })
   }
 
   _mountViews () {
@@ -145,7 +156,7 @@ module.exports = class Collection extends Nanoresource {
   }
 
   init (cb) {
-    this.db.putSchema(RESOURCE_SCHEMA.name, RESOURCE_SCHEMA, cb)
+    this.db.putType(TYPE_SPECS.RESOURCE, cb)
   }
 
   replicate (isInitator, opts) {
@@ -165,31 +176,27 @@ module.exports = class Collection extends Nanoresource {
   }
 
   batch (batch, cb) {
-    this.scope.batch(batch, cb)
+    this.db.batch(batch, cb)
   }
 
   loadRecord (key, seq, cb) {
     this.scope.loadRecord(key, seq, cb)
   }
 
-  putSchema (name, schema, cb) {
-    this.db.putSchema(name, schema, cb)
+  putType (spec, cb) {
+    this.db.putType(spec, cb)
   }
 
-  getSchemas (cb) {
-    const schemas = this.db.getSchemas()
-    if (cb) cb(null, schemas)
-    else return schemas
+  getType (name) {
+    return this.db.getType(name)
   }
 
-  getSchema (name, cb) {
-    const schema = this.db.getSchema(name)
-    if (cb) cb(schema ? null : new Error('Schema not found'), schema)
-    else return schema
+  serializeSchema () {
+    return this.db.schema.toJSON()
   }
 
-  putSource (key, info, cb) {
-    this.db.putSource(key, info, cb)
+  putFeed (key, info, cb) {
+    this.db.putFeed(key, info, cb)
   }
 
   query (name, args, opts, cb) {
@@ -225,7 +232,6 @@ module.exports = class Collection extends Nanoresource {
   // Return some info on the collection synchronously.
   status (cb) {
     if (!this.opened) return cb(null, { opened: false, name: this.name })
-    const localKey = datEncoding.encode(this._local.key)
     const localDrive = this.fs.localwriter
     if (localDrive) var localDriveKey = datEncoding.encode(localDrive.key)
 
@@ -235,7 +241,9 @@ module.exports = class Collection extends Nanoresource {
       opened: true,
       key: this.key.toString('hex'),
       discoveryKey: this.discoveryKey.toString('hex'),
-      localKey,
+      localKey: datEncoding.encode(this.db.localKey),
+      rootKey: datEncoding.encode(this.db.rootKey),
+      dataKey: datEncoding.encode(this.db.dataKey),
       localDrive: localDriveKey
     }
 

@@ -6,10 +6,12 @@ const createServerClient = require('./util/server')
 async function prepare (t) {
   const [context, client] = await createServerClient()
   try {
-    await client.put({ schema: 'doc', value: { title: 'hello world' } })
-    await client.put({ schema: 'doc', value: { title: 'hello moon' } })
+    await client.putType('doc', { fields: { title: { type: 'string' } } })
+    await client.put({ type: 'doc', value: { title: 'hello world' } })
+    await client.put({ type: 'doc', value: { title: 'hello moon' } })
     await client.sync()
   } catch (e) {
+    console.error(e)
     t.fail(e)
     await context.stop()
     throw e
@@ -19,14 +21,18 @@ async function prepare (t) {
 }
 
 test('basic query', async t => {
-  const [context, client] = await prepare(t)
-  let results = await client.search('hello')
-  t.equal(results.length, 2, 'hello search')
-  results = await client.search('world')
-  t.equal(results.length, 1, 'world search')
-  results = await client.search('moon')
-  t.equal(results.length, 1, 'moon search')
-  await context.stop()
+  try {
+    const [context, client] = await prepare(t)
+    let results = await client.search('hello')
+    t.equal(results.length, 2, 'hello search')
+    results = await client.search('world')
+    t.equal(results.length, 1, 'world search')
+    results = await client.search('moon')
+    t.equal(results.length, 1, 'moon search')
+    await context.stop()
+  } catch (e) {
+    console.error('error', e)
+  }
 })
 
 test('querybuilder: simple bool search', async t => {

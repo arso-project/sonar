@@ -49,9 +49,17 @@ tape('batch and query', t => {
         { title: 'Hello moon', body: 'so dark' }
       ]
 
+      collection.schema.addType({
+        name: 'doc',
+        fields: {
+          title: { type: 'string' },
+          body: { type: 'String' }
+        }
+      })
+
       runAll([
         next => {
-          const batch = records.map(value => ({ op: 'put', schema: 'doc', value }))
+          const batch = records.map(value => ({ op: 'put', type: 'doc', value }))
           collection.batch(batch, (err, res) => {
             t.error(err, 'batch ok')
             t.equal(res.length, 2)
@@ -77,7 +85,7 @@ tape('batch and query', t => {
           })
         },
         next => {
-          collection.query('records', { schema: 'doc' }, (err, res) => {
+          collection.query('records', { type: 'doc' }, (err, res) => {
             t.error(err)
             t.equal(res.length, 2)
             next()
@@ -89,39 +97,21 @@ tape('batch and query', t => {
   })
 })
 
-tape('put and get', t => {
+tape('put and get 1', t => {
   createStore({ network: false }, (err, collections, cleanup) => {
     t.error(err, 'tempdir ok')
     collections.create('default', (err, collection) => {
       t.error(err)
-      // collection.status((err, status) => {
-      //   console.log('STATUS', err, status)
-      //   t.end()
-      // })
-      collection.put({ schema: 'foo', value: { title: 'hello' } }, (err, id) => {
+      collection.putType({ name: 'doc', fields: { title: { type: 'string' } } }, err => {
         t.error(err)
-        collection.get({ id }, { waitForSync: true }, (err, records) => {
+        collection.put({ type: 'doc', value: { title: 'hello' } }, (err, id) => {
           t.error(err)
-          t.equal(records.length, 1)
-          t.equal(records[0].value.title, 'hello')
-          cleanup(() => t.end())
-        })
-      })
-    })
-  })
-})
-tape('put and get', t => {
-  createStore({ network: false }, (err, collections, cleanup) => {
-    t.error(err, 'tempdir ok')
-    collections.create('default', (err, collection) => {
-      t.error(err)
-      collection.put({ schema: 'foo', value: { title: 'hello' } }, (err, id) => {
-        t.error(err)
-        collection.get({ id }, { waitForSync: true }, (err, records) => {
-          t.error(err)
-          t.equal(records.length, 1)
-          t.equal(records[0].value.title, 'hello')
-          cleanup(() => t.end())
+          collection.get({ id }, { waitForSync: true }, (err, records) => {
+            t.error(err)
+            t.equal(records.length, 1)
+            t.equal(records[0].value.title, 'hello')
+            cleanup(() => t.end())
+          })
         })
       })
     })

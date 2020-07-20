@@ -50,11 +50,13 @@ test('subscription commands', async t => {
 
   process.nextTick(async () => {
     try {
+      await client.putType('foo', { fields: { title: { type: 'string' } } })
       for (let i = 0; i < count; i++) {
-        await client.put({ schema: 'foo', value: { title: 'hello' } })
+        await client.put({ type: 'foo', value: { title: 'hello' } })
         debug(timer.log('put' + i, true))
       }
     } catch (err) {
+      console.error(err)
       t.fail(err)
     }
   })
@@ -88,15 +90,16 @@ test('query commands', async t => {
   debug(timer.log('init', true))
 
   const count = 5
-  const schema = 'foo'
+  const type = 'foo'
 
+  await client.putType(type, { fields: { title: { type: 'string' } } })
   for (let i = 0; i < count; i++) {
-    await client.put({ schema, value: { title: 'hello' } })
+    await client.put({ type, value: { title: 'hello' } })
     debug(timer.log('put' + i, true))
   }
 
   await client.sync()
-  const qs = await client.createQueryStream('records', { schema })
+  const qs = await client.createQueryStream('records', { type })
   timer.debug('create qs')
 
   await new Promise(resolve => {

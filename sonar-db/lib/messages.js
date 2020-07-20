@@ -52,8 +52,8 @@ function defineRecord () {
     if (!defined(obj.op)) throw new Error("op is required")
     var len = enc[1].encodingLength(obj.op)
     length += 1 + len
-    if (defined(obj.schema)) {
-      var len = enc[0].encodingLength(obj.schema)
+    if (defined(obj.type)) {
+      var len = enc[0].encodingLength(obj.type)
       length += 1 + len
     }
     if (defined(obj.value)) {
@@ -86,9 +86,9 @@ function defineRecord () {
     buf[offset++] = 16
     enc[1].encode(obj.op, buf, offset)
     offset += enc[1].encode.bytes
-    if (defined(obj.schema)) {
+    if (defined(obj.type)) {
       buf[offset++] = 26
-      enc[0].encode(obj.schema, buf, offset)
+      enc[0].encode(obj.type, buf, offset)
       offset += enc[0].encode.bytes
     }
     if (defined(obj.value)) {
@@ -121,7 +121,7 @@ function defineRecord () {
     var obj = {
       id: "",
       op: 0,
-      schema: "",
+      type: "",
       value: null,
       timestamp: 0,
       links: []
@@ -149,7 +149,7 @@ function defineRecord () {
         found1 = true
         break
         case 3:
-        obj.schema = enc[0].decode(buf, offset)
+        obj.type = enc[0].decode(buf, offset)
         offset += enc[0].decode.bytes
         break
         case 4:

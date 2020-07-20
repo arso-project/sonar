@@ -1,30 +1,29 @@
 const through = require('through2')
-const pump = require('pump')
 
-const { mapRecordsIntoLevelDB } = require('./helpers')
+const { mapRecordsIntoOps } = require('./helpers')
 
 const CHAR_END = '\uffff'
 const CHAR_SPLIT = '\u0000'
 const CHAR_START = '\u0001'
 
 module.exports = function indexedView (lvl, db, opts) {
-  const schemas = opts.schemas
+  const schema = opts.schema
   return {
     name: 'indexes',
     map (records, next) {
-      mapRecordsIntoLevelDB({
-        db, records, map: mapToIndex, level: lvl
-      }, next)
+      mapRecordsIntoOps(db, records, mapToIndex, (err, ops) => {
+        lvl.batch(ops, next)
+      })
     },
     api: {
       query (kappa, opts, cb) {
-        // const { schema, prop, value, gt, lt, gte, lte, reverse, limit } = opts
+        // const { type, prop, value, gt, lt, gte, lte, reverse, limit } = opts
         const proxy = transform(opts)
-        if (!opts.schema || !opts.prop) {
-          proxy.destroy(new Error('schema and prop are required.'))
+        if (!opts.type || !opts.field) {
+          proxy.destroy(new Error('type and field are required.'))
         } else {
-          opts.schema = schemas.resolveName(opts.schema)
-          if (!opts.schema) return proxy.destroy(new Error('Invalid schema name.'))
+          opts.type = schema.resolveTypeAddress(opts.type)
+          if (!opts.type) return proxy.destroy(new Error('Unknown type: ' + opts.type))
           const lvlopts = queryOptsToLevelOpts(opts)
           lvl.createReadStream(lvlopts).pipe(proxy)
         }
@@ -34,35 +33,30 @@ module.exports = function indexedView (lvl, db, opts) {
   }
 
   function mapToIndex (msg, db) {
-    const schema = schemas.get(msg)
+    const record = schema.Record(msg)
+    const lseq = record.lseq
     const ops = []
-    const { id, key: source, seq, schema: schemaName, value, lseq } = msg
-    if (!schema || !schema.properties) return ops
-    if (!value || typeof value !== 'object') return ops
-    // TODO: Recursive?
-    for (const [field, def] of Object.entries(schema.properties)) {
-      // Only care for fields that want to be indexed and are not undefined.
-      if (!def.index) continue
-      if (typeof value[field] === 'undefined') continue
-
-      if (def.type === 'array' && Array.isArray(value)) var values = value[field]
-      else values = [value[field]]
-      values.forEach(value => {
-        ops.push({
-          key: [schemaName, field, value, lseq].join(CHAR_SPLIT),
-          value: ''
-        })
+    for (const fieldValue of record.fields()) {
+      const field = fieldValue.field
+      if (fieldValue.empty() || !field.index.basic) continue
+      const fieldAddress = fieldValue.address
+      const value = fieldValue.value
+      ops.push({
+        key: [fieldAddress, value, lseq].join(CHAR_SPLIT),
+        value: ''
       })
     }
     return ops
   }
 }
 
-function queryOptsToLevelOpts (opts) {
-  let { schema, prop, reverse, limit, offset, value, gt, gte, lt, lte } = opts
+function queryOptsToLevelOpts (schema, opts) {
+  let { field, reverse, limit, offset, value, gt, gte, lt, lte } = opts
+  // TODO: This will throw for invalid fields names.
+  const fieldAddress = schema.resolveFieldAddress(field)
   if (offset && limit) limit = limit + offset
   const lvlopts = { reverse, limit }
-  const key = schema + CHAR_SPLIT + prop + CHAR_SPLIT
+  const key = fieldAddress + CHAR_SPLIT
   lvlopts.gt = key + CHAR_SPLIT
   lvlopts.lt = key + CHAR_END
   if (value) {
@@ -85,7 +79,7 @@ function queryOptsToLevelOpts (opts) {
 }
 
 function transform (opts) {
-  let offset = opts.offset || null
+  const offset = opts.offset || null
   let i = 0
   return through.obj(function (row, enc, next) {
     i += 1
@@ -97,8 +91,7 @@ function transform (opts) {
 }
 
 function decodeNode (node) {
-  const { key, value: _ } = node
-  const [schema, prop, value, lseq] = key.split(CHAR_SPLIT)
+  const [, , lseq] = node.key.split(CHAR_SPLIT)
   // return { schema, id, key: source, seq, params: { prop, value } }
   return { lseq }
 }

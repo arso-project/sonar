@@ -43,8 +43,8 @@ async function create (argv) {
   const name = argv.name
   const key = argv.key
   const alias = argv.alias
-  const result = await client.createCollection(name, { key, alias })
-  console.log(result)
+  const collection = await client.createCollection(name, { key, alias })
+  console.log(collection.info)
 }
 
 async function addSource (argv) {

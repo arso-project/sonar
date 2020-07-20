@@ -1,5 +1,5 @@
 module.exports = function getExampleSchemas () {
-  const schemas = [
+  const types = [
     {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "$id": "dat://unwalled.garden/bookmark.json",
@@ -89,5 +89,5 @@ module.exports = function getExampleSchemas () {
       }
     }]
 
-  return schemas
+  return types
 }

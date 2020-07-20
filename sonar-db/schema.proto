@@ -7,7 +7,7 @@ message Record {
   }
   required string id = 1;
   required Op op = 2;
-  optional string schema = 3;
+  optional string type = 3;
   optional bytes value = 4;
   optional uint32 timestamp = 5;
   repeated string links = 6;

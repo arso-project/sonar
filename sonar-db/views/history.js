@@ -1,19 +1,22 @@
-const { mapRecordsIntoLevelDB } = require('./helpers')
+const { mapRecordsIntoOps } = require('./helpers')
 const through = require('through2')
 
 module.exports = function recordView (level, db) {
   return {
     version: 2,
     map (records, next) {
-      mapRecordsIntoLevelDB({
-        records,
-        level,
+      mapRecordsIntoOps(
         db,
-        map (msg) {
+        records,
+        function map (msg) {
           if (!msg.timestamp) return
           return [{ key: msg.timestamp + '/' + msg.lseq }]
+        },
+        function done (err, ops) {
+          if (!err) level.batch(ops, next)
+          else next()
         }
-      }, next)
+      )
     },
     api: {
       query (_kappa, opts, _db) {

@@ -70,10 +70,9 @@ module.exports = function SonarServer (opts = {}) {
   // Main API
   const apiRoutes = apiRouter(api)
 
-  // Serve the API at /api
+  // Serve the API at /api/v1
   app.use('/api', apiRoutes)
-  // TODO: Change to v1
-  // app.use('/api/v1', apiRoutes)
+  app.use('/api/v1', apiRoutes)
 
   // Serve the swagger API docs at /api-docs
   app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(
@@ -82,10 +81,6 @@ module.exports = function SonarServer (opts = {}) {
       customCss: '.swagger-ui .topbar { display: none }'
     }
   ))
-
-  // Include the static UI at /
-  const uiStaticPath = p.join(p.dirname(require.resolve('@arso-project/sonar-ui/package.json')), 'build', 'dist')
-  app.use(express.static(uiStaticPath))
 
   // Include the client api docs at /api-docs-client
   const clientApiDocsPath = p.join(p.dirname(require.resolve('@arso-project/sonar-client/package.json')), 'apidocs')
@@ -97,6 +92,9 @@ module.exports = function SonarServer (opts = {}) {
     devMiddleware(app, { publicPath: '/ui-dev', workdir: opts.workdir })
   }
 
+  // Include the static UI at /
+  const uiStaticPath = p.join(p.dirname(require.resolve('@arso-project/sonar-ui/package.json')), 'build', 'dist')
+  app.use('/', express.static(uiStaticPath))
 
   // Error handling
   app.use(function (err, req, res, next) {
