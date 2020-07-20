@@ -1,4 +1,5 @@
 const pretty = require('pretty-hash')
+const { Readable } = require('streamx')
 const datEncoding = require('dat-encoding')
 const sub = require('subleveldown')
 const debug = require('debug')('sonar-core:collection')
@@ -26,9 +27,6 @@ module.exports = class Collection extends Nanoresource {
     this.scope = opts.scope
     this.corestore = opts.scope.corestore
     this.name = opts.name
-
-    this.scope.on('remote-update', () => this.emit('remote-update'))
-    this.scope.on('feed', feed => this.emit('feed', feed))
 
     this._subscriptions = {}
     this._level = {
@@ -80,7 +78,33 @@ module.exports = class Collection extends Nanoresource {
       }
     })
 
+    // Forward some events.
+    this.scope.on('remote-update', () => this.emit('remote-update'))
+    this.scope.on('feed', feed => this.emit('feed', feed))
+    this.scope.indexer.on('update', () => this.emit('update', this.scope.indexer.length))
+    this.db.on('schema-update', () => this.emit('schema-update'))
+
     this.ready = this.open.bind(this)
+    this._eventStreams = new Set()
+    this._eventCounter = 0
+  }
+
+  emit (event, ...args) {
+    const id = ++this._eventCounter
+    let data
+    if (event === 'update') data = { lseq: args[0] }
+    if (event === 'feed') data = { key: args[0].key.toString('hex') }
+    for (const stream of this._eventStreams) {
+      stream.push({ event, data, id })
+    }
+    super.emit(event, ...args)
+  }
+
+  createEventStream () {
+    const stream = new Readable()
+    this._eventStreams.add(stream)
+    stream.on('destroy', () => this._eventStreams.delete(stream))
+    return stream
   }
 
   get writable () {

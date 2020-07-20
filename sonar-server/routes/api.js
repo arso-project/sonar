@@ -62,6 +62,8 @@ module.exports = function apiRoutes (api) {
   collectionRouter.get('/subscription/:name/sse', handlers.pullSubscriptionSSE)
   collectionRouter.post('/subscription/:name/:cursor', handlers.ackSubscription)
 
+  collectionRouter.get('/events', handlers.eventsSSE)
+
   collectionRouter.get('/fs-info', function (req, res, next) {
     const { collection } = req
     collection.query('records', { type: 'sonar/feed' }, (err, records) => {

@@ -1,4 +1,5 @@
 const SSE = require('express-sse')
+const debug = require('debug')('sonar-server')
 
 module.exports = function createCollectionHandler (collections) {
   return {
@@ -156,6 +157,19 @@ module.exports = function createCollectionHandler (collections) {
       req.collection.ackSubscription(name, cursor, (err, result) => {
         if (err) return next(err)
         res.send(result)
+      })
+    },
+
+    eventsSSE (req, res, next) {
+      const sse = new SSE()
+      sse.init(req, res)
+      const stream = req.collection.createEventStream()
+      stream.on('data', message => {
+        sse.send(message.data, message.event, message.id)
+      })
+      stream.on('error', err => {
+        debug(err)
+        res.end()
       })
     }
   }
