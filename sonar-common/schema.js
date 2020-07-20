@@ -102,7 +102,12 @@ class Record {
   }
 
   get meta () {
-    return this._record.meta || {}
+    return this._meta || this._record.meta || {}
+  }
+
+  set meta (obj) {
+    if (!this._meta) this._meta = this.meta
+    this._meta = { ...this.meta, ...obj }
   }
 
   // TODO: kappa-scopes/scopes.js:518 calls this to add lseq from indexer state.
@@ -249,16 +254,19 @@ class Record {
     // TODO: Add opts to skip encoding lseq on put.
     // TODO: We don't need both address and key, seq.
     return {
-      // address: this.address,
+      // stored keys
       id: this.id,
-      lseq: this.lseq,
       type: this.type,
       value: this.value,
       links: this.links,
+      deleted: this.deleted,
+      timestamp: this.timestamp,
+
+      // wire key
       key: this.key,
       seq: this.seq,
-      deleted: this.deleted,
-      timestamp: this.timestamp
+      lseq: this.lseq,
+      meta: this.meta
     }
   }
 

@@ -41,6 +41,7 @@ module.exports = class Database extends Nanoresource {
     this.schema.persist = cb => {
       const spec = this.schema.toJSON()
       schemaDb.put('spec', JSON.stringify(spec), cb)
+      this.emit('schema-update')
     }
     this.schema.load = cb => {
       this.schema.setDefaultNamespace(this._root.key.toString('hex'))
@@ -90,6 +91,7 @@ module.exports = class Database extends Nanoresource {
 
     this.scope.use('root', {
       map (records, next) {
+        let schemaUpdated
         for (const record of records) {
           if (record.hasType(TYPE.FEED)) {
             // console.log(self.name, 'ADD FEED', record.value)
@@ -104,6 +106,7 @@ module.exports = class Database extends Nanoresource {
             // console.log(self.name, 'ADD TYPE', record.id)
             try {
               self.schema.addTypeFromJsonSchema(record.value)
+              schemaUpdated = true
             } catch (err) {
               // TODO: Think about error handling here. This would likely crash the server which is too much.
               const error = new Error('Error: Trying to add invalid type: ' + record.id, err.message)
@@ -111,7 +114,8 @@ module.exports = class Database extends Nanoresource {
             }
           }
         }
-        self.schema.persist(next)
+        if (schemaUpdated) self.schema.persist(next)
+        else next()
       }
     }, {
       scopeFeed (key, info) {
