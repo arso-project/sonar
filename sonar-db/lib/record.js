@@ -40,4 +40,3 @@ module.exports = class Record {
     return null
   }
 }
-

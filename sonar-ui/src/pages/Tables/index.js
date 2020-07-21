@@ -52,7 +52,7 @@ export default function TablesPage (props) {
   return (
     <Flex direction='column' width='100%'>
       <SchemaSelect onSchema={setSchema} schema={schema} flex={0} />
-      { columns && rows && (
+      {columns && rows && (
         <Table
           columns={columns}
           rows={rows}
@@ -167,7 +167,7 @@ function SchemaSelect (props) {
 
   if (schemas === null) return <Loading />
   if (!schemas) return <div>No schemas</div>
-  let selected = schema ? schema.name : false
+  const selected = schema ? schema.name : false
 
   const menuItems = schemas.map(schema => ({ key: schema.name, value: schemaName(schema) }))
 

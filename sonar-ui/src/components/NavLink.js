@@ -7,7 +7,7 @@ import {
 } from '@chakra-ui/core'
 
 export default function MenuLink (props) {
-  let active = useRouteMatch({
+  const active = useRouteMatch({
     path: props.to,
     exact: props.exact
   })

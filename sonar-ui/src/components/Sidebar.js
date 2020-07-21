@@ -17,7 +17,7 @@ const collection = config.get('collection')
 export function SidebarContent (props) {
   const { data: collection } = useAsync(() => client.focusedCollection())
   return (
-    <Fragment>
+    <>
       <List>
         <NavLink exact to='/'>Start</NavLink>
         <NavLink to='/config'>Config</NavLink>
@@ -26,20 +26,20 @@ export function SidebarContent (props) {
           <CollectionMenu />
         )}
       </List>
-    </Fragment>
+    </>
   )
 }
 
 function CollectionMenu (props) {
   return (
-    <Fragment>
+    <>
       <MenuHeading><CollectionName /></MenuHeading>
       <NavLink to='/activity'>Activity</NavLink>
       <NavLink to='/search'>Search</NavLink>
       <NavLink to='/fileimport'>Import files</NavLink>
       <NavLink to='/filebrowser'>Filebrowser</NavLink>
       <NavLink to='/tables'>Tables</NavLink>
-    </Fragment>
+    </>
   )
 }
 

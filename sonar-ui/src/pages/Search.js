@@ -58,7 +58,7 @@ export function SearchInput (props) {
   const [error, setError] = useState(null)
   const [results, setResults] = useGlobalState('results', null)
   return (
-    <React.Fragment>
+    <>
       <Input
         type='text'
         value={search}
@@ -67,8 +67,8 @@ export function SearchInput (props) {
         mb='4'
         {...props}
       />
-      { error && <Logger error={error} />}
-    </React.Fragment>
+      {error && <Logger error={error} />}
+    </>
   )
 
   function onInputChange (e) {

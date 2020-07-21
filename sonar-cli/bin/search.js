@@ -60,7 +60,7 @@ function formatResultFull (r) {
   return [
     chalk.bold.green(r.value.title),
     '  ' + formatMeta(r),
-    formatValue(r),
+    formatValue(r)
   ].join('\n')
 }
 
