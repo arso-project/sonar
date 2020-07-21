@@ -28,7 +28,7 @@ class Client {
     this._id = opts.id || randombytes(16).toString('hex')
 
     this.commands = new Commands({
-      url: this.endpoint + '/_commands',
+      url: this.endpoint + '/commands',
       name: opts.name || 'client:' + this._id
     })
   }
@@ -50,7 +50,7 @@ class Client {
    * @return {Promise.<object[]>} Promise that resolves to an array of collection info objects.
    */
   async listCollections () {
-    const info = await this.fetch('/_info')
+    const info = await this.fetch('/info')
     return info.collections
   }
 
@@ -64,9 +64,10 @@ class Client {
    * @param {string} [opts.alias] - When setting key, alias is required and is your nick name within this collection.
    * @return {Promise<Collection>} The created collection.
    */
-  async createCollection (name, opts) {
-    await this.fetch(`/_create/${name}`, {
-      method: 'PUT',
+  async createCollection (name, opts = {}) {
+    opts.name = name
+    await this.fetch('/collection', {
+      method: 'POST',
       body: opts
     })
     return this.openCollection(name)
@@ -84,7 +85,7 @@ class Client {
    * @return {Promise<void>}
    */
   async updateCollection (name, info) {
-    return this.fetch(name, {
+    return this.fetch('/collection/' + name, {
       method: 'PATCH',
       body: info
     })

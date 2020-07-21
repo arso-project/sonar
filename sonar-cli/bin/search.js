@@ -41,14 +41,15 @@ function formatResults (results, opts) {
   const len = results.length
   let list
   if (!opts.full) {
-    list = table(results.map(r => {
+    const rows = results.map(r => {
       return [
-        r.meta.score,
-        formatSchema(r),
+        r.meta.score || 0,
+        formatType(r),
         r.id,
-        chalk.bold.yellow(r.value.title)
+        chalk.bold.yellow(r.getOne('title'))
       ]
-    }))
+    })
+    list = table(rows)
   } else {
     list = results.map(formatResultFull).join('\n\n')
   }
@@ -65,8 +66,8 @@ function formatResultFull (r) {
 
 function formatMeta (r) {
   const line = [
-    'schema',
-    chalk.bold(formatSchema(r)),
+    'type',
+    chalk.bold(formatType(r)),
     'id',
     chalk.bold(r.id),
     'feed',
@@ -84,8 +85,9 @@ function formatValue (r) {
   return snippet
 }
 
-function formatSchema (r) {
-  const parts = r.schema.split('/')
-  if (parts.length > 1) return parts[1]
-  else return r.schema
+function formatType (r) {
+  return r.getType().title
+  // const parts = r.schema.split('/')
+  // if (parts.length > 1) return parts[1]
+  // else return r.schema
 }

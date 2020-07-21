@@ -15,7 +15,7 @@ import { SearchResultList } from './Search'
 
 async function fetchRecordData (id) {
   const records = await client.get({ id })
-  const schemas = await client.getSchemas()
+  const schemas = await client.getTypes()
   return { records, schemas }
 }
 

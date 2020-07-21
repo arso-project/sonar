@@ -25,26 +25,34 @@ module.exports = class LegacyClient extends Client {
   }
 
   async info () {
-    return this.fetch('/_info')
+    return this.fetch('/info')
   }
 
-  async getSchemas () {
+  async getTypes () {
     const collection = await this.focusedCollection()
-    return collection.schema.listTypes()
+    return collection.schema.getTypes()
   }
 
-  async getSchema (name) {
+  async getType (name) {
     const collection = await this.focusedCollection()
     return collection.schema.getType(name)
   }
 
-  async putSchema (name, schema) {
+  async putType (name, schema) {
     schema.name = name
     const collection = await this.focusedCollection()
-    return collection.putSchema(schema)
+    return collection.putType(schema)
   }
 
-  async putSource (key, opts) {
+  // TODO: Remove.
+  getSchemas () {
+    return this.getTypes()
+  }
+  getSchema (name) {
+    return this.getSchema(name)
+  }
+
+  async putFeed (key, opts) {
     const collection = await this.focusedCollection()
     return collection.putFeed(key, opts)
   }

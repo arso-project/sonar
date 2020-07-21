@@ -29,16 +29,53 @@ tape('db basic put and query', async t => {
   const [cleanup, client] = await prepare({ network: false })
 
   const collection = await client.createCollection('foobar')
+  await collection.putType({
+    name: 'doc',
+    fields: {
+      title: {
+        type: 'string'
+      }
+    }
+  })
+  await collection.putType({
+    name: 'fun',
+    title: 'Fun things',
+    fields: {
+      color: {
+        type: 'string'
+      }
+    }
+  })
+  await collection.open()
   const res = await collection.put({
-    schema: 'doc',
+    type: 'doc',
     value: { title: 'hello world' }
   })
-  const id = res.id
+  const res2 = await collection.put({
+    type: 'fun',
+    id: res.id,
+    value: { color: 'red' }
+  })
+  // const id = res.id
   // await collection.sync()
-  const results = await collection.query('records', { id }, { waitForSync: true })
-  t.equal(results.length, 1)
-  t.equal(results[0].id, id)
-  t.equal(results[0].value.title, 'hello world')
+  const results = await collection.query('records', { id: res.id }, { waitForSync: true })
+  t.equal(results.length, 2)
+  // t.equal(results[0].id, id)
+  // t.equal(results[0].value.title, 'hello world')
+  // console.log(results.map(record => record.get('title')))
+  console.log(results.map(record => record.address))
+  console.log(results.map(record => record.id))
+  console.log(results.map(record => record.fields().map(f => f.fieldAddress).join('  !!  ')))
+  const record = results[0]
+  // const record2 = results[1]
+  t.equal(record.entity.id, res.id)
+  t.equal(record.entity.get('fun#color'), 'red')
+  t.equal(record.entity.get('doc#title'), 'hello world')
+  // t.equal(record.get('color'), 'red')
+  // t.equal(record.get('fun#color'), 'red')
+  // t.equal(record.get('fun#color'), 'red')
+  console.log(record.entity.types().map(t => t.title))
+  t.equal(record.entity.id, res.id)
 
   await cleanup()
 })
@@ -46,8 +83,9 @@ tape('db basic put and query', async t => {
 tape('get and delete record', async t => {
   const [cleanup, client] = await prepare()
   const collection = await client.createCollection('myCollection')
+  await collection.putType({ name: 'foo', fields: { title: { type: 'string' } } })
   const nuRecord = {
-    schema: 'foo',
+    type: 'foo',
     id: 'bar',
     value: { title: 'bar' }
   }
@@ -120,11 +158,16 @@ tape('replicate resources', async t => {
   t.notEqual(collection2.info.key, collection2.info.localKey)
 
   const resource1 = await writeResource(collection1, 'one', 'onfirst')
-  const resource2 = await writeResource(collection2, 'two', 'onsecond')
-  t.equal(resource1.key, collection1.info.key)
-  t.equal(resource2.key, collection2.info.localKey)
 
-  await timeout(200)
+  // TODO: This refetches the schema. We should automate this.
+  await timeout(500)
+  await collection2.open()
+
+  const resource2 = await writeResource(collection2, 'two', 'onsecond')
+  t.equal(resource1.key, collection1.info.dataKey, 'key of resource1 ok')
+  t.equal(resource2.key, collection2.info.dataKey, 'key of resourc2 ok')
+
+  await timeout(500)
 
   let contents1 = await readResources(collection1)
   t.deepEqual(contents1.sort(), ['onfirst'], 'collection 1 ok')
@@ -133,7 +176,7 @@ tape('replicate resources', async t => {
 
   await collection1.addFeed(collection2.info.localKey, { alias: 'seconda' })
 
-  await timeout(200)
+  await timeout(500)
 
   contents1 = await readResources(collection1)
   t.deepEqual(contents1.sort(), ['onfirst', 'onsecond'], 'collection 1 ok')
@@ -146,7 +189,7 @@ tape('replicate resources', async t => {
 async function readResources (collection) {
   const records = await collection.query(
     'records',
-    { schema: 'sonar/resource' },
+    { type: 'sonar/resource' },
     { waitForSync: true }
   )
   const contents = await Promise.all(records.map(r => {

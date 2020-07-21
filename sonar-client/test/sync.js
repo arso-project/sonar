@@ -4,8 +4,9 @@ const createServerClient = require('./util/server')
 tape('sync', async t => {
   const [context, client] = await createServerClient()
   try {
+    await client.putType('foo', { fields: { title: { type: 'string' } } })
     const { id } = await client.put({
-      schema: 'foo',
+      type: 'foo',
       id: 'bar',
       value: { title: 'bar' }
     })

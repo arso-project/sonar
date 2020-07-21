@@ -1,20 +1,21 @@
 const Record = require('../lib/record')
-module.exports = { mapRecordsIntoLevelDB }
+module.exports = { mapRecordsIntoOps }
 
-function mapRecordsIntoLevelDB (opts, next) {
-  const { records, map, level, db } = opts
+function mapRecordsIntoOps (db, records, map, cb) {
   let pending = records.length
   const ops = []
+  const errs = []
 
   records.forEach(record => collectOps(db, record, map, done))
 
   function done (err, curOps) {
     if (!err) ops.push(...curOps)
+    else errs.push(err)
     if (--pending === 0) finish()
   }
 
   function finish () {
-    level.batch(ops, next)
+    cb(errs, ops)
   }
 }
 
@@ -37,10 +38,10 @@ function collectOps (db, record, mapFn, cb) {
       }
 
       // map the current record itself
-      if (record.op === Record.PUT) {
-        Array.prototype.push.apply(ops, mapToPut(db, record, mapFn))
-      } else if (record.op === Record.DEL) {
+      if (record.deleted) {
         Array.prototype.push.apply(ops, mapToDel(db, record, mapFn))
+      } else {
+        Array.prototype.push.apply(ops, mapToPut(db, record, mapFn))
       }
 
       cb(null, ops)
@@ -62,12 +63,12 @@ function collectLinkedRecords (db, record, cb) {
 }
 
 function mapToPut (db, record, mapFn) {
-  let ops = mapFn(record, db)
+  const ops = mapFn(record, db)
   return mapResult(ops, 'put')
 }
 
 function mapToDel (db, record, mapFn) {
-  let ops = mapFn(record, db)
+  const ops = mapFn(record, db)
   return mapResult(ops, 'del')
 }
 

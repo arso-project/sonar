@@ -15,13 +15,14 @@ const { CollectionStore } = require('sonar-core')
 const store = new CollectionStore('/tmp/database')
 
 store.create('my-db', (err, collection) => {
-  // Create a schema.
-  collection.putSchema('doc', { 
-    properties: { title: { type: 'string' } }
+  // Create a type.
+  collection.putType({ 
+    name: 'doc',
+    fields: { title: { type: 'string' } }
   })
 
   // Put json records.
-  collection.put({ schema: 'doc', value: { title: 'Hello!' })
+  collection.put({ type: 'doc', value: { title: 'Hello!' })
 
   // Make a query.
   collection.query('search', 'hello', (err, results) => 7

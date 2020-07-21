@@ -16,11 +16,12 @@ module.exports = function apiRoutes (api) {
   const commandHandler = createCommandStreamHandler(api.collections)
 
   // Info
-  router.get('/_info', deviceHandlers.info)
-  // Create collection
-  router.put('/_create/:name', deviceHandlers.createCollection)
+  router.get('/info', deviceHandlers.info)
   // Create command stream (websocket)
-  router.ws('/_commands', commandHandler)
+  router.ws('/commands', commandHandler)
+
+  // Create collection
+  router.post('/collection', deviceHandlers.createCollection)
 
   const collectionRouter = express.Router()
   // Change collection config
@@ -45,16 +46,14 @@ module.exports = function apiRoutes (api) {
 
   // Search/Query
   collectionRouter.post('/query/:name', handlers.query)
-  // TODO: backwards-compat only, remove.
-  collectionRouter.post('/_query/:name', handlers.query)
 
   // List schemas
-  collectionRouter.get('/schema', handlers.getSchemas)
+  collectionRouter.get('/schema', handlers.getTypes)
   // Put schema
-  collectionRouter.post('/schema', handlers.putSchema)
-  // Put source
-  // TODO: This route should have the same pattern as the others.
-  collectionRouter.put('/source/:key', handlers.putSource)
+  collectionRouter.post('/schema', handlers.putType)
+  // Put feed
+  collectionRouter.put('/feed/:key', handlers.putFeed)
+  // TODO: Add GET feed
 
   collectionRouter.get('/debug', handlers.debug)
 
@@ -63,9 +62,11 @@ module.exports = function apiRoutes (api) {
   collectionRouter.get('/subscription/:name/sse', handlers.pullSubscriptionSSE)
   collectionRouter.post('/subscription/:name/:cursor', handlers.ackSubscription)
 
+  collectionRouter.get('/events', handlers.eventsSSE)
+
   collectionRouter.get('/fs-info', function (req, res, next) {
     const { collection } = req
-    collection.query('records', { schema: 'core/source' }, (err, records) => {
+    collection.query('records', { type: 'sonar/feed' }, (err, records) => {
       if (err) return next(err)
       const drives = records
         .filter(record => record.value.type === 'hyperdrive')
@@ -85,7 +86,7 @@ module.exports = function apiRoutes (api) {
   })
 
   // Load collection if in path.
-  router.use('/:collection', function (req, res, next) {
+  router.use('/collection/:collection', function (req, res, next) {
     const { collection } = req.params
     if (!collection) return next()
     api.collections.get(collection, (err, collection) => {

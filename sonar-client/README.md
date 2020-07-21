@@ -53,7 +53,7 @@ Get all schemas in the current collection.
 
 Get schema `schemaName` in this collection. Throws if the schema does not exist.
 
-#### `await client.putSchema(schemaName, schema)`
+#### `await client.putType(schemaName, schema)`
 
 Add an new schema to the collection. `schemaName` is a string, `schema` a [JSON schema](https://json-schema.org/) object.
 

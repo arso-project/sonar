@@ -105,7 +105,7 @@ async function readid (argv) {
   const client = makeClient(argv)
   const id = argv.id
   console.error('reading ' + id)
-  const res = await client.get({ id, schema: 'sonar/resource' })
+  const res = await client.get({ id, type: 'sonar/resource' })
   if (!res.length) throw new Error('id not found')
   if (res.length > 1) return console.error('warn: multiple files found. reading first')
   const rs = await client.readResourceFile(res[0])
