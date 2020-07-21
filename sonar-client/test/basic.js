@@ -9,6 +9,7 @@ const { initDht, cleanupDht, BOOTSTRAP_ADDRESS } = require('./util/dht')
 const { ServerClient } = require('./util/server')
 
 async function prepare (opts = {}) {
+  if (opts.disableAuthentication === undefined) opts.disableAuthentication = true
   if (opts.network !== false) {
     await initDht()
     opts.network = true

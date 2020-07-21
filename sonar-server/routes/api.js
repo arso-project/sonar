@@ -19,23 +19,9 @@ module.exports = function apiRoutes (api) {
   const commandHandler = createCommandStreamHandler(api.collections)
   const authHandler = createAuthHandler(api)
 
-  const secretCallback = (_req, _dtoken, cb) => {
-    api.auth.getSecret(cb)
+  if (!api.config.disableAuthentication) {
+    router.use(authHandler.createAuthMiddleware())
   }
-
-  const unlessOptions = { path: ['/login'], useOriginalUrl: false }
-  const jwtMiddleware = expressJwt({
-    secret: secretCallback,
-    algorithms: ['HS256']
-  })
-  function checkAuthMiddleware (req, res, next) {
-    if (!req.user.root) {
-      res.status(403).send({ error: 'Not authorized' })
-    }
-    next()
-  }
-  checkAuthMiddleware.unless = expressUnless
-  router.use(jwtMiddleware.unless(unlessOptions), checkAuthMiddleware.unless(unlessOptions))
 
   // Login
   router.post('/login', authHandler.login)
