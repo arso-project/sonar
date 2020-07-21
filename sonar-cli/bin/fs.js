@@ -87,7 +87,7 @@ async function list (argv) {
   console.log(list)
 }
 
-async function ls(argv) {
+async function ls (argv) {
   const client = makeClient(argv)
   const path = argv.path || '/'
   const list = await client.statFile(path)
@@ -119,14 +119,14 @@ async function readfile (argv) {
   res.pipe(process.stdout)
 }
 
-async function writefile(argv) {
+async function writefile (argv) {
   const client = makeClient(argv)
   const path = argv.path
   const res = await client.writeFile(path, process.stdin)
   console.log(res)
 }
 
-async function importfile(argv) {
+async function importfile (argv) {
   const client = makeClient(argv)
   const path = p.resolve(argv.path)
 
@@ -149,7 +149,7 @@ async function _importfile ({ client, path, opts }) {
     if (opts.recursive) return _importfolder({ client, path, stat, opts })
     else throw new Error('path is a folder and recursive is not set')
   }
-  let filename = p.basename(path)
+  const filename = p.basename(path)
   const record = await client.createResource({
     filename,
     prefix: opts.prefix,
@@ -159,7 +159,7 @@ async function _importfile ({ client, path, opts }) {
 
   console.log('created resource: ' + record.id)
   console.log('starting upload (' + pretty(stat.size) + ')')
-  let readStream = fs.createReadStream(path)
+  const readStream = fs.createReadStream(path)
   reportProgress(readStream, { msg: 'Uploading', total: stat.size })
   await client.writeResourceFile(record, readStream)
   console.log('ok')
@@ -188,23 +188,23 @@ function reportProgress (stream, { total, msg, bytes = true, interval = 1000 }) 
   let len = 0
   if (msg) msg = msg + ' ... '
   else msg = ''
-  let report = setInterval(status, interval)
+  const report = setInterval(status, interval)
   stream.on('data', d => (len = len + d.length))
   stream.on('end', stop)
-  function status() {
+  function status () {
     if (!total) console.log(`${msg} ${pretty(len)}`)
     else {
-      let percent = Math.round((len / total) * 100)
+      const percent = Math.round((len / total) * 100)
       console.log(`${msg} ${percent}% ${pretty(len)}`)
     }
   }
-  function stop() {
+  function stop () {
     clearInterval(report)
     status()
   }
 }
 
-function formatStat(files, opts = {}) {
+function formatStat (files, opts = {}) {
   opts = {
     list: false,
     ...opts
@@ -235,7 +235,7 @@ function formatStat(files, opts = {}) {
   }
 }
 
-function formatStatDetails(file, opts = {}) {
+function formatStatDetails (file, opts = {}) {
   return formatList({
     filename: file.name,
     directory: file.stat.isDirectory(),
@@ -247,7 +247,7 @@ function formatStatDetails(file, opts = {}) {
   })
 }
 
-function formatList(list) {
+function formatList (list) {
   let rows = Object.entries(list)
   rows = rows.map(([key, value]) => {
     if (typeof value !== 'string' && typeof value !== 'number') {
@@ -267,16 +267,16 @@ function formatDate (d) {
   }
 }
 
-function parseStat(s) {
+function parseStat (s) {
   const { Stats } = require('fs')
   return new Stats(s.dev, s.mode, s.nlink, s.uid, s.gid, s.rdev, s.blksize,
     s.ino, s.size, s.blocks, s.atime, s.mtime, s.ctime)
 }
 
-function pify(fn, ...args) {
+function pify (fn, ...args) {
   return new Promise((resolve, reject) => {
     fn(...args, onresult)
-    function onresult(err, data) {
+    function onresult (err, data) {
       err ? reject(err) : resolve(data)
     }
   })

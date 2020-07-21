@@ -128,8 +128,8 @@ function ColumnHeader (props) {
         bg={bg[colorMode]}
       >
         <Box flex='1' mr={2}>{column.render('Header')}</Box>
-        { column.isSorted && <HeaderColumnIcon icon={sortIcon} /> }
-        { column.filterValue && <HeaderColumnIcon icon={FaFilter} /> }
+        {column.isSorted && <HeaderColumnIcon icon={sortIcon} />}
+        {column.filterValue && <HeaderColumnIcon icon={FaFilter} />}
         <ColumnHeaderMenu column={column} dispatch={dispatch} />
       </Box>
       <PseudoBox
@@ -197,7 +197,7 @@ function HeaderMenuItem (props) {
   // const color = active ? 'green.600' : undefined
   const fontWeight = active ? 'bold' : undefined
   return (
-    <MenuItem onClick={e => onClick && onClick()} fontWeight={fontWeight} transition={false} {...other} >
+    <MenuItem onClick={e => onClick && onClick()} fontWeight={fontWeight} transition={false} {...other}>
       <Box as={icon} mr='1' />
       {children}
     </MenuItem>
@@ -287,7 +287,7 @@ function Table (props) {
     // debug('render inner')
 
     return (
-      <React.Fragment>
+      <>
         {header}
         <div
           {...other}
@@ -296,7 +296,7 @@ function Table (props) {
         >
           {children}
         </div>
-      </React.Fragment>
+      </>
     )
   }), [flatHeaders, selectedFlatRows, rows])
 
@@ -381,7 +381,7 @@ function uiReducer (state, action) {
     case 'pane.close':
       return x({ pane: { ...state.pane, [action.name]: false } })
     case 'pane.toggle':
-      let current = state.pane[action.name]
+      const current = state.pane[action.name]
       return x({ pane: { ...state.pane, [action.name]: !current } })
   }
   return state
@@ -448,8 +448,8 @@ function TableMeta (props) {
         <TableSort columns={columns} />
       </SimplePopover>
       <TableMetaButton ml={4} onClick={onTogglePreview} icon={IoMdEye} isOpen={showPreview}>
-        { showPreview && 'Preview on select' }
-        { !showPreview && 'No preview' }
+        {showPreview && 'Preview on select'}
+        {!showPreview && 'No preview'}
       </TableMetaButton>
     </Flex>
   )
@@ -503,7 +503,7 @@ function SimplePopover (props) {
   const triggerOnClick = e => toggle(name)
 
   return (
-    <Fragment>
+    <>
       <TableMetaButton icon={icon} isOpen={isOpen} onClick={triggerOnClick} badge={badge}>
         {header}
       </TableMetaButton>
@@ -523,7 +523,7 @@ function SimplePopover (props) {
           </PopoverBody>
         </PopoverContent>
       </Popover>
-    </Fragment>
+    </>
   )
 }
 
@@ -570,7 +570,7 @@ function TableFilter (props) {
   )
 
   function addFilter (id) {
-    let col = columns.filter(c => c.id === id)[0]
+    const col = columns.filter(c => c.id === id)[0]
     if (!col) return
     dispatch({ type: 'filter.add', data: id })
     // setNewfilters(f => [...f, col])
@@ -601,7 +601,7 @@ function TableColumns (props) {
       {columns.map(column => {
         const { checked, onChange } = column.getToggleHiddenProps()
         return (
-          <Checkbox key={column.id} onChange={onChange} isChecked={checked} mr={4} >
+          <Checkbox key={column.id} onChange={onChange} isChecked={checked} mr={4}>
             {column.render('Header')}
           </Checkbox>
         )

@@ -83,7 +83,6 @@ const headerButtonProps = {
   height: '2rem'
 }
 
-
 const HeaderIconButton = React.forwardRef((props, ref) => {
   return (
     <IconButton

@@ -39,7 +39,7 @@ module.exports = class SchemaStore {
 
   get (name) {
     if (typeof name === 'object') {
-      let { schema, key } = name
+      const { schema, key } = name
       name = this.resolveName(schema, key)
     } else {
       name = this.resolveName(name)

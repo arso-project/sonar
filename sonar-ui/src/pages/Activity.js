@@ -61,7 +61,7 @@ function Pager (props) {
       )}
       {pages.map(cur => {
         const active = cur === page
-        const fontWeight = active ? 'bold' : 'normal' 
+        const fontWeight = active ? 'bold' : 'normal'
         return (
           <Link key={cur} to={pagelink(cur)}>
             <Text mx='2' display='inline' fontWeight={fontWeight}>
@@ -95,7 +95,6 @@ function ActivityList (props) {
       ))}
     </Box>
   )
-
 }
 
 function Row (props) {

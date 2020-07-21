@@ -1,11 +1,7 @@
-const debug = require('debug')('db')
-const pretty = require('pretty-hash')
-const thunky = require('thunky')
 const sub = require('subleveldown')
 const Nanoresource = require('nanoresource/emitter')
-const { Scope } = require('kappa-scopes')
 
-const { uuid, sink, noop } = require('./lib/util')
+const { uuid } = require('./lib/util')
 const createKvView = require('./views/kv')
 const createRecordsView = require('./views/records')
 const createIndexView = require('./views/indexes')

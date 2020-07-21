@@ -4,10 +4,10 @@ import React, { Fragment } from 'react'
 
 export default function CSSReset (props) {
   return (
-    <Fragment>
+    <>
       <ChakraCSSReset />
       <Global styles={styles} />
-    </Fragment>
+    </>
   )
 }
 

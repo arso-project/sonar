@@ -48,6 +48,7 @@ module.exports = class LegacyClient extends Client {
   getSchemas () {
     return this.getTypes()
   }
+
   getSchema (name) {
     return this.getSchema(name)
   }

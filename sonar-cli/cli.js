@@ -24,8 +24,8 @@ const args = yargs
     command: '$0',
     async handler (argv) {
       const msg = [
-        `Usage: sonar <command>`,
-        `The "help" command provides a list of commands.`
+        'Usage: sonar <command>',
+        'The "help" command provides a list of commands.'
       ].join('\n')
       printLogo()
       console.log(msg)

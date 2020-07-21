@@ -29,8 +29,8 @@ defineHeader()
 
 function defineRecord () {
   Record.Op = {
-  "PUT": 0,
-  "DEL": 1
+  PUT: 0,
+  DEL: 1
 }
 
   var enc = [

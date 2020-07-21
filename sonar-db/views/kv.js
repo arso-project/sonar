@@ -26,7 +26,7 @@ module.exports = function kvView (lvl) {
       filterOutdated (kappa, records, cb) {
         cb = once(cb)
         let pending = records.length
-        let filtered = []
+        const filtered = []
         records.forEach(record => {
           kv.isLinked(record, (err, isOutdated) => {
             if (err) return cb(err)
