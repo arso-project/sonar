@@ -5,7 +5,7 @@ const { clock } = require('nanobench-utils')
 const createServerClient = require('./util/server')
 
 test('commands', async t => {
-  const [context, client1] = await createServerClient()
+  const [context, client1] = await createServerClient({ disableAuthentication: true })
   const client2 = context.createClient()
 
   await client1.commands.setName('pinger')

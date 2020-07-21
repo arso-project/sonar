@@ -2,7 +2,7 @@ const tape = require('tape')
 const createServerClient = require('./util/server')
 
 tape('sync', async t => {
-  const [context, client] = await createServerClient()
+  const [context, client] = await createServerClient({ disableAuthentication: true })
   try {
     await client.putType('foo', { fields: { title: { type: 'string' } } })
     const { id } = await client.put({
