@@ -1,9 +1,12 @@
 const express = require('express')
+const expressJwt = require('express-jwt')
 const hyperdriveMiddleware = require('./hyperdrive')
+const expressUnless = require('express-unless')
 
 const createDeviceHandler = require('../handlers/device-handler')
 const createCollectionHandler = require('../handlers/collection-handler')
 const createCommandStreamHandler = require('../handlers/command-handler')
+const createAuthHandler = require('../handlers/auth')
 
 // const SYNC_TIMEOUT = 10000
 
@@ -14,6 +17,29 @@ module.exports = function apiRoutes (api) {
   const deviceHandlers = createDeviceHandler(api.collections)
   const handlers = createCollectionHandler(api.collections)
   const commandHandler = createCommandStreamHandler(api.collections)
+  const authHandler = createAuthHandler(api)
+
+  const secretCallback = (_req, _dtoken, cb) => {
+    api.auth.getSecret(cb)
+  }
+
+  const unlessOptions = { path: ['/login'], useOriginalUrl: false }
+  const jwtMiddleware = expressJwt({
+    secret: secretCallback,
+    algorithms: ['HS256']
+  })
+  function checkAuthMiddleware (req, res, next) {
+    if (!req.user.root) {
+      res.status(403).send({ error: 'Not authorized' })
+    }
+    next()
+  }
+  checkAuthMiddleware.unless = expressUnless
+  router.use(jwtMiddleware.unless(unlessOptions), checkAuthMiddleware.unless(unlessOptions))
+
+  // Login
+  router.post('/login', authHandler.login)
+  router.post('/create-access-code', authHandler.createAccessCode)
 
   // Info
   router.get('/info', deviceHandlers.info)
@@ -24,6 +50,7 @@ module.exports = function apiRoutes (api) {
   router.post('/collection', deviceHandlers.createCollection)
 
   const collectionRouter = express.Router()
+
   // Change collection config
   collectionRouter.patch('/', deviceHandlers.updateCollection)
 

@@ -1,5 +1,6 @@
 const SSE = require('express-sse')
 const debug = require('debug')('sonar-server')
+const { HttpError } = require('../lib/util')
 
 module.exports = function createCollectionHandler (collections) {
   return {
@@ -173,12 +174,4 @@ module.exports = function createCollectionHandler (collections) {
       })
     }
   }
-}
-
-function HttpError (code, message) {
-  let err
-  if (message instanceof Error) err = message
-  else err = new Error(message)
-  err.statusCode = code
-  return err
 }

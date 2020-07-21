@@ -5,7 +5,7 @@ const debug = require('debug')('sonar-cli')
 const { printLogo } = require('./util/logo')
 
 const DEFAULT_ENDPOINT = 'http://localhost:9191/api'
-const DEFAULT_ISLAND = 'default'
+const DEFAULT_COLLECTION = 'default'
 
 const args = yargs
   .usage('sonar <command>')
@@ -14,6 +14,7 @@ const args = yargs
   .command(require('./bin/db.js'))
   .command(require('./bin/fs.js'))
   .command(require('./bin/collection.js'))
+  .command(require('./bin/device.js'))
   .command(require('./bin/search.js'))
   .command(require('./bin/status.js'))
   .help()
@@ -40,7 +41,10 @@ const args = yargs
     collection: {
       alias: 'i',
       describe: 'collection key or name',
-      default: process.env.SONAR_ISLAND || DEFAULT_ISLAND
+      default: process.env.SONAR_COLLECTION || DEFAULT_COLLECTION
+    },
+    token: {
+      describe: 'access token'
     }
   })
   .help()

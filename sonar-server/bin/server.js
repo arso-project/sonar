@@ -23,6 +23,7 @@ exports.builder = function (yargs) {
       handler: stop
     })
 }
+
 exports.startServer = startServer
 exports.options = options
 

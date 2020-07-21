@@ -26,6 +26,8 @@ class Client {
     }
     this._collections = new Map()
     this._id = opts.id || randombytes(16).toString('hex')
+    this._token = opts.token
+    this._accessCode = opts.accessCode
 
     this.commands = new Commands({
       url: this.endpoint + '/commands',
@@ -41,6 +43,26 @@ class Client {
    */
   async close () {
     return this.commands.close()
+  }
+
+  async open () {
+    if (this.opened) return
+    if (!this._openPromise) this._openPromise = this._open()
+    await this._openPromise
+  }
+
+  async _open () {
+    await this.login()
+    this.opened = true
+  }
+
+  // TODO: Support re-logins
+  async login () {
+    if (this._accessCode && !this._token) {
+      const res = await this.fetch('/login', { params: { code: this._accessCode }, method: 'POST', opening: true })
+      const token = res.token
+      this._token = token
+    }
   }
 
   /**
@@ -129,6 +151,9 @@ class Client {
    * TODO: Rethink the default responseType cascade.
    */
   async fetch (url, opts = {}) {
+    if (!this.opened && !opts.opening) {
+      await this.open()
+    }
     if (!url.match(/^https?:\/\//)) {
       if (url.indexOf('://') !== -1) throw new Error('Only http: and https: protocols are supported.')
       if (!url.startsWith('/')) url = '/' + url
@@ -156,6 +181,11 @@ class Client {
     }
     if (opts.requestType === 'buffer') {
       opts.headers['content-type'] = 'application/octet-stream'
+    }
+
+    const token = this._token || opts.token
+    if (token) {
+      opts.headers.authorization = 'Bearer ' + token
     }
 
     try {
@@ -187,6 +217,8 @@ class Client {
 
       return await res.text()
     } catch (err) {
+      // TODO: If error fails for insufficient authorization, try creating
+      // a new token if accessCode is set
       debug('fetch error', err)
       throw err
     }

@@ -13,14 +13,15 @@ import {
 import FormField from '../components/FormField'
 
 export default function ConfigPage (props) {
-  let { token } = useParams()
+  let { accessCode } = useParams()
+  console.log(useParams())
   const endpoint = config.get('endpoint', 'http://localhost:9191/api')
-  token = token || config.get('token', '')
+  accessCode = accessCode || config.get('accessCode', '')
   return (
     <div className='sonar-config'>
       <form onSubmit={onSubmit}>
         <FormField name='endpoint' title='API endpoint' defaultValue={endpoint} />
-        <FormField name='token' title='API access token' defaultValue={token} />
+        <FormField name='accessCode' title='API access code' defaultValue={accessCode} />
         <Button type='submit' variantColor='teal'>Save</Button>
       </form>
     </div>
@@ -30,7 +31,7 @@ export default function ConfigPage (props) {
     e.preventDefault()
     const data = formData(e.currentTarget)
     config.set('endpoint', data.endpoint)
-    config.set('token', data.token)
+    config.set('accessCode', data.accessCode)
     // After config change reload page to re-initialize client.
     // TODO: Maybe support changing the client at runtime and
     // instead rerender within React.

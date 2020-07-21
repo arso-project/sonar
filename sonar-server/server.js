@@ -12,15 +12,16 @@ const swaggerUi = require('swagger-ui-express')
 const thunky = require('thunky')
 // const websocketStream = require('websocket-stream/stream')
 
+const { storagePath } = require('@arso-project/sonar-common/storage.js')
 const apiRouter = require('./routes/api')
 const apiDocs = require('./docs/swagger.json')
+const Auth = require('./lib/auth')
 
-const DEFAULT_STORAGE = p.join(os.homedir(), '.sonar')
 const DEFAULT_PORT = 9191
 const DEFAULT_HOSTNAME = 'localhost'
 
 module.exports = function SonarServer (opts = {}) {
-  if (!opts.storage) opts.storage = process.env.SONAR_STORAGE || DEFAULT_STORAGE
+  opts.storage = storagePath(opts.storage)
   if (!opts.port) opts.port = DEFAULT_PORT
   if (!opts.hostname) opts.hostname = DEFAULT_HOSTNAME
   if (!opts.dev) opts.dev = process.env.NODE_ENV === 'development'
@@ -32,7 +33,18 @@ module.exports = function SonarServer (opts = {}) {
     }
   }
 
+  const auth = new Auth(opts.storage)
+  // Open auth store (asynchrounsly)
+  auth.open(err => {
+    // TODO: How do we handle top-level errors?
+    console.error(err)
+  })
+
   const api = {
+    auth,
+    config: {
+      ...opts
+    },
     collections: new CollectionStore(opts.storage, storeOpts)
   }
 
@@ -108,25 +120,29 @@ module.exports = function SonarServer (opts = {}) {
   app.start = thunky((cb = noop) => {
     if (typeof opts === 'function') return app.start(null, opts)
     // Open the collection store.
-    api.collections.ready(err => {
+    api.auth.open(err => {
       if (err) return cb(err)
-      app.port = opts.port
-      app.hostname = opts.hostname
-      // Start the HTTP server.
-      app.server = app.listen(app.port, app.hostname, cb)
-      // Mount the shutdown handler onto the server.
-      shutdown(app.server)
+      api.collections.ready(err => {
+        if (err) return cb(err)
+        app.port = opts.port
+        app.hostname = opts.hostname
+        // Start the HTTP server.
+        app.server = app.listen(app.port, app.hostname, cb)
+        // Mount the shutdown handler onto the server.
+        shutdown(app.server)
+      })
     })
   })
 
   app.close = thunky((cb = noop) => {
-    let pending = 2
+    let pending = 3
     debug('shutting down')
     app.server.forceShutdown(err => {
       debug('closed http server', err || '')
       finish()
     })
     api.collections.close(finish)
+    api.auth.close(finish)
     function finish () {
       if (--pending !== 0) return
       debug('closed')
