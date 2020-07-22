@@ -4,11 +4,91 @@ const inspect = require('inspect-custom-symbol')
 const RECORD = Symbol('sonar-record')
 const TYPE = Symbol('sonar-type')
 const FIELD = Symbol('sonar-field')
+const SC = Symbol('sonar-schema')
+
+// Base class for Record and Entity
+class Node {
+  constructor (schema) {
+    bindSymbol(this, SC, schema)
+  }
+
+  field (name, single = true) {
+    return this._field(name, single)
+  }
+
+  fields (name) {
+    return this._field(name, false)
+  }
+
+  hasField (name) {
+    try {
+      return this.fields(name).length > 0
+    } catch (err) {
+      return false
+    }
+  }
+
+  values (name) {
+    return this.fields(name).values()
+  }
+
+  mapFields (name, fn) {
+    if (!fn) {
+      fn = name
+      name = null
+    }
+    return this.fields(name).map(fn)
+  }
+
+  // TODO: Depcreate in favor of getOne/getMany.
+  get (name, single = true) {
+    return this.field(name, single).value
+  }
+
+  getOne (name) {
+    return this.get(name, true)
+  }
+
+  getMany (name) {
+    return this.get(name, false)
+  }
+
+  gotoOne (name) {
+    return this._goto(name, true)
+  }
+
+  gotoMany (name) {
+    return this._goto(name, false)
+  }
+
+  // Invoked by the Node high-level methods.
+  _goto (name, single = false) {
+    const field = this.field(name)
+    // TODO: This means crash.
+    if (!field) throw new Error('Field not found: ' + name)
+    if (!field.type === 'relation') {
+      throw new Error('Not a relation field: ' + name)
+    }
+    // TODO: Deal with multiple values
+    const targetAddresses = field.values()
+    const targetEntities = targetAddresses.map(address => {
+      let entity = this[SC].getEntity(address)
+      if (!entity) entity = new MissingEntity(this[SC], address)
+      return entity
+    })
+    // TODO: targetEntities are Entity not FieldValue objects,
+    // not sure if that is good or if it should be a Proxy or so
+    // on FieldValue.
+    const fieldValues = new FieldValueList(this[SC], ...targetEntities)
+    if (single) return fieldValues.first()
+    else return fieldValues.filter(f => !f.empty())
+  }
+}
 
 class FieldValueList extends Array {
   constructor (schema, ...values) {
     super(...values)
-    this._schema = schema
+    bindSymbol(this, SC, schema)
   }
 
   get value () {
@@ -26,7 +106,7 @@ class FieldValueList extends Array {
   }
 }
 
-class Record {
+class Record extends Node {
   constructor (schema, record) {
     if (record instanceof Record) record = record._record
 
@@ -38,7 +118,6 @@ class Record {
     }
 
     // TODO: Decide how to deal with unknown types - likely we want to error here.
-    // This breaks a few tests because they are written without creating types first.
     // Maybe we also want to support deriving types on first use? Or allow to deal
     // with records with an unknown type in a limited fashion.
     if (!schema.getType(record.type)) {
@@ -46,8 +125,9 @@ class Record {
     }
     record.type = schema.resolveTypeAddress(record.type)
 
+    super(schema)
+
     this._record = record
-    this._schema = schema
     this._built = false
 
     // Prevent double-upcasting
@@ -57,7 +137,7 @@ class Record {
   }
 
   get entity () {
-    return this._schema.getEntity(this.id)
+    return this[SC].getEntity(this.id)
   }
 
   get id () {
@@ -121,11 +201,11 @@ class Record {
   }
 
   getType () {
-    return this._schema.getType(this.type)
+    return this[SC].getType(this.type)
   }
 
   hasType (typeAddress) {
-    typeAddress = this._schema.resolveTypeAddress(typeAddress)
+    typeAddress = this[SC].resolveTypeAddress(typeAddress)
     if (this.type === typeAddress) return true
     const type = this.getType()
     if (!type) return false
@@ -133,77 +213,11 @@ class Record {
     return allTypes.indexOf(typeAddress) !== -1
   }
 
-  fields (fieldName) {
-    const fields = this._filterFieldValues(fieldName)
-    return fields
-  }
-
-  field (fieldName, single = true) {
-    if (!single) return this.fields(fieldName)
-    else return this.fields(fieldName).first()
-  }
-
-  hasField (name) {
-    try {
-      return this.fields(name).length > 0
-    } catch (err) {
-      return false
-    }
-  }
-
-  // TODO: Depcreate in favor of getOne/getMany.
-  get (name, single = true) {
-    return this.field(name, single).value
-  }
-
-  getOne (name) {
-    return this.get(name, true)
-  }
-
-  getMany (name) {
-    return this.get(name, false)
-  }
-
-  gotoOne (name) {
-    return this._goto(name, true)
-  }
-
-  gotoMany (name) {
-    return this._goto(name, false)
-  }
-
-  _goto (name, single = false) {
-    const field = this.field(name)
-    // TODO: This means crash.
-    if (!field) throw new Error('Field not found: ' + name)
-    if (!field.type === 'relation') {
-      throw new Error('Not a relation field: ' + name)
-    }
-    // TODO: Deal with multiple values
-    const targetAddresses = field.values()
-    const targetEntities = targetAddresses.map(address => {
-      let entity = this._schema.getEntity(address)
-      if (!entity) entity = new MissingEntity(this._schema, address)
-      return entity
-    })
-    // TODO: targetEntities are Entity not FieldValue objects,
-    // not sure if that is good or if it should be a Proxy or so
-    // on FieldValue.
-    const fieldValues = new FieldValueList(this._schema, ...targetEntities)
+  // Invoked by the Node high-level methods.
+  _field (fieldName, single = true) {
+    const fieldValues = this._filterFieldValues(fieldName)
     if (single) return fieldValues.first()
-    else return fieldValues.filter(f => !f.empty())
-  }
-
-  values (name) {
-    return this.fields(name).values()
-  }
-
-  mapFields (name, fn) {
-    if (!fn) {
-      fn = name
-      name = null
-    }
-    return this.fields(name).map(fn)
+    return fieldValues
   }
 
   _update (force = false) {
@@ -214,7 +228,7 @@ class Record {
 
   _buildFieldValues () {
     const fields = this.getType().fields()
-    this._fieldValues = new FieldValueList(this._schema)
+    this._fieldValues = new FieldValueList(this[SC])
     if (!this._record.value || typeof this._record.value !== 'object') {
       return
     }
@@ -229,12 +243,12 @@ class Record {
 
   _findField (name) {
     if (name.indexOf('#') !== -1) {
-      return this._schema.getField(name)
+      return this[SC].getField(name)
     }
-    const fields = this.getType().fields()
-    const filtered = fields.filter(f => f.name === name)
-    if (filtered.length !== 1) throw new Error('Field not found: ' + name)
-    return filtered[0]
+    for (const field of this.getType().fields()) {
+      if (field.name === name) return field
+    }
+    return null
   }
 
   _filterFieldValues (fieldName) {
@@ -242,7 +256,7 @@ class Record {
     if (!fieldName) return this._fieldValues
 
     const field = this._findField(fieldName)
-    if (!field) return new FieldValueList(this._schema)
+    if (!field) return new FieldValueList(this[SC])
 
     const validAddresses = field.allVariants()
     return this._fieldValues.filter(field => {
@@ -268,18 +282,6 @@ class Record {
       lseq: this.lseq,
       meta: this.meta
     }
-  }
-
-  async update (fn) {
-    throw new Error('Not connected to a collection')
-  }
-
-  async save () {
-    throw new Error('Not connected to a collection')
-  }
-
-  async getFeed () {
-    throw new Error('Not connected to a collection')
   }
 }
 
@@ -376,7 +378,7 @@ class Type {
   }
 
   constructor (schema, spec) {
-    this._schema = schema
+    bindSymbol(this, SC, schema)
     this._fields = new Set()
 
     if (spec.address) {
@@ -386,7 +388,7 @@ class Type {
       this._version = parts.version || 0
     } else {
       // This will throw if namespace is undefined and default namespace is not set.
-      this._namespace = spec.namespace || this._schema.defaultNamespace()
+      this._namespace = spec.namespace || this[SC].defaultNamespace()
       this._name = spec.name
       this._version = spec.version || 0
     }
@@ -402,13 +404,13 @@ class Type {
     if (spec.fields) {
       for (const [name, fieldSpec] of Object.entries(spec.fields)) {
         fieldSpec.name = name
-        const field = this._schema._addFieldForType(this, fieldSpec)
+        const field = this[SC]._addFieldForType(this, fieldSpec)
         this._fields.add(field.address)
       }
     }
 
     if (spec.refines) {
-      this._parent = this._schema.resolveTypeAddress(spec.refines)
+      this._parent = this[SC].resolveTypeAddress(spec.refines)
     }
 
     this._info = {
@@ -443,7 +445,7 @@ class Type {
 
   parentType () {
     if (!this._parent) return null
-    return this._schema.getType(this._parent)
+    return this[SC].getType(this._parent)
   }
 
   allParents () {
@@ -457,7 +459,7 @@ class Type {
   // TODO: Or: Use an lazy iterator.
   fields () {
     const fields = Array.from(this._fields)
-      .map(address => this._schema.getField(address))
+      .map(address => this[SC].getField(address))
 
     const parentType = this.parentType()
     if (parentType) {
@@ -508,7 +510,7 @@ class Field {
   constructor (schema, spec) {
     if (!spec.address) throw new Error('Field address is required')
     if (!spec.name) throw new Error('Field name is required')
-    this._schema = schema
+    bindSymbol(this, SC, schema)
     this._address = spec.address
     this._spec = spec
     this._children = new Set()
@@ -542,13 +544,13 @@ class Field {
   allVariants () {
     const addresses = [this.address]
     addresses.push(...this._children)
-    if (this._parent) addresses.push(this._schema.getField(this._parent).allVariants())
+    if (this._parent) addresses.push(this[SC].getField(this._parent).allVariants())
     return addresses
   }
 
   getParent () {
     if (!this._parent) return null
-    return this._schema.getField(this._parent)
+    return this[SC].getField(this._parent)
   }
 
   _build (strict = true, force = false) {
@@ -563,7 +565,7 @@ class Field {
 
     // TODO: This will endlessly loop for nested refineds.
     // It should throw or stop when recursion is encountered.
-    const parent = this._schema.getField(this._spec.refines)
+    const parent = this[SC].getField(this._spec.refines)
 
     if (strict && !parent) {
       throw new Error(`Missing parent field ${this._spec.refines} while resolving ${this.address}`)
@@ -582,7 +584,7 @@ class Field {
 
   getType () {
     const typeAddress = this._address.split('#')[0]
-    return this._schema.getType(typeAddress)
+    return this[SC].getType(typeAddress)
   }
 
   setProp (path, value) {
@@ -640,11 +642,10 @@ class Field {
   // }
 }
 
-class Entity {
+class Entity extends Node {
   constructor (schema, records) {
-    this._schema = schema
+    super(schema)
     this._records = new Set()
-    this._types = new Set()
     this._id = null
     if (records) {
       for (const record of records) {
@@ -661,6 +662,16 @@ class Entity {
     return this._id
   }
 
+  add (record) {
+    record = this[SC].Record(record)
+    if (!this._id) {
+      this._id = record.id
+    } else if (this._id !== record.id) {
+      throw new Error('Cannot add record to entity: IDs do not match')
+    }
+    this._records.add(record)
+  }
+
   empty () {
     return !this._missing && !this._records.size
   }
@@ -672,23 +683,15 @@ class Entity {
     return false
   }
 
-  add (record) {
-    record = this._schema.Record(record)
-    if (!this._id) {
-      this._id = record.id
-    } else if (this._id !== record.id) {
-      throw new Error('Cannot add record to entity: IDs do not match')
-    }
-    this._records.add(record)
-    this._types.add(record.getType())
+  getTypes () {
+    return Array.from(new Set(
+      Array.from(this._records).map(r => r.getType())
+    ))
   }
 
-  types () {
-    return Array.from(this._types)
-  }
-
-  field (fieldName, single = true) {
-    const fieldValues = new FieldValueList(this._schema)
+  // Invoked by the Node high-level methods.
+  _field (fieldName, single = true) {
+    const fieldValues = new FieldValueList(this[SC])
 
     for (const record of this._records) {
       if (fieldName && record.hasField(fieldName)) {
@@ -700,26 +703,6 @@ class Entity {
 
     if (single) return fieldValues.first()
     return fieldValues
-  }
-
-  fields (fieldName) {
-    return this.field(fieldName, false)
-  }
-
-  get (fieldName, single = true) {
-    return this.field(fieldName, single).value
-  }
-
-  values (fieldName) {
-    return this.fields(fieldName).value
-  }
-
-  mapFields (fieldName, fn) {
-    if (!fn) {
-      fn = fieldName
-      fieldName = null
-    }
-    return this.fields(fieldName).map(fn)
   }
 }
 
@@ -733,7 +716,7 @@ class MissingEntity extends Entity {
 
 class RecordCache {
   constructor (schema) {
-    this._schema = schema
+    bindSymbol(this, SC, schema)
     this._records = new Map()
     this._entities = new Map()
   }
@@ -750,7 +733,7 @@ class RecordCache {
     this._records.set(record.address, record)
 
     let entity = this._entities.get(record.id)
-    if (!entity) entity = this._schema.Entity()
+    if (!entity) entity = this[SC].Entity()
     entity.add(record)
     this._entities.set(entity.address, entity)
   }
@@ -1017,4 +1000,13 @@ function validSegment (segment) {
 
 function hasChar (str, char) {
   return str.indexOf(char) !== -1
+}
+
+function bindSymbol (obj, symbol, value) {
+  Object.defineProperty(obj, symbol, {
+    enumerable: false,
+    configurable: false,
+    writable: false,
+    value
+  })
 }
