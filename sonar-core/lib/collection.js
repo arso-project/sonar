@@ -87,6 +87,8 @@ module.exports = class Collection extends Nanoresource {
     this.ready = this.open.bind(this)
     this._eventStreams = new Set()
     this._eventCounter = 0
+
+    setInterval(() => this.emit('ping'), 1000)
   }
 
   emit (event, ...args) {
@@ -94,8 +96,9 @@ module.exports = class Collection extends Nanoresource {
     let data
     if (event === 'update') data = { lseq: args[0] }
     if (event === 'feed') data = { key: args[0].key.toString('hex') }
+    const eventObject = { type: event, data, id }
     for (const stream of this._eventStreams) {
-      stream.push({ event, data, id })
+      stream.push(eventObject)
     }
     super.emit(event, ...args)
   }
@@ -220,6 +223,9 @@ module.exports = class Collection extends Nanoresource {
   }
 
   _close (cb) {
+    for (const stream of this._eventStreams) {
+      stream.destroy()
+    }
     this.fs.close(() => {
       this.scope.sync(() => {
         this.scope.close(() => {

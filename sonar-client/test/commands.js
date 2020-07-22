@@ -40,7 +40,7 @@ test('commands', async t => {
 
 test('subscription commands', async t => {
   const timer = clock()
-  const [context, client] = await createServerClient()
+  const [context, client] = await createServerClient({ disableAuthentication: true })
   debug(timer.log('init', true))
 
   const sub = await client.createSubscriptionStream('foo')
@@ -86,7 +86,7 @@ test('subscription commands', async t => {
 
 test('query commands', async t => {
   const timer = clock()
-  const [context, client] = await createServerClient()
+  const [context, client] = await createServerClient({ disableAuthentication: true })
   debug(timer.log('init', true))
 
   const count = 5

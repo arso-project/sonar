@@ -15,6 +15,11 @@ module.exports = {
     describe: 'the storage path',
     default: null
   },
+  'disable-authentication': {
+    boolean: true,
+    describe: 'completely disable authentication. WARNING: be sure you want this!',
+    default: false
+  },
   dev: {
     describe: 'start in developer\'s mode'
   }

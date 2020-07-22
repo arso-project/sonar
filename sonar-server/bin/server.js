@@ -37,7 +37,7 @@ function startServer (argv) {
   }
 
   const path = p.join(__dirname, '..', 'launch.js')
-  const args = [path, ...copyArgs(argv, ['port', 'hostname', 'storage', 'dev'])]
+  const args = [path, ...copyArgs(argv, ['port', 'hostname', 'storage', 'dev', 'disable-authentication'])]
 
   const nodeExe = process.execPath
 

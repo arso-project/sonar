@@ -1,5 +1,4 @@
-const SSE = require('express-sse')
-const debug = require('debug')('sonar-server')
+const SseStream = require('ssestream').default
 const { HttpError } = require('../lib/util')
 
 module.exports = function createCollectionHandler (collections) {
@@ -134,21 +133,22 @@ module.exports = function createCollectionHandler (collections) {
     },
 
     pullSubscriptionSSE (req, res, next) {
-      const { name } = req.params
-      const opts = req.query || {}
-      opts.live = true
+      res.end()
+      // const { name } = req.params
+      // const opts = req.query || {}
+      // opts.live = true
 
-      const sse = new SSE()
-      sse.init(req, res)
+      // const sse = new SSE()
+      // sse.init(req, res)
 
-      const stream = req.collection.pullSubscriptionStream(name, opts)
-      stream.on('data', row => {
-        sse.send(row, null, row.lseq)
-      })
-      stream.on('error', err => {
-        sse.send({ error: err.message }, 'error')
-        res.end()
-      })
+      // const stream = req.collection.pullSubscriptionStream(name, opts)
+      // stream.on('data', row => {
+      //   sse.send(row, null, row.lseq)
+      // })
+      // stream.on('error', err => {
+      //   sse.send({ error: err.message }, 'error')
+      //   res.end()
+      // })
       // pump(stream, sse)
     },
 
@@ -162,15 +162,26 @@ module.exports = function createCollectionHandler (collections) {
     },
 
     eventsSSE (req, res, next) {
-      const sse = new SSE()
-      sse.init(req, res)
-      const stream = req.collection.createEventStream()
-      stream.on('data', message => {
-        sse.send(message.data, message.event, message.id)
+      const sseStream = new SseStream(req)
+      const eventStream = req.collection.createEventStream()
+      sseStream.pipe(res)
+
+      eventStream.on('data', message => {
+        const event = { type: message.type, data: message.data }
+        const data = JSON.stringify(event)
+        sseStream.write({
+          id: message.id,
+          // TODO: It would be nicer to pass the message type here.
+          // However, the EventSource API doesn't really allow a
+          // catch-all handler.
+          event: 'message',
+          data
+        })
       })
-      stream.on('error', err => {
-        debug(err)
-        res.end()
+
+      res.on('close', () => {
+        sseStream.unpipe(res)
+        eventStream.destroy()
       })
     }
   }

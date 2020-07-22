@@ -19,3 +19,26 @@ tape('sync', async t => {
   }
   await context.stop()
 })
+
+tape.only('events', async t => {
+  const [context, client] = await createServerClient({ disableAuthentication: true })
+  try {
+    const collection = await client.createCollection('test')
+    const eventStream = collection.createEventStream()
+    const events = []
+    eventStream.on('data', event => {
+      events.push(event)
+      console.log('event', event)
+    })
+    await collection.putType({ name: 'foo', fields: { title: { type: 'string' } } })
+    console.log('type created')
+    await collection.put({ type: 'foo', value: { title: 'hello world' } })
+    console.log('record created')
+    await collection.sync()
+    t.deepEqual(events.map(event => event.type).sort(), ['schema-update', 'update', 'update'])
+  } catch (e) {
+    console.log(e)
+    throw e
+  }
+  await context.stop()
+})

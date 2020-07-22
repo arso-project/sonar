@@ -50,7 +50,7 @@ module.exports = class LegacyClient extends Client {
   }
 
   getSchema (name) {
-    return this.getSchema(name)
+    return this.getType(name)
   }
 
   async putFeed (key, opts) {

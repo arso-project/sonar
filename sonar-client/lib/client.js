@@ -42,6 +42,9 @@ class Client {
    * @return {Promise<void>}
    */
   async close () {
+    for (const collection of this._collections.values()) {
+      collection.close()
+    }
     return this.commands.close()
   }
 
@@ -130,6 +133,15 @@ class Client {
     return collection
   }
 
+  getAuthHeaders (opts = {}) {
+    const headers = {}
+    const token = this._token || opts.token
+    if (token) {
+      headers.authorization = 'Bearer ' + token
+    }
+    return headers
+  }
+
   /**
    * Fetch a resource.
    *
@@ -183,10 +195,7 @@ class Client {
       opts.headers['content-type'] = 'application/octet-stream'
     }
 
-    const token = this._token || opts.token
-    if (token) {
-      opts.headers.authorization = 'Bearer ' + token
-    }
+    opts.headers = { ...opts.headers, ...this.getAuthHeaders(opts) }
 
     try {
       debug('fetch', url, opts)
