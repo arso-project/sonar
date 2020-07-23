@@ -87,8 +87,6 @@ module.exports = class Collection extends Nanoresource {
     this.ready = this.open.bind(this)
     this._eventStreams = new Set()
     this._eventCounter = 0
-
-    setInterval(() => this.emit('ping'), 1000)
   }
 
   emit (event, ...args) {
