@@ -3,7 +3,7 @@ const expressUnless = require('express-unless')
 
 const { HttpError } = require('../lib/util')
 
-module.exports = function createCollectionHandler (api) {
+module.exports = function createAuthHandler (api) {
   return {
     createAccessCode (req, res, next) {
       api.auth.createAccessCode(req.query, (err, code) => {
@@ -12,6 +12,10 @@ module.exports = function createCollectionHandler (api) {
       })
     },
     login (req, res, next) {
+      // TODO: What to return if auth is disabled?
+      if (api.config.disableAuthentication) {
+        return res.send()
+      }
       const { code } = req.query
       if (!code) return next(HttpError(403, 'Code is required'))
       api.auth.login(code, (err, token) => {
@@ -21,6 +25,12 @@ module.exports = function createCollectionHandler (api) {
     },
 
     createAuthMiddleware () {
+      if (api.config.disableAuthentication) {
+        return function (req, res, next) {
+          next()
+        }
+      }
+
       function secretCallback (_req, _dtoken, cb) {
         api.auth.getSecret(cb)
       }

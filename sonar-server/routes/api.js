@@ -19,9 +19,7 @@ module.exports = function apiRoutes (api) {
   const commandHandler = createCommandStreamHandler(api.collections)
   const authHandler = createAuthHandler(api)
 
-  if (!api.config.disableAuthentication) {
-    router.use(authHandler.createAuthMiddleware())
-  }
+  router.use(authHandler.createAuthMiddleware())
 
   // Login
   router.post('/login', authHandler.login)

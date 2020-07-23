@@ -57,7 +57,6 @@ tape('db basic put and query', async t => {
     id: res.id,
     value: { color: 'red' }
   })
-  console.log(collection.schema)
   
   // const id = res.id
   // await collection.sync()

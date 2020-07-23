@@ -42,6 +42,10 @@ module.exports = function SonarServer (opts = {}) {
     },
     collections: new CollectionStore(opts.storage, storeOpts)
   }
+  
+  if (api.config.disableAuthentication) {
+    console.log('Authentication is diabled.')
+  }
 
   const app = express()
 
