@@ -318,6 +318,21 @@ class Collection {
     })
   }
 
+  /**
+   * Reindex the secondary indexes (views) in this collection.
+   *
+   * Use with care, this can be expensive.
+   *
+   * @param {Array<string>} Optional array of view names to reindex.
+   *  If unset all views will be reindexed.
+   */
+  async reindex (views) {
+    return this.fetch('/reindex', {
+      method: 'post',
+      params: { views }
+    })
+  }
+
   async fetch (path, opts = {}) {
     if (!opts.endpoint) opts.endpoint = this.endpoint
     return this._client.fetch(path, opts)

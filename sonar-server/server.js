@@ -34,11 +34,6 @@ module.exports = function SonarServer (opts = {}) {
   }
 
   const auth = new Auth(opts.storage)
-  // Open auth store (asynchrounsly)
-  auth.open(err => {
-    // TODO: How do we handle top-level errors?
-    if (err) console.error(err)
-  })
 
   const api = {
     auth,
@@ -120,9 +115,9 @@ module.exports = function SonarServer (opts = {}) {
   app.start = thunky((cb = noop) => {
     if (typeof opts === 'function') return app.start(null, opts)
     // Open the collection store.
-    api.auth.open(err => {
+    api.collections.ready(err => {
       if (err) return cb(err)
-      api.collections.ready(err => {
+      api.auth.open(err => {
         if (err) return cb(err)
         app.port = opts.port
         app.hostname = opts.hostname

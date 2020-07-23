@@ -290,6 +290,11 @@ module.exports = class Collection extends Nanoresource {
     if (!this._subscriptions[name]) return cb(new Error('Subscription does not exist'))
     this._subscriptions[name].setCursor(cursor, cb)
   }
+
+  reindex (views, cb) {
+    if (!cb) { cb = views; views = null }
+    this.db.reindex(views, cb)
+  }
 }
 
 function once (fn) {

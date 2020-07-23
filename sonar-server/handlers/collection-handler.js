@@ -183,6 +183,18 @@ module.exports = function createCollectionHandler (collections) {
         sseStream.unpipe(res)
         eventStream.destroy()
       })
+    },
+
+    reindex (req, res, next) {
+      let views
+      if (req.query.views) {
+        views = req.query.views.split(',')
+      }
+
+      req.collection.reindex(views, (err) => {
+        if (err) return next(err)
+        res.send()
+      })
     }
   }
 }

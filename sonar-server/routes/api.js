@@ -76,6 +76,7 @@ module.exports = function apiRoutes (api) {
   collectionRouter.post('/subscription/:name/:cursor', handlers.ackSubscription)
 
   collectionRouter.get('/events', handlers.eventsSSE)
+  collectionRouter.post('/reindex', handlers.reindex)
 
   collectionRouter.get('/fs-info', function (req, res, next) {
     const { collection } = req

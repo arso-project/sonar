@@ -1,6 +1,9 @@
 const through = require('through2')
 const keyEncoding = require('charwise')
-const { mapRecordsIntoOps } = require('./helpers')
+const {
+  mapRecordsIntoOps,
+  clearLevelDb
+} = require('./helpers')
 const Live = require('level-live')
 // const debug = require('debug')('db')
 // const collect = require('stream-collector')
@@ -20,6 +23,10 @@ module.exports = function createRecordView (lvl, db, opts) {
         // console.log('ops', ops.map(o => `${o.key} : ${o.value} : ${o.type}`))
         lvl.batch(ops, next)
       })
+    },
+
+    reset (cb) {
+      clearLevelDb(lvl, cb)
     },
 
     api: {
