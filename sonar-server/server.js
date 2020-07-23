@@ -21,7 +21,6 @@ const DEFAULT_PORT = 9191
 const DEFAULT_HOSTNAME = 'localhost'
 
 module.exports = function SonarServer (opts = {}) {
-  console.log('createServer opts', {})
   opts.storage = storagePath(opts.storage)
   if (!opts.port) opts.port = DEFAULT_PORT
   if (!opts.hostname) opts.hostname = DEFAULT_HOSTNAME
@@ -38,7 +37,7 @@ module.exports = function SonarServer (opts = {}) {
   // Open auth store (asynchrounsly)
   auth.open(err => {
     // TODO: How do we handle top-level errors?
-    console.error(err)
+    if (err) console.error(err)
   })
 
   const api = {

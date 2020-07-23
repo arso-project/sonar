@@ -1,5 +1,6 @@
 const base32Encode = require('base32-encode')
 const randomBytes = require('randombytes')
+const debug = require('debug')('sonar-client')
 const { Readable } = require('streamx')
 const EventSource = require('eventsource')
 
@@ -275,8 +276,8 @@ class Collection {
           eventStream.once('error', reject)
           function ondata (event) {
             if (event.type === 'update') {
-              eventStream.removeEventListener('data', ondata)
-              eventStream.removeEventListener('error', reject)
+              eventStream.removeListener('data', ondata)
+              eventStream.removeListener('error', reject)
               resolve()
             }
           }
@@ -284,10 +285,17 @@ class Collection {
 
         const batch = await self._pullSubscription(name)
         for (const message of batch.messages) {
-          await onRecord(message)
-          // TODO: Do we want to ack for each message or for each batch?
-          // Likely let the subscriber decide.
-          self._ackSubscription(name, message.lseq)
+          try {
+            const record = self.schema.Record(message)
+            await onRecord(record)
+            // TODO: Do we want to ack for each message or for each batch?
+            // Likely let the subscriber decide.
+            self._ackSubscription(name, message.lseq)
+          } catch (err) {
+            // TODO: What to do with errors here?
+            console.error(`Error in subscription ${name}: ${err.message}`)
+            debug(err)
+          }
         }
         if (batch.finished) {
           await incomingEvent
