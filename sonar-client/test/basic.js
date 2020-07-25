@@ -9,6 +9,7 @@ const { initDht, cleanupDht, BOOTSTRAP_ADDRESS } = require('./util/dht')
 const { ServerClient } = require('./util/server')
 
 async function prepare (opts = {}) {
+  if (opts.disableAuthentication === undefined) opts.disableAuthentication = true
   if (opts.network !== false) {
     await initDht()
     opts.network = true
@@ -56,6 +57,7 @@ tape('db basic put and query', async t => {
     id: res.id,
     value: { color: 'red' }
   })
+  
   // const id = res.id
   // await collection.sync()
   const results = await collection.query('records', { id: res.id }, { waitForSync: true })
@@ -74,7 +76,7 @@ tape('db basic put and query', async t => {
   // t.equal(record.get('color'), 'red')
   // t.equal(record.get('fun#color'), 'red')
   // t.equal(record.get('fun#color'), 'red')
-  console.log(record.entity.types().map(t => t.title))
+  console.log(record.entity.getTypes().map(t => t.title))
   t.equal(record.entity.id, res.id)
 
   await cleanup()

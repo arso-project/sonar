@@ -1,5 +1,30 @@
 const Record = require('../lib/record')
-module.exports = { mapRecordsIntoOps }
+const { Writable } = require('stream')
+const pump = require('pump')
+
+module.exports = { mapRecordsIntoOps, clearLevelDb }
+
+function clearLevelDb (db, cb) {
+  var batch = []
+  var maxSize = 5000
+  pump(db.createKeyStream(), new Writable({
+    objectMode: true,
+    write: function (key, enc, next) {
+      batch.push({ type: 'del', key })
+      if (batch.length >= maxSize) {
+        db.batch(batch, next)
+      } else next()
+    },
+    final: function (next) {
+      if (batch.length > 0) db.batch(batch, next)
+      else next()
+    }
+  }), ondone)
+  function ondone (err) {
+    if (err) cb(err)
+    else cb()
+  }
+}
 
 function mapRecordsIntoOps (db, records, map, cb) {
   let pending = records.length
@@ -15,7 +40,7 @@ function mapRecordsIntoOps (db, records, map, cb) {
   }
 
   function finish () {
-    cb(errs, ops)
+    cb(errs.length ? errs : null, ops)
   }
 }
 

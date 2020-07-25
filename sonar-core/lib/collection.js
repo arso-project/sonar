@@ -94,8 +94,9 @@ module.exports = class Collection extends Nanoresource {
     let data
     if (event === 'update') data = { lseq: args[0] }
     if (event === 'feed') data = { key: args[0].key.toString('hex') }
+    const eventObject = { type: event, data, id }
     for (const stream of this._eventStreams) {
-      stream.push({ event, data, id })
+      stream.push(eventObject)
     }
     super.emit(event, ...args)
   }
@@ -220,6 +221,9 @@ module.exports = class Collection extends Nanoresource {
   }
 
   _close (cb) {
+    for (const stream of this._eventStreams) {
+      stream.destroy()
+    }
     this.fs.close(() => {
       this.scope.sync(() => {
         this.scope.close(() => {
@@ -285,6 +289,11 @@ module.exports = class Collection extends Nanoresource {
   ackSubscription (name, cursor, cb) {
     if (!this._subscriptions[name]) return cb(new Error('Subscription does not exist'))
     this._subscriptions[name].setCursor(cursor, cb)
+  }
+
+  reindex (views, cb) {
+    if (!cb) { cb = views; views = null }
+    this.db.reindex(views, cb)
   }
 }
 

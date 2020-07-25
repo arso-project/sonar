@@ -19,7 +19,7 @@ export default function Pageroutes () {
       <Route exact path='/'><Start /></Route>
       <Route path='/collections'><Collections /></Route>
       <Route path='/config'><Config /></Route>
-      <Route path='/token/:token'><Config /></Route>
+      <Route path='/login/:accessCode'><Config /></Route>
 
       <Route path='/activity'><Activity /></Route>
       <Route path='/search'><Search /></Route>

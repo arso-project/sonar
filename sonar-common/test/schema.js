@@ -1,4 +1,5 @@
 const tape = require('tape')
+const table = require('text-table')
 const Schema = require('../schema')
 
 tape('basics', t => {
@@ -12,6 +13,11 @@ tape('basics', t => {
       label: {
         type: 'string',
         title: 'Label'
+      },
+      tags: {
+        type: 'relation',
+        title: 'Tags',
+        multiple: true
       }
     }
   })
@@ -43,7 +49,14 @@ tape('basics', t => {
     fields: {
       duration: {
         type: 'string',
-        title: 'Duration'
+        title: 'Duration',
+        index: {
+          search: {
+            // field: true
+            // bodytext: true
+            // facet: true
+          }
+        }
       }
     }
   })
@@ -53,17 +66,49 @@ tape('basics', t => {
   const record = schema.Record({
     id: 'avideo',
     type: 'video',
+    key: 'f1',
+    seq: 1,
 
     value: {
       duration: '1h20min',
       filename: 'avideo.mp4',
       size: '200mb',
-      label: 'A video label'
+      label: 'A video label',
+      tags: ['atag1', 'atag2']
     }
   })
 
+  console.log('\n# Table\n')
+  const rows = [['ID', 'Field', 'Value']]
+  for (const fieldValue of record.fields()) {
+    rows.push([record.id, fieldValue.fieldAddress, fieldValue.value])
+  }
+  console.log(table(rows))
+
+  console.log('\n# Human readable fields\n')
   for (const fieldValue of record.fields()) {
     console.log(fieldValue.title, ':', fieldValue.value)
+  }
+
+  console.log('\n# Get tag labels (Tags missing)\n')
+  for (const tag of record.gotoMany('tags')) {
+    console.log('Label: ' + tag.getOne('label'))
+  }
+
+  const tag1 = schema.Record({
+    id: 'atag1',
+    type: 'entity',
+    value: { label: 'A Tag!' }
+  })
+  const tag2 = schema.Record({
+    id: 'atag2',
+    type: 'entity',
+    value: { label: 'Cool things' }
+  })
+
+  console.log('\n# Get tag labels (Tags present)\n')
+  for (const tag of record.gotoMany('tags')) {
+    console.log('Label: ' + tag.getOne('label'))
   }
 
   // console.log('record label', record.field('entity#label').value)
@@ -89,7 +134,7 @@ tape('basics', t => {
 
   const entity = schema.Entity([record, file])
 
-  console.log('entity has types', entity.id, entity.types().map(t => t.title))
+  console.log('entity has types', entity.id, entity.getTypes().map(t => t.title))
 
   console.log('entity label', entity.get('entity#label'))
   console.log('entity labels', entity.values('entity#label'))
@@ -99,12 +144,9 @@ tape('basics', t => {
   console.log('entity duration', entity.get('video#duration'))
 
   console.log('entity triples', toTriples(entity))
-  console.log('entity turtle', toTurtle(entity))
+  // console.log('entity turtle', toTurtle(entity))
   console.log('entity is video', entity.hasType('sonar/video'))
-  // console.log(entity)
   // console.log('type json schema', schema.getType('video').toJSONSchema())
-  // const s2 = new Schema()
-  // s2.addType(schema.getType('video').toJSONSchema())
   t.end()
 })
 
@@ -178,17 +220,12 @@ tape('relations', t => {
     tag.gotoMany('target').map(e => [e.id, e.get('label')])
   )
 
-  // console.log('tag: target', tag.goto('target').map(entity => entity.id))
-  // console.log('tag: target many', tag.goto('target'))
-  // console.log(
-  //   // tag.('target').mapFields(f => f.get('label'))
-  // )
   t.end()
 })
 
 function toTriples (entity) {
   const triples = []
-  for (const type of entity.types()) {
+  for (const type of entity.getTypes()) {
     triples.push([entity.id, 'a', type.address])
   }
   for (const fv of entity.fields()) {
@@ -197,9 +234,11 @@ function toTriples (entity) {
   return triples
 }
 
-function toTurtle (entity) {
-  const triples = toTriples(entity)
-  let str = `<${entity.id}>\n`
-  str += triples.map(t => '  ' + t[1] + ' ' + t[2]).join('\n')
-  return str
-}
+// function toTurtle (entity) {
+//   const triples = toTriples(entity)
+//   let str = `\n<${entity.id}>\n`
+//   str += triples.map(t => (
+//     `  ${t[1]} ${t[2]}.\n`
+//   )).join('')
+//   return str
+// }

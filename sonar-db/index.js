@@ -375,6 +375,11 @@ module.exports = class Database extends Nanoresource {
     const opts = { root: true }
     this.put(record, opts, cb)
   }
+
+  reindex (views, cb) {
+    if (!cb) { cb = views; views = null }
+    this.scope.kappa.reset(views, cb)
+  }
 }
 
 function once (fn) {

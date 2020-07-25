@@ -1,9 +1,12 @@
 const express = require('express')
+const expressJwt = require('express-jwt')
 const hyperdriveMiddleware = require('./hyperdrive')
+const expressUnless = require('express-unless')
 
 const createDeviceHandler = require('../handlers/device-handler')
 const createCollectionHandler = require('../handlers/collection-handler')
 const createCommandStreamHandler = require('../handlers/command-handler')
+const createAuthHandler = require('../handlers/auth')
 
 // const SYNC_TIMEOUT = 10000
 
@@ -14,6 +17,13 @@ module.exports = function apiRoutes (api) {
   const deviceHandlers = createDeviceHandler(api.collections)
   const handlers = createCollectionHandler(api.collections)
   const commandHandler = createCommandStreamHandler(api.collections)
+  const authHandler = createAuthHandler(api)
+
+  router.use(authHandler.createAuthMiddleware())
+
+  // Login
+  router.post('/login', authHandler.login)
+  router.post('/create-access-code', authHandler.createAccessCode)
 
   // Info
   router.get('/info', deviceHandlers.info)
@@ -24,6 +34,7 @@ module.exports = function apiRoutes (api) {
   router.post('/collection', deviceHandlers.createCollection)
 
   const collectionRouter = express.Router()
+
   // Change collection config
   collectionRouter.patch('/', deviceHandlers.updateCollection)
 
@@ -63,6 +74,7 @@ module.exports = function apiRoutes (api) {
   collectionRouter.post('/subscription/:name/:cursor', handlers.ackSubscription)
 
   collectionRouter.get('/events', handlers.eventsSSE)
+  collectionRouter.post('/reindex', handlers.reindex)
 
   collectionRouter.get('/fs-info', function (req, res, next) {
     const { collection } = req

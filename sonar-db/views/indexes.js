@@ -1,6 +1,6 @@
 const through = require('through2')
 
-const { mapRecordsIntoOps } = require('./helpers')
+const { mapRecordsIntoOps, clearLevelDb } = require('./helpers')
 
 const CHAR_END = '\uffff'
 const CHAR_SPLIT = '\u0000'
@@ -15,17 +15,27 @@ module.exports = function indexedView (lvl, db, opts) {
         lvl.batch(ops, next)
       })
     },
+    reset (cb) {
+      clearLevelDb(lvl, cb)
+    },
     api: {
       query (kappa, opts, cb) {
         // const { type, prop, value, gt, lt, gte, lte, reverse, limit } = opts
         const proxy = transform(opts)
-        if (!opts.type || !opts.field) {
-          proxy.destroy(new Error('type and field are required.'))
-        } else {
-          opts.type = schema.resolveTypeAddress(opts.type)
-          if (!opts.type) return proxy.destroy(new Error('Unknown type: ' + opts.type))
+        if (!opts.field) {
+          proxy.destroy(new Error('field is required.'))
+        }
+        try {
+          if (opts.type) {
+            opts.type = schema.resolveTypeAddress(opts.type)
+            opts.field = opts.type + '#' + opts.field
+          }
+          opts.fieldAddress = schema.resolveFieldAddress(opts.field)
+
           const lvlopts = queryOptsToLevelOpts(opts)
           lvl.createReadStream(lvlopts).pipe(proxy)
+        } catch (err) {
+          proxy.destroy(err)
         }
         return proxy
       }
@@ -39,7 +49,7 @@ module.exports = function indexedView (lvl, db, opts) {
     for (const fieldValue of record.fields()) {
       const field = fieldValue.field
       if (fieldValue.empty() || !field.index.basic) continue
-      const fieldAddress = fieldValue.address
+      const fieldAddress = fieldValue.fieldAddress
       const value = fieldValue.value
       ops.push({
         key: [fieldAddress, value, lseq].join(CHAR_SPLIT),
@@ -50,10 +60,9 @@ module.exports = function indexedView (lvl, db, opts) {
   }
 }
 
-function queryOptsToLevelOpts (schema, opts) {
-  let { field, reverse, limit, offset, value, gt, gte, lt, lte } = opts
+function queryOptsToLevelOpts (opts) {
+  let { fieldAddress, reverse, limit, offset, value, gt, gte, lt, lte } = opts
   // TODO: This will throw for invalid fields names.
-  const fieldAddress = schema.resolveFieldAddress(field)
   if (offset && limit) limit = limit + offset
   const lvlopts = { reverse, limit }
   const key = fieldAddress + CHAR_SPLIT

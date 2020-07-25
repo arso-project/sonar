@@ -1,4 +1,6 @@
 const umkv = require('unordered-materialized-kv')
+const { clearLevelDb } = require('./helpers')
+
 const { keyseq, once } = require('../lib/util')
 
 module.exports = function kvView (lvl) {
@@ -15,6 +17,9 @@ module.exports = function kvView (lvl) {
         links: record.links
       }))
       kv.batch(ops, next)
+    },
+    reset (cb) {
+      clearLevelDb(lvl, cb)
     },
     api: {
       getLinks (kappa, record, cb) {

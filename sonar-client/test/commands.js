@@ -5,7 +5,7 @@ const { clock } = require('nanobench-utils')
 const createServerClient = require('./util/server')
 
 test('commands', async t => {
-  const [context, client1] = await createServerClient()
+  const [context, client1] = await createServerClient({ disableAuthentication: true })
   const client2 = context.createClient()
 
   await client1.commands.setName('pinger')
@@ -40,7 +40,7 @@ test('commands', async t => {
 
 test('subscription commands', async t => {
   const timer = clock()
-  const [context, client] = await createServerClient()
+  const [context, client] = await createServerClient({ disableAuthentication: true })
   debug(timer.log('init', true))
 
   const sub = await client.createSubscriptionStream('foo')
@@ -86,7 +86,7 @@ test('subscription commands', async t => {
 
 test('query commands', async t => {
   const timer = clock()
-  const [context, client] = await createServerClient()
+  const [context, client] = await createServerClient({ disableAuthentication: true })
   debug(timer.log('init', true))
 
   const count = 5

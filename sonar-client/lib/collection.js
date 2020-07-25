@@ -1,5 +1,8 @@
 const base32Encode = require('base32-encode')
 const randomBytes = require('randombytes')
+const debug = require('debug')('sonar-client')
+const { Readable } = require('streamx')
+const EventSource = require('eventsource')
 
 const Schema = require('@arso-project/sonar-common/schema')
 const Fs = require('./fs')
@@ -27,6 +30,7 @@ class Collection {
     this._client = client
     this._info = {}
     this._name = name
+    this._eventStreams = new Set()
 
     this.fs = new Fs(this)
     this.resources = new Resources(this)
@@ -66,6 +70,13 @@ class Collection {
     for (const typeSpec of Object.values(typeSpecs)) {
       this.schema.addType(typeSpec)
     }
+  }
+
+  async close () {
+    for (const stream of this._eventStreams) {
+      stream.destroy()
+    }
+    if (this._eventSource) this._eventSource.close()
   }
 
   /**
@@ -195,34 +206,131 @@ class Collection {
     return this.fetch('/sync')
   }
 
+  /**
+   * Subscribe to events on this collection.
+   *
+   * Returned events look like this: `{ event, data, id }`
+   * Events are:
+   *
+   * * `update`: with `{ lseq }`
+   * * `feed`: with `{ key }`
+   * * `schema-update`
+   *
+   * @return {Readable<object>}
+   */
+  createEventStream () {
+    const stream = new Readable()
+    this._eventStreams.add(stream)
+    if (!this._eventSource) this._initEventSource()
+    return stream
+  }
+
+  async _initEventSource () {
+    try {
+      if (!this._client.opened) await this._client.open()
+      const headers = this._client.getAuthHeaders()
+      const path = this.endpoint + '/events'
+      this._eventSource = new EventSource(path, { headers })
+      this._eventSource.addEventListener('message', message => {
+        try {
+          const event = JSON.parse(message.data)
+          for (const stream of this._eventStreams) {
+            stream.push(event)
+          }
+        } catch (e) {}
+      })
+    } catch (e) {
+      // TODO: Where should the error go?
+      console.error('Error initializing event source: ' + e.message)
+    }
+    return this._eventSource
+  }
+
+  /**
+   * Subscribe to this collection.
+   *
+   * This will fetch all records from the first to the last and then waits for new records.
+   * Currently only intended for usage in bots (not in short-running Browser clients).
+   *
+   * @todo: Prefix client ID to subscription name.
+   * @todo: Allow to subscribe from now instead of from the beginning.
+   *
+   * @param {string} Subscription name. Has to be unique per running Sonar instance
+   * @param {function} Async callback function that will be called for each incoming record
+   */
+  async subscribe (name, onRecord) {
+    const self = this
+
+    run().catch(err => {
+      // TODO: How to deal with these errors?
+      console.error('subscription error', err)
+    })
+
+    return true
+
+    async function run () {
+      const eventStream = self.createEventStream()
+      while (true) {
+        const incomingEvent = new Promise((resolve, reject) => {
+          eventStream.on('data', ondata)
+          eventStream.once('error', reject)
+          function ondata (event) {
+            if (event.type === 'update') {
+              eventStream.removeListener('data', ondata)
+              eventStream.removeListener('error', reject)
+              resolve()
+            }
+          }
+        })
+
+        const batch = await self._pullSubscription(name)
+        for (const message of batch.messages) {
+          try {
+            const record = self.schema.Record(message)
+            await onRecord(record)
+            // TODO: Do we want to ack for each message or for each batch?
+            // Likely let the subscriber decide.
+            self._ackSubscription(name, message.lseq)
+          } catch (err) {
+            // TODO: What to do with errors here?
+            console.error(`Error in subscription ${name}: ${err.message}`)
+            debug(err)
+          }
+        }
+        if (batch.finished) {
+          await incomingEvent
+        }
+      }
+    }
+  }
+
   async _pullSubscription (name, opts) {
+    // TODO: Prefix name with client id.
     return this.fetch('/subscription/' + name, {
       query: opts
     })
   }
 
   async _ackSubscription (name, cursor) {
+    // TODO: Prefix name with client id.
     return this.fetch('/subscription/' + name + '/' + cursor, {
       method: 'post'
     })
   }
 
-  async subscribe (name, onmessage) {
-    const self = this
-    run().catch(err => {
-      console.error('subscription error', err)
+  /**
+   * Reindex the secondary indexes (views) in this collection.
+   *
+   * Use with care, this can be expensive.
+   *
+   * @param {Array<string>} Optional array of view names to reindex.
+   *  If unset all views will be reindexed.
+   */
+  async reindex (views) {
+    return this.fetch('/reindex', {
+      method: 'post',
+      params: { views }
     })
-    return true
-
-    async function run () {
-      const result = await self._pullSubscription(name)
-      for (const message of result.messages) {
-        await onmessage(message)
-        self._ackSubscription(name, message.lseq)
-      }
-      if (!result.finished) setTimeout(run, 0)
-      else setTimeout(run, 1000)
-    }
   }
 
   async fetch (path, opts = {}) {

@@ -8,6 +8,10 @@ module.exports = class ConfigLoader {
     this.lock = mutex()
   }
 
+  open (cb) {
+    this.load(cb)
+  }
+
   load (cb) {
     const self = this
 
