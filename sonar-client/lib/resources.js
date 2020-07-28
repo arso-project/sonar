@@ -61,7 +61,7 @@ module.exports = class Resources {
 
     id = id || opts.id
 
-    const res = await this.collection.put({
+    const record = {
       type: SCHEMA_RESOURCE,
       id,
       value: {
@@ -69,7 +69,8 @@ module.exports = class Resources {
         contentUrl,
         filename
       }
-    })
+    }
+    const res = await this.collection.put(record)
     // TODO: This should get by keyseq. Or put should just return the
     // putted record.
     const records = await this.collection.get({

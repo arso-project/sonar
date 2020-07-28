@@ -1,4 +1,5 @@
 const fs = require('fs')
+const debug = require('debug')('sonar-cli')
 const p = require('path')
 const u = require('util')
 const chalk = require('chalk')
@@ -128,6 +129,7 @@ async function writefile (argv) {
 
 async function importfile (argv) {
   const client = makeClient(argv)
+  // const collection = await client.focusedCollection()
   const path = p.resolve(argv.path)
 
   // const writable = await client.isWritable()
@@ -179,6 +181,7 @@ async function _importfolder ({ client, path, opts }) {
       console.log('ok')
     } catch (e) {
       console.error(e.message)
+      debug(e)
     }
   }
   console.log(prefix)
