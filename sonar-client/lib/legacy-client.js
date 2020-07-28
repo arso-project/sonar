@@ -122,9 +122,7 @@ module.exports = class LegacyClient extends Client {
   // Resources
   // TODO: Rethink the resource API and model
   async createResource (value, opts) {
-    console.log('CREATE IN', value, opts)
     const collection = await this.focusedCollection()
-    console.log('here', collection)
     return collection.resources.create(value, opts)
   }
 
