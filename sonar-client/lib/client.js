@@ -16,7 +16,8 @@ class Client {
    * @constructor
    * @param {object} [opts] - Optional options.
    * @param {string} [opts.endpoint=http://localhost:9191/api] - The API endpoint to talk to.
-   * @param {string} [opts.id] - The id for this client. Random by default. Used for for cache ids.
+   * @param {string} [opts.accessCode] - An access code to login at the endpoint.
+   * @param {string} [opts.token] - A JSON web token to authorize to the endpoint.
    * @param {string} [opts.name] - The name of this client. Only relevant if using persistent commands (for bots).
    */
   constructor (opts = {}) {

@@ -105,8 +105,8 @@ class Fs {
    *
    * @async
    * @param {string} path - A hyper:// URL or a relative path within the collection's file system.
-   * @param {Stream|Buffer} file - File content to write.
-   * @param {object} [opts] - Options. TODO: document.
+   * @param {Stream|Buffer} file - File content to write. Can be either a buffer or a read stream.
+   * @param {object} [opts] - Options.
    * @throws Will throw if the path cannot be written to.
    * @return {Promise}
    */
@@ -121,7 +121,6 @@ class Fs {
       params,
       responseType: 'text',
       requestType,
-      // binary: true,
       onUploadProgress: opts.onUploadProgress
     })
   }
