@@ -5,9 +5,9 @@ info:
     name: GPL-3.0
   description: '[Specification JSON](/api-spec)'
 paths:
-  /api/_info:
+  /api/info:
     get:
-      summary: /api/_info
+      summary: Get a list of all collections available on this server.
       parameters: []
       responses:
         '200':
@@ -21,16 +21,25 @@ paths:
                  collections:
                     type: object
                     description: list of Collections
-  '/api/_create/{name}':
-    put:
-      summary: '/api/_create/{name}'
-      parameters:
-        - name: name
-          in: path
-          description: the name of collection that should be created
-          required: true
-          schema:
-            type: string
+  /api/collection:
+    post:
+      summary: Creates a collection.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                name: 
+                  description: The name of collection that should be created
+                  type: string
+                key:
+                  description: Hex string of an existing collection. Will then sync this collection instead of creating a new, empty collection.
+                  type: string
+                alias:
+                  description: When setting key, alias is required and is your nick name within this collection.
+                  type: string
+              required:
+                - name
       responses:
         '200':
           description: Collection created
@@ -53,16 +62,16 @@ paths:
                     type: string
                     example: alias is required
      
-  /api/_commands/.websocket:
+  /api/commands/.websocket:
     get:
-      summary: /api/_commands/.websocket
+      summary: /api/commands/.websocket
       parameters: []
       responses: 
         '200':
           description: connection established
-  '/api/{collection}':
+  '/api/collection/{collection}':
     patch:
-      summary: '/api/{collection}'
+      summary: '/api/collection/{collection}'
       parameters:
         - name: collection
           in: path
@@ -82,7 +91,7 @@ paths:
                     type: string
                     example: 12c7408b50773b7145e5d85967809a1b7e56ccebc21fce34a943c6dc87743983
     get:
-      summary: '/api/{collection}'
+      summary: '/api/collection/{collection}'
       
       parameters:
         - name: collection
