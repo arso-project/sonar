@@ -26,9 +26,9 @@ exports.builder = function (yargs) {
       handler: list
     })
     .command({
-      command: 'add-source <name> <key>',
-      describe: 'add a source to the collection',
-      handler: addSource
+      command: 'addFeed <name> <key>',
+      describe: 'add a feed to the collection',
+      handler: addFeed
     })
     .command({
       command: 'debug',
@@ -47,11 +47,12 @@ async function create (argv) {
   console.log(collection.info)
 }
 
-async function addSource (argv) {
+async function addFeed (argv) {
   const client = makeClient(argv)
+  const collection = await client.focusedCollection()
   const { key, name } = argv
   const info = { name }
-  const result = await client.putSource(key, info)
+  const result = await collection.addFeed(key, info)
   console.log(result)
 }
 
