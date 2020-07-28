@@ -52,5 +52,5 @@ module.exports = function kvView (lvl) {
 }
 
 function kvkey (record) {
-  return record.schema + ':' + record.id
+  return record.type + ':' + record.id
 }
