@@ -7,7 +7,10 @@ const expressWebSocket = require('express-ws')
 const shutdown = require('http-shutdown')
 const debug = require('debug')('sonar-server')
 const p = require('path')
-const os = require('os')
+const fs = require('fs')
+const { handleResponses, handleRequests } = require('express-oas-generator')
+const mkdirp = require('mkdirp')
+
 const swaggerUi = require('swagger-ui-express')
 const thunky = require('thunky')
 // const websocketStream = require('websocket-stream/stream')
@@ -16,6 +19,7 @@ const { storagePath } = require('@arso-project/sonar-common/storage.js')
 const apiRouter = require('./routes/api')
 const apiDocs = require('./docs/swagger.json')
 const Auth = require('./lib/auth')
+const _ = require('lodash')
 
 const DEFAULT_PORT = 9191
 const DEFAULT_HOSTNAME = 'localhost'
@@ -42,12 +46,31 @@ module.exports = function SonarServer (opts = {}) {
     },
     collections: new CollectionStore(opts.storage, storeOpts)
   }
-  
+
   if (api.config.disableAuthentication) {
-    console.log('Authentication is diabled.')
+    console.log('Authentication is disabled.')
   }
 
   const app = express()
+
+  const openAPIFilePath = './docs/swagger.json'
+  /** SWAGGER: handle the responses */
+  if (process.env.NODE_ENV !== 'production') {
+    mkdirp.sync(p.parse(openAPIFilePath).dir)
+    let predefinedSpec
+    try {
+      predefinedSpec = JSON.parse(
+        fs.readFileSync(openAPIFilePath, { encoding: 'utf-8' })
+      )
+    } catch (e) {
+      console.log('Error: ', e)
+    }
+    handleResponses(app, {
+      specOutputPath: openAPIFilePath,
+      writeIntervalMs: 0,
+      predefinedSpec: predefinedSpec ? () => predefinedSpec : undefined
+    })
+  }
 
   // Make the sonar api available on the app object.
   app.api = api
@@ -132,7 +155,10 @@ module.exports = function SonarServer (opts = {}) {
       })
     })
   })
-
+  /** SWAGGER: handle the responses */
+  if (process.env.NODE_ENV !== 'production') {
+    handleRequests()
+  }
   app.close = thunky((cb = noop) => {
     let pending = 3
     debug('shutting down')

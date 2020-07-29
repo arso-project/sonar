@@ -1,1641 +1,937 @@
 {
-  "openapi" : "3.0.0",
-  "info" : {
-    "title" : "sonar",
-    "description" : "[Specification JSON](/api-spec)",
-    "license" : {
-      "name" : "GPL-3.0"
+  "info": {
+    "title": "Sonar Server HTTP API",
+    "version": "0.1.0",
+    "license": {
+      "name": "GPL-3.0"
     },
-    "version" : "0.0.1"
+    "description": "[Specification JSON](/api-spec)"
   },
-  "servers" : [ {
-    "url" : "/"
-  } ],
-  "paths" : {
-    "/api/_info" : {
-      "get" : {
-        "summary" : "/api/_info",
-        "parameters" : [ ],
-        "responses" : {
-          "200" : {
-            "description" : "info object about the running sonar instance",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/inline_response_200"
-                }
-              }
-            }
-          }
-        }
+  "paths": {
+    "/api/login": {
+      "post": {
+        "summary": "/api/login",
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [],
+        "responses": {}
       }
     },
-    "/api/_create/{name}" : {
-      "put" : {
-        "summary" : "/api/_create/{name}",
-        "parameters" : [ {
-          "name" : "name",
-          "in" : "path",
-          "description" : "the name of collection that should be created",
-          "required" : true,
-          "style" : "simple",
-          "explode" : false,
-          "schema" : {
-            "type" : "string"
+    "/api/create-access-code": {
+      "post": {
+        "summary": "/api/create-access-code",
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [],
+        "responses": {}
+      }
+    },
+    "/api/info": {
+      "get": {
+        "summary": "/api/info",
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [],
+        "responses": {}
+      }
+    },
+    "/api/commands/.websocket": {
+      "get": {
+        "summary": "/api/commands/.websocket",
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [],
+        "responses": {}
+      }
+    },
+    "/api/collection": {
+      "post": {
+        "summary": "/api/collection",
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [],
+        "responses": {}
+      }
+    },
+    "/api/collection/{collection}": {
+      "patch": {
+        "summary": "/api/collection/{collection}",
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "collection",
+            "in": "path",
+            "required": true
           }
-        } ],
-        "responses" : {
-          "200" : {
-            "description" : "Collection created",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/inline_response_200_1"
-                }
-              }
-            }
+        ],
+        "responses": {}
+      },
+      "get": {
+        "summary": "/api/collection/{collection}",
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "collection",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {}
+      }
+    },
+    "/api/collection/{collection}/fs/{drive}/*": {
+      "get": {
+        "summary": "/api/collection/{collection}/fs/{drive}/*",
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "collection",
+            "in": "path",
+            "required": true
           },
-          "500" : {
-            "description" : "error message",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/inline_response_500"
-                }
-              }
-            }
+          {
+            "name": "drive",
+            "in": "path",
+            "required": true
           }
-        }
-      }
-    },
-    "/api/_commands/.websocket" : {
-      "get" : {
-        "summary" : "/api/_commands/.websocket",
-        "parameters" : [ ],
-        "responses" : {
-          "200" : {
-            "description" : "connection established"
-          }
-        }
-      }
-    },
-    "/api/{collection}" : {
-      "get" : {
-        "summary" : "/api/{collection}",
-        "parameters" : [ {
-          "name" : "collection",
-          "in" : "path",
-          "description" : "the name of collection",
-          "required" : true,
-          "style" : "simple",
-          "explode" : false,
-          "schema" : {
-            "type" : "string"
-          }
-        } ],
-        "responses" : {
-          "200" : {
-            "description" : "Collection object",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/inline_response_200_2"
-                }
-              }
-            }
+        ],
+        "responses": {}
+      },
+      "put": {
+        "summary": "/api/collection/{collection}/fs/{drive}/*",
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "collection",
+            "in": "path",
+            "required": true
           },
-          "500" : {
-            "description" : "error object",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/inline_response_500_1"
-                }
-              }
-            }
+          {
+            "name": "drive",
+            "in": "path",
+            "required": true
           }
-        }
+        ],
+        "responses": {}
+      }
+    },
+    "/api/collection/{collection}/fs/{drive}": {
+      "get": {
+        "summary": "/api/collection/{collection}/fs/{drive}",
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "collection",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "drive",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {}
+      }
+    },
+    "/api/collection/{collection}/db": {
+      "put": {
+        "summary": "/api/collection/{collection}/db",
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "collection",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {}
+      }
+    },
+    "/api/collection/{collection}/db/{id}": {
+      "put": {
+        "summary": "/api/collection/{collection}/db/{id}",
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "collection",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {}
       },
-      "patch" : {
-        "summary" : "/api/{collection}",
-        "parameters" : [ {
-          "name" : "collection",
-          "in" : "path",
-          "description" : "the name of collection",
-          "required" : true,
-          "style" : "simple",
-          "explode" : false,
-          "schema" : {
-            "type" : "string"
+      "delete": {
+        "summary": "/api/collection/{collection}/db/{id}",
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "collection",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true
           }
-        } ],
-        "responses" : {
-          "200" : {
-            "description" : "Collection patched",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/inline_response_200_1"
-                }
-              }
-            }
-          }
-        }
+        ],
+        "responses": {}
       }
     },
-    "/api/{collection}/fs/{drive}/*" : {
-      "get" : {
-        "summary" : "/api/{collection}/fs/{drive}/*",
-        "parameters" : [ {
-          "name" : "collection",
-          "in" : "path",
-          "description" : "the name of collection",
-          "required" : true,
-          "style" : "simple",
-          "explode" : false,
-          "schema" : {
-            "type" : "string"
+    "/api/collection/{collection}/db/{key}/{seq}": {
+      "get": {
+        "summary": "/api/collection/{collection}/db/{key}/{seq}",
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "collection",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "key",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "seq",
+            "in": "path",
+            "required": true
           }
-        }, {
-          "name" : "drive",
-          "in" : "path",
-          "description" : "the key of drive",
-          "required" : true,
-          "style" : "simple",
-          "explode" : false,
-          "schema" : {
-            "type" : "string"
+        ],
+        "responses": {}
+      }
+    },
+    "/api/collection/{collection}/sync": {
+      "get": {
+        "summary": "/api/collection/{collection}/sync",
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "collection",
+            "in": "path",
+            "required": true
           }
-        } ],
-        "responses" : {
-          "200" : {
-            "description" : "get drive",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "type" : "array",
-                  "items" : {
-                    "$ref" : "#/components/schemas/inline_response_200_3"
-                  }
-                }
-              }
-            }
+        ],
+        "responses": {}
+      }
+    },
+    "/api/collection/{collection}/query/{name}": {
+      "post": {
+        "summary": "/api/collection/{collection}/query/{name}",
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "collection",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "name",
+            "in": "path",
+            "required": true
           }
-        }
+        ],
+        "responses": {}
+      }
+    },
+    "/api/collection/{collection}/schema": {
+      "get": {
+        "summary": "/api/collection/{collection}/schema",
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "collection",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {}
       },
-      "put" : {
-        "summary" : "/api/{collection}/fs/{drive}/*",
-        "parameters" : [ {
-          "name" : "collection",
-          "in" : "path",
-          "description" : "the name of collection",
-          "required" : true,
-          "style" : "simple",
-          "explode" : false,
-          "schema" : {
-            "type" : "string"
+      "post": {
+        "summary": "/api/collection/{collection}/schema",
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "collection",
+            "in": "path",
+            "required": true
           }
-        }, {
-          "name" : "drive",
-          "in" : "path",
-          "description" : "the key of drive",
-          "required" : true,
-          "style" : "simple",
-          "explode" : false,
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "type" : "string"
-              }
-            }
-          }
-        } ],
-        "responses" : {
-          "200" : {
-            "description" : "Hyperdrive"
-          }
-        }
+        ],
+        "responses": {}
       }
     },
-    "/api/{collection}/fs/{drive}" : {
-      "get" : {
-        "summary" : "/api/{collection}/fs/{drive}",
-        "parameters" : [ {
-          "name" : "collection",
-          "in" : "path",
-          "description" : "the name of collection",
-          "required" : true,
-          "style" : "simple",
-          "explode" : false,
-          "schema" : {
-            "type" : "string"
+    "/api/collection/{collection}/feed/{key}": {
+      "put": {
+        "summary": "/api/collection/{collection}/feed/{key}",
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "collection",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "key",
+            "in": "path",
+            "required": true
           }
-        }, {
-          "name" : "drive",
-          "in" : "path",
-          "description" : "the key of drive",
-          "required" : true,
-          "style" : "simple",
-          "explode" : false,
-          "schema" : {
-            "type" : "string"
-          }
-        } ],
-        "responses" : {
-          "200" : {
-            "description" : "Hyperdrive"
-          }
-        }
+        ],
+        "responses": {}
       }
     },
-    "/api/{collection}/db" : {
-      "put" : {
-        "summary" : "/api/{collection}/db",
-        "parameters" : [ {
-          "name" : "collection",
-          "in" : "path",
-          "description" : "the name of collection",
-          "required" : true,
-          "style" : "simple",
-          "explode" : false,
-          "schema" : {
-            "type" : "string"
+    "/api/collection/{collection}/debug": {
+      "get": {
+        "summary": "/api/collection/{collection}/debug",
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "collection",
+            "in": "path",
+            "required": true
           }
-        } ],
-        "responses" : {
-          "200" : {
-            "description" : "gives you the db object",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/inline_response_200_4"
-                }
-              }
-            }
-          }
-        }
+        ],
+        "responses": {}
       }
     },
-    "/api/{collection}/db/{id}" : {
-      "put" : {
-        "summary" : "/api/{collection}/db/{id}",
-        "parameters" : [ {
-          "name" : "collection",
-          "in" : "path",
-          "description" : "the name of collection",
-          "required" : true,
-          "style" : "simple",
-          "explode" : false,
-          "schema" : {
-            "type" : "string"
+    "/api/collection/{collection}/subscription/{name}": {
+      "put": {
+        "summary": "/api/collection/{collection}/subscription/{name}",
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "collection",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "name",
+            "in": "path",
+            "required": true
           }
-        }, {
-          "name" : "id",
-          "in" : "path",
-          "description" : "Entity id",
-          "required" : true,
-          "style" : "simple",
-          "explode" : false,
-          "schema" : {
-            "type" : "string"
-          }
-        } ],
-        "responses" : {
-          "200" : {
-            "description" : "Record"
-          }
-        }
+        ],
+        "responses": {}
       },
-      "delete" : {
-        "summary" : "/api/{collection}/db/{id}",
-        "parameters" : [ {
-          "name" : "collection",
-          "in" : "path",
-          "description" : "the name of collection",
-          "required" : true,
-          "style" : "simple",
-          "explode" : false,
-          "schema" : {
-            "type" : "string"
+      "get": {
+        "summary": "/api/collection/{collection}/subscription/{name}",
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "collection",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "name",
+            "in": "path",
+            "required": true
           }
-        }, {
-          "name" : "id",
-          "in" : "path",
-          "description" : "record id",
-          "required" : true,
-          "style" : "simple",
-          "explode" : false,
-          "schema" : {
-            "type" : "string"
-          }
-        } ],
-        "responses" : {
-          "200" : {
-            "description" : "Record deleted"
-          }
-        }
+        ],
+        "responses": {}
       }
     },
-    "/api/{collection}/db/{key}/{seq}" : {
-      "get" : {
-        "summary" : "/api/{collection}/db/{key}/{seq}",
-        "parameters" : [ {
-          "name" : "collection",
-          "in" : "path",
-          "description" : "the name of collection",
-          "required" : true,
-          "style" : "simple",
-          "explode" : false,
-          "schema" : {
-            "type" : "string"
+    "/api/collection/{collection}/subscription/{name}/sse": {
+      "get": {
+        "summary": "/api/collection/{collection}/subscription/{name}/sse",
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "collection",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "name",
+            "in": "path",
+            "required": true
           }
-        }, {
-          "name" : "key",
-          "in" : "path",
-          "description" : "key",
-          "required" : true,
-          "style" : "simple",
-          "explode" : false,
-          "schema" : {
-            "type" : "string"
-          }
-        }, {
-          "name" : "seq",
-          "in" : "path",
-          "description" : "seq",
-          "required" : true,
-          "style" : "simple",
-          "explode" : false,
-          "schema" : {
-            "type" : "string"
-          }
-        } ],
-        "responses" : {
-          "200" : {
-            "description" : "Key/Seq"
-          }
-        }
+        ],
+        "responses": {}
       }
     },
-    "/api/{collection}/sync" : {
-      "get" : {
-        "summary" : "/api/{collection}/sync",
-        "parameters" : [ {
-          "name" : "collection",
-          "in" : "path",
-          "description" : "the name of collection that should be created",
-          "required" : true,
-          "style" : "simple",
-          "explode" : false,
-          "schema" : {
-            "type" : "string"
+    "/api/collection/{collection}/subscription/{name}/{cursor}": {
+      "post": {
+        "summary": "/api/collection/{collection}/subscription/{name}/{cursor}",
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "collection",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "name",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "cursor",
+            "in": "path",
+            "required": true
           }
-        } ],
-        "responses" : {
-          "200" : {
-            "description" : "synced"
-          }
-        }
+        ],
+        "responses": {}
       }
     },
-    "/api/{collection}/query/{name}" : {
-      "post" : {
-        "summary" : "/api/{collection}/query/{name}",
-        "parameters" : [ {
-          "name" : "collection",
-          "in" : "path",
-          "description" : "the name of collection",
-          "required" : true,
-          "style" : "simple",
-          "explode" : false,
-          "schema" : {
-            "type" : "string"
+    "/api/collection/{collection}/events": {
+      "get": {
+        "summary": "/api/collection/{collection}/events",
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "collection",
+            "in": "path",
+            "required": true
           }
-        }, {
-          "name" : "name",
-          "in" : "path",
-          "description" : "queryname",
-          "required" : true,
-          "style" : "simple",
-          "explode" : false,
-          "schema" : {
-            "type" : "string"
-          }
-        } ],
-        "responses" : {
-          "200" : {
-            "description" : "Queryresponse",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "type" : "array",
-                  "items" : {
-                    "$ref" : "#/components/schemas/inline_response_200_5"
-                  }
-                }
-              }
-            }
-          }
-        }
+        ],
+        "responses": {}
       }
     },
-    "/api/{collection}/_query/{name}" : {
-      "post" : {
-        "summary" : "/api/{collection}/_query/{name}",
-        "parameters" : [ {
-          "name" : "collection",
-          "in" : "path",
-          "description" : "the name of collection that should be created",
-          "required" : true,
-          "style" : "simple",
-          "explode" : false,
-          "schema" : {
-            "type" : "string"
+    "/api/collection/{collection}/reindex": {
+      "post": {
+        "summary": "/api/collection/{collection}/reindex",
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "collection",
+            "in": "path",
+            "required": true
           }
-        }, {
-          "name" : "name",
-          "in" : "path",
-          "description" : "query name",
-          "required" : true,
-          "style" : "simple",
-          "explode" : false,
-          "schema" : {
-            "type" : "string"
-          }
-        } ],
-        "responses" : {
-          "200" : {
-            "description" : "query response"
-          }
-        }
+        ],
+        "responses": {}
       }
     },
-    "/api/{collection}/schema" : {
-      "get" : {
-        "summary" : "/api/{collection}/schema",
-        "parameters" : [ {
-          "name" : "collection",
-          "in" : "path",
-          "description" : "the name of collection that should be created",
-          "required" : true,
-          "style" : "simple",
-          "explode" : false,
-          "schema" : {
-            "type" : "string"
+    "/api/collection/{collection}/fs-info": {
+      "get": {
+        "summary": "/api/collection/{collection}/fs-info",
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "collection",
+            "in": "path",
+            "required": true
           }
-        } ],
-        "responses" : {
-          "200" : {
-            "description" : "schema",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/inline_response_200_6"
-                }
-              }
-            }
+        ],
+        "responses": {}
+      }
+    },
+    "/api/v1/login": {
+      "post": {
+        "summary": "/api/v1/login",
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [],
+        "responses": {}
+      }
+    },
+    "/api/v1/create-access-code": {
+      "post": {
+        "summary": "/api/v1/create-access-code",
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [],
+        "responses": {}
+      }
+    },
+    "/api/v1/info": {
+      "get": {
+        "summary": "/api/v1/info",
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [],
+        "responses": {}
+      }
+    },
+    "/api/v1/commands/.websocket": {
+      "get": {
+        "summary": "/api/v1/commands/.websocket",
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [],
+        "responses": {}
+      }
+    },
+    "/api/v1/collection": {
+      "post": {
+        "summary": "/api/v1/collection",
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [],
+        "responses": {}
+      }
+    },
+    "/api/v1/collection/{collection}": {
+      "patch": {
+        "summary": "/api/v1/collection/{collection}",
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "collection",
+            "in": "path",
+            "required": true
           }
-        }
+        ],
+        "responses": {}
       },
-      "post" : {
-        "summary" : "/api/{collection}/schema",
-        "parameters" : [ {
-          "name" : "collection",
-          "in" : "path",
-          "description" : "the name of collection",
-          "required" : true,
-          "style" : "simple",
-          "explode" : false,
-          "schema" : {
-            "type" : "string"
+      "get": {
+        "summary": "/api/v1/collection/{collection}",
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "collection",
+            "in": "path",
+            "required": true
           }
-        } ],
-        "responses" : {
-          "200" : {
-            "description" : "Schemata from collection"
-          }
-        }
+        ],
+        "responses": {}
       }
     },
-    "/api/{collection}/source/{key}" : {
-      "put" : {
-        "summary" : "/api/{collection}/source/{key}",
-        "parameters" : [ {
-          "name" : "collection",
-          "in" : "path",
-          "description" : "the name of collection",
-          "required" : true,
-          "style" : "simple",
-          "explode" : false,
-          "schema" : {
-            "type" : "string"
+    "/api/v1/collection/{collection}/fs/{drive}/*": {
+      "get": {
+        "summary": "/api/v1/collection/{collection}/fs/{drive}/*",
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "collection",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "drive",
+            "in": "path",
+            "required": true
           }
-        }, {
-          "name" : "key",
-          "in" : "path",
-          "description" : "Source key",
-          "required" : true,
-          "style" : "simple",
-          "explode" : false,
-          "schema" : {
-            "type" : "string"
-          }
-        } ],
-        "responses" : {
-          "200" : {
-            "description" : "put source"
-          }
-        }
-      }
-    },
-    "/api/{collection}/debug" : {
-      "get" : {
-        "summary" : "/api/{collection}/debug",
-        "parameters" : [ {
-          "name" : "collection",
-          "in" : "path",
-          "description" : "the name of collection",
-          "required" : true,
-          "style" : "simple",
-          "explode" : false,
-          "schema" : {
-            "type" : "string"
-          }
-        } ],
-        "responses" : {
-          "200" : {
-            "description" : "Debug"
-          }
-        }
-      }
-    },
-    "/api/{collection}/subscription/{name}" : {
-      "get" : {
-        "summary" : "/api/{collection}/subscription/{name}",
-        "parameters" : [ {
-          "name" : "collection",
-          "in" : "path",
-          "description" : "the name of collection",
-          "required" : true,
-          "style" : "simple",
-          "explode" : false,
-          "schema" : {
-            "type" : "string"
-          }
-        }, {
-          "name" : "name",
-          "in" : "path",
-          "description" : "the name of subscription",
-          "required" : true,
-          "style" : "simple",
-          "explode" : false,
-          "schema" : {
-            "type" : "string"
-          }
-        } ],
-        "responses" : {
-          "200" : {
-            "description" : "get subscription"
-          }
-        }
+        ],
+        "responses": {}
       },
-      "put" : {
-        "summary" : "/api/{collection}/subscription/{name}",
-        "parameters" : [ {
-          "name" : "collection",
-          "in" : "path",
-          "description" : "the name of collection",
-          "required" : true,
-          "style" : "simple",
-          "explode" : false,
-          "schema" : {
-            "type" : "string"
+      "put": {
+        "summary": "/api/v1/collection/{collection}/fs/{drive}/*",
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "collection",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "drive",
+            "in": "path",
+            "required": true
           }
-        }, {
-          "name" : "name",
-          "in" : "path",
-          "description" : "Name for subscription",
-          "required" : true,
-          "style" : "simple",
-          "explode" : false,
-          "schema" : {
-            "type" : "string"
-          }
-        } ],
-        "responses" : {
-          "200" : {
-            "description" : "subsription putted"
-          }
-        }
+        ],
+        "responses": {}
       }
     },
-    "/api/{collection}/subscription/{name}/sse" : {
-      "get" : {
-        "summary" : "/api/{collection}/subscription/{name}/sse",
-        "parameters" : [ {
-          "name" : "collection",
-          "in" : "path",
-          "description" : "the name of collection",
-          "required" : true,
-          "style" : "simple",
-          "explode" : false,
-          "schema" : {
-            "type" : "string"
+    "/api/v1/collection/{collection}/fs/{drive}": {
+      "get": {
+        "summary": "/api/v1/collection/{collection}/fs/{drive}",
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "collection",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "drive",
+            "in": "path",
+            "required": true
           }
-        }, {
-          "name" : "name",
-          "in" : "path",
-          "description" : "the name of subscription",
-          "required" : true,
-          "style" : "simple",
-          "explode" : false,
-          "schema" : {
-            "type" : "string"
-          }
-        } ],
-        "responses" : {
-          "200" : {
-            "description" : "sse subscription"
-          }
-        }
+        ],
+        "responses": {}
       }
     },
-    "/api/{collection}/subscription/{name}/{cursor}" : {
-      "post" : {
-        "summary" : "/api/{collection}/subscription/{name}/{cursor}",
-        "parameters" : [ {
-          "name" : "collection",
-          "in" : "path",
-          "description" : "the name of collection",
-          "required" : true,
-          "style" : "simple",
-          "explode" : false,
-          "schema" : {
-            "type" : "string"
+    "/api/v1/collection/{collection}/db": {
+      "put": {
+        "summary": "/api/v1/collection/{collection}/db",
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "collection",
+            "in": "path",
+            "required": true
           }
-        }, {
-          "name" : "name",
-          "in" : "path",
-          "description" : "the name of subscription",
-          "required" : true,
-          "style" : "simple",
-          "explode" : false,
-          "schema" : {
-            "type" : "string"
-          }
-        }, {
-          "name" : "cursor",
-          "in" : "path",
-          "description" : "cursor",
-          "required" : true,
-          "style" : "simple",
-          "explode" : false,
-          "schema" : {
-            "type" : "string"
-          }
-        } ],
-        "responses" : {
-          "200" : {
-            "description" : "cursor"
-          }
-        }
+        ],
+        "responses": {}
       }
     },
-    "/api/{collection}/fs-info" : {
-      "get" : {
-        "summary" : "/api/{collection}/fs-info",
-        "parameters" : [ {
-          "name" : "collection",
-          "in" : "path",
-          "description" : "the name of collection",
-          "required" : true,
-          "style" : "simple",
-          "explode" : false,
-          "schema" : {
-            "type" : "string"
+    "/api/v1/collection/{collection}/db/{id}": {
+      "put": {
+        "summary": "/api/v1/collection/{collection}/db/{id}",
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "collection",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true
           }
-        } ],
-        "responses" : {
-          "200" : {
-            "description" : "filesystem information",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "type" : "array",
-                  "items" : {
-                    "$ref" : "#/components/schemas/inline_response_200_7"
-                  }
-                }
-              }
-            }
+        ],
+        "responses": {}
+      },
+      "delete": {
+        "summary": "/api/v1/collection/{collection}/db/{id}",
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "collection",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true
           }
-        }
+        ],
+        "responses": {}
+      }
+    },
+    "/api/v1/collection/{collection}/db/{key}/{seq}": {
+      "get": {
+        "summary": "/api/v1/collection/{collection}/db/{key}/{seq}",
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "collection",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "key",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "seq",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {}
+      }
+    },
+    "/api/v1/collection/{collection}/sync": {
+      "get": {
+        "summary": "/api/v1/collection/{collection}/sync",
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "collection",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {}
+      }
+    },
+    "/api/v1/collection/{collection}/query/{name}": {
+      "post": {
+        "summary": "/api/v1/collection/{collection}/query/{name}",
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "collection",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "name",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {}
+      }
+    },
+    "/api/v1/collection/{collection}/schema": {
+      "get": {
+        "summary": "/api/v1/collection/{collection}/schema",
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "collection",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {}
+      },
+      "post": {
+        "summary": "/api/v1/collection/{collection}/schema",
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "collection",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {}
+      }
+    },
+    "/api/v1/collection/{collection}/feed/{key}": {
+      "put": {
+        "summary": "/api/v1/collection/{collection}/feed/{key}",
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "collection",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "key",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {}
+      }
+    },
+    "/api/v1/collection/{collection}/debug": {
+      "get": {
+        "summary": "/api/v1/collection/{collection}/debug",
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "collection",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {}
+      }
+    },
+    "/api/v1/collection/{collection}/subscription/{name}": {
+      "put": {
+        "summary": "/api/v1/collection/{collection}/subscription/{name}",
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "collection",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "name",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {}
+      },
+      "get": {
+        "summary": "/api/v1/collection/{collection}/subscription/{name}",
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "collection",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "name",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {}
+      }
+    },
+    "/api/v1/collection/{collection}/subscription/{name}/sse": {
+      "get": {
+        "summary": "/api/v1/collection/{collection}/subscription/{name}/sse",
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "collection",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "name",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {}
+      }
+    },
+    "/api/v1/collection/{collection}/subscription/{name}/{cursor}": {
+      "post": {
+        "summary": "/api/v1/collection/{collection}/subscription/{name}/{cursor}",
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "collection",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "name",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "cursor",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {}
+      }
+    },
+    "/api/v1/collection/{collection}/events": {
+      "get": {
+        "summary": "/api/v1/collection/{collection}/events",
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "collection",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {}
+      }
+    },
+    "/api/v1/collection/{collection}/reindex": {
+      "post": {
+        "summary": "/api/v1/collection/{collection}/reindex",
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "collection",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {}
+      }
+    },
+    "/api/v1/collection/{collection}/fs-info": {
+      "get": {
+        "summary": "/api/v1/collection/{collection}/fs-info",
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "collection",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {}
       }
     }
   },
-  "components" : {
-    "schemas" : {
-      "inline_response_200" : {
-        "type" : "object",
-        "properties" : {
-          "collections" : {
-            "type" : "object",
-            "description" : "list of Collections"
-          }
-        },
-        "description" : "list of Collections"
-      },
-      "inline_response_200_1" : {
-        "type" : "object",
-        "properties" : {
-          "key" : {
-            "type" : "string",
-            "example" : "12c7408b50773b7145e5d85967809a1b7e56ccebc21fce34a943c6dc87743983"
-          }
-        }
-      },
-      "inline_response_500" : {
-        "type" : "object",
-        "properties" : {
-          "error" : {
-            "type" : "string",
-            "example" : "alias is required"
-          }
-        }
-      },
-      "inline_response_200_2" : {
-        "type" : "object",
-        "properties" : {
-          "name" : {
-            "type" : "string",
-            "example" : "Test"
-          },
-          "key" : {
-            "type" : "string",
-            "example" : "40c7408b50773b7145e5d85967809a1b7e56ccebc21fce34a943c6dc87743983"
-          },
-          "feeds" : {
-            "type" : "array",
-            "example" : [ {
-              "key" : "40c7408b50773b7145e5d85967809a1b7e56ccebc21fce34a943c6dc87743983",
-              "discoveryKey" : "ef1bf9a89bf601e85ecc87d7b339f428638ac7bb7fcd35dee311a2ff27a22d24",
-              "writable" : true,
-              "length" : 3,
-              "byteLength" : 905,
-              "name" : "root",
-              "type" : "sonar.db",
-              "info" : {
-                "name" : "root",
-                "type" : "sonar.db",
-                "key" : "40c7408b50773b7145e5d85967809a1b7e56ccebc21fce34a943c6dc87743983"
-              },
-              "downloadedBlocks" : 3,
-              "stats" : {
-                "peers" : [ ],
-                "totals" : {
-                  "downloadedBlocks" : 0,
-                  "downloadedBytes" : 0,
-                  "uploadedBlocks" : 0,
-                  "uploadedBytes" : 0
-                }
-              }
-            } ],
-            "items" : {
-              "type" : "object",
-              "properties" : {
-                "key" : {
-                  "type" : "string"
-                },
-                "discoveryKey" : {
-                  "type" : "string"
-                },
-                "writable" : {
-                  "type" : "boolean"
-                },
-                "length" : {
-                  "type" : "number"
-                },
-                "byteLength" : {
-                  "type" : "number"
-                },
-                "name" : {
-                  "type" : "string"
-                },
-                "type" : {
-                  "type" : "string"
-                },
-                "info" : {
-                  "type" : "object",
-                  "properties" : {
-                    "name" : {
-                      "type" : "string"
-                    },
-                    "type" : {
-                      "type" : "string"
-                    },
-                    "key" : {
-                      "type" : "string"
-                    }
-                  }
-                },
-                "downloadedBlocks" : {
-                  "type" : "number"
-                },
-                "stats" : {
-                  "type" : "object",
-                  "properties" : {
-                    "peers" : {
-                      "type" : "array",
-                      "items" : { }
-                    },
-                    "totals" : {
-                      "type" : "object",
-                      "properties" : {
-                        "downloadedBlocks" : {
-                          "type" : "number"
-                        },
-                        "downloadedBytes" : {
-                          "type" : "number"
-                        },
-                        "uploadedBlocks" : {
-                          "type" : "number"
-                        },
-                        "uploadedBytes" : {
-                          "type" : "number"
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "kappa" : {
-            "type" : "object",
-            "properties" : {
-              "kv" : {
-                "type" : "object",
-                "properties" : {
-                  "status" : {
-                    "type" : "string",
-                    "example" : "running"
-                  }
-                }
-              },
-              "records" : {
-                "type" : "object",
-                "properties" : {
-                  "status" : {
-                    "type" : "string",
-                    "example" : "running"
-                  }
-                }
-              },
-              "index" : {
-                "type" : "object",
-                "properties" : {
-                  "status" : {
-                    "type" : "string",
-                    "example" : "running"
-                  }
-                }
-              },
-              "history" : {
-                "type" : "object",
-                "properties" : {
-                  "status" : {
-                    "type" : "string",
-                    "example" : "running"
-                  }
-                }
-              },
-              "relations" : {
-                "type" : "object",
-                "properties" : {
-                  "status" : {
-                    "type" : "string",
-                    "example" : "running"
-                  }
-                }
-              },
-              "search" : {
-                "type" : "object",
-                "properties" : {
-                  "status" : {
-                    "type" : "string",
-                    "example" : "running"
-                  }
-                }
-              }
-            }
-          },
-          "opened" : {
-            "type" : "boolean",
-            "example" : true
-          },
-          "discoveryKey" : {
-            "type" : "string",
-            "example" : "ef1bf9a89bf601e85ecc87d7b339f428638ac7bb7fcd35dee311a2ff27a22d24"
-          },
-          "localKey" : {
-            "type" : "string",
-            "example" : "40c7408b50773b7145e5d85967809a1b7e56ccebc21fce34a943c6dc87743983"
-          },
-          "localDrive" : {
-            "type" : "string",
-            "example" : "1af5e75fe62fc2654245c3ef559f26a8047ac87e9c7ca3ab5909598bb9342a68"
-          },
-          "fs" : {
-            "type" : "object",
-            "properties" : {
-              "1af5e75fe62fc2654245c3ef559f26a8047ac87e9c7ca3ab5909598bb9342a68" : {
-                "type" : "object",
-                "properties" : {
-                  "discoveryKey" : {
-                    "type" : "string",
-                    "example" : "eb357ec1d651e2fcd0f3ebf43328b84bb2903a73671c03794f6483920f026917"
-                  },
-                  "version" : {
-                    "type" : "number",
-                    "example" : 1
-                  },
-                  "writable" : {
-                    "type" : "boolean",
-                    "example" : true
-                  },
-                  "contentWritable" : {
-                    "type" : "boolean",
-                    "example" : true
-                  },
-                  "metadata" : {
-                    "type" : "object",
-                    "properties" : {
-                      "key" : {
-                        "type" : "string",
-                        "example" : "1af5e75fe62fc2654245c3ef559f26a8047ac87e9c7ca3ab5909598bb9342a68"
-                      },
-                      "writable" : {
-                        "type" : "boolean",
-                        "example" : true
-                      },
-                      "length" : {
-                        "type" : "number",
-                        "example" : 1
-                      },
-                      "byteLength" : {
-                        "type" : "number",
-                        "example" : 45
-                      },
-                      "downloadedBlocks" : {
-                        "type" : "number",
-                        "example" : 1
-                      },
-                      "stats" : {
-                        "type" : "object",
-                        "properties" : {
-                          "peers" : {
-                            "type" : "array",
-                            "example" : [ null ],
-                            "items" : { }
-                          },
-                          "totals" : {
-                            "type" : "object",
-                            "properties" : {
-                              "downloadedBlocks" : {
-                                "type" : "number",
-                                "example" : 0
-                              },
-                              "downloadedBytes" : {
-                                "type" : "number",
-                                "example" : 0
-                              },
-                              "uploadedBlocks" : {
-                                "type" : "number",
-                                "example" : 0
-                              },
-                              "uploadedBytes" : {
-                                "type" : "number",
-                                "example" : 0
-                              }
-                            }
-                          }
-                        }
-                      }
-                    }
-                  },
-                  "content" : {
-                    "type" : "object",
-                    "properties" : {
-                      "key" : {
-                        "type" : "string",
-                        "example" : "50d5a3a48c0d034abd7bd6d5185df66ee981e86421f4a8d19fb223ca86506393"
-                      },
-                      "writable" : {
-                        "type" : "boolean",
-                        "example" : true
-                      },
-                      "length" : {
-                        "type" : "number",
-                        "example" : 0
-                      },
-                      "byteLength" : {
-                        "type" : "number",
-                        "example" : 0
-                      },
-                      "downloadedBlocks" : {
-                        "type" : "number",
-                        "example" : 0
-                      },
-                      "stats" : {
-                        "type" : "object",
-                        "properties" : {
-                          "peers" : {
-                            "type" : "array",
-                            "example" : [ null ],
-                            "items" : { }
-                          },
-                          "totals" : {
-                            "type" : "object",
-                            "properties" : {
-                              "downloadedBlocks" : {
-                                "type" : "number",
-                                "example" : 0
-                              },
-                              "downloadedBytes" : {
-                                "type" : "number",
-                                "example" : 0
-                              },
-                              "uploadedBlocks" : {
-                                "type" : "number",
-                                "example" : 0
-                              },
-                              "uploadedBytes" : {
-                                "type" : "number",
-                                "example" : 0
-                              }
-                            }
-                          }
-                        }
-                      }
-                    }
-                  },
-                  "mounts" : {
-                    "type" : "object",
-                    "properties" : { }
-                  }
-                }
-              }
-            }
-          }
-        }
-      },
-      "inline_response_500_1" : {
-        "type" : "object",
-        "properties" : {
-          "error" : {
-            "type" : "string",
-            "example" : "collection 2acf3ea89ee171f95b7714ca7859455f4f558fce22fc028b85a1fb2bdb9a1083 does not exist."
-          }
-        }
-      },
-      "inline_response_200_3" : {
-        "type" : "object",
-        "properties" : {
-          "dev" : {
-            "type" : "number"
-          },
-          "nlink" : {
-            "type" : "number"
-          },
-          "rdev" : {
-            "type" : "number"
-          },
-          "blksize" : {
-            "type" : "number"
-          },
-          "ino" : {
-            "type" : "number"
-          },
-          "mode" : {
-            "type" : "number"
-          },
-          "uid" : {
-            "type" : "number"
-          },
-          "gid" : {
-            "type" : "number"
-          },
-          "size" : {
-            "type" : "number"
-          },
-          "offset" : {
-            "type" : "number"
-          },
-          "byteOffset" : {
-            "type" : "number"
-          },
-          "blocks" : {
-            "type" : "number"
-          },
-          "atime" : {
-            "type" : "string"
-          },
-          "mtime" : {
-            "type" : "string"
-          },
-          "ctime" : {
-            "type" : "string"
-          },
-          "linkname" : {
-            "type" : "string"
-          },
-          "mount" : {
-            "type" : "string"
-          },
-          "metadata" : {
-            "type" : "object",
-            "properties" : { }
-          },
-          "path" : {
-            "type" : "string"
-          },
-          "name" : {
-            "type" : "string"
-          },
-          "directory" : {
-            "type" : "boolean"
-          }
-        }
-      },
-      "inline_response_200_4" : {
-        "type" : "object",
-        "properties" : {
-          "id" : {
-            "type" : "string",
-            "example" : "25qhwxenmuhbq1qfggp2nfxq84"
-          }
-        }
-      },
-      "apicollectionqueryname_value_properties_label" : {
-        "type" : "object",
-        "properties" : {
-          "type" : {
-            "type" : "string"
-          },
-          "title" : {
-            "type" : "string"
-          }
-        }
-      },
-      "apicollectionqueryname_value_properties_contentUrl" : {
-        "type" : "object",
-        "properties" : {
-          "type" : {
-            "type" : "string"
-          },
-          "format" : {
-            "type" : "string"
-          },
-          "title" : {
-            "type" : "string"
-          }
-        }
-      },
-      "apicollectionqueryname_value_properties_contentHash" : {
-        "type" : "object",
-        "properties" : {
-          "type" : {
-            "type" : "string"
-          },
-          "title" : {
-            "type" : "string"
-          },
-          "index" : {
-            "type" : "boolean"
-          }
-        }
-      },
-      "apicollectionqueryname_value_properties_mediaType" : {
-        "type" : "object",
-        "properties" : {
-          "type" : {
-            "type" : "string"
-          },
-          "title" : {
-            "type" : "string"
-          },
-          "enum" : {
-            "type" : "array",
-            "items" : {
-              "type" : "string"
-            }
-          },
-          "index" : {
-            "type" : "boolean"
-          }
-        }
-      },
-      "apicollectionqueryname_value_properties" : {
-        "type" : "object",
-        "properties" : {
-          "label" : {
-            "$ref" : "#/components/schemas/apicollectionqueryname_value_properties_label"
-          },
-          "description" : {
-            "$ref" : "#/components/schemas/apicollectionqueryname_value_properties_label"
-          },
-          "contentUrl" : {
-            "$ref" : "#/components/schemas/apicollectionqueryname_value_properties_contentUrl"
-          },
-          "contentSize" : {
-            "$ref" : "#/components/schemas/apicollectionqueryname_value_properties_label"
-          },
-          "contentHash" : {
-            "$ref" : "#/components/schemas/apicollectionqueryname_value_properties_contentHash"
-          },
-          "encodingFormat" : {
-            "$ref" : "#/components/schemas/apicollectionqueryname_value_properties_contentHash"
-          },
-          "duration" : {
-            "$ref" : "#/components/schemas/apicollectionqueryname_value_properties_label"
-          },
-          "mediaType" : {
-            "$ref" : "#/components/schemas/apicollectionqueryname_value_properties_mediaType"
-          }
-        }
-      },
-      "apicollectionqueryname_value" : {
-        "type" : "object",
-        "properties" : {
-          "properties" : {
-            "$ref" : "#/components/schemas/apicollectionqueryname_value_properties"
-          },
-          "type" : {
-            "type" : "string"
-          },
-          "name" : {
-            "type" : "string"
-          },
-          "title" : {
-            "type" : "string"
-          },
-          "$id" : {
-            "type" : "string"
-          },
-          "key" : {
-            "type" : "string"
-          },
-          "alias" : {
-            "type" : "string"
-          }
-        }
-      },
-      "inline_response_200_5" : {
-        "required" : [ "feedType", "id", "key", "links", "lseq", "op", "schema", "seq", "timestamp", "value" ],
-        "type" : "object",
-        "properties" : {
-          "key" : {
-            "type" : "string"
-          },
-          "seq" : {
-            "type" : "number"
-          },
-          "lseq" : {
-            "type" : "number"
-          },
-          "feedType" : {
-            "type" : "string"
-          },
-          "id" : {
-            "type" : "string"
-          },
-          "op" : {
-            "type" : "number"
-          },
-          "schema" : {
-            "type" : "string"
-          },
-          "value" : {
-            "$ref" : "#/components/schemas/apicollectionqueryname_value"
-          },
-          "timestamp" : {
-            "type" : "number"
-          },
-          "links" : {
-            "type" : "array",
-            "items" : { }
-          }
-        }
-      },
-      "inline_response_200_6" : {
-        "type" : "object",
-        "properties" : {
-          "core/schema" : {
-            "type" : "object",
-            "properties" : {
-              "properties" : {
-                "type" : "object",
-                "properties" : {
-                  "name" : {
-                    "type" : "object",
-                    "properties" : {
-                      "type" : {
-                        "type" : "string",
-                        "example" : "string"
-                      },
-                      "index" : {
-                        "type" : "boolean",
-                        "example" : true
-                      }
-                    }
-                  }
-                }
-              },
-              "type" : {
-                "type" : "string",
-                "example" : "object"
-              },
-              "$id" : {
-                "type" : "string",
-                "example" : "core/schema"
-              },
-              "name" : {
-                "type" : "string",
-                "example" : "core/schema"
-              }
-            }
-          },
-          "core/source" : {
-            "type" : "object",
-            "properties" : {
-              "properties" : {
-                "type" : "object",
-                "properties" : {
-                  "type" : {
-                    "type" : "object",
-                    "properties" : {
-                      "type" : {
-                        "type" : "string",
-                        "example" : "string"
-                      },
-                      "title" : {
-                        "type" : "string",
-                        "example" : "Type"
-                      }
-                    }
-                  },
-                  "key" : {
-                    "type" : "object",
-                    "properties" : {
-                      "type" : {
-                        "type" : "string",
-                        "example" : "string"
-                      },
-                      "pattern" : {
-                        "type" : "string",
-                        "example" : "^[0-9a-f]{64}$"
-                      },
-                      "title" : {
-                        "type" : "string",
-                        "example" : "key"
-                      }
-                    }
-                  },
-                  "alias" : {
-                    "type" : "object",
-                    "properties" : {
-                      "type" : {
-                        "type" : "string",
-                        "example" : "string"
-                      },
-                      "title" : {
-                        "type" : "string",
-                        "example" : "Alias"
-                      }
-                    }
-                  },
-                  "description" : {
-                    "type" : "object",
-                    "properties" : {
-                      "type" : {
-                        "type" : "string",
-                        "example" : "string"
-                      },
-                      "title" : {
-                        "type" : "string",
-                        "example" : "Description"
-                      }
-                    }
-                  }
-                }
-              },
-              "type" : {
-                "type" : "string",
-                "example" : "object"
-              },
-              "$id" : {
-                "type" : "string",
-                "example" : "core/source"
-              },
-              "name" : {
-                "type" : "string",
-                "example" : "core/source"
-              }
-            }
-          },
-          "core/any" : {
-            "type" : "object",
-            "properties" : {
-              "properties" : {
-                "type" : "object",
-                "properties" : { }
-              },
-              "type" : {
-                "type" : "string",
-                "example" : "object"
-              },
-              "$id" : {
-                "type" : "string",
-                "example" : "core/any"
-              },
-              "name" : {
-                "type" : "string",
-                "example" : "core/any"
-              }
-            }
-          },
-          "sonar/resource" : {
-            "type" : "object",
-            "properties" : {
-              "properties" : {
-                "type" : "object",
-                "properties" : {
-                  "label" : {
-                    "type" : "object",
-                    "properties" : {
-                      "type" : {
-                        "type" : "string",
-                        "example" : "string"
-                      },
-                      "title" : {
-                        "type" : "string",
-                        "example" : "Label"
-                      }
-                    }
-                  },
-                  "description" : {
-                    "type" : "object",
-                    "properties" : {
-                      "type" : {
-                        "type" : "string",
-                        "example" : "string"
-                      },
-                      "title" : {
-                        "type" : "string",
-                        "example" : "Description"
-                      }
-                    }
-                  },
-                  "contentUrl" : {
-                    "type" : "object",
-                    "properties" : {
-                      "type" : {
-                        "type" : "string",
-                        "example" : "string"
-                      },
-                      "format" : {
-                        "type" : "string",
-                        "example" : "uri"
-                      },
-                      "title" : {
-                        "type" : "string",
-                        "example" : "URL to file"
-                      }
-                    }
-                  },
-                  "contentSize" : {
-                    "type" : "object",
-                    "properties" : {
-                      "type" : {
-                        "type" : "string",
-                        "example" : "number"
-                      },
-                      "title" : {
-                        "type" : "string",
-                        "example" : "File size"
-                      }
-                    }
-                  },
-                  "contentHash" : {
-                    "type" : "object",
-                    "properties" : {
-                      "type" : {
-                        "type" : "string",
-                        "example" : "string"
-                      },
-                      "title" : {
-                        "type" : "string",
-                        "example" : "Content hash"
-                      },
-                      "index" : {
-                        "type" : "boolean",
-                        "example" : true
-                      }
-                    }
-                  },
-                  "encodingFormat" : {
-                    "type" : "object",
-                    "properties" : {
-                      "type" : {
-                        "type" : "string",
-                        "example" : "string"
-                      },
-                      "title" : {
-                        "type" : "string",
-                        "example" : "Encoding format (MIME type)"
-                      },
-                      "index" : {
-                        "type" : "boolean",
-                        "example" : true
-                      }
-                    }
-                  },
-                  "duration" : {
-                    "type" : "object",
-                    "properties" : {
-                      "type" : {
-                        "type" : "string",
-                        "example" : "number"
-                      },
-                      "title" : {
-                        "type" : "string",
-                        "example" : "Duration in seconds"
-                      }
-                    }
-                  },
-                  "mediaType" : {
-                    "type" : "object",
-                    "properties" : {
-                      "type" : {
-                        "type" : "string",
-                        "example" : "string"
-                      },
-                      "title" : {
-                        "type" : "string",
-                        "example" : "Media type"
-                      },
-                      "enum" : {
-                        "type" : "array",
-                        "example" : [ "audio" ],
-                        "items" : {
-                          "type" : "string"
-                        }
-                      },
-                      "index" : {
-                        "type" : "boolean",
-                        "example" : true
-                      }
-                    }
-                  }
-                }
-              },
-              "type" : {
-                "type" : "string",
-                "example" : "object"
-              },
-              "name" : {
-                "type" : "string",
-                "example" : "sonar/resource"
-              },
-              "title" : {
-                "type" : "string",
-                "example" : "Resource"
-              },
-              "$id" : {
-                "type" : "string",
-                "example" : "sonar/resource"
-              }
-            }
-          }
-        }
-      },
-      "inline_response_200_7" : {
-        "type" : "object",
-        "properties" : {
-          "type" : {
-            "type" : "string"
-          },
-          "key" : {
-            "type" : "string"
-          },
-          "alias" : {
-            "type" : "string"
-          },
-          "writable" : {
-            "type" : "boolean"
-          }
-        }
-      }
-    }
-  }
+  "swagger": "2.0"
 }
