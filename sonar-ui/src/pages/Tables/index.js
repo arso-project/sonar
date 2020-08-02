@@ -18,40 +18,40 @@ import {
   MenuItemOption
 } from '@chakra-ui/core'
 
-async function loadSchemas () {
-  const schemas = await client.getSchemas()
-  return Object.values(schemas)
+async function loadTypes () {
+  const types = await client.getTypes()
+  return Object.values(types)
 }
 
-async function loadRecords ({ schema }) {
-  return client.query('records', { type: schema })
+async function loadRecords ({ type }) {
+  return await client.query('records', { type: type })
 }
 
 const useGlobalState = makeGlobalStateHook('tables')
 
 export default function TablesPage (props) {
   const [records, setRecords] = useGlobalState('records', null)
-  const [schema, setSchema] = useGlobalState('schema', null)
-  const schemaname = schema ? schema.address : null
+  const [type, setType] = useGlobalState('type', null)
+  const typename = type ? type.address : null
 
   useEffect(() => {
-    if (!schemaname) return
-    loadRecords({ schema: schemaname })
+    if (!typename) return
+    loadRecords({ type: typename })
       .then(records => setRecords(records))
-      .catch(log => log.error(error))
-  }, [schemaname])
+      .catch(error => log.error(error))
+  }, [typename])
 
   const rows = useMemo(() => buildRowsFromRecords(records), [records])
-  const columns = useMemo(() => buildColumnsFromSchema(schema), [schema])
+  const columns = useMemo(() => buildColumnsFromType(type), [type])
 
   const PreviewWrapper = useCallback(function PreviewWrapper (props) {
     const { row } = props
-    return <Preview record={row} schema={schema} />
-  }, [schema])
+    return <Preview record={row} type={type} />
+  }, [type])
 
   return (
     <Flex direction='column' width='100%'>
-      <SchemaSelect onSchema={setSchema} schema={schema} flex={0} />
+      <TypeSelect onType={setType} type={type} flex={0} />
       {columns && rows && (
         <Table
           columns={columns}
@@ -68,9 +68,9 @@ function buildRowsFromRecords (records) {
   return [...records]
 }
 
-function buildColumnsFromSchema (schema) {
-  if (!schema) return null
-  const allColumns = [...defaultColumns(), ...schemaColumns(schema)]
+function buildColumnsFromType (type) {
+  if (!type) return null
+  const allColumns = [...defaultColumns(), ...typeColumns(type)]
     .map(column => {
       if (!column.Cell) column.Cell = createCellFormatter(column)
       if (!column.Header) column.Header = createHeaderFormatter(column)
@@ -80,11 +80,11 @@ function buildColumnsFromSchema (schema) {
 }
 
 function createCellFormatter (column) {
-  const { Widget, schema } = column
+  const { Widget, type } = column
   return function CellFormatter (props) {
     const { cell: { value, row } } = props
     // TODO: Rethink if we wanna do row.original = record.
-    if (Widget) return <Widget value={value} fieldSchema={schema} record={row.original} />
+    if (Widget) return <Widget value={value} fieldType={type} record={row.original} />
     return String(value)
   }
 }
@@ -94,17 +94,17 @@ function createHeaderFormatter (column) {
   return title || id
 }
 
-function schemaColumns (type) {
+function typeColumns (type) {
   return type.fields().map(field => {
     return fieldColumn(field.address, field)
   })
 }
 
-function fieldColumn (key, fieldSchema) {
-  const Widget = findWidget(fieldSchema)
+function fieldColumn (key, fieldType) {
+  const Widget = findWidget(fieldType)
   return {
-    schema: fieldSchema,
-    title: fieldSchema.title,
+    type: fieldType,
+    title: fieldType.title,
     id: 'value.' + key,
     accessor: row => row.value[key],
     Widget
@@ -148,7 +148,7 @@ function defaultColumns () {
 }
 
 function ActionsFormatter (props) {
-  // const { value, fieldSchema, record } = props
+  // const { value, fieldType, record } = props
   // TODO: Rethink if the way we get hold of a "record" here is sound enough.
   const { record } = props
   return (
@@ -156,40 +156,40 @@ function ActionsFormatter (props) {
   )
 }
 
-function SchemaSelect (props) {
-  const { onSchema, schema, ...other } = props
-  const [schemas, setSchemas] = useState()
+function TypeSelect (props) {
+  const { onType, type, ...other } = props
+  const [types, setTypes] = useState()
   useEffect(() => {
-    loadSchemas()
-      .then(schemas => setSchemas(schemas))
-      .catch(err => log.error(err) && setSchemas(null))
+    loadTypes()
+      .then(types => setTypes(types))
+      .catch(err => log.error(err) && setTypes(null))
   }, [])
 
-  if (schemas === null) return <Loading />
-  if (!schemas) return <div>No schemas</div>
-  const selected = schema ? schema.name : false
+  if (types === null) return <Loading />
+  if (!types) return <div>No types</div>
+  const selected = type ? type.name : false
 
-  const menuItems = schemas.map(schema => ({ key: schema.name, value: schemaName(schema) }))
+  const menuItems = types.map(type => ({ key: type.name, value: typeName(type) }))
 
   return (
     <Box {...other}>
-      <SchemaMenu onChange={onSelect} value={selected} items={menuItems} />
+      <TypeMenu onChange={onSelect} value={selected} items={menuItems} />
     </Box>
   )
 
-  function schemaName (schema) {
-    return schema.title || schema.name
+  function typeName (type) {
+    return type.title || type.name
   }
 
   function onSelect (name) {
-    const schema = schemas.filter(s => s.name === name)[0]
-    onSchema(schema)
+    const type = types.filter(s => s.name === name)[0]
+    onType(type)
   }
 }
 
-function SchemaMenu (props) {
+function TypeMenu (props) {
   const { items, onChange, value } = props
-  const title = value ? items.find(el => el.key === value).value : 'Select schema'
+  const title = value ? items.find(el => el.key === value).value : 'Select type'
   return (
     <Menu>
       <MenuButton as={Button} size='sm' rightIcon='chevron-down'>

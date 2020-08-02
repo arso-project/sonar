@@ -1,30 +1,15 @@
 import client from '../lib/client'
-import log from '../lib/log'
+import useAsync from '../hooks/use-async'
+import Logger from '../components/Logger'
 
 async function fetchRecordData (id) {
   const records = await client.get({ id })
-  const schemaNames = new Set(records.map(r => r.schema))
-  const schemas = {}
-  await Promise.all([...schemaNames].map(async name => {
-    const schema = await client.getSchema(name)
-    schemas[name] = schema
-  }))
-  return { records, schemas }
+  const types = await client.getTypes()
+  return { records, types }
 }
 
-function useRecord (id) {
-  const [data, setData] = useState(null)
-
-  useEffect(() => {
-    let mounted = true
-    fetchRecordData(id)
-      .then(({ records, schemas }) => {
-        if (!mounted) return
-        setData({ records, schemas })
-      })
-      .catch(error => errors.push(error))
-    return () => (mounted = false)
-  }, [id])
-
-  return data
+export default function useRecords (id) {
+  const { data, error, pending } = useAsync(fetchRecordData, [id], [id])
+  if (error || pending) return <Logger error={error} pending={pending} />
+  return (data)
 }

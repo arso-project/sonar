@@ -80,7 +80,6 @@ function FileListItem (props) {
   const keyRegex = /[aA-zZ0-9]{26}/
 
   function findIcon () {
-    console.log(name, upload)
     if (!resource) return <Icon icon={FaFileUpload} />
     if (resource.error) return <Icon icon={MdError} color='red.400' />
     if (!upload) return <Icon icon={MdCheck} color='green.400' />
@@ -122,7 +121,6 @@ function ImportProgress (props) {
 
 function FileProgress (props) {
   const { label, total, transfered, detail, step, totalSteps } = props
-  console.log(props)
   const showSteps = step > 0
   return (
     <Box mb='2' p='2' borderWidth='1px'>

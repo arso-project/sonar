@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react'
 import { format, formatRelative } from 'date-fns'
 import JsonTree from 'react-json-tree'
 import { Link } from 'react-router-dom'
 import useCollection from '../hooks/use-collection'
-
+import React, { useState } from 'react'
 import { MetaItem, MetaItems } from '../components/MetaItem'
 import client from '../lib/client'
+import useRecords from '../hooks/use-record'
 import {
   Box,
   Button,
@@ -27,8 +27,8 @@ import {
 
 // import './Record.css'
 
-export function findWidget (fieldSchema) {
-  const { type, format } = fieldSchema
+export function findWidget (field) {
+  const { fieldType: type, format } = field
   if (type === 'string' && format === 'date-time') return DateViewer
   if (type === 'string' && format === 'uri') return LinkViewer
   if (type === 'string' || type === 'integer' || type === 'number') return TextViewer
@@ -48,11 +48,11 @@ function getDisplays () {
 }
 
 export function RecordLink (props) {
-  let { record, schema, children } = props
+  let { record, type, children } = props
   if (!props.record) return <MissingRecordError />
   const { id } = record
   children = children || (
-    <RecordLabelDisplay record={record} schema={schema} />
+    <RecordLabelDisplay record={record} type={type} />
   )
   return (
     <Link to={recordPath(id)}>
@@ -65,12 +65,12 @@ export function RecordLink (props) {
 }
 
 export function RecordGroup (props) {
-  const { records, schemas } = props
+  const { records, types } = props
   if (!records) return null
   return (
     <Box>
       {records.map((record, i) => (
-        <Record key={i} record={record} schema={schemas[record.schema]} />
+        <Record key={i} record={record} type={types[record.type]} />
       ))}
     </Box>
   )
@@ -96,7 +96,7 @@ function DisplayMenu (props) {
 }
 
 export function Record (props) {
-  const { record, schema } = props
+  const { record, type } = props
   const [displayId, setDisplay] = useState('fields')
   const displays = getDisplays()
   const display = displays.find(d => d.id === displayId)
@@ -105,11 +105,11 @@ export function Record (props) {
   return (
     <div className='sonar-record' flex={1}>
       <Box display={['block', 'flex']}>
-        <RecordMeta record={record} schema={schema} />
+        <RecordMeta record={record} type={type} />
         <Box flex={1} />
         <DisplayMenu displays={displays} onChange={setDisplay} value={display.id} />
       </Box>
-      <Display record={record} schema={schema} />
+      <Display record={record} type={type} />
     </div>
   )
 }
@@ -149,33 +149,17 @@ export function RecordRawDisplay (props) {
 }
 
 export function RecordFieldDisplay (props) {
-  const { record, schema } = props
+  const { record } = props
   const { collection } = useCollection()
-  console.log('collection', collection)
+  const type = record.getType()
   if (!collection) return null
 
-  if (!schema) return <NoSchemaError record={record} message='Schema not found' />
-  if (!schema.properties) return <NoSchemaError record={record} message='Invalid schema' />
-
-  // TODO: This is a hack until the new schema API arrives.
-  if (record.schema === 'sonar/resource') {
-    schema.properties.httpUrl = {
-      type: 'string',
-      format: 'uri',
-      title: 'HTTP URL to file'
-    }
-    record.value.httpUrl = collection.resources.resolveFileURL(record)
-  }
-
-  console.log('RecordFieldDisplay', { record, schema })
+  if (!type) return <NoTypeError record={record} message='type not found' />
   return (
     <Box>
-      {Object.entries(schema.properties).map(([key, fieldSchema], i) => {
-        if (typeof record.value[key] === 'undefined') return null
-        return (
-          <FieldViewer key={i} fieldSchema={fieldSchema} value={record.value[key]} fieldName={key} />
-        )
-      })}
+      {record.fields().map((fieldValue, i) => (
+        <FieldViewer key={i} fieldValue={fieldValue} />
+      ))}
     </Box>
   )
 }
@@ -184,47 +168,48 @@ export function RecordDrawerByID (props) {
   const { isOpen, onOpen, onClose } = useDisclosure()
   const btnRef = React.useRef()
   const { id } = props
-  const data = useRecordData(id)
-  if (!data) return <em>Loading</em>
-  const { records, schemas } = data
-  return (<>
-    <Button w='14rem' pl='3' leftIcon='view' justifyContent='left' variantColor='teal' size='xs' ref={btnRef} onClick={onOpen}>
-      {id}
-    </Button>
-    <Drawer
-      isOpen={isOpen}
-      placement='right'
-      size='lg'
-      onClose={onClose}
-      finalFocusRef={btnRef}
-    >
-      <DrawerOverlay />
-      <DrawerContent>
-        <DrawerCloseButton />
-        <DrawerHeader>{id}</DrawerHeader>
-        <DrawerBody>
-          <RecordGroup records={records} schemas={schemas} />
-        </DrawerBody>
-        <DrawerFooter>
-          <Button variant='outline' mr={3} onClick={onClose}>
+  const data = useRecords(id)
+  const { records, types } = data
+  console.log('Records: ', records, 'TYPES: ', types)
+  return (
+    <>
+      <Button w='14rem' pl='3' leftIcon='view' justifyContent='left' variantColor='teal' size='xs' ref={btnRef} onClick={onOpen}>
+        {id}
+      </Button>
+      <Drawer
+        isOpen={isOpen}
+        placement='right'
+        size='lg'
+        onClose={onClose}
+        finalFocusRef={btnRef}
+      >
+        <DrawerOverlay />
+        <DrawerContent>
+          <DrawerCloseButton />
+          <DrawerHeader>{id}</DrawerHeader>
+          <DrawerBody>
+            <RecordGroup records={records} types={types} />
+          </DrawerBody>
+          <DrawerFooter>
+            <Button variant='outline' mr={3} onClick={onClose}>
             Cancel
-          </Button>
-        </DrawerFooter>
-      </DrawerContent>
-    </Drawer>
-  </>
+            </Button>
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
+    </>
   )
 }
 
 function ObjectViewer (props) {
-  const { value, fieldSchema } = props
+  const { value, fieldType } = props
   if (!value) return 'no object'
   return (
     <div>
-      {Object.entries(fieldSchema.properties).map(([key, fieldSchema], i) => {
+      {Object.entries(fieldType.properties).map(([key, fieldType], i) => {
         if (typeof value[key] === 'undefined') return null
         return (
-          <FieldViewer key={i} fieldSchema={fieldSchema} value={value[key]} fieldName={key} />
+          <FieldViewer key={i} fieldType={fieldType} value={value[key]} fieldName={key} />
         )
       })}
     </div>
@@ -232,28 +217,28 @@ function ObjectViewer (props) {
 }
 
 function FieldViewer (props) {
-  const { fieldSchema, fieldName, value } = props
-  const Viewer = findWidget(fieldSchema)
+  const { fieldValue } = props
+  const Viewer = findWidget(fieldValue.field)
   return (
     <Box display={['block', 'flex']} borderBottomWidth='1px' py='2'>
-      <Box flexShrink='0' width={['auto', '12rem']} color='teal.400'>{fieldSchema.title}</Box>
+      <Box flexShrink='0' width={['auto', '12rem']} color='teal.400'>{fieldValue.title}</Box>
       <Box flex='1' style={{ overflowWrap: 'anywhere' }}>
-        <Viewer value={value} fieldSchema={fieldSchema} />
+        <Viewer value={fieldValue.value} field={fieldValue.field} />
       </Box>
     </Box>
   )
 }
-
+// TODO: Fix array viewer, use multiple prop
 function ArrayViewer (props) {
-  const { value, fieldSchema } = props
-  if (!value) return <InvalidValueError value={value} fieldSchema={fieldSchema} />
-  if (!Array.isArray(value)) return <InvalidValueError value={value} fieldSchena={fieldSchema} message='Not an array' />
-  const Viewer = findWidget(fieldSchema.items)
+  const { value, field } = props
+  if (!value) return <InvalidValueError value={value} field={field} />
+  if (!Array.isArray(value)) return <InvalidValueError value={value} field={field} message='Not an array' />
+  const Viewer = findWidget(field)
   return (
     <List>
       {value.map((value, i) => (
         <Box as='li' key={i}>
-          <Viewer value={value} fieldSchema={fieldSchema.items} />
+          <Viewer value={value} fieldType={field} />
         </Box>
       ))}
     </List>
@@ -289,11 +274,11 @@ function DateViewer (props) {
 }
 
 function RecordMeta (props) {
-  const { record, schema } = props
+  const { record } = props
   const { id, key, timestamp, type } = record
   return (
     <MetaItems>
-      <MetaItem stacked name='Schema' value={formatSchema(type)} />
+      <MetaItem stacked name='Type' value={formatType(type)} />
       <MetaItem stacked name='ID' value={id} />
       <MetaItem stacked name='Source' value={formatSource(key)} />
       <MetaItem stacked name='Created' value={formatDate(timestamp)} />
@@ -301,18 +286,17 @@ function RecordMeta (props) {
   )
 }
 
-function NoSchemaError (props) {
+function NoTypeError (props) {
   const { record } = props
-  const { id, schema, message } = record
+  const { id, type, message } = record
   return (
     <div>
-      Missing schema for record <strong>{id}</strong> (schema <code>{schema}</code>): {message}.
+      Missing type for record <strong>{id}</strong> (type <code>{type}</code>): {message}.
     </div>
   )
 }
 
 function InvalidValueError (props) {
-  const { fieldSchema, value } = props
   return (
     <div>
       Invalid value.
@@ -334,47 +318,18 @@ function formatDate (ts) {
 
 // TODO: This is likely too hacky. Propably we'll want
 // a full component with a tooltip for details.
-function formatSchema (schemaName) {
-  return schemaName.split('/').slice(1).join('/')
+function formatType (typeName) {
+  return typeName.split('/').slice(1).join('/')
 }
 
 function formatSource (source) {
   return source.substring(0, 6)
 }
 
-async function fetchRecordData (id) {
-  let records = await client.get({ id })
-  const schemaNames = new Set(records.map(r => r.schema))
-  const schemas = {}
-  records = await fetchFileUrls(records)
-  console.log(records)
-  await Promise.all([...schemaNames].map(async name => {
-    const schema = await client.getSchema(name)
-    schemas[name] = schema
-  }))
-  return { records, schemas }
-}
 // TODO: This is hacky and should not be here.
 async function fetchFileUrls (records) {
   for (const record of records) {
-    record.value.fileUrl = await client.resolveResourceURL(record)
+    record.value.fileUrl = await client.resolveURL(record)
   }
   return records
-}
-
-function useRecordData (id) {
-  const [data, setData] = useState(null)
-
-  useEffect(() => {
-    let mounted = true
-    fetchRecordData(id)
-      .then(({ records, schemas }) => {
-        if (!mounted) return
-        setData({ records, schemas })
-      })
-      .catch(error => console.log(error))
-    return () => (mounted = false)
-  }, [id])
-
-  return data
 }

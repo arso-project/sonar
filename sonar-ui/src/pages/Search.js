@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
 import NavLink from '../components/NavLink'
 
@@ -13,9 +13,6 @@ import { MetaItem, MetaItems } from '../components/MetaItem'
 
 import {
   Box,
-  Flex,
-  Text,
-  List,
   Input,
   Heading
 } from '@chakra-ui/core'
@@ -23,7 +20,7 @@ import {
 export const useGlobalState = makeGlobalStateHook('search')
 
 export function useSearchResults () {
-  const [results, setResults] = useGlobalState('results', null)
+  const [results] = useGlobalState('results', null)
   return results
 }
 
@@ -56,7 +53,7 @@ export default function SearchPage (props) {
 export function SearchInput (props) {
   const [search, setSearch] = useGlobalState('search', '')
   const [error, setError] = useState(null)
-  const [results, setResults] = useGlobalState('results', null)
+  const [setResults] = useGlobalState('results', null)
   return (
     <>
       <Input

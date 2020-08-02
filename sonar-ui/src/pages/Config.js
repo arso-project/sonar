@@ -4,9 +4,6 @@ import { useParams } from 'react-router-dom'
 import { formData } from '../lib/form'
 
 import {
-  Box,
-  Flex,
-  Input,
   Button
 } from '@chakra-ui/core'
 
