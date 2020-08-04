@@ -36,7 +36,8 @@
     "tape": "^5.0",
     "tape-plus": "^1.0.0",
     "temporary-directory": "^1.0.2",
-    "tsd-jsdoc": "^2.5.0"
+    "tsd-jsdoc": "^2.5.0",
+    "express-oas-generator":"^1.0.25"
   },
   "publishConfig": {
     "access": "public"
