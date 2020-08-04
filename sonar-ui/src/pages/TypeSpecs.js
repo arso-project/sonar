@@ -1,4 +1,4 @@
-import React, { useState, Suspense } from 'react'
+import React, { useState, useMemo, useRef, Suspense } from 'react'
 import { MetaItem, MetaItems } from '../components/MetaItem'
 import client from '../lib/client'
 import useAsync from '../hooks/use-async'
@@ -93,57 +93,42 @@ function RecordEditor (props) {
   )
 }
 
-function Widgets (props) {
-  const [onSubmits, setOnSubmits] = useState({})
-  const { fields } = props
-  console.log(fields)
-  const widgets = {}
-  fields.forEach(field => {
-    widgets[field.defaultWidget] = React.lazy(() => import('../components/widgets/' + field.defaultWidget))
-  })
+function loadWidget (field) {
+  const widgetFileName = field.defaultWidget
+  return import('../components/widgets/' + widgetFileName)
+}
+
+function FieldWidget (props) {
+  const { field, register } = props
+  const Widget = React.lazy(() => loadWidget(field))
   return (
-    <div>
-      {fields && fields.map((field, i) => {
-        const Widget = widgets[field.defaultWidget]
-        return (
-          <div key={i}>
-            <Suspense fallback={<div>LOADING</div>}>
-              <Widget field={field} register={makeRegister(field.name)} />
-            </Suspense>
-          </div>
-        )
-      })}
-    </div>
+    <Suspense fallback={<div>LOADING</div>}>
+      <Widget field={field} register={register.bind(null, field.name)} />
+    </Suspense>
   )
-  function makeRegister (name) {
-    return function (onSubmit) {
-      setOnSubmits(onSubmits => ({ ...onSubmits, [name]: onSubmit }))
-    }
-  }
 }
 
 function RecordForm (props) {
   const { fields } = props
-  const [onSubmits, setOnSubmits] = useState({})
-  const [data, setData] = useState({})
+  const submitCallbacks = useRef({})
   return (
     <form onSubmit={onFormSubmit}>
-      <Widgets fields={fields} />
-      <button variantcolor='blue' mr={3} type='submit'>Submit</button>
-      <div>
-        submitted:
-        <pre>{JSON.stringify(data, null, 2)}</pre>
-      </div>
-
+      {fields && fields.map((field, i) => (
+        <FieldWidget key={i} field={field} register={register} />
+      ))}
+      <Button variantcolor='blue' mr={3} type='submit'>Submit</Button>
     </form>
   )
-  function onFormSubmit (e) {
-    console.log('onsubmit clicked')
-    e.preventDefault()
+
+  function onFormSubmit () {
     const data = {}
-    for (const [name, onSubmit] of Object.entries(onSubmits)) {
+    for (const [name, onSubmit] of Object.entries(submitCallbacks.current)) {
       data[name] = onSubmit()
     }
-    setData(data)
+    console.log('submit. form data: ', data)
+  }
+
+  function register (name, onSubmit) {
+    submitCallbacks.current[name] = onSubmit
   }
 }
