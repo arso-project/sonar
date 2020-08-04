@@ -12,6 +12,7 @@ import RecordPage from './pages/Record'
 import TablesPage from './pages/Tables'
 import DebugPage from './pages/Debug'
 import FileImportPage from './pages/FileImport'
+import TypePage from './pages/TypeSpecs'
 
 export default function Pageroutes () {
   return (
@@ -24,6 +25,7 @@ export default function Pageroutes () {
       <Route path='/activity'><Activity /></Route>
       <Route path='/search'><Search /></Route>
       <Route path='/fileimport'><FileImportPage /></Route>
+      <Route path='/types'><TypePage /></Route>
       <Route path='/filebrowser'><Filebrowser /></Route>
       <Route path='/record/:id'><RecordPage /></Route>
       <Route path='/tables'><TablesPage /></Route>

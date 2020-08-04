@@ -314,6 +314,10 @@ class FieldValue {
     return this._field.fieldType
   }
 
+  get defaultWidget () {
+    return this._field.defaultWidget
+  }
+
   get name () {
     return this._field.name
   }
@@ -510,8 +514,12 @@ class Field {
   constructor (schema, spec) {
     if (!spec.address) throw new Error('Field address is required')
     if (!spec.name) throw new Error('Field name is required')
+    if (!spec.defaultWidget) {
+      spec.defaultWidget = 'TextWidget'
+    }
     bindSymbol(this, SC, schema)
     this._address = spec.address
+    this._defaultWidget = spec.defaultWidget
     this._spec = spec
     this._children = new Set()
     this._parent = null
@@ -535,6 +543,10 @@ class Field {
 
   get address () {
     return this._address
+  }
+
+  get defaultWidget () {
+    return this._defaultWidget
   }
 
   get index () {
