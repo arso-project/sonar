@@ -4,13 +4,13 @@ const p = require('path')
 const Config = require('@arso-project/sonar-core/lib/config')
 const Nanoresource = require('nanoresource')
 const jwt = require('jsonwebtoken')
-const expressjwt = require('express-jwt')
 const { HttpError } = require('../lib/util')
 
 module.exports = class Authenticator extends Nanoresource {
-  constructor (storage) {
+  constructor (storage, opts = {}) {
     super()
     this._tokens = new Map()
+    this.disabled = !!opts.disableAuthentication
     this._store = new Config(p.join(storage, 'tokens.json'))
   }
 
@@ -86,10 +86,6 @@ module.exports = class Authenticator extends Nanoresource {
       expiresIn: 86400 * 30 // expires in 30 days
     })
     return token
-  }
-
-  authMiddleware () {
-    return expressjwt({ secret: this._secret, algorithms: ['HS256'] })
   }
 }
 

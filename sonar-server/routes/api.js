@@ -1,8 +1,6 @@
 const express = require('express')
-const expressJwt = require('express-jwt')
-const hyperdriveMiddleware = require('./hyperdrive')
-const expressUnless = require('express-unless')
 
+const hyperdriveMiddleware = require('./hyperdrive')
 const createDeviceHandler = require('../handlers/device-handler')
 const createCollectionHandler = require('../handlers/collection-handler')
 const createCommandStreamHandler = require('../handlers/command-handler')
@@ -17,9 +15,9 @@ module.exports = function apiRoutes (api) {
   const deviceHandlers = createDeviceHandler(api.collections)
   const handlers = createCollectionHandler(api.collections)
   const commandHandler = createCommandStreamHandler(api.collections)
-  const authHandler = createAuthHandler(api)
+  const authHandler = createAuthHandler(api.auth)
 
-  router.use(authHandler.createAuthMiddleware())
+  router.use(authHandler.authMiddleware())
 
   // Login
   router.post('/login', authHandler.login)

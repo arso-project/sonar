@@ -7,78 +7,81 @@ const expressWebSocket = require('express-ws')
 const shutdown = require('http-shutdown')
 const debug = require('debug')('sonar-server')
 const p = require('path')
-const fs = require('fs')
-const { handleResponses, handleRequests } = require('express-oas-generator')
-const mkdirp = require('mkdirp')
 
 const swaggerUi = require('swagger-ui-express')
 const thunky = require('thunky')
-// const websocketStream = require('websocket-stream/stream')
 
 const { storagePath } = require('@arso-project/sonar-common/storage.js')
 const apiRouter = require('./routes/api')
-const apiDocs = require('./docs/swagger.json')
 const Auth = require('./lib/auth')
-const _ = require('lodash')
 
 const DEFAULT_PORT = 9191
 const DEFAULT_HOSTNAME = 'localhost'
 
 module.exports = function SonarServer (opts = {}) {
-  opts.storage = storagePath(opts.storage)
-  if (!opts.port) opts.port = DEFAULT_PORT
-  if (!opts.hostname) opts.hostname = DEFAULT_HOSTNAME
-  if (!opts.dev) opts.dev = process.env.NODE_ENV === 'development'
-
-  const storeOpts = {
-    network: opts.network === undefined ? true : opts.network,
-    swarm: {
-      bootstrap: opts.bootstrap
+  const config = {
+    storage: storagePath(opts.storage),
+    auth: {
+      disableAuthentication: opts.disableAuthentication
+    },
+    server: {
+      hostname: opts.hostname || DEFAULT_HOSTNAME,
+      port: opts.port || DEFAULT_PORT
+    },
+    collections: {
+      network: opts.network === undefined ? true : opts.network,
+      swarm: {
+        bootstrap: opts.bootstrap
+      }
     }
   }
 
-  const auth = new Auth(opts.storage)
-
-  const api = {
-    auth,
-    config: {
-      ...opts
-    },
-    collections: new CollectionStore(opts.storage, storeOpts)
+  // TODO: Make dev options cleaner.
+  if (opts.dev) {
+    config.server.dev = { expressOas: false, uiWatch: true }
+  }
+  if (process.env.SONAR_OAS_GENERATE) {
+    config.server.dev = config.server.dev || {}
+    config.server.dev.expressOas = true
   }
 
-  if (api.config.disableAuthentication) {
-    console.log('Authentication is disabled.')
-  }
+  // Init authentication API.
+  const auth = new Auth(config.storage, config.auth)
 
+  // Init collection store.
+  const collections = new CollectionStore(config.storage, config.collections)
+
+  // Init express app.
   const app = express()
 
-  const openAPIFilePath = './docs/swagger.json'
-  /** SWAGGER: handle the responses */
-  if (process.env.NODE_ENV !== 'production') {
-    mkdirp.sync(p.parse(openAPIFilePath).dir)
-    let predefinedSpec
-    try {
-      predefinedSpec = JSON.parse(
-        fs.readFileSync(openAPIFilePath, { encoding: 'utf-8' })
-      )
-    } catch (e) {
-      console.log('Error: ', e)
-    }
-    handleResponses(app, {
-      specOutputPath: openAPIFilePath,
-      writeIntervalMs: 0,
-      predefinedSpec: predefinedSpec ? () => predefinedSpec : undefined
-    })
+  // Assemble api object.
+  const api = {
+    auth,
+    collections,
+    config
   }
 
   // Make the sonar api available on the app object.
   app.api = api
 
+  if (config.auth.disableAuthentication) {
+    console.log('Authentication is disabled.')
+  }
+
+  // If in dev mode, add a optional dev middlewares.
+  let devMiddleware
+  if (config.server.dev && Object.keys(config.server.dev).length) {
+    devMiddleware = require('./lib/dev')
+  }
+
+  if (devMiddleware) {
+    devMiddleware.initTop(app, config.server.dev)
+  }
+
   // Enable websockets
   expressWebSocket(app)
 
-  // Bodyparser
+  // Add body parsers.
   app.use(bodyParser.urlencoded({
     limit: '10MB',
     extended: true
@@ -109,25 +112,29 @@ module.exports = function SonarServer (opts = {}) {
   app.use('/api/v1', apiRoutes)
 
   // Serve the swagger API docs at /api-docs
-  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(
-    apiDocs,
-    {
-      customCss: '.swagger-ui .topbar { display: none }'
-    }
-  ))
+  try {
+    const apiDocs = require('./docs/swagger.json')
+    app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(
+      apiDocs,
+      {
+        customCss: '.swagger-ui .topbar { display: none }'
+      }
+    ))
+  } catch (e) {}
 
   // Include the client api docs at /api-docs-client
-  const clientApiDocsPath = p.join(p.dirname(require.resolve('@arso-project/sonar-client/package.json')), 'apidocs')
+  const clientApiDocsPath = p.join(
+    p.dirname(require.resolve('@arso-project/sonar-client/package.json')),
+    'apidocs'
+  )
   app.use('/api-docs-client', express.static(clientApiDocsPath))
 
-  // If in dev mode, serve the webpack dev middleware for the UI at /ui-dev
-  if (opts.dev) {
-    const devMiddleware = require('@arso-project/sonar-ui/express-dev')
-    devMiddleware(app, { publicPath: '/ui-dev', workdir: opts.workdir })
-  }
-
   // Include the static UI at /
-  const uiStaticPath = p.join(p.dirname(require.resolve('@arso-project/sonar-ui/package.json')), 'build', 'dist')
+  const uiStaticPath = p.join(
+    p.dirname(require.resolve('@arso-project/sonar-ui/package.json')),
+    'build',
+    'dist'
+  )
   app.use('/', express.static(uiStaticPath))
 
   // Error handling
@@ -139,26 +146,29 @@ module.exports = function SonarServer (opts = {}) {
     res.status(err.statusCode || 500).send(result)
   })
 
+  // Dev middleware.
+  if (devMiddleware) {
+    devMiddleware.initBottom(app, config.server.dev)
+  }
+
+  // Add start method.
   app.start = thunky((cb = noop) => {
-    if (typeof opts === 'function') return app.start(null, opts)
     // Open the collection store.
     api.collections.ready(err => {
       if (err) return cb(err)
       api.auth.open(err => {
         if (err) return cb(err)
-        app.port = opts.port
-        app.hostname = opts.hostname
+        app.port = config.server.port
+        app.hostname = config.server.hostname
         // Start the HTTP server.
-        app.server = app.listen(app.port, app.hostname, cb)
+        app.server = app.listen(config.server.port, config.server.hostname, cb)
         // Mount the shutdown handler onto the server.
         shutdown(app.server)
       })
     })
   })
-  /** SWAGGER: handle the responses */
-  if (process.env.NODE_ENV !== 'production') {
-    handleRequests()
-  }
+
+  // Add close method.
   app.close = thunky((cb = noop) => {
     let pending = 3
     debug('shutting down')

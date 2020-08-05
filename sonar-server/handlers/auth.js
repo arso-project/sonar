@@ -3,36 +3,33 @@ const expressUnless = require('express-unless')
 
 const { HttpError } = require('../lib/util')
 
-module.exports = function createAuthHandler (api) {
+module.exports = function createAuthHandler (auth) {
   return {
     createAccessCode (req, res, next) {
-      api.auth.createAccessCode(req.query, (err, code) => {
+      auth.createAccessCode(req.query, (err, code) => {
         if (err) return next(err)
         res.send(code)
       })
     },
     login (req, res, next) {
       // TODO: What to return if auth is disabled?
-      if (api.config.disableAuthentication) {
-        return res.send()
-      }
       const { code } = req.query
       if (!code) return next(HttpError(403, 'Code is required'))
-      api.auth.login(code, (err, token) => {
+      auth.login(code, (err, token) => {
         if (err) return next(err)
         res.send({ token })
       })
     },
 
-    createAuthMiddleware () {
-      if (api.config.disableAuthentication) {
+    authMiddleware () {
+      if (auth.disabled) {
         return function (req, res, next) {
           next()
         }
       }
 
       function secretCallback (_req, _dtoken, cb) {
-        api.auth.getSecret(cb)
+        auth.getSecret(cb)
       }
 
       const unlessOptions = { path: ['/login'], useOriginalUrl: false }
