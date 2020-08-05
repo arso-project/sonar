@@ -17,10 +17,8 @@ module.exports = function createRecordView (lvl, db, opts) {
   const schema = opts.schema
   return {
     map (records, next) {
-      console.log('map', records.map(r => [`${r.type} : ${r.id} del ${r.deleted}`, r.links]))
       mapRecordsIntoOps(db, records, mapToPutOp, (err, ops) => {
         if (err) { console.error(err) }
-        console.log('ops', ops.map(o => `${o.key} : ${o.value} : ${o.type}`))
         lvl.batch(ops, next)
       })
     },
@@ -77,7 +75,6 @@ module.exports = function createRecordView (lvl, db, opts) {
 }
 
 function query (db, opts) {
-  console.log('query', opts)
   opts.keyEncoding = keyEncoding
   const transform = parseRow()
   let rs

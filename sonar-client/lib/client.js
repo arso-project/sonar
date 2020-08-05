@@ -1,7 +1,6 @@
-const debug = require('debug')('sonar-client')
 const randombytes = require('randombytes')
-const fetch = require('isomorphic-fetch')
 
+const sonarFetch = require('./fetch')
 const Commands = require('./commands')
 const Collection = require('./collection')
 
@@ -167,78 +166,16 @@ class Client {
     if (!this.opened && !opts.opening) {
       await this.open()
     }
-    if (!url.match(/^https?:\/\//)) {
-      if (url.indexOf('://') !== -1) throw new Error('Only http: and https: protocols are supported.')
-      if (!url.startsWith('/')) url = '/' + url
-      if (opts.endpoint) url = opts.endpoint + url
-      else url = this.endpoint + url
+    if (!opts.endpoint && this.endpoint) {
+      opts.endpoint = this.endpoint
     }
-
     if (!opts.headers) opts.headers = {}
-    if (!opts.requestType) {
-      if (Buffer.isBuffer(opts.body)) opts.requestType = 'buffer'
-      else opts.requestType = 'json'
+    opts.headers = {
+      ...opts.headers,
+      ...this.getAuthHeaders(opts)
     }
-
-    if (opts.params) {
-      const searchParams = new URLSearchParams()
-      for (const [key, value] of Object.entries(opts.params)) {
-        searchParams.append(key, value)
-      }
-      url += '?' + searchParams.toString()
-    }
-
-    if (opts.requestType === 'json') {
-      opts.body = JSON.stringify(opts.body)
-      opts.headers['content-type'] = 'application/json'
-    }
-    if (opts.requestType === 'buffer') {
-      opts.headers['content-type'] = 'application/octet-stream'
-    }
-
-    opts.headers = { ...opts.headers, ...this.getAuthHeaders(opts) }
-
-    try {
-      debug('fetch', url, opts)
-      const res = await fetch(url, opts)
-      if (!res.ok) {
-        let message
-        if (isJsonResponse(res)) {
-          message = (await res.json()).error
-        } else {
-          message = await res.text()
-        }
-        throw new Error('Remote error (code ' + res.status + '): ' + message)
-      }
-
-      if (opts.responseType === 'stream') {
-        return res.body
-      }
-      if (opts.responseType === 'buffer') {
-        // nodejs only: res.buffer() returns a Buffer instance.
-        if (res.buffer) return await res.buffer()
-        // browser: Fetch API res.arrayBuffer returns ArrayBuffer.
-        else return await res.arrayBuffer()
-      }
-
-      if (isJsonResponse(res)) {
-        return await res.json()
-      }
-
-      return await res.text()
-    } catch (err) {
-      // TODO: If error fails for insufficient authorization, try creating
-      // a new token if accessCode is set
-      debug('fetch error', err)
-      throw err
-    }
+    return sonarFetch(url, opts)
   }
-}
-
-function isJsonResponse (res) {
-  const header = res.headers.get('content-type')
-  if (!header) return false
-  return header.indexOf('application/json') !== -1
 }
 
 module.exports = Client
