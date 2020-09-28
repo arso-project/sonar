@@ -72,6 +72,12 @@ class Collection {
     }
   }
 
+  /**
+   * Close the collection.
+   *
+   * Properly closes open HTTP requests.
+   * @async
+   */
   async close () {
     for (const stream of this._eventStreams) {
       stream.destroy()
