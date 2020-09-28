@@ -1,0 +1,320 @@
+syntax = "proto2";
+
+package sonar;
+
+import "hrpc.proto";
+
+//! Overriden messages
+
+// This is actually bytes for protobuf.
+// It has to be aliased to bytes for the compiler.
+message Json {}
+
+//! General structs
+
+message Link {
+  required bytes key = 1;
+  required uint64 seq = 2;
+}
+
+message Arg {
+  required string name = 1;
+  required bytes value = 2;
+}
+
+//! Specs for Info requests
+
+message CommandSpec {
+  required string name = 1;
+  repeated ArgSpec args = 2;
+  optional bool streaming = 3;
+  optional bool replying = 4;
+  repeated StreamSpec streams = 5;
+}
+
+message QuerySpec {
+  required string name = 1;
+  repeated ArgSpec args = 2;
+}
+
+message ArgSpec {
+  required string name = 1;
+  required string type = 2;
+  optional string alias = 3;
+  optional string description = 4;
+}
+
+message StreamSpec {
+  required string name = 1;
+  required StreamKind kind = 2;
+  optional string encoding = 3;
+}
+
+enum StreamKind {
+  Readable = 1;
+  Writable = 2;
+  Duplex = 3;
+}
+
+message Record {
+  // these are stored fields.
+  required string id = 1;
+  required string type = 2;
+  optional bool deleted = 3 [default = false];
+  optional Json value = 4;
+  optional uint32 timestamp = 5;
+  repeated Link links = 7;
+
+  // these are fields only present in the wire format.
+  optional bytes feed = 13;
+  optional uint64 seq = 14;
+  optional uint64 lseq = 15;
+  map<string, bytes> meta = 16;
+}
+
+message Feed {
+  required bytes key = 1;
+  optional string name = 2;
+  required uint64 length = 3;
+  required uint64 byteLength = 4;
+  required bool writable = 5;
+  required string type = 6;
+}
+
+// Collection service
+
+message OpenRequest {
+  optional bytes key = 1;
+  optional string name = 2;
+  optional string token = 3;
+  optional string cacheid = 4;
+}
+
+message OpenResponse {
+  required uint32 id = 1;
+  required bytes key = 2;
+  optional string name = 3;
+  required uint64 length = 4;
+}
+
+message InfoRequest {
+}
+
+message InfoResponse {
+  repeated QuerySpec queries = 1;
+  repeated CommandSpec commands = 2;
+}
+
+message FeedsRequest {
+  required uint32 id = 1;
+}
+
+message FeedsResponse {
+  repeated Feed feeds = 1;
+}
+
+message SchemaRequest {
+  required uint32 id = 1;
+  optional bool wait = 2 [default = false];
+}
+
+message SchemaResponse {
+  // JSON encoded schema.
+  // required string schema = 2;
+  // repeated Type type = 1;
+  // repeated Field field = 2;
+  map<string,Type> types = 1;
+  required uint64 version = 2;
+}
+
+message Type {
+  required string namespace = 1;
+  required string name = 2;
+  required uint64 version = 3;
+  optional string title = 4;
+  optional string description = 5;
+  repeated Field fields = 6;
+}
+
+message Field {
+  required string name = 1;
+  required string fieldType = 2;
+  optional string refines = 3;
+  optional string title = 4;
+  optional string description = 5;
+  map<string, bytes> index = 6;
+  map<string, bytes> meta = 7;
+}
+
+
+message GetRequest {
+  optional uint64 lseq = 1;
+  optional Link address = 2;
+}
+
+message GetResponse {
+  optional uint64 lseq = 1;
+  optional Link address = 2;
+  optional Record record = 3;
+}
+
+message QueryRequest {
+  required uint32 id = 1;
+  required string name = 2;
+  optional bytes args = 3;
+  optional bool stream = 4 [default = false];
+  optional uint32 resourceId = 5;
+  optional bool live = 6 [default = false];
+}
+
+message QueryResponse {
+  repeated Record records = 1;
+  map<string, bytes> meta = 2;
+}
+
+message CancelQueryRequest {
+  required uint32 id = 1;
+  required uint32 resourceId = 2;
+}
+
+message PublishRequest {
+  required uint32 id = 1;
+  repeated Record records = 2;
+}
+
+message PublishResponse {
+  repeated Link records = 1;
+}
+
+message SubscribeRequest {
+  required uint32 id = 1;
+  required uint32 resourceId = 2;
+
+  // Set to have Sonar track the state for this subscription.
+  // Tracked subscriptions always start at 0.
+  optional bool persistent = 3;
+  optional string name = 4;
+
+  // Set if you track the state of this subscription yourself or do not
+  // want any state tracking.
+  optional uint64 start = 5;
+  optional uint64 end = 6;
+  optional bool reverse = 7;
+}
+
+message SubscribeResponse {
+  required uint64 cursor = 1;
+  required uint64 head = 2;
+}
+
+message PullRequest {
+  required uint32 resourceId = 1;
+}
+
+message PullResponse {
+  repeated Record messages = 1;
+  required uint64 cursor = 2;
+  optional bool finished = 3;
+  optional uint64 total = 4;
+}
+
+message AckRequest {
+  required uint32 resourceId = 1;
+  required uint64 cursor = 2;
+}
+
+message AckResponse {
+  required uint64 cursor = 1;
+  required uint64 head = 2;
+}
+
+message OnResultsRequest {
+  required uint32 resourceId = 1;
+  repeated Record records = 2;
+  map<string, bytes> meta = 3;
+  optional bool finished = 4 [default = true];
+}
+
+message OnUpdateRequest {
+  required uint32 id = 1;
+  required uint32 resourceId = 2;
+  required uint64 head = 3;
+}
+
+message SyncRequest {
+  required uint32 id = 1;
+  repeated string views = 2;
+}
+
+// Service to interact with collections.
+service Collection {
+  rpc Open(OpenRequest) returns (OpenResponse);
+
+  rpc Feeds(FeedsRequest) returns (FeedsResponse);
+  rpc Schema(SchemaRequest) returns (SchemaResponse);
+
+  rpc Get(GetRequest) returns (GetResponse);
+  rpc Query(QueryRequest) returns (QueryResponse);
+  rpc CancelQuery(CancelQueryRequest) returns (hrpc.Void);
+
+  // Do clientside and use publish?
+  // rpc AddType(AddTypeRequest) returns (AddTypeResponse);
+  // rpc AddFeed(AddFeedRequest) returns (AddFeedResponse);
+
+  rpc Publish(PublishRequest) returns (PublishResponse);
+
+  rpc Subscribe(SubscribeRequest) returns (SubscribeResponse);
+  rpc Pull(PullRequest) returns (PullResponse);
+  rpc Ack(AckRequest) returns (AckResponse);
+
+  rpc Sync(SyncRequest) returns (hrpc.Void);
+
+  // Called for streaming queries.
+  rpc OnResults(OnResultsRequest) returns (hrpc.Void);
+  // Called when subscriptions have updates (but only after everything so far was acked).
+  rpc OnUpdate(OnUpdateRequest) returns (hrpc.Void);
+}
+
+// Service to expose commands.
+service Commands {
+  rpc Command(CommandRequest) returns (CommandResponse);
+  rpc Stream(StreamRequest) returns (hrpc.Void);
+  rpc Status(hrpc.Void) returns (StatusResponse);
+}
+
+message CommandRequest {
+  required string bot = 1;
+  required string command = 2;
+  repeated Arg args = 3;
+  optional bool streaming = 4 [default = false];
+  optional uint32 stdout = 5;
+  optional uint32 stderr = 6;
+}
+
+message CommandResponse {
+  optional bytes value = 1;
+  optional uint32 stdin = 2;
+  optional bool finished = 3 [default = false];
+  optional string error = 4;
+  optional uint32 code = 5;
+}
+
+message StreamRequest {
+  required uint32 resourceId = 1;
+  optional bytes data = 2;
+  optional bool finished = 3 [default = false];
+  // Those may only be set when finished = true.
+  optional string error = 4;
+  optional uint32 code = 5;
+}
+
+message StatusResponse {
+  required bool live = 1;
+  optional uint64 uptime = 2;
+  repeated CommandStatus commandStatus = 3;
+}
+
+message CommandStatus {
+  required string name = 1;
+  required bool streaming = 2;
+}
