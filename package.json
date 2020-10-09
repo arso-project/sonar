@@ -11,7 +11,8 @@
     "rebuild": "run-p build:*",
     "build:apidocs": "cd sonar-client; npm run doc:html",
     "build:ui": "cd sonar-ui; npm run build",
-    "build:tantivy": "cd node_modules/@arso-project/sonar-tantivy; npm run postinstall"
+    "build:tantivy": "cd node_modules/@arso-project/sonar-tantivy; npm run postinstall",
+    "dev:link": "./script/dev-link.sh"
   },
   "workspaces": [
     "*",
