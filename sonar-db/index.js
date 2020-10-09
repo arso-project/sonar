@@ -8,10 +8,12 @@ const createIndexView = require('./views/indexes')
 const createHistoryView = require('./views/history')
 const Schema = require('@arso-project/sonar-common/schema')
 const Record = require('./lib/record')
+const onDriveLoad = require('./lib/drive')
 
 const FEED_TYPE = {
   DATA: 'sonar-data',
-  ROOT: 'sonar-root'
+  ROOT: 'sonar-root',
+  DRIVE: 'hyperdrive'
 }
 const FEED_NAME = {
   ...FEED_TYPE,
@@ -62,6 +64,9 @@ module.exports = class Database extends Nanoresource {
     this.scope.registerFeedType(FEED_TYPE.ROOT, {
       onload: this._onload.bind(this)
     })
+    this.scope.registerFeedType(FEED_TYPE.DRIVE, {
+      onload: this._ondriveload.bind(this)
+    })
 
     this.scope.use('kv', createKvView(
       sub(opts.db, 'kv')
@@ -93,7 +98,7 @@ module.exports = class Database extends Nanoresource {
             // console.log(self.name, 'ADD FEED', record.value)
             const { alias, key, type, ...info } = record.value
             // TODO: Make it configurable which feeds are considered "record feeds".
-            if (type === FEED_TYPE.ROOT || type === FEED_TYPE.DATA) {
+            if (type === FEED_TYPE.ROOT || type === FEED_TYPE.DATA || type === FEED_TYPE.DRIVE) {
               const feedOpts = { alias, key, type, info }
               self.scope.addFeed(feedOpts)
             }
@@ -106,7 +111,8 @@ module.exports = class Database extends Nanoresource {
             } catch (err) {
               // TODO: Think about error handling here. This would likely crash the server which is too much.
               const error = new Error('Error: Trying to add invalid type: ' + record.id, err.message)
-              self.emit('error', error)
+              console.error(error)
+              // self.emit('error', error)
             }
           }
         }
@@ -115,7 +121,8 @@ module.exports = class Database extends Nanoresource {
       }
     }, {
       scopeFeed (key, info) {
-        return info.type === FEED_TYPE.ROOT
+        return true
+        // return info.type === FEED_TYPE.ROOT
       }
     })
 
@@ -225,6 +232,10 @@ module.exports = class Database extends Nanoresource {
         this._onload(message, opts, cb, true)
       })
     }
+  }
+
+  _ondriveload (message, opts, cb) {
+    onDriveLoad(this.schema, message, cb)
   }
 
   _onappend (record, opts, cb) {
