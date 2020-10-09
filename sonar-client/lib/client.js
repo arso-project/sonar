@@ -3,6 +3,7 @@ const randombytes = require('randombytes')
 const sonarFetch = require('./fetch')
 const Commands = require('./commands')
 const Collection = require('./collection')
+const Bots = require('./bots')
 
 const {
   DEFAULT_ENDPOINT
@@ -28,6 +29,8 @@ class Client {
     this._id = opts.id || randombytes(16).toString('hex')
     this._token = opts.token
     this._accessCode = opts.accessCode
+
+    this.bots = new Bots(this)
 
     this.commands = new Commands({
       url: this.endpoint + '/commands',

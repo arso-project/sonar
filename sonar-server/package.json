@@ -19,6 +19,7 @@
     "@arso-project/sonar-common": "^0.3.0-alpha.7",
     "@arso-project/sonar-core": "^0.3.0-alpha.7",
     "@arso-project/sonar-ui": "^0.3.0-alpha.7",
+    "@arso-project/sonar-bots": "^0.3.0-alpha.7",
     "async-exit-hook": "^2.0.1",
     "body-parser": "^1.19.0",
     "collect-stream": "^1.2.1",
