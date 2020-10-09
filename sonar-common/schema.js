@@ -976,6 +976,8 @@ function parseAddress (address) {
 
 function encodeAddress (parts) {
   let { namespace, type, field, version } = parts
+  // TODO: Think if we want to accept both name and type
+  if (!type && parts.name) type = parts.name
   if (!type || !validSegment(type)) {
     throw new Error('Cannot encode address: invalid type name')
   }

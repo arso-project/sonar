@@ -5,7 +5,7 @@ const { storagePath } = require('@arso-project/sonar-common/storage')
 const p = require('path')
 const fs = require('fs')
 
-module.exports = class NodeClient extends Client {
+class NodeClient extends Client {
   constructor (opts) {
     if (!opts.token) {
       // TODO: Put filenames in constants.js in sonar-common
@@ -21,3 +21,5 @@ module.exports = class NodeClient extends Client {
     super(opts)
   }
 }
+module.exports = NodeClient
+module.exports.Client = NodeClient

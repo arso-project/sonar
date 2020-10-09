@@ -39,7 +39,7 @@ const args = yargs
       default: process.env.SONAR_ENDPOINT || DEFAULT_ENDPOINT
     },
     collection: {
-      alias: 'i',
+      alias: 'c',
       describe: 'collection key or name',
       default: process.env.SONAR_COLLECTION || DEFAULT_COLLECTION
     },
