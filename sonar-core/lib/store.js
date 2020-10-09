@@ -360,7 +360,7 @@ module.exports = class CollectionStore extends Nanoresource {
       name: opts.name,
       key,
       // rootFeedKey: key,
-      defaultFeedType: 'sonar.db'
+      defaultFeedType: 'sonar-data'
     }
 
     // const scope = this.scopes.createScopeWithRootFeed(scopeOpts)
