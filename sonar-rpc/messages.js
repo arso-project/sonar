@@ -9,12 +9,6 @@ var encodings = require('hrpc-runtime/encodings')
 var varint = encodings.varint
 var skip = encodings.skip
 
-exports.StreamKind = {
-  Readable: 1,
-  Writable: 2,
-  Duplex: 3
-}
-
 var Json = exports.Json = {
   buffer: true,
   encodingLength: null,
@@ -36,6 +30,13 @@ var Arg = exports.Arg = {
   decode: null
 }
 
+var RemoteError = exports.RemoteError = {
+  buffer: true,
+  encodingLength: null,
+  encode: null,
+  decode: null
+}
+
 var CommandSpec = exports.CommandSpec = {
   buffer: true,
   encodingLength: null,
@@ -51,13 +52,6 @@ var QuerySpec = exports.QuerySpec = {
 }
 
 var ArgSpec = exports.ArgSpec = {
-  buffer: true,
-  encodingLength: null,
-  encode: null,
-  decode: null
-}
-
-var StreamSpec = exports.StreamSpec = {
   buffer: true,
   encodingLength: null,
   encode: null,
@@ -316,13 +310,20 @@ var Map_string_Type = exports.Map_string_Type = {
   decode: null
 }
 
+var Map_string_string = exports.Map_string_string = {
+  buffer: true,
+  encodingLength: null,
+  encode: null,
+  decode: null
+}
+
 defineJson()
 defineLink()
 defineArg()
+defineRemoteError()
 defineCommandSpec()
 defineQuerySpec()
 defineArgSpec()
-defineStreamSpec()
 defineRecord()
 defineFeed()
 defineOpenRequest()
@@ -359,6 +360,7 @@ defineCommandStatus()
 defineRPCError()
 defineMap_string_bytes()
 defineMap_string_Type()
+defineMap_string_string()
 
 function defineJson () {
   Json.encodingLength = encodingLength
@@ -478,9 +480,10 @@ function defineArg () {
 
   function encodingLength (obj) {
     var length = 0
-    if (!defined(obj.name)) throw new Error("name is required")
-    var len = encodings.string.encodingLength(obj.name)
-    length += 1 + len
+    if (defined(obj.name)) {
+      var len = encodings.string.encodingLength(obj.name)
+      length += 1 + len
+    }
     if (!defined(obj.value)) throw new Error("value is required")
     var len = encodings.bytes.encodingLength(obj.value)
     length += 1 + len
@@ -491,10 +494,11 @@ function defineArg () {
     if (!offset) offset = 0
     if (!buf) buf = Buffer.allocUnsafe(encodingLength(obj))
     var oldOffset = offset
-    if (!defined(obj.name)) throw new Error("name is required")
-    buf[offset++] = 10
-    encodings.string.encode(obj.name, buf, offset)
-    offset += encodings.string.encode.bytes
+    if (defined(obj.name)) {
+      buf[offset++] = 10
+      encodings.string.encode(obj.name, buf, offset)
+      offset += encodings.string.encode.bytes
+    }
     if (!defined(obj.value)) throw new Error("value is required")
     buf[offset++] = 18
     encodings.bytes.encode(obj.value, buf, offset)
@@ -512,11 +516,10 @@ function defineArg () {
       name: "",
       value: null
     }
-    var found0 = false
     var found1 = false
     while (true) {
       if (end <= offset) {
-        if (!found0 || !found1) throw new Error("Decoded message is not valid")
+        if (!found1) throw new Error("Decoded message is not valid")
         decode.bytes = offset - oldOffset
         return obj
       }
@@ -527,12 +530,80 @@ function defineArg () {
         case 1:
         obj.name = encodings.string.decode(buf, offset)
         offset += encodings.string.decode.bytes
-        found0 = true
         break
         case 2:
         obj.value = encodings.bytes.decode(buf, offset)
         offset += encodings.bytes.decode.bytes
         found1 = true
+        break
+        default:
+        offset = skip(prefix & 7, buf, offset)
+      }
+    }
+  }
+}
+
+function defineRemoteError () {
+  RemoteError.encodingLength = encodingLength
+  RemoteError.encode = encode
+  RemoteError.decode = decode
+
+  function encodingLength (obj) {
+    var length = 0
+    if (defined(obj.reason)) {
+      var len = encodings.string.encodingLength(obj.reason)
+      length += 1 + len
+    }
+    if (defined(obj.code)) {
+      var len = encodings.varint.encodingLength(obj.code)
+      length += 1 + len
+    }
+    return length
+  }
+
+  function encode (obj, buf, offset) {
+    if (!offset) offset = 0
+    if (!buf) buf = Buffer.allocUnsafe(encodingLength(obj))
+    var oldOffset = offset
+    if (defined(obj.reason)) {
+      buf[offset++] = 10
+      encodings.string.encode(obj.reason, buf, offset)
+      offset += encodings.string.encode.bytes
+    }
+    if (defined(obj.code)) {
+      buf[offset++] = 16
+      encodings.varint.encode(obj.code, buf, offset)
+      offset += encodings.varint.encode.bytes
+    }
+    encode.bytes = offset - oldOffset
+    return buf
+  }
+
+  function decode (buf, offset, end) {
+    if (!offset) offset = 0
+    if (!end) end = buf.length
+    if (!(end <= buf.length && offset <= buf.length)) throw new Error("Decoded message is not valid")
+    var oldOffset = offset
+    var obj = {
+      reason: "",
+      code: 0
+    }
+    while (true) {
+      if (end <= offset) {
+        decode.bytes = offset - oldOffset
+        return obj
+      }
+      var prefix = varint.decode(buf, offset)
+      offset += varint.decode.bytes
+      var tag = prefix >> 3
+      switch (tag) {
+        case 1:
+        obj.reason = encodings.string.decode(buf, offset)
+        offset += encodings.string.decode.bytes
+        break
+        case 2:
+        obj.code = encodings.varint.decode(buf, offset)
+        offset += encodings.varint.decode.bytes
         break
         default:
         offset = skip(prefix & 7, buf, offset)
@@ -567,14 +638,6 @@ function defineCommandSpec () {
       var len = encodings.bool.encodingLength(obj.replying)
       length += 1 + len
     }
-    if (defined(obj.streams)) {
-      for (var i = 0; i < obj.streams.length; i++) {
-        if (!defined(obj.streams[i])) continue
-        var len = StreamSpec.encodingLength(obj.streams[i])
-        length += varint.encodingLength(len)
-        length += 1 + len
-      }
-    }
     return length
   }
 
@@ -606,16 +669,6 @@ function defineCommandSpec () {
       encodings.bool.encode(obj.replying, buf, offset)
       offset += encodings.bool.encode.bytes
     }
-    if (defined(obj.streams)) {
-      for (var i = 0; i < obj.streams.length; i++) {
-        if (!defined(obj.streams[i])) continue
-        buf[offset++] = 42
-        varint.encode(StreamSpec.encodingLength(obj.streams[i]), buf, offset)
-        offset += varint.encode.bytes
-        StreamSpec.encode(obj.streams[i], buf, offset)
-        offset += StreamSpec.encode.bytes
-      }
-    }
     encode.bytes = offset - oldOffset
     return buf
   }
@@ -629,8 +682,7 @@ function defineCommandSpec () {
       name: "",
       args: [],
       streaming: false,
-      replying: false,
-      streams: []
+      replying: false
     }
     var found0 = false
     while (true) {
@@ -661,12 +713,6 @@ function defineCommandSpec () {
         case 4:
         obj.replying = encodings.bool.decode(buf, offset)
         offset += encodings.bool.decode.bytes
-        break
-        case 5:
-        var len = varint.decode(buf, offset)
-        offset += varint.decode.bytes
-        obj.streams.push(StreamSpec.decode(buf, offset, offset + len))
-        offset += StreamSpec.decode.bytes
         break
         default:
         offset = skip(prefix & 7, buf, offset)
@@ -854,90 +900,6 @@ function defineArgSpec () {
   }
 }
 
-function defineStreamSpec () {
-  StreamSpec.encodingLength = encodingLength
-  StreamSpec.encode = encode
-  StreamSpec.decode = decode
-
-  function encodingLength (obj) {
-    var length = 0
-    if (!defined(obj.name)) throw new Error("name is required")
-    var len = encodings.string.encodingLength(obj.name)
-    length += 1 + len
-    if (!defined(obj.kind)) throw new Error("kind is required")
-    var len = encodings.enum.encodingLength(obj.kind)
-    length += 1 + len
-    if (defined(obj.encoding)) {
-      var len = encodings.string.encodingLength(obj.encoding)
-      length += 1 + len
-    }
-    return length
-  }
-
-  function encode (obj, buf, offset) {
-    if (!offset) offset = 0
-    if (!buf) buf = Buffer.allocUnsafe(encodingLength(obj))
-    var oldOffset = offset
-    if (!defined(obj.name)) throw new Error("name is required")
-    buf[offset++] = 10
-    encodings.string.encode(obj.name, buf, offset)
-    offset += encodings.string.encode.bytes
-    if (!defined(obj.kind)) throw new Error("kind is required")
-    buf[offset++] = 16
-    encodings.enum.encode(obj.kind, buf, offset)
-    offset += encodings.enum.encode.bytes
-    if (defined(obj.encoding)) {
-      buf[offset++] = 26
-      encodings.string.encode(obj.encoding, buf, offset)
-      offset += encodings.string.encode.bytes
-    }
-    encode.bytes = offset - oldOffset
-    return buf
-  }
-
-  function decode (buf, offset, end) {
-    if (!offset) offset = 0
-    if (!end) end = buf.length
-    if (!(end <= buf.length && offset <= buf.length)) throw new Error("Decoded message is not valid")
-    var oldOffset = offset
-    var obj = {
-      name: "",
-      kind: 1,
-      encoding: ""
-    }
-    var found0 = false
-    var found1 = false
-    while (true) {
-      if (end <= offset) {
-        if (!found0 || !found1) throw new Error("Decoded message is not valid")
-        decode.bytes = offset - oldOffset
-        return obj
-      }
-      var prefix = varint.decode(buf, offset)
-      offset += varint.decode.bytes
-      var tag = prefix >> 3
-      switch (tag) {
-        case 1:
-        obj.name = encodings.string.decode(buf, offset)
-        offset += encodings.string.decode.bytes
-        found0 = true
-        break
-        case 2:
-        obj.kind = encodings.enum.decode(buf, offset)
-        offset += encodings.enum.decode.bytes
-        found1 = true
-        break
-        case 3:
-        obj.encoding = encodings.string.decode(buf, offset)
-        offset += encodings.string.decode.bytes
-        break
-        default:
-        offset = skip(prefix & 7, buf, offset)
-      }
-    }
-  }
-}
-
 function defineRecord () {
   Record.encodingLength = encodingLength
   Record.encode = encode
@@ -956,8 +918,7 @@ function defineRecord () {
       length += 1 + len
     }
     if (defined(obj.value)) {
-      var len = Json.encodingLength(obj.value)
-      length += varint.encodingLength(len)
+      var len = encodings.bytes.encodingLength(obj.value)
       length += 1 + len
     }
     if (defined(obj.timestamp)) {
@@ -967,8 +928,7 @@ function defineRecord () {
     if (defined(obj.links)) {
       for (var i = 0; i < obj.links.length; i++) {
         if (!defined(obj.links[i])) continue
-        var len = Link.encodingLength(obj.links[i])
-        length += varint.encodingLength(len)
+        var len = encodings.string.encodingLength(obj.links[i])
         length += 1 + len
       }
     }
@@ -1018,10 +978,8 @@ function defineRecord () {
     }
     if (defined(obj.value)) {
       buf[offset++] = 34
-      varint.encode(Json.encodingLength(obj.value), buf, offset)
-      offset += varint.encode.bytes
-      Json.encode(obj.value, buf, offset)
-      offset += Json.encode.bytes
+      encodings.bytes.encode(obj.value, buf, offset)
+      offset += encodings.bytes.encode.bytes
     }
     if (defined(obj.timestamp)) {
       buf[offset++] = 40
@@ -1032,10 +990,8 @@ function defineRecord () {
       for (var i = 0; i < obj.links.length; i++) {
         if (!defined(obj.links[i])) continue
         buf[offset++] = 58
-        varint.encode(Link.encodingLength(obj.links[i]), buf, offset)
-        offset += varint.encode.bytes
-        Link.encode(obj.links[i], buf, offset)
-        offset += Link.encode.bytes
+        encodings.string.encode(obj.links[i], buf, offset)
+        offset += encodings.string.encode.bytes
       }
     }
     if (defined(obj.feed)) {
@@ -1116,20 +1072,16 @@ function defineRecord () {
         offset += encodings.bool.decode.bytes
         break
         case 4:
-        var len = varint.decode(buf, offset)
-        offset += varint.decode.bytes
-        obj.value = Json.decode(buf, offset, offset + len)
-        offset += Json.decode.bytes
+        obj.value = encodings.bytes.decode(buf, offset)
+        offset += encodings.bytes.decode.bytes
         break
         case 5:
         obj.timestamp = encodings.varint.decode(buf, offset)
         offset += encodings.varint.decode.bytes
         break
         case 7:
-        var len = varint.decode(buf, offset)
-        offset += varint.decode.bytes
-        obj.links.push(Link.decode(buf, offset, offset + len))
-        offset += Link.decode.bytes
+        obj.links.push(encodings.string.decode(buf, offset))
+        offset += encodings.string.decode.bytes
         break
         case 13:
         obj.feed = encodings.bytes.decode(buf, offset)
@@ -1290,6 +1242,9 @@ function defineOpenRequest () {
 
   function encodingLength (obj) {
     var length = 0
+    if (!defined(obj.id)) throw new Error("id is required")
+    var len = encodings.varint.encodingLength(obj.id)
+    length += 1 + len
     if (defined(obj.key)) {
       var len = encodings.bytes.encodingLength(obj.key)
       length += 1 + len
@@ -1313,23 +1268,27 @@ function defineOpenRequest () {
     if (!offset) offset = 0
     if (!buf) buf = Buffer.allocUnsafe(encodingLength(obj))
     var oldOffset = offset
+    if (!defined(obj.id)) throw new Error("id is required")
+    buf[offset++] = 8
+    encodings.varint.encode(obj.id, buf, offset)
+    offset += encodings.varint.encode.bytes
     if (defined(obj.key)) {
-      buf[offset++] = 10
+      buf[offset++] = 18
       encodings.bytes.encode(obj.key, buf, offset)
       offset += encodings.bytes.encode.bytes
     }
     if (defined(obj.name)) {
-      buf[offset++] = 18
+      buf[offset++] = 26
       encodings.string.encode(obj.name, buf, offset)
       offset += encodings.string.encode.bytes
     }
     if (defined(obj.token)) {
-      buf[offset++] = 26
+      buf[offset++] = 34
       encodings.string.encode(obj.token, buf, offset)
       offset += encodings.string.encode.bytes
     }
     if (defined(obj.cacheid)) {
-      buf[offset++] = 34
+      buf[offset++] = 42
       encodings.string.encode(obj.cacheid, buf, offset)
       offset += encodings.string.encode.bytes
     }
@@ -1343,13 +1302,16 @@ function defineOpenRequest () {
     if (!(end <= buf.length && offset <= buf.length)) throw new Error("Decoded message is not valid")
     var oldOffset = offset
     var obj = {
+      id: 0,
       key: null,
       name: "",
       token: "",
       cacheid: ""
     }
+    var found0 = false
     while (true) {
       if (end <= offset) {
+        if (!found0) throw new Error("Decoded message is not valid")
         decode.bytes = offset - oldOffset
         return obj
       }
@@ -1358,18 +1320,23 @@ function defineOpenRequest () {
       var tag = prefix >> 3
       switch (tag) {
         case 1:
+        obj.id = encodings.varint.decode(buf, offset)
+        offset += encodings.varint.decode.bytes
+        found0 = true
+        break
+        case 2:
         obj.key = encodings.bytes.decode(buf, offset)
         offset += encodings.bytes.decode.bytes
         break
-        case 2:
+        case 3:
         obj.name = encodings.string.decode(buf, offset)
         offset += encodings.string.decode.bytes
         break
-        case 3:
+        case 4:
         obj.token = encodings.string.decode(buf, offset)
         offset += encodings.string.decode.bytes
         break
-        case 4:
+        case 5:
         obj.cacheid = encodings.string.decode(buf, offset)
         offset += encodings.string.decode.bytes
         break
@@ -1387,9 +1354,6 @@ function defineOpenResponse () {
 
   function encodingLength (obj) {
     var length = 0
-    if (!defined(obj.id)) throw new Error("id is required")
-    var len = encodings.varint.encodingLength(obj.id)
-    length += 1 + len
     if (!defined(obj.key)) throw new Error("key is required")
     var len = encodings.bytes.encodingLength(obj.key)
     length += 1 + len
@@ -1397,9 +1361,10 @@ function defineOpenResponse () {
       var len = encodings.string.encodingLength(obj.name)
       length += 1 + len
     }
-    if (!defined(obj.length)) throw new Error("length is required")
-    var len = encodings.varint.encodingLength(obj.length)
-    length += 1 + len
+    if (defined(obj.total)) {
+      var len = encodings.varint.encodingLength(obj.total)
+      length += 1 + len
+    }
     return length
   }
 
@@ -1407,23 +1372,20 @@ function defineOpenResponse () {
     if (!offset) offset = 0
     if (!buf) buf = Buffer.allocUnsafe(encodingLength(obj))
     var oldOffset = offset
-    if (!defined(obj.id)) throw new Error("id is required")
-    buf[offset++] = 8
-    encodings.varint.encode(obj.id, buf, offset)
-    offset += encodings.varint.encode.bytes
     if (!defined(obj.key)) throw new Error("key is required")
-    buf[offset++] = 18
+    buf[offset++] = 10
     encodings.bytes.encode(obj.key, buf, offset)
     offset += encodings.bytes.encode.bytes
     if (defined(obj.name)) {
-      buf[offset++] = 26
+      buf[offset++] = 18
       encodings.string.encode(obj.name, buf, offset)
       offset += encodings.string.encode.bytes
     }
-    if (!defined(obj.length)) throw new Error("length is required")
-    buf[offset++] = 32
-    encodings.varint.encode(obj.length, buf, offset)
-    offset += encodings.varint.encode.bytes
+    if (defined(obj.total)) {
+      buf[offset++] = 24
+      encodings.varint.encode(obj.total, buf, offset)
+      offset += encodings.varint.encode.bytes
+    }
     encode.bytes = offset - oldOffset
     return buf
   }
@@ -1434,17 +1396,14 @@ function defineOpenResponse () {
     if (!(end <= buf.length && offset <= buf.length)) throw new Error("Decoded message is not valid")
     var oldOffset = offset
     var obj = {
-      id: 0,
       key: null,
       name: "",
-      length: 0
+      total: 0
     }
     var found0 = false
-    var found1 = false
-    var found3 = false
     while (true) {
       if (end <= offset) {
-        if (!found0 || !found1 || !found3) throw new Error("Decoded message is not valid")
+        if (!found0) throw new Error("Decoded message is not valid")
         decode.bytes = offset - oldOffset
         return obj
       }
@@ -1453,23 +1412,17 @@ function defineOpenResponse () {
       var tag = prefix >> 3
       switch (tag) {
         case 1:
-        obj.id = encodings.varint.decode(buf, offset)
-        offset += encodings.varint.decode.bytes
+        obj.key = encodings.bytes.decode(buf, offset)
+        offset += encodings.bytes.decode.bytes
         found0 = true
         break
         case 2:
-        obj.key = encodings.bytes.decode(buf, offset)
-        offset += encodings.bytes.decode.bytes
-        found1 = true
-        break
-        case 3:
         obj.name = encodings.string.decode(buf, offset)
         offset += encodings.string.decode.bytes
         break
-        case 4:
-        obj.length = encodings.varint.decode(buf, offset)
+        case 3:
+        obj.total = encodings.varint.decode(buf, offset)
         offset += encodings.varint.decode.bytes
-        found3 = true
         break
         default:
         offset = skip(prefix & 7, buf, offset)
@@ -2386,6 +2339,10 @@ function defineQueryRequest () {
     if (!defined(obj.id)) throw new Error("id is required")
     var len = encodings.varint.encodingLength(obj.id)
     length += 1 + len
+    if (defined(obj.resourceId)) {
+      var len = encodings.varint.encodingLength(obj.resourceId)
+      length += 1 + len
+    }
     if (!defined(obj.name)) throw new Error("name is required")
     var len = encodings.string.encodingLength(obj.name)
     length += 1 + len
@@ -2395,10 +2352,6 @@ function defineQueryRequest () {
     }
     if (defined(obj.stream)) {
       var len = encodings.bool.encodingLength(obj.stream)
-      length += 1 + len
-    }
-    if (defined(obj.resourceId)) {
-      var len = encodings.varint.encodingLength(obj.resourceId)
       length += 1 + len
     }
     if (defined(obj.live)) {
@@ -2416,24 +2369,24 @@ function defineQueryRequest () {
     buf[offset++] = 8
     encodings.varint.encode(obj.id, buf, offset)
     offset += encodings.varint.encode.bytes
+    if (defined(obj.resourceId)) {
+      buf[offset++] = 16
+      encodings.varint.encode(obj.resourceId, buf, offset)
+      offset += encodings.varint.encode.bytes
+    }
     if (!defined(obj.name)) throw new Error("name is required")
-    buf[offset++] = 18
+    buf[offset++] = 26
     encodings.string.encode(obj.name, buf, offset)
     offset += encodings.string.encode.bytes
     if (defined(obj.args)) {
-      buf[offset++] = 26
+      buf[offset++] = 34
       encodings.bytes.encode(obj.args, buf, offset)
       offset += encodings.bytes.encode.bytes
     }
     if (defined(obj.stream)) {
-      buf[offset++] = 32
+      buf[offset++] = 40
       encodings.bool.encode(obj.stream, buf, offset)
       offset += encodings.bool.encode.bytes
-    }
-    if (defined(obj.resourceId)) {
-      buf[offset++] = 40
-      encodings.varint.encode(obj.resourceId, buf, offset)
-      offset += encodings.varint.encode.bytes
     }
     if (defined(obj.live)) {
       buf[offset++] = 48
@@ -2451,17 +2404,17 @@ function defineQueryRequest () {
     var oldOffset = offset
     var obj = {
       id: 0,
+      resourceId: 0,
       name: "",
       args: null,
       stream: false,
-      resourceId: 0,
       live: false
     }
     var found0 = false
-    var found1 = false
+    var found2 = false
     while (true) {
       if (end <= offset) {
-        if (!found0 || !found1) throw new Error("Decoded message is not valid")
+        if (!found0 || !found2) throw new Error("Decoded message is not valid")
         decode.bytes = offset - oldOffset
         return obj
       }
@@ -2475,21 +2428,21 @@ function defineQueryRequest () {
         found0 = true
         break
         case 2:
-        obj.name = encodings.string.decode(buf, offset)
-        offset += encodings.string.decode.bytes
-        found1 = true
+        obj.resourceId = encodings.varint.decode(buf, offset)
+        offset += encodings.varint.decode.bytes
         break
         case 3:
+        obj.name = encodings.string.decode(buf, offset)
+        offset += encodings.string.decode.bytes
+        found2 = true
+        break
+        case 4:
         obj.args = encodings.bytes.decode(buf, offset)
         offset += encodings.bytes.decode.bytes
         break
-        case 4:
+        case 5:
         obj.stream = encodings.bool.decode(buf, offset)
         offset += encodings.bool.decode.bytes
-        break
-        case 5:
-        obj.resourceId = encodings.varint.decode(buf, offset)
-        offset += encodings.varint.decode.bytes
         break
         case 6:
         obj.live = encodings.bool.decode(buf, offset)
@@ -2832,10 +2785,9 @@ function defineSubscribeRequest () {
     if (!defined(obj.resourceId)) throw new Error("resourceId is required")
     var len = encodings.varint.encodingLength(obj.resourceId)
     length += 1 + len
-    if (defined(obj.persistent)) {
-      var len = encodings.bool.encodingLength(obj.persistent)
-      length += 1 + len
-    }
+    if (!defined(obj.persist)) throw new Error("persist is required")
+    var len = encodings.bool.encodingLength(obj.persist)
+    length += 1 + len
     if (defined(obj.name)) {
       var len = encodings.string.encodingLength(obj.name)
       length += 1 + len
@@ -2867,11 +2819,10 @@ function defineSubscribeRequest () {
     buf[offset++] = 16
     encodings.varint.encode(obj.resourceId, buf, offset)
     offset += encodings.varint.encode.bytes
-    if (defined(obj.persistent)) {
-      buf[offset++] = 24
-      encodings.bool.encode(obj.persistent, buf, offset)
-      offset += encodings.bool.encode.bytes
-    }
+    if (!defined(obj.persist)) throw new Error("persist is required")
+    buf[offset++] = 24
+    encodings.bool.encode(obj.persist, buf, offset)
+    offset += encodings.bool.encode.bytes
     if (defined(obj.name)) {
       buf[offset++] = 34
       encodings.string.encode(obj.name, buf, offset)
@@ -2904,7 +2855,7 @@ function defineSubscribeRequest () {
     var obj = {
       id: 0,
       resourceId: 0,
-      persistent: false,
+      persist: false,
       name: "",
       start: 0,
       end: 0,
@@ -2912,9 +2863,10 @@ function defineSubscribeRequest () {
     }
     var found0 = false
     var found1 = false
+    var found2 = false
     while (true) {
       if (end <= offset) {
-        if (!found0 || !found1) throw new Error("Decoded message is not valid")
+        if (!found0 || !found1 || !found2) throw new Error("Decoded message is not valid")
         decode.bytes = offset - oldOffset
         return obj
       }
@@ -2933,8 +2885,9 @@ function defineSubscribeRequest () {
         found1 = true
         break
         case 3:
-        obj.persistent = encodings.bool.decode(buf, offset)
+        obj.persist = encodings.bool.decode(buf, offset)
         offset += encodings.bool.decode.bytes
+        found2 = true
         break
         case 4:
         obj.name = encodings.string.decode(buf, offset)
@@ -2969,8 +2922,8 @@ function defineSubscribeResponse () {
     if (!defined(obj.cursor)) throw new Error("cursor is required")
     var len = encodings.varint.encodingLength(obj.cursor)
     length += 1 + len
-    if (!defined(obj.head)) throw new Error("head is required")
-    var len = encodings.varint.encodingLength(obj.head)
+    if (!defined(obj.total)) throw new Error("total is required")
+    var len = encodings.varint.encodingLength(obj.total)
     length += 1 + len
     return length
   }
@@ -2983,9 +2936,9 @@ function defineSubscribeResponse () {
     buf[offset++] = 8
     encodings.varint.encode(obj.cursor, buf, offset)
     offset += encodings.varint.encode.bytes
-    if (!defined(obj.head)) throw new Error("head is required")
+    if (!defined(obj.total)) throw new Error("total is required")
     buf[offset++] = 16
-    encodings.varint.encode(obj.head, buf, offset)
+    encodings.varint.encode(obj.total, buf, offset)
     offset += encodings.varint.encode.bytes
     encode.bytes = offset - oldOffset
     return buf
@@ -2998,7 +2951,7 @@ function defineSubscribeResponse () {
     var oldOffset = offset
     var obj = {
       cursor: 0,
-      head: 0
+      total: 0
     }
     var found0 = false
     var found1 = false
@@ -3018,7 +2971,7 @@ function defineSubscribeResponse () {
         found0 = true
         break
         case 2:
-        obj.head = encodings.varint.decode(buf, offset)
+        obj.total = encodings.varint.decode(buf, offset)
         offset += encodings.varint.decode.bytes
         found1 = true
         break
@@ -3103,14 +3056,12 @@ function definePullResponse () {
     if (!defined(obj.cursor)) throw new Error("cursor is required")
     var len = encodings.varint.encodingLength(obj.cursor)
     length += 1 + len
-    if (defined(obj.finished)) {
-      var len = encodings.bool.encodingLength(obj.finished)
-      length += 1 + len
-    }
-    if (defined(obj.total)) {
-      var len = encodings.varint.encodingLength(obj.total)
-      length += 1 + len
-    }
+    if (!defined(obj.finished)) throw new Error("finished is required")
+    var len = encodings.bool.encodingLength(obj.finished)
+    length += 1 + len
+    if (!defined(obj.total)) throw new Error("total is required")
+    var len = encodings.varint.encodingLength(obj.total)
+    length += 1 + len
     return length
   }
 
@@ -3132,16 +3083,14 @@ function definePullResponse () {
     buf[offset++] = 16
     encodings.varint.encode(obj.cursor, buf, offset)
     offset += encodings.varint.encode.bytes
-    if (defined(obj.finished)) {
-      buf[offset++] = 24
-      encodings.bool.encode(obj.finished, buf, offset)
-      offset += encodings.bool.encode.bytes
-    }
-    if (defined(obj.total)) {
-      buf[offset++] = 32
-      encodings.varint.encode(obj.total, buf, offset)
-      offset += encodings.varint.encode.bytes
-    }
+    if (!defined(obj.finished)) throw new Error("finished is required")
+    buf[offset++] = 24
+    encodings.bool.encode(obj.finished, buf, offset)
+    offset += encodings.bool.encode.bytes
+    if (!defined(obj.total)) throw new Error("total is required")
+    buf[offset++] = 32
+    encodings.varint.encode(obj.total, buf, offset)
+    offset += encodings.varint.encode.bytes
     encode.bytes = offset - oldOffset
     return buf
   }
@@ -3158,9 +3107,11 @@ function definePullResponse () {
       total: 0
     }
     var found1 = false
+    var found2 = false
+    var found3 = false
     while (true) {
       if (end <= offset) {
-        if (!found1) throw new Error("Decoded message is not valid")
+        if (!found1 || !found2 || !found3) throw new Error("Decoded message is not valid")
         decode.bytes = offset - oldOffset
         return obj
       }
@@ -3182,10 +3133,12 @@ function definePullResponse () {
         case 3:
         obj.finished = encodings.bool.decode(buf, offset)
         offset += encodings.bool.decode.bytes
+        found2 = true
         break
         case 4:
         obj.total = encodings.varint.decode(buf, offset)
         offset += encodings.varint.decode.bytes
+        found3 = true
         break
         default:
         offset = skip(prefix & 7, buf, offset)
@@ -3274,8 +3227,8 @@ function defineAckResponse () {
     if (!defined(obj.cursor)) throw new Error("cursor is required")
     var len = encodings.varint.encodingLength(obj.cursor)
     length += 1 + len
-    if (!defined(obj.head)) throw new Error("head is required")
-    var len = encodings.varint.encodingLength(obj.head)
+    if (!defined(obj.total)) throw new Error("total is required")
+    var len = encodings.varint.encodingLength(obj.total)
     length += 1 + len
     return length
   }
@@ -3288,9 +3241,9 @@ function defineAckResponse () {
     buf[offset++] = 8
     encodings.varint.encode(obj.cursor, buf, offset)
     offset += encodings.varint.encode.bytes
-    if (!defined(obj.head)) throw new Error("head is required")
+    if (!defined(obj.total)) throw new Error("total is required")
     buf[offset++] = 16
-    encodings.varint.encode(obj.head, buf, offset)
+    encodings.varint.encode(obj.total, buf, offset)
     offset += encodings.varint.encode.bytes
     encode.bytes = offset - oldOffset
     return buf
@@ -3303,7 +3256,7 @@ function defineAckResponse () {
     var oldOffset = offset
     var obj = {
       cursor: 0,
-      head: 0
+      total: 0
     }
     var found0 = false
     var found1 = false
@@ -3323,7 +3276,7 @@ function defineAckResponse () {
         found0 = true
         break
         case 2:
-        obj.head = encodings.varint.decode(buf, offset)
+        obj.total = encodings.varint.decode(buf, offset)
         offset += encodings.varint.decode.bytes
         found1 = true
         break
@@ -3368,6 +3321,11 @@ function defineOnResultsRequest () {
       var len = encodings.bool.encodingLength(obj.finished)
       length += 1 + len
     }
+    if (defined(obj.error)) {
+      var len = RemoteError.encodingLength(obj.error)
+      length += varint.encodingLength(len)
+      length += 1 + len
+    }
     return length
   }
 
@@ -3408,6 +3366,13 @@ function defineOnResultsRequest () {
       encodings.bool.encode(obj.finished, buf, offset)
       offset += encodings.bool.encode.bytes
     }
+    if (defined(obj.error)) {
+      buf[offset++] = 42
+      varint.encode(RemoteError.encodingLength(obj.error), buf, offset)
+      offset += varint.encode.bytes
+      RemoteError.encode(obj.error, buf, offset)
+      offset += RemoteError.encode.bytes
+    }
     encode.bytes = offset - oldOffset
     return buf
   }
@@ -3421,7 +3386,8 @@ function defineOnResultsRequest () {
       resourceId: 0,
       records: [],
       meta: {},
-      finished: true
+      finished: true,
+      error: null
     }
     var found0 = false
     while (true) {
@@ -3455,6 +3421,12 @@ function defineOnResultsRequest () {
         case 4:
         obj.finished = encodings.bool.decode(buf, offset)
         offset += encodings.bool.decode.bytes
+        break
+        case 5:
+        var len = varint.decode(buf, offset)
+        offset += varint.decode.bytes
+        obj.error = RemoteError.decode(buf, offset, offset + len)
+        offset += RemoteError.decode.bytes
         break
         default:
         offset = skip(prefix & 7, buf, offset)
@@ -3630,8 +3602,8 @@ function defineCommandRequest () {
 
   function encodingLength (obj) {
     var length = 0
-    if (!defined(obj.bot)) throw new Error("bot is required")
-    var len = encodings.string.encodingLength(obj.bot)
+    if (!defined(obj.resourceId)) throw new Error("resourceId is required")
+    var len = encodings.varint.encodingLength(obj.resourceId)
     length += 1 + len
     if (!defined(obj.command)) throw new Error("command is required")
     var len = encodings.string.encodingLength(obj.command)
@@ -3644,17 +3616,17 @@ function defineCommandRequest () {
         length += 1 + len
       }
     }
-    if (defined(obj.streaming)) {
-      var len = encodings.bool.encodingLength(obj.streaming)
-      length += 1 + len
-    }
-    if (defined(obj.stdout)) {
-      var len = encodings.varint.encodingLength(obj.stdout)
-      length += 1 + len
-    }
-    if (defined(obj.stderr)) {
-      var len = encodings.varint.encodingLength(obj.stderr)
-      length += 1 + len
+    if (defined(obj.env)) {
+      var tmp = Object.keys(obj.env)
+      for (var i = 0; i < tmp.length; i++) {
+        tmp[i] = {key: tmp[i], value: obj.env[tmp[i]]}
+      }
+      for (var i = 0; i < tmp.length; i++) {
+        if (!defined(tmp[i])) continue
+        var len = Map_string_string.encodingLength(tmp[i])
+        length += varint.encodingLength(len)
+        length += 1 + len
+      }
     }
     return length
   }
@@ -3663,10 +3635,10 @@ function defineCommandRequest () {
     if (!offset) offset = 0
     if (!buf) buf = Buffer.allocUnsafe(encodingLength(obj))
     var oldOffset = offset
-    if (!defined(obj.bot)) throw new Error("bot is required")
-    buf[offset++] = 10
-    encodings.string.encode(obj.bot, buf, offset)
-    offset += encodings.string.encode.bytes
+    if (!defined(obj.resourceId)) throw new Error("resourceId is required")
+    buf[offset++] = 8
+    encodings.varint.encode(obj.resourceId, buf, offset)
+    offset += encodings.varint.encode.bytes
     if (!defined(obj.command)) throw new Error("command is required")
     buf[offset++] = 18
     encodings.string.encode(obj.command, buf, offset)
@@ -3681,20 +3653,19 @@ function defineCommandRequest () {
         offset += Arg.encode.bytes
       }
     }
-    if (defined(obj.streaming)) {
-      buf[offset++] = 32
-      encodings.bool.encode(obj.streaming, buf, offset)
-      offset += encodings.bool.encode.bytes
-    }
-    if (defined(obj.stdout)) {
-      buf[offset++] = 40
-      encodings.varint.encode(obj.stdout, buf, offset)
-      offset += encodings.varint.encode.bytes
-    }
-    if (defined(obj.stderr)) {
-      buf[offset++] = 48
-      encodings.varint.encode(obj.stderr, buf, offset)
-      offset += encodings.varint.encode.bytes
+    if (defined(obj.env)) {
+      var tmp = Object.keys(obj.env)
+      for (var i = 0; i < tmp.length; i++) {
+        tmp[i] = {key: tmp[i], value: obj.env[tmp[i]]}
+      }
+      for (var i = 0; i < tmp.length; i++) {
+        if (!defined(tmp[i])) continue
+        buf[offset++] = 34
+        varint.encode(Map_string_string.encodingLength(tmp[i]), buf, offset)
+        offset += varint.encode.bytes
+        Map_string_string.encode(tmp[i], buf, offset)
+        offset += Map_string_string.encode.bytes
+      }
     }
     encode.bytes = offset - oldOffset
     return buf
@@ -3706,12 +3677,10 @@ function defineCommandRequest () {
     if (!(end <= buf.length && offset <= buf.length)) throw new Error("Decoded message is not valid")
     var oldOffset = offset
     var obj = {
-      bot: "",
+      resourceId: 0,
       command: "",
       args: [],
-      streaming: false,
-      stdout: 0,
-      stderr: 0
+      env: {}
     }
     var found0 = false
     var found1 = false
@@ -3726,8 +3695,8 @@ function defineCommandRequest () {
       var tag = prefix >> 3
       switch (tag) {
         case 1:
-        obj.bot = encodings.string.decode(buf, offset)
-        offset += encodings.string.decode.bytes
+        obj.resourceId = encodings.varint.decode(buf, offset)
+        offset += encodings.varint.decode.bytes
         found0 = true
         break
         case 2:
@@ -3742,16 +3711,11 @@ function defineCommandRequest () {
         offset += Arg.decode.bytes
         break
         case 4:
-        obj.streaming = encodings.bool.decode(buf, offset)
-        offset += encodings.bool.decode.bytes
-        break
-        case 5:
-        obj.stdout = encodings.varint.decode(buf, offset)
-        offset += encodings.varint.decode.bytes
-        break
-        case 6:
-        obj.stderr = encodings.varint.decode(buf, offset)
-        offset += encodings.varint.decode.bytes
+        var len = varint.decode(buf, offset)
+        offset += varint.decode.bytes
+        var tmp = Map_string_string.decode(buf, offset, offset + len)
+        obj.env[tmp.key] = tmp.value
+        offset += Map_string_string.decode.bytes
         break
         default:
         offset = skip(prefix & 7, buf, offset)
@@ -3771,20 +3735,13 @@ function defineCommandResponse () {
       var len = encodings.bytes.encodingLength(obj.value)
       length += 1 + len
     }
-    if (defined(obj.stdin)) {
-      var len = encodings.varint.encodingLength(obj.stdin)
-      length += 1 + len
-    }
     if (defined(obj.finished)) {
       var len = encodings.bool.encodingLength(obj.finished)
       length += 1 + len
     }
     if (defined(obj.error)) {
-      var len = encodings.string.encodingLength(obj.error)
-      length += 1 + len
-    }
-    if (defined(obj.code)) {
-      var len = encodings.varint.encodingLength(obj.code)
+      var len = RemoteError.encodingLength(obj.error)
+      length += varint.encodingLength(len)
       length += 1 + len
     }
     return length
@@ -3799,25 +3756,17 @@ function defineCommandResponse () {
       encodings.bytes.encode(obj.value, buf, offset)
       offset += encodings.bytes.encode.bytes
     }
-    if (defined(obj.stdin)) {
-      buf[offset++] = 16
-      encodings.varint.encode(obj.stdin, buf, offset)
-      offset += encodings.varint.encode.bytes
-    }
     if (defined(obj.finished)) {
-      buf[offset++] = 24
+      buf[offset++] = 16
       encodings.bool.encode(obj.finished, buf, offset)
       offset += encodings.bool.encode.bytes
     }
     if (defined(obj.error)) {
-      buf[offset++] = 34
-      encodings.string.encode(obj.error, buf, offset)
-      offset += encodings.string.encode.bytes
-    }
-    if (defined(obj.code)) {
-      buf[offset++] = 40
-      encodings.varint.encode(obj.code, buf, offset)
-      offset += encodings.varint.encode.bytes
+      buf[offset++] = 26
+      varint.encode(RemoteError.encodingLength(obj.error), buf, offset)
+      offset += varint.encode.bytes
+      RemoteError.encode(obj.error, buf, offset)
+      offset += RemoteError.encode.bytes
     }
     encode.bytes = offset - oldOffset
     return buf
@@ -3830,10 +3779,8 @@ function defineCommandResponse () {
     var oldOffset = offset
     var obj = {
       value: null,
-      stdin: 0,
       finished: false,
-      error: "",
-      code: 0
+      error: null
     }
     while (true) {
       if (end <= offset) {
@@ -3849,20 +3796,14 @@ function defineCommandResponse () {
         offset += encodings.bytes.decode.bytes
         break
         case 2:
-        obj.stdin = encodings.varint.decode(buf, offset)
-        offset += encodings.varint.decode.bytes
-        break
-        case 3:
         obj.finished = encodings.bool.decode(buf, offset)
         offset += encodings.bool.decode.bytes
         break
-        case 4:
-        obj.error = encodings.string.decode(buf, offset)
-        offset += encodings.string.decode.bytes
-        break
-        case 5:
-        obj.code = encodings.varint.decode(buf, offset)
-        offset += encodings.varint.decode.bytes
+        case 3:
+        var len = varint.decode(buf, offset)
+        offset += varint.decode.bytes
+        obj.error = RemoteError.decode(buf, offset, offset + len)
+        offset += RemoteError.decode.bytes
         break
         default:
         offset = skip(prefix & 7, buf, offset)
@@ -3881,6 +3822,9 @@ function defineStreamRequest () {
     if (!defined(obj.resourceId)) throw new Error("resourceId is required")
     var len = encodings.varint.encodingLength(obj.resourceId)
     length += 1 + len
+    if (!defined(obj.streamId)) throw new Error("streamId is required")
+    var len = encodings.varint.encodingLength(obj.streamId)
+    length += 1 + len
     if (defined(obj.data)) {
       var len = encodings.bytes.encodingLength(obj.data)
       length += 1 + len
@@ -3890,11 +3834,8 @@ function defineStreamRequest () {
       length += 1 + len
     }
     if (defined(obj.error)) {
-      var len = encodings.string.encodingLength(obj.error)
-      length += 1 + len
-    }
-    if (defined(obj.code)) {
-      var len = encodings.varint.encodingLength(obj.code)
+      var len = RemoteError.encodingLength(obj.error)
+      length += varint.encodingLength(len)
       length += 1 + len
     }
     return length
@@ -3908,25 +3849,26 @@ function defineStreamRequest () {
     buf[offset++] = 8
     encodings.varint.encode(obj.resourceId, buf, offset)
     offset += encodings.varint.encode.bytes
+    if (!defined(obj.streamId)) throw new Error("streamId is required")
+    buf[offset++] = 16
+    encodings.varint.encode(obj.streamId, buf, offset)
+    offset += encodings.varint.encode.bytes
     if (defined(obj.data)) {
-      buf[offset++] = 18
+      buf[offset++] = 26
       encodings.bytes.encode(obj.data, buf, offset)
       offset += encodings.bytes.encode.bytes
     }
     if (defined(obj.finished)) {
-      buf[offset++] = 24
+      buf[offset++] = 32
       encodings.bool.encode(obj.finished, buf, offset)
       offset += encodings.bool.encode.bytes
     }
     if (defined(obj.error)) {
-      buf[offset++] = 34
-      encodings.string.encode(obj.error, buf, offset)
-      offset += encodings.string.encode.bytes
-    }
-    if (defined(obj.code)) {
-      buf[offset++] = 40
-      encodings.varint.encode(obj.code, buf, offset)
-      offset += encodings.varint.encode.bytes
+      buf[offset++] = 42
+      varint.encode(RemoteError.encodingLength(obj.error), buf, offset)
+      offset += varint.encode.bytes
+      RemoteError.encode(obj.error, buf, offset)
+      offset += RemoteError.encode.bytes
     }
     encode.bytes = offset - oldOffset
     return buf
@@ -3939,15 +3881,16 @@ function defineStreamRequest () {
     var oldOffset = offset
     var obj = {
       resourceId: 0,
+      streamId: 0,
       data: null,
       finished: false,
-      error: "",
-      code: 0
+      error: null
     }
     var found0 = false
+    var found1 = false
     while (true) {
       if (end <= offset) {
-        if (!found0) throw new Error("Decoded message is not valid")
+        if (!found0 || !found1) throw new Error("Decoded message is not valid")
         decode.bytes = offset - oldOffset
         return obj
       }
@@ -3961,20 +3904,23 @@ function defineStreamRequest () {
         found0 = true
         break
         case 2:
+        obj.streamId = encodings.varint.decode(buf, offset)
+        offset += encodings.varint.decode.bytes
+        found1 = true
+        break
+        case 3:
         obj.data = encodings.bytes.decode(buf, offset)
         offset += encodings.bytes.decode.bytes
         break
-        case 3:
+        case 4:
         obj.finished = encodings.bool.decode(buf, offset)
         offset += encodings.bool.decode.bytes
         break
-        case 4:
-        obj.error = encodings.string.decode(buf, offset)
-        offset += encodings.string.decode.bytes
-        break
         case 5:
-        obj.code = encodings.varint.decode(buf, offset)
-        offset += encodings.varint.decode.bytes
+        var len = varint.decode(buf, offset)
+        offset += varint.decode.bytes
+        obj.error = RemoteError.decode(buf, offset, offset + len)
+        offset += RemoteError.decode.bytes
         break
         default:
         offset = skip(prefix & 7, buf, offset)
@@ -4383,6 +4329,76 @@ function defineMap_string_Type () {
         offset += varint.decode.bytes
         obj.value = Type.decode(buf, offset, offset + len)
         offset += Type.decode.bytes
+        break
+        default:
+        offset = skip(prefix & 7, buf, offset)
+      }
+    }
+  }
+}
+
+function defineMap_string_string () {
+  Map_string_string.encodingLength = encodingLength
+  Map_string_string.encode = encode
+  Map_string_string.decode = decode
+
+  function encodingLength (obj) {
+    var length = 0
+    if (!defined(obj.key)) throw new Error("key is required")
+    var len = encodings.string.encodingLength(obj.key)
+    length += 1 + len
+    if (defined(obj.value)) {
+      var len = encodings.string.encodingLength(obj.value)
+      length += 1 + len
+    }
+    return length
+  }
+
+  function encode (obj, buf, offset) {
+    if (!offset) offset = 0
+    if (!buf) buf = Buffer.allocUnsafe(encodingLength(obj))
+    var oldOffset = offset
+    if (!defined(obj.key)) throw new Error("key is required")
+    buf[offset++] = 10
+    encodings.string.encode(obj.key, buf, offset)
+    offset += encodings.string.encode.bytes
+    if (defined(obj.value)) {
+      buf[offset++] = 18
+      encodings.string.encode(obj.value, buf, offset)
+      offset += encodings.string.encode.bytes
+    }
+    encode.bytes = offset - oldOffset
+    return buf
+  }
+
+  function decode (buf, offset, end) {
+    if (!offset) offset = 0
+    if (!end) end = buf.length
+    if (!(end <= buf.length && offset <= buf.length)) throw new Error("Decoded message is not valid")
+    var oldOffset = offset
+    var obj = {
+      key: "",
+      value: ""
+    }
+    var found0 = false
+    while (true) {
+      if (end <= offset) {
+        if (!found0) throw new Error("Decoded message is not valid")
+        decode.bytes = offset - oldOffset
+        return obj
+      }
+      var prefix = varint.decode(buf, offset)
+      offset += varint.decode.bytes
+      var tag = prefix >> 3
+      switch (tag) {
+        case 1:
+        obj.key = encodings.string.decode(buf, offset)
+        offset += encodings.string.decode.bytes
+        found0 = true
+        break
+        case 2:
+        obj.value = encodings.string.decode(buf, offset)
+        offset += encodings.string.decode.bytes
         break
         default:
         offset = skip(prefix & 7, buf, offset)

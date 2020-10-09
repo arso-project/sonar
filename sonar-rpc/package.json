@@ -11,7 +11,10 @@
   },
   "license": "GPL-3.0",
   "devDependencies": {
+    "call-me-maybe": "^1.0.1",
+    "freemap": "^1.0.1",
     "hrpc": "^2.2.0",
+    "minimist": "^1.2.5",
     "standard": "^14.3.4"
   },
   "dependencies": {

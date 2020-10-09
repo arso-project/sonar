@@ -18,8 +18,13 @@ message Link {
 }
 
 message Arg {
-  required string name = 1;
+  optional string name = 1;
   required bytes value = 2;
+}
+
+message RemoteError {
+  optional string reason = 1;
+  optional uint32 code = 2;
 }
 
 //! Specs for Info requests
@@ -29,7 +34,7 @@ message CommandSpec {
   repeated ArgSpec args = 2;
   optional bool streaming = 3;
   optional bool replying = 4;
-  repeated StreamSpec streams = 5;
+  // repeated StreamSpec streams = 5;
 }
 
 message QuerySpec {
@@ -44,26 +49,27 @@ message ArgSpec {
   optional string description = 4;
 }
 
-message StreamSpec {
-  required string name = 1;
-  required StreamKind kind = 2;
-  optional string encoding = 3;
-}
+// message StreamSpec {
+//   required string name = 1;
+//   required StreamKind kind = 2;
+//   optional string encoding = 3;
+// }
 
-enum StreamKind {
-  Readable = 1;
-  Writable = 2;
-  Duplex = 3;
-}
+// enum StreamKind {
+//   Readable = 1;
+//   Writable = 2;
+//   Duplex = 3;
+// }
 
 message Record {
   // these are stored fields.
   required string id = 1;
   required string type = 2;
   optional bool deleted = 3 [default = false];
-  optional Json value = 4;
+  optional bytes value = 4;
   optional uint32 timestamp = 5;
-  repeated Link links = 7;
+  // repeated Link links = 7;
+  repeated string links = 7;
 
   // these are fields only present in the wire format.
   optional bytes feed = 13;
@@ -84,17 +90,17 @@ message Feed {
 // Collection service
 
 message OpenRequest {
-  optional bytes key = 1;
-  optional string name = 2;
-  optional string token = 3;
-  optional string cacheid = 4;
+  required uint32 id = 1;
+  optional bytes key = 2;
+  optional string name = 3;
+  optional string token = 4;
+  optional string cacheid = 5;
 }
 
 message OpenResponse {
-  required uint32 id = 1;
-  required bytes key = 2;
-  optional string name = 3;
-  required uint64 length = 4;
+  required bytes key = 1;
+  optional string name = 2;
+  optional uint64 total = 3;
 }
 
 message InfoRequest {
@@ -160,10 +166,10 @@ message GetResponse {
 
 message QueryRequest {
   required uint32 id = 1;
-  required string name = 2;
-  optional bytes args = 3;
-  optional bool stream = 4 [default = false];
-  optional uint32 resourceId = 5;
+  optional uint32 resourceId = 2;
+  required string name = 3;
+  optional bytes args = 4;
+  optional bool stream = 5 [default = false];
   optional bool live = 6 [default = false];
 }
 
@@ -192,7 +198,7 @@ message SubscribeRequest {
 
   // Set to have Sonar track the state for this subscription.
   // Tracked subscriptions always start at 0.
-  optional bool persistent = 3;
+  required bool persist = 3 [default = false];
   optional string name = 4;
 
   // Set if you track the state of this subscription yourself or do not
@@ -204,7 +210,7 @@ message SubscribeRequest {
 
 message SubscribeResponse {
   required uint64 cursor = 1;
-  required uint64 head = 2;
+  required uint64 total = 2;
 }
 
 message PullRequest {
@@ -214,8 +220,8 @@ message PullRequest {
 message PullResponse {
   repeated Record messages = 1;
   required uint64 cursor = 2;
-  optional bool finished = 3;
-  optional uint64 total = 4;
+  required bool finished = 3;
+  required uint64 total = 4;
 }
 
 message AckRequest {
@@ -225,22 +231,26 @@ message AckRequest {
 
 message AckResponse {
   required uint64 cursor = 1;
-  required uint64 head = 2;
+  required uint64 total = 2;
 }
 
+// New results for queries.
 message OnResultsRequest {
   required uint32 resourceId = 1;
   repeated Record records = 2;
   map<string, bytes> meta = 3;
   optional bool finished = 4 [default = true];
+  optional RemoteError error = 5;
 }
 
+// Signal that a subscription has updates.
 message OnUpdateRequest {
   required uint32 id = 1;
   required uint32 resourceId = 2;
   required uint64 head = 3;
 }
 
+// Wait for views to be synced (pending operations are complete).
 message SyncRequest {
   required uint32 id = 1;
   repeated string views = 2;
@@ -283,29 +293,33 @@ service Commands {
 }
 
 message CommandRequest {
-  required string bot = 1;
+  required uint32 resourceId = 1;
   required string command = 2;
   repeated Arg args = 3;
-  optional bool streaming = 4 [default = false];
-  optional uint32 stdout = 5;
-  optional uint32 stderr = 6;
+  map<string,string> env = 4;
+  // Resource ids for streams.
+  // optional uint32 stdout = 4;
+  // optional uint32 stderr = 5;
+
+  // optional bool streaming = 3 [default = false];
+  // optional string collection = 5;
+  // Resource ids for streams.
+  // required string bot = 1;
 }
 
 message CommandResponse {
   optional bytes value = 1;
-  optional uint32 stdin = 2;
-  optional bool finished = 3 [default = false];
-  optional string error = 4;
-  optional uint32 code = 5;
+  optional bool finished = 2 [default = false];
+  optional RemoteError error = 3;
 }
 
 message StreamRequest {
   required uint32 resourceId = 1;
-  optional bytes data = 2;
-  optional bool finished = 3 [default = false];
+  required uint32 streamId = 2;
+  optional bytes data = 3;
+  optional bool finished = 4 [default = false];
   // Those may only be set when finished = true.
-  optional string error = 4;
-  optional uint32 code = 5;
+  optional RemoteError error = 5;
 }
 
 message StatusResponse {
