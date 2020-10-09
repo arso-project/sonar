@@ -125,6 +125,10 @@ module.exports = class Collection extends Nanoresource {
     return this.db.rootKey
   }
 
+  get length () {
+    return this.db.scope.indexer.length || 0
+  }
+
   _open (cb) {
     cb = once(cb)
     // db.open also calls scope.open.

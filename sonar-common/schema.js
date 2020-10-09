@@ -121,7 +121,7 @@ class Record extends Node {
     // Maybe we also want to support deriving types on first use? Or allow to deal
     // with records with an unknown type in a limited fashion.
     if (!schema.getType(record.type)) {
-      throw new Error(`Cannot upgrade record: Unknown type "${record.type}"`)
+      throw new Error(`Cannot upcast record: Unknown type "${record.type}"`)
     }
     record.type = schema.resolveTypeAddress(record.type)
 
