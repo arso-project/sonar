@@ -7,7 +7,7 @@
   "scripts": {
     "test": "tape */test/*.js",
     "start": "node sonar start",
-    "dev": "node sonar start --dev",
+    "dev": "node sonar start --dev --disable-authentication",
     "rebuild": "run-p build:*",
     "build:apidocs": "cd sonar-client; npm run doc:html",
     "build:ui": "cd sonar-ui; npm run build",
