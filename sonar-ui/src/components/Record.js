@@ -28,7 +28,9 @@ import {
 // import './Record.css'
 
 export function findWidget (field) {
-  const { fieldType: type, format } = field
+  console.log('FIELD: ', field)
+  const { fieldType: type, format, address } = field
+  if (type === 'string' && address === 'sonar/resource@0#contentUrl') return LinkViewer
   if (type === 'string' && format === 'date-time') return DateViewer
   if (type === 'string' && format === 'uri') return LinkViewer
   if (type === 'string' || type === 'integer' || type === 'number') return TextViewer
@@ -37,7 +39,8 @@ export function findWidget (field) {
   if (type === 'object') return ObjectViewer
   return () => <em>No viewer available for {type}</em>
 }
-
+/* collection.schema,
+oder über einen Record  */
 function getDisplays () {
   return [
     { id: 'fields', name: 'Fields', component: RecordFieldDisplay },
@@ -170,7 +173,6 @@ export function RecordDrawerByID (props) {
   const { id } = props
   const data = useRecords(id)
   const { records, types } = data
-  console.log('Records: ', records, 'TYPES: ', types)
   return (
     <>
       <Button w='14rem' pl='3' leftIcon='view' justifyContent='left' variantColor='teal' size='xs' ref={btnRef} onClick={onOpen}>
@@ -253,8 +255,11 @@ function TextViewer (props) {
 
 function LinkViewer (props) {
   const { value } = props
-  if (typeof value === 'undefined') return null
-  return <a href={String(value)}>{String(value)}</a>
+  const { collection } = useCollection()
+  if (typeof value === 'undefined' || !collection) return null
+  const httpLink = collection.fs.resolveURL(String(value))
+  console.log('LINK',httpLink)
+  return <a href={httpLink}>{httpLink}</a>
 }
 
 function BooleanViewer (props) {
@@ -329,7 +334,7 @@ function formatSource (source) {
 // TODO: This is hacky and should not be here.
 async function fetchFileUrls (records) {
   for (const record of records) {
-    record.value.fileUrl = await client.resolveURL(record)
+    record.value.fileUrl = client.resolveURL(record)
   }
   return records
 }
