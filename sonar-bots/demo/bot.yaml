@@ -27,8 +27,8 @@ config:
 types:
   - namespace: demobot
     name: message
-    version: 1
+    version: 2
     fields:
-      - name: message
+      message:
         type: string
         title: Message

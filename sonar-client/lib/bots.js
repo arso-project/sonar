@@ -106,6 +106,7 @@ class Bots {
           await this.reply({ requestId, result })
         }
       } catch (err) {
+        console.error('bot produced error', err)
         await this.reply({
           requestId: requestId,
           error: err.message
@@ -133,6 +134,7 @@ class Bots {
   }
 
   async register (name, spec, handlers) {
+    if (typeof spec !== 'object') throw new Error('Spec must be an object')
     spec.name = name
     const { config, sessionId } = await this.fetch('/announce', {
       method: 'POST',
@@ -152,7 +154,6 @@ class Bots {
   //   const config = await this.client.fetch('/bot/configure/' + name, config)
   // }
 }
-
 
 class Bot {
   constructor ({ spec, config, handlers, client }) {
@@ -181,7 +182,6 @@ class Bot {
     for (const typeSpec of this.spec.types) {
       if (!collection.schema.hasType(typeSpec)) {
         await collection.putType(typeSpec)
-      } else {
       }
     }
   }
@@ -197,7 +197,7 @@ class Bot {
     const session = this.sessions.get(collection)
     if (!session) throw new Error('Bot did not join collection')
     if (!session.oncommand) throw new Error('Bot cannot handle commands')
-    await session.oncommand(command, args)
+    return await session.oncommand(command, args)
   }
 }
 
