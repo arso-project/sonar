@@ -53,7 +53,7 @@ export default function SearchPage (props) {
 export function SearchInput (props) {
   const [search, setSearch] = useGlobalState('search', '')
   const [error, setError] = useState(null)
-  const [setResults] = useGlobalState('results', null)
+  const [results, setResults] = useGlobalState('results', null)
   return (
     <>
       <Input
