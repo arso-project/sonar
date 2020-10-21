@@ -1,7 +1,11 @@
 const argv = require('yargs-parser')(process.argv)
+const fs = require('fs')
 const p = require('path')
 const HtmlWebpackPlugin = require('html-webpack-plugin')
 const HtmlWebpackInlineSourcePlugin = require('html-webpack-inline-source-plugin')
+const debug = require('debug')('sonar:ui')
+
+const INDEX_HTML_PATH = 'src/index.html'
 
 const opts = {
   // A workdir is the main entrypoint. Entry file is expected at src/index.js.
@@ -19,12 +23,27 @@ const opts = {
 module.exports = createConfig(opts)
 
 function createConfig (opts) {
+  debug('create webpack config', opts)
   const target = opts.dev ? 'debug' : 'dist'
   const output = p.join(opts.workdir, 'build', target)
 
   const entry = [
     p.join(opts.workdir, './src/index.js')
   ]
+
+  // Create an index html file.
+  const htmlWebpackOpts = {
+    title: 'Sonar',
+    meta: { viewport: 'width=device-width, initial-scale=1, shrink-to-fit=no' },
+    inlineSource: '.(js|css)$' // has only an effect with HtmlWebpackInlineSourcePlugin
+  }
+  const indexHtmlPath = p.resolve(p.join(opts.workdir, INDEX_HTML_PATH))
+  try {
+    fs.statSync(indexHtmlPath)
+    htmlWebpackOpts.template = indexHtmlPath
+  } catch (err) {}
+  console.log(htmlWebpackOpts)
+  const htmlWebpackPlugin = new HtmlWebpackPlugin(htmlWebpackOpts)
 
   let config = {
     entry,
@@ -76,11 +95,7 @@ function createConfig (opts) {
     },
     plugins: [
       // Create an index.html file
-      new HtmlWebpackPlugin({
-        title: 'Sonar',
-        meta: { viewport: 'width=device-width, initial-scale=1, shrink-to-fit=no' },
-        inlineSource: '.(js|css)$' // has only an effect with HtmlWebpackInlineSourcePlugin
-      })
+      htmlWebpackPlugin
     ]
   }
 
