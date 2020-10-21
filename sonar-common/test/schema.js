@@ -3,9 +3,7 @@ const table = require('text-table')
 const Schema = require('../schema')
 
 tape('basics', t => {
-  const schema = new Schema()
-
-  schema.setDefaultNamespace('sonar')
+  const schema = new Schema({ defaultNamespace: 'sonar' })
 
   schema.addType({
     name: 'entity',
@@ -61,7 +59,7 @@ tape('basics', t => {
     }
   })
 
-  schema.build(true)
+  // schema.build(true)
 
   const record = schema.Record({
     id: 'avideo',

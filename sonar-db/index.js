@@ -35,7 +35,7 @@ module.exports = class Database extends Nanoresource {
 
     const schemaDb = sub(opts.db, 'schema')
     this.schema.persist = cb => {
-      const spec = this.schema.toJSON()
+      const spec = this.schema.serializeSchema()
       schemaDb.put('spec', JSON.stringify(spec), cb)
       this.emit('schema-update')
     }
@@ -45,7 +45,7 @@ module.exports = class Database extends Nanoresource {
         if (err && !err.notFound) return cb(err)
         if (!err) {
           const spec = JSON.parse(str)
-          this.schema.fromJSON(spec)
+          this.schema.addTypes(spec)
         }
         cb()
       })
@@ -101,7 +101,7 @@ module.exports = class Database extends Nanoresource {
           if (record.hasType(TYPE.TYPE)) {
             // console.log(self.name, 'ADD TYPE', record.id)
             try {
-              self.schema.addTypeFromJsonSchema(record.value)
+              self.schema.addType(record.value)
               schemaUpdated = true
             } catch (err) {
               // TODO: Think about error handling here. This would likely crash the server which is too much.

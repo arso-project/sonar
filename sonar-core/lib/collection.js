@@ -197,7 +197,7 @@ module.exports = class Collection extends Nanoresource {
   }
 
   serializeSchema () {
-    return this.db.schema.toJSON()
+    return this.db.schema.serializeSchema()
   }
 
   putFeed (key, info, cb) {

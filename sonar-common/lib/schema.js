@@ -1,21 +1,7 @@
 const { MapSet } = require('./util')
 const { parseAddress, encodeAddress } = require('./address')
 
-const {
-  RECORD,
-  TYPE,
-  FIELD
-} = require('./symbols')
-
-const {
-  Entity,
-  // MissingEntity,
-  Record,
-  // FieldValue,
-  FieldValueList,
-  // MissingFieldValue
-} = require('./records')
-const Store = require('./store')
+// const Store = require('./store')
 const Type = require('./type')
 const Field = require('./field')
 
@@ -25,38 +11,6 @@ module.exports = class Schema {
     this._fields = new Map()
     this._typeVersions = new MapSet()
     this._defaultNamespace = opts.defaultNamespace
-
-    // TODO: Move out of schema
-    if (opts.recordCache !== false) {
-      this._recordCache = new Store(this)
-    }
-  }
-
-  Entity (records) {
-    return new Entity(this, records)
-  }
-
-  Record (spec) {
-    if (spec[RECORD]) return spec[RECORD]
-    const record = new Record(this, spec)
-    if (this._recordCache) this._recordCache.add(record)
-    return record
-  }
-
-  Type (spec) {
-    if (spec[TYPE]) return spec[TYPE]
-    // Hacky check if it's a JSON schema or sonar spec.
-    if (spec.properties) return Type.fromJSONSchema(this, spec)
-    return new Type(this, spec)
-  }
-
-  Field (spec) {
-    if (spec[FIELD]) return spec[FIELD]
-    return new Field(this, spec)
-  }
-
-  FieldValueList (values) {
-    return new FieldValueList(this, values)
   }
 
   setDefaultNamespace (namespace) {
@@ -90,20 +44,27 @@ module.exports = class Schema {
   }
 
   addType (spec) {
-    if (this._types.has(spec.address)) {
+    if (spec.address && this._types.has(spec.address)) {
       return this._types.get(spec.address)
     }
-    const type = this.Type(spec)
+    // TODO: Remove
+    if (Type.isJsonSchema(spec)) {
+      spec = Type.jsonSchemaToSpec(spec)
+    }
+
+    const type = new Type(this, spec)
+
     // TODO: Make sure types are immutable.
     this._types.set(type.address, type)
     this._typeVersions.add(type.namespace + '/' + type.name, type.version)
     return type
   }
 
-  addTypeFromJsonSchema (spec) {
-    spec = Type.jsonSchemaToSpec(spec)
-    return this.addType(spec)
-  }
+  // TODO: Remove
+  // _addTypeFromJsonSchema (spec) {
+  //   spec = Type.jsonSchemaToSpec(spec)
+  //   return this.addType(spec)
+  // }
 
   getType (address) {
     return this._types.get(address) || this._types.get(this.resolveTypeAddress(address))
@@ -115,16 +76,6 @@ module.exports = class Schema {
 
   getTypes () {
     return Array.from(this._types.values())
-  }
-
-  getRecord (address) {
-    if (!this._recordCache) throw new Error('Cannot get records: Record cache disabled')
-    return this._recordCache.getRecord(address)
-  }
-
-  getEntity (id) {
-    if (!this._recordCache) throw new Error('Cannot get records: Record cache disabled')
-    return this._recordCache.getEntity(id)
   }
 
   // This is called by the Type constructor.
@@ -139,7 +90,7 @@ module.exports = class Schema {
     }
     spec.address = address
 
-    const field = this.Field(spec)
+    const field = new Field(this, spec)
     this._fields.set(field.address, field)
     return field
   }
@@ -156,11 +107,6 @@ module.exports = class Schema {
     return this._fields.get(address) || this._fields.get(this.resolveFieldAddress(address))
   }
 
-  // fields (record) {
-  //   record = this.Record(record)
-  //   return record.fields()
-  // }
-
   build (strict = true) {
     for (const field of this._fields.values()) {
       field._build(strict)
@@ -175,8 +121,9 @@ module.exports = class Schema {
     return spec
   }
 
-  fromJSON (spec) {
-    for (const type of Object.values(spec)) {
+  addTypes (spec) {
+    const types = Array.isArray(spec) ? spec : Object.values(spec)
+    for (const type of types) {
       this.addType(type)
     }
   }

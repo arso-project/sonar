@@ -7,9 +7,13 @@ class Type {
     return jsonSchemaToSpec(spec)
   }
 
-  static fromJSONSchema (schema, spec) {
-    return new Type(schema, jsonSchemaToSpec(spec))
+  static isJsonSchema (spec) {
+    return isJsonSchema(spec)
   }
+
+  // static fromJSONSchema (schema, spec) {
+  //   return new Type(schema, jsonSchemaToSpec(spec))
+  // }
 
   constructor (schema, spec) {
     bindSymbol(this, SC, schema)
@@ -165,4 +169,9 @@ function jsonSchemaToSpec (spec) {
     spec.sonar = undefined
   }
   return spec
+}
+
+function isJsonSchema (spec) {
+  if (spec.properties) return true
+  return false
 }
