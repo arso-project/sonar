@@ -126,7 +126,18 @@ class Collection {
       params: opts
     })
 
-    records = records.map(record => this.schema.Record(record))
+    for (const key of records.keys()) {
+      const record = records[key]
+      try {
+        records[key] = this.schema.Record(record)
+      } catch (err) {
+        // TODO: Where should these errors go
+        console.error('Error when upcasting record', err)
+        console.error('Record: ', record)
+        records[key] = null
+      }
+    }
+    records = records.filter(r => r)
 
     // if (this._cacheid) {
     //   return this._cache.batch(records)
