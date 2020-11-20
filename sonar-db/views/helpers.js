@@ -75,7 +75,7 @@ function collectOps (db, record, mapFn, cb) {
 }
 
 function collectLinkedRecords (db, record, cb) {
-  if (!record.links.length) return cb(null, [])
+  if (!record.links || !record.links.length) return cb(null, [])
   const records = []
   let pending = record.links.length
   record.links.forEach(link => {

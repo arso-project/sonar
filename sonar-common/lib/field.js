@@ -27,7 +27,7 @@ class Field {
   }
 
   get title () {
-    return this._spec.title
+    return this._spec.title || this._spec.name
   }
 
   get description () {

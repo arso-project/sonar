@@ -62,6 +62,7 @@ module.exports = class Database extends Nanoresource {
     this.scope.registerFeedType(FEED_TYPE.ROOT, {
       onload: this._onload.bind(this)
     })
+    this.scope.handlers.onload = this._onload.bind(this)
 
     this.scope.use('kv', createKvView(
       sub(opts.db, 'kv')
