@@ -5,6 +5,7 @@ const createDeviceHandler = require('../handlers/device-handler')
 const createCollectionHandler = require('../handlers/collection-handler')
 const createCommandStreamHandler = require('../handlers/command-handler')
 const createAuthHandler = require('../handlers/auth')
+const createBotsRouter = require('../handlers/bots')
 
 // const SYNC_TIMEOUT = 10000
 
@@ -17,11 +18,16 @@ module.exports = function apiRoutes (api) {
   const commandHandler = createCommandStreamHandler(api.collections)
   const authHandler = createAuthHandler(api.auth)
 
+  const botRouter = createBotsRouter(api.collections)
+
   router.use(authHandler.authMiddleware())
 
   // Login
   router.post('/login', authHandler.login)
   router.post('/create-access-code', authHandler.createAccessCode)
+
+  // Bots
+  router.use('/bot', botRouter)
 
   // Info
   router.get('/info', deviceHandlers.info)

@@ -1,0 +1,34 @@
+name: download
+
+info:
+  description: Download resources from HTTP url
+  version: 1
+
+commands:
+  - name: download
+    help: Download a file from a HTTP url
+    args:
+      - name: url
+        type: string
+        title: URL to dowload
+  - name: hello
+    help: Create a dummy record
+    args:
+      - name: message
+        type: string
+        title: Message
+
+config:
+  userAgent:
+    type: string
+    title: user agent string to use
+    defaultValue: sonar-download-bot/1.0
+
+types:
+  - namespace: demobot
+    name: message
+    version: 2
+    fields:
+      message:
+        type: string
+        title: Message

@@ -1,7 +1,7 @@
 const makeClient = require('../client')
 // const chalk = require('chalk')
 // const pretty = require('pretty-bytes')
-// const table = require('text-table')
+const table = require('text-table')
 // const date = require('date-fns')
 const collect = require('stream-collector')
 const yargs = require('yargs')
@@ -18,6 +18,11 @@ exports.builder = function (yargs) {
         type: {
           alias: 't',
           describe: 'type'
+        },
+        type: {
+          alias: 'j',
+          boolean: true,
+          describe: 'output as json'
         }
       },
       handler: get
@@ -70,7 +75,18 @@ async function get (argv) {
   const client = makeClient(argv)
   const { id, type } = argv
   const records = await client.get({ id, type })
-  console.log(JSON.stringify(records))
+  if (argv.json) return console.log(JSON.stringify(records))
+  const rows = []
+  for (const record of records) {
+    const type = record.getType()
+    rows.push(['id', record.id])
+    rows.push(['type', type.address])
+    for (const fieldValue of record.fields()) {
+      rows.push(['  ', fieldValue.field.name, JSON.stringify(fieldValue.value)])
+    }
+    rows.push(['--', '--'])
+  }
+  console.log(table(rows))
 }
 
 async function put (argv) {
