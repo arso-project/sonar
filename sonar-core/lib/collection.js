@@ -1,17 +1,22 @@
 const pretty = require('pretty-hash')
 const { Readable } = require('streamx')
 const datEncoding = require('dat-encoding')
+const p = require('path')
 const sub = require('subleveldown')
 const debug = require('debug')('sonar-core:collection')
 const hcrypto = require('hypercore-crypto')
 const Nanoresource = require('nanoresource/emitter')
 
-const TYPE_SPECS = require('./schemas.js')
-
-const Database = require('@arso-project/sonar-db')
+const Database = require('./db')
 const Fs = require('./fs')
+const { loadTypesFromDir, once } = require('./util')
 
 const searchView = require('../views/search')
+
+function getDefaultTypes (cb) {
+  const typeSpecs = loadTypesFromDir(p.join(__dirname, '../types'))
+  cb(null, typeSpecs)
+}
 
 module.exports = class Collection extends Nanoresource {
   constructor (key, opts) {
@@ -161,7 +166,21 @@ module.exports = class Collection extends Nanoresource {
   }
 
   init (cb) {
-    this.db.putType(TYPE_SPECS.RESOURCE, cb)
+    cb = once(cb)
+
+    // Add default types to collection.
+    getDefaultTypes((err, typeSpecs) => {
+      if (err) return cb(err)
+      let pending = 0
+      for (const typeSpec of typeSpecs) {
+        ++pending
+        this.db.putType(typeSpec, done)
+      }
+      function done (err) {
+        if (err) return cb(err)
+        if (--pending === 0) cb()
+      }
+    })
   }
 
   replicate (isInitator, opts) {
@@ -298,13 +317,5 @@ module.exports = class Collection extends Nanoresource {
   reindex (views, cb) {
     if (!cb) { cb = views; views = null }
     this.db.reindex(views, cb)
-  }
-}
-
-function once (fn) {
-  let called = false
-  return (...args) => {
-    if (!called) fn(...args)
-    called = true
   }
 }

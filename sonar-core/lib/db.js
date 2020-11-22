@@ -1,13 +1,15 @@
 const sub = require('subleveldown')
 const Nanoresource = require('nanoresource/emitter')
-
-const { uuid } = require('./lib/util')
-const createKvView = require('./views/kv')
-const createRecordsView = require('./views/records')
-const createIndexView = require('./views/indexes')
-const createHistoryView = require('./views/history')
 const Schema = require('@arso-project/sonar-common/schema')
-const Record = require('./lib/record')
+const p = require('path')
+
+const Record = require('./record')
+const { uuid, once, loadTypesFromDir } = require('./util')
+
+const createKvView = require('../views/kv')
+const createRecordsView = require('../views/records')
+const createIndexView = require('../views/indexes')
+const createHistoryView = require('../views/history')
 
 const FEED_TYPE = {
   DATA: 'sonar-data',
@@ -23,7 +25,7 @@ const TYPE = {
   TYPE: 'sonar/type'
 }
 
-const TYPE_SPECS = require('./lib/schemas')
+// const TYPE_SPECS = require('./lib/schemas')
 
 module.exports = class Database extends Nanoresource {
   constructor (opts) {
@@ -51,8 +53,9 @@ module.exports = class Database extends Nanoresource {
       })
     }
 
-    // Add predefined types to schema.
-    for (const spec of Object.values(TYPE_SPECS)) {
+    const typeSpecs = loadTypesFromDir(p.join(__dirname, '../types'))
+    for (const spec of typeSpecs) {
+      console.log('SPEC', spec)
       this.schema.addType(spec)
     }
 
@@ -322,7 +325,7 @@ module.exports = class Database extends Nanoresource {
         const record = {
           type: TYPE.TYPE,
           id: type.address,
-          value: type.toJSONSchema()
+          value: type.toJSON()
         }
         const opts = { root: true }
         this.put(record, opts, cb)
@@ -380,13 +383,5 @@ module.exports = class Database extends Nanoresource {
   reindex (views, cb) {
     if (!cb) { cb = views; views = null }
     this.scope.kappa.reset(views, cb)
-  }
-}
-
-function once (fn) {
-  let called = false
-  return (...args) => {
-    if (!called) fn(...args)
-    called = true
   }
 }

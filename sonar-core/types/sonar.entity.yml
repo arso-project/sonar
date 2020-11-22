@@ -1,0 +1,7 @@
+namespace: sonar
+name: entity
+title: Entity
+fields:
+  label:
+    type: string
+    name: Label
