@@ -55,7 +55,6 @@ module.exports = class Database extends Nanoresource {
 
     const typeSpecs = loadTypesFromDir(p.join(__dirname, '../types'))
     for (const spec of typeSpecs) {
-      console.log('SPEC', spec)
       this.schema.addType(spec)
     }
 

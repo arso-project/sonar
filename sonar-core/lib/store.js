@@ -12,7 +12,7 @@ const Corestore = require('corestore')
 const SwarmNetworker = require('corestore-swarm-networking')
 const Nanoresource = require('nanoresource/emitter')
 
-const Scopes = require('kappa-scopes')
+const Scopes = require('./kappa')
 const Catalog = require('@arso-project/sonar-tantivy')
 const Relations = require('@arso-project/sonar-view-relations')
 

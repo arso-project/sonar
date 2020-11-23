@@ -4,7 +4,7 @@ const {
   mapRecordsIntoOps,
   clearLevelDb
 } = require('./helpers')
-const Live = require('level-live')
+const Live = require('@frando/level-live')
 // const debug = require('debug')('db')
 // const collect = require('stream-collector')
 
