@@ -253,52 +253,6 @@ module.exports = class Kappa extends EventEmitter {
     // return cb.promise
   }
 
-  // query (name, args, opts = {}, cb) {
-  //   if (typeof opts === 'function') {
-  //     cb = opts
-  //     opts = {}
-  //   }
-
-  //   if (cb && opts.live) {
-  //     return cb(new Error('Cannot use live mode with callbacks'))
-  //   }
-
-  //   const qs = this.createQueryStream(name, args, opts)
-  //   return collect(qs, cb)
-  // }
-
-  // createQueryStream (name, args, opts = {}) {
-  //   const self = this
-  //   if (typeof opts.load === 'undefined') opts.load = true
-
-  //   const proxy = new Transform({
-  //     transform (chunk, next) {
-  //       this.push(chunk)
-  //       next()
-  //     }
-  //   })
-
-  //   if (!this.view[name] || !this.view[name].query) {
-  //     proxy.destroy(new Error('Invalid query name: ' + name))
-  //     return proxy
-  //   }
-
-  //   if (opts.waitForSync) {
-  //     this.sync(createStream)
-  //   } else {
-  //     createStream()
-  //   }
-
-  //   return proxy
-
-  //   function createStream () {
-  //     const qs = self.view[name].query(args, opts)
-  //     qs.once('sync', () => proxy.emit('sync'))
-  //     qs.on('error', err => proxy.emit('error', err))
-  //     if (opts.load !== false) pump(qs, self.createGetStream(opts), proxy)
-  //     else pump(qs, proxy)
-  //   }
-  // }
 }
 
 function empty (value) {
