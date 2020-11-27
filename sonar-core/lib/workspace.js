@@ -1,11 +1,12 @@
 const DatSDK = require('dat-sdk')
-const mkdirp = require('mkdirp-classic')
 const RAF = require('random-access-file')
 const pino = require('pino')
 const p = require('path')
 const level = require('level')
 const levelMem = require('level-mem')
 const sublevel = require('subleveldown')
+const { promisify } = require('util')
+const mkdirp = promisify(require('mkdirp-classic'))
 const { NanoresourcePromise: Nanoresource } = require('nanoresource-promise/emitter')
 // const why = require('why-is-node-running')
 
@@ -86,15 +87,19 @@ module.exports = class Workspace extends Nanoresource {
   }
 
   async _open () {
-    const sdkOpts = { ...this._opts }
-    sdkOpts.storage = file => RAF(this.storagePath('cores/' + file))
-    this._sdk = await DatSDK(sdkOpts)
+    if (!this._opts.sdk) {
+      const sdkOpts = { ...this._opts }
+      sdkOpts.storage = file => RAF(this.storagePath('cores/' + file))
+      this._sdk = await DatSDK(sdkOpts)
+    } else {
+      this._sdk = this._opts.sdk
+    }
 
     if (this._opts.persist === false) {
       this._leveldb = levelMem()
     } else {
       const path = this.storagePath('leveldb')
-      mkdirp.sync(path)
+      await mkdirp(path)
       this._leveldb = level(path)
     }
 

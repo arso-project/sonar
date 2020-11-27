@@ -1,4 +1,5 @@
 const hcrypto = require('hypercore-crypto')
+const mutexify = require('mutexify/promise')
 const datEncoding = require('dat-encoding')
 const pretty = require('pretty-hash')
 const inspect = require('inspect-custom-symbol')
@@ -57,6 +58,7 @@ class Collection extends Nanoresource {
     this._queryHandlers = new Map()
     this._onerror = (err) => err && this.emit('error', err)
     this._subscriptions = new Map()
+    this.lock = opts.lock || mutexify()
 
     if (opts.defaultViews !== false) {
       this._setupDefaultViews()
@@ -415,9 +417,8 @@ class Collection extends Nanoresource {
   }
 
   async _close () {
-    // for (const feed of this.feeds()) {
-    //   await feed.close()
-    // }
+    // Wait until all batches are complete
+    await this.lock()
   }
 
   async _initFeed (keyOrName, info = {}) {
@@ -455,7 +456,9 @@ class Collection extends Nanoresource {
     // }
     this._kappa.addFeed(feed)
     // TODO: Start to not download everything, always.
-    feed.download({ start: 0, end: -1 })
+    // Note: null as second argument is needed, see
+    // https://github.com/geut/hypercore-promise/issues/8
+    feed.download({ start: 0, end: -1 }, null)
 
     this.emit('feed', feed, info)
     // this.log.info('Added feed %o', info)
@@ -600,6 +603,17 @@ class Batch {
     this.collection = collection
     this.entries = []
     this.synced = false
+    this.locked = null
+  }
+
+  async _lock () {
+    if (this.locked === null) this.locked = await this.collection.lock()
+  }
+
+  _unlock () {
+    const locked = this.locked
+    this.locked = null
+    if (locked !== null) locked()
   }
 
   async put (record, opts) {
@@ -612,6 +626,7 @@ class Batch {
   }
 
   async _append (record, opts = {}) {
+    if (!this.locked) await this._lock()
     if (!this.synced) {
       await this.collection.sync('kv')
       this.synced = true
@@ -652,6 +667,7 @@ class Batch {
       return records
     })
     await Promise.all(promises)
+    this._unlock()
   }
 
   async _findFeed (record, opts) {
