@@ -1,10 +1,13 @@
-const crypto = require('crypto')
 const base32 = require('base32')
+const sodium = require('sodium-universal')
+const randomBytes = require('randombytes')
 const { Writable, Transform } = require('streamx')
 
 const fs = require('fs')
 const p = require('path')
 const yaml = require('js-yaml')
+
+const SONAR_ID = Buffer.from('sonar-derive-id')
 
 exports.loadTypesFromDir = function (paths) {
   if (!Array.isArray(paths)) paths = [paths]
@@ -30,7 +33,14 @@ exports.keyseq = function (record) {
 }
 
 exports.uuid = function () {
-  return base32.encode(crypto.randomBytes(16))
+  return base32.encode(randomBytes(16))
+}
+
+exports.deriveId = function (buf) {
+  if (!Buffer.isBuffer(buf)) buf = Buffer.from(buf)
+  const digest = Buffer.allocUnsafe(32)
+  sodium.crypto_generichash(digest, buf)
+  return base32.encode(digest.slice(0, 16))
 }
 
 exports.through = function (transform) {
@@ -59,3 +69,42 @@ exports.defaultTrue = function (val) {
 }
 
 exports.noop = function () {}
+
+exports.maybeCallback = function (callback) {
+  if (typeof callback === 'function' && callback.promise) callback.promise = undefined
+  if (callback) return callback
+  let _resolve, _reject
+  callback = function (err, result) {
+    if (err) _reject(err)
+    else _resolve(result)
+  }
+  callback.promise = new Promise((resolve, reject) => {
+    _resolve = resolve
+    _reject = reject
+  })
+  return callback
+}
+
+exports.promiseToCallback = function (callback, promise) {
+  promise.then(
+    result => callback(null, result),
+    err => callback(err)
+  )
+}
+
+exports.clock = function clock () {
+  const [ss, sn] = process.hrtime()
+  return () => {
+    const [ds, dn] = process.hrtime([ss, sn])
+    const ns = (ds * 1e9) + dn
+    const ms = round(ns / 1e6)
+    const s = round(ms / 1e3)
+    if (s >= 1) return s + 's'
+    if (ms >= 0.01) return ms + 'ms'
+    if (ns) return ns + 'ns'
+  }
+}
+
+function round (num, decimals = 2) {
+  return Math.round(num * Math.pow(10, decimals)) / Math.pow(10, decimals)
+}

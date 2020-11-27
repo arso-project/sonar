@@ -44,6 +44,7 @@ module.exports = class SonarFs extends Nanoresource {
   }
 
   status (cb) {
+    if (!this.opened) this.open(() => this.status(cb))
     cb = once(cb)
     const stats = {}
     let pending = Object.values(this.drives).length
@@ -110,7 +111,7 @@ module.exports = class SonarFs extends Nanoresource {
     // Get the local writer key from the leveldb.
     this.db.get(LOCALW, (err, key) => {
       if (err && !err.notFound) return cb(err)
-      if (key) return this.get(key, cb)
+      if (key) return this._openDrive(key, cb)
       else this._createLocalwriter(cb)
     })
   }
@@ -120,12 +121,16 @@ module.exports = class SonarFs extends Nanoresource {
       if (err) return cb(err)
       const hkey = drive.key.toString('hex')
       this.add(drive)
-      this.db.put(LOCALW, hkey, err => cb(err, drive))
-      if (this.handlers.oninit) this.handlers.oninit(hkey)
+      this.db.put(LOCALW, hkey, err => {
+        if (err) return cb(err)
+        if (this.handlers.oninit) this.handlers.oninit(hkey, err => cb(err, drive))
+        else cb(null, drive)
+      })
     })
   }
 
   list (cb) {
+    if (!this.opened) this.open(() => this.status(cb))
     collect(this.db.createReadStream(prefix(DRIVES), (err, results) => {
       if (err) return cb(err)
       const keys = results.map(r => r.key)
@@ -133,24 +138,36 @@ module.exports = class SonarFs extends Nanoresource {
     }))
   }
 
-  // Get a drive by key or alias.
-  get (keyOrAlias, cb) {
-    this.resolveAlias(keyOrAlias, (err, key) => {
-      if (err) return cb(err)
-      key = datEncoding.decode(key)
-      const hkey = datEncoding.encode(key)
-      if (this.drives[hkey]) return cb(null, this.drives[hkey])
-
-      const drive = hyperdrive(this.corestore, key)
-      drive.ready((err) => {
-        if (err) return cb(err)
-        this.drives[hkey] = drive
-        cb(null, drive)
-      })
+  _createDrive (cb) {
+    const feed = this.corestore.get()
+    feed.ready(() => {
+      const key = feed.key.toString('hex')
+      this._openDrive(key, cb)
     })
   }
 
-  resolveAlias (alias, cb) {
+  _openDrive (key, cb) {
+    key = datEncoding.decode(key)
+    const hkey = datEncoding.encode(key)
+    const drive = hyperdrive(this.corestore, key)
+    this.drives[hkey] = drive
+    drive.ready((err) => {
+      if (err) return cb(err)
+      cb(null, drive)
+    })
+  }
+
+  // Get a drive by key or alias.
+  get (keyOrAlias, cb) {
+    if (!this.opened) return this.open(() => this.get(keyOrAlias, cb))
+    this._resolveAlias(keyOrAlias, (err, key) => {
+      if (err) return cb(err)
+      this._openDrive(key, cb)
+    })
+  }
+
+  _resolveAlias (alias, cb) {
+    if (!this.opened) this.open(() => this.resolveAlias(cb))
     if (Buffer.isBuffer(alias)) return cb(null, alias.toString('hex'))
     if (validKey(alias)) return cb(null, alias)
     if (!this.handlers.resolveAlias) return cb(new Error('Cannot resolve alias'))
@@ -158,12 +175,6 @@ module.exports = class SonarFs extends Nanoresource {
       if (err || !key) return cb(err || new Error('invalid alias: ' + alias))
       cb(null, key)
     })
-  }
-
-  _createDrive (cb) {
-    const feed = this.corestore.get()
-    const key = feed.key.toString('hex')
-    this.get(key, cb)
   }
 }
 

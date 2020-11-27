@@ -7,15 +7,14 @@ const { promisify } = require('util')
 
 tape('put query without replication', async t => {
   let id
-  console.log('X')
   const [collections, cleanup] = await createStore({ network: false })
   const collection = await promisify(collections.create.bind(collections))('foo')
   await runAll([
     cb => collection.ready(cb),
     cb => collection.putType({ name: 'doc', fields: { title: { type: 'string' } } }, cb),
-    cb => collection.put({ type: 'doc', value: { title: 'foo' } }, (err, _id) => {
+    cb => collection.put({ type: 'doc', value: { title: 'foo' } }, (err, record) => {
       t.error(err)
-      id = _id
+      id = record.id
       cb()
     }),
     cb => collection.put({ type: 'doc', value: { title: 'bar' }, id }, cb),
@@ -45,9 +44,9 @@ tape('simple replication', async t => {
     // cb => { console.log('COLLECTION 1 READY!!'); cb() },
     cb => collection.putType({ name: 'doc', fields: { title: { type: 'string' } } }, cb),
     // cb => { console.log('COLLECTION 1 TYPE PUT DONE, NOW PUT DOC !!'); cb() },
-    cb => collection.put(doc('1rev1'), (err, _id) => {
+    cb => collection.put(doc('1rev1'), (err, record) => {
       t.error(err)
-      id = _id
+      id = record.id
       cb()
     }),
     cb => collection.sync(cb),
@@ -89,19 +88,18 @@ tape('simple replication', async t => {
     cb => {
       collection2.put(doc('2rev1', id), cb)
     },
-    cb => collection.once('remote-update', cb),
+    cb => collection.once('remote-update', () => cb()),
     cb => collection.sync(cb),
     cb => setTimeout(cb, 1000),
     cb => {
-      // console.log('STATUS')
       // console.log({ collection, collection2 })
       cb()
     },
     cb => checkOne(t, collection, { type: 'doc' }, '2rev1', 'end collection1 ok', cb),
     cb => checkOne(t, collection2, { type: 'doc' }, '2rev1', 'end collection2 ok', cb),
     cb => {
-      // console.log('collection1', collection.scope)
-      // console.log('collection2', collection2.scope)
+      // console.log('collection1', collection)
+      // console.log('collection2', collection2)
       cb()
     }
   ])
@@ -114,7 +112,7 @@ function checkOne (t, collection, query, title, msg, cb) {
     // console.log({ msg, query, value, records })
     t.error(err, msg + ' (no err)')
     t.equal(records.length, 1, msg + ' (result len)')
-    t.equal(records[0].value.title, title, msg + '(value)')
+    t.equal(records[0].value.title, title, msg + ' (value)')
     cb()
   })
 }

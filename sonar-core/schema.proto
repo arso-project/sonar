@@ -14,10 +14,12 @@ message Record {
     DEL = 1;
   }
   required string id = 1;
-  required Op op = 2;
+  // TODO: Remove
+  optional Op op = 2;
   required string type = 3;
   optional bytes value = 4;
   optional uint32 timestamp = 5;
   repeated string links = 6;
   optional string typeVersion = 7;
+  optional bool deleted = 8;
 }

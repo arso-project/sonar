@@ -42,8 +42,8 @@ module.exports = function indexedView (lvl, db, opts) {
     }
   }
 
-  function mapToIndex (msg, db) {
-    const record = schema.Record(msg)
+  function mapToIndex (record, db) {
+    // const record = schema.Record(msg)
     const lseq = record.lseq
     const ops = []
     for (const fieldValue of record.fields()) {

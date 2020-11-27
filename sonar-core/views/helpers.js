@@ -1,4 +1,3 @@
-const Record = require('../lib/record')
 const { Writable } = require('stream')
 const pump = require('pump')
 

@@ -4,7 +4,10 @@ exports.runAll = function runAll (ops, cb) {
     runNext(ops.shift())
     function runNext (op) {
       op(err => {
-        if (err) return reject(err)
+        if (err) {
+          console.error(err)
+          return reject(err)
+        }
         const next = ops.shift()
         if (!next) return resolve()
         return runNext(next)

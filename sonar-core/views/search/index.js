@@ -2,7 +2,7 @@ const IndexManager = require('./index-manager')
 const doQuery = require('./query')
 
 const log = require('../../lib/log').child({ component: 'view-sonar' })
-const { clock } = require('../../lib/log')
+const { clock } = require('../../lib/util')
 
 module.exports = searchView
 
@@ -23,12 +23,12 @@ function searchView (level, _scope, opts) {
     map,
     // close: (cb) => manager.closeIndex(cb),
     api: {
-      info (kcore, args, cb) {
+      info (args, cb) {
         manager.getInfo()
           .then(info => cb(null, info))
           .catch(err => cb(err))
       },
-      query (kcore, query, opts = {}) {
+      query (query, opts = {}) {
         const resultStream = doQuery(manager, query, opts.indexName)
         return resultStream
       }

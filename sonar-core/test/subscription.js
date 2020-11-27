@@ -40,7 +40,9 @@ tape('subscription stream', async t => {
     await pify(cb => collection.put({ type: 'foo', value: { title: 'hello' } }, cb))
     debug('put took', timer())
     timer = clock()
+    const fail = setTimeout(() => t.fail('record was not in subscription stream'), 1000)
     await promise
+    clearTimeout(fail)
     debug('sub took', timer())
     debug('all inner', alltimer())
 

@@ -1,6 +1,8 @@
-const CollectionStore = require('./lib/store')
+const Workspace = require('./lib/workspace')
 const Collection = require('./lib/collection')
-
-module.exports = CollectionStore
-module.exports.CollectionStore = CollectionStore
-module.exports.Collection = Collection
+const CompatWorkspace = require('./lib/compat')
+module.exports = Object.assign(CompatWorkspace, {
+  Workspace,
+  Collection,
+  CollectionStore: CompatWorkspace
+})

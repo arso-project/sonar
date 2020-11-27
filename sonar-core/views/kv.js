@@ -22,13 +22,13 @@ module.exports = function kvView (lvl) {
       clearLevelDb(lvl, cb)
     },
     api: {
-      getLinks (kappa, record, cb) {
+      getLinks (record, cb) {
         kv.get(kvkey(record), cb)
       },
-      isLinked (kappa, record, cb) {
+      isLinked (record, cb) {
         kv.isLinked(keyseq(record), cb)
       },
-      filterOutdated (kappa, records, cb) {
+      filterOutdated (records, cb) {
         cb = once(cb)
         let pending = records.length
         const filtered = []

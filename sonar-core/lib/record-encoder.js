@@ -1,12 +1,9 @@
 const { Record: RecordEncoding } = require('./messages')
 
-module.exports = class Record {
-  static get PUT () { return RecordEncoding.Op.PUT }
-  static get DEL () { return RecordEncoding.Op.DEL }
-
+module.exports = class RecordEncoder {
   static decode (buf, props = {}) {
     let record = RecordEncoding.decode(buf)
-    record.value = Record.decodeValue(record)
+    record.value = RecordEncoder.decodeValue(record)
 
     // Assign key and seq if provided (these are not part of the encoded record, but
     // must be provided when loading the record from the feed).
@@ -17,15 +14,11 @@ module.exports = class Record {
       record.seq = Number(props.seq)
     }
     record = { ...props, ...record }
-    record.deleted = false
-    if (record.op === Record.DEL) {
-      record.deleted = true
-    }
     return record
   }
 
   static encode (record) {
-    const value = Record.encodeValue(record)
+    const value = RecordEncoder.encodeValue(record)
     const buf = RecordEncoding.encode({ ...record, value })
     return buf
   }

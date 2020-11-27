@@ -112,9 +112,10 @@ function defineRecord () {
     if (!defined(obj.id)) throw new Error("id is required")
     var len = encodings.string.encodingLength(obj.id)
     length += 1 + len
-    if (!defined(obj.op)) throw new Error("op is required")
-    var len = encodings.enum.encodingLength(obj.op)
-    length += 1 + len
+    if (defined(obj.op)) {
+      var len = encodings.enum.encodingLength(obj.op)
+      length += 1 + len
+    }
     if (!defined(obj.type)) throw new Error("type is required")
     var len = encodings.string.encodingLength(obj.type)
     length += 1 + len
@@ -137,6 +138,10 @@ function defineRecord () {
       var len = encodings.string.encodingLength(obj.typeVersion)
       length += 1 + len
     }
+    if (defined(obj.deleted)) {
+      var len = encodings.bool.encodingLength(obj.deleted)
+      length += 1 + len
+    }
     return length
   }
 
@@ -148,10 +153,11 @@ function defineRecord () {
     buf[offset++] = 10
     encodings.string.encode(obj.id, buf, offset)
     offset += encodings.string.encode.bytes
-    if (!defined(obj.op)) throw new Error("op is required")
-    buf[offset++] = 16
-    encodings.enum.encode(obj.op, buf, offset)
-    offset += encodings.enum.encode.bytes
+    if (defined(obj.op)) {
+      buf[offset++] = 16
+      encodings.enum.encode(obj.op, buf, offset)
+      offset += encodings.enum.encode.bytes
+    }
     if (!defined(obj.type)) throw new Error("type is required")
     buf[offset++] = 26
     encodings.string.encode(obj.type, buf, offset)
@@ -179,6 +185,11 @@ function defineRecord () {
       encodings.string.encode(obj.typeVersion, buf, offset)
       offset += encodings.string.encode.bytes
     }
+    if (defined(obj.deleted)) {
+      buf[offset++] = 64
+      encodings.bool.encode(obj.deleted, buf, offset)
+      offset += encodings.bool.encode.bytes
+    }
     encode.bytes = offset - oldOffset
     return buf
   }
@@ -195,14 +206,14 @@ function defineRecord () {
       value: null,
       timestamp: 0,
       links: [],
-      typeVersion: ""
+      typeVersion: "",
+      deleted: false
     }
     var found0 = false
-    var found1 = false
     var found2 = false
     while (true) {
       if (end <= offset) {
-        if (!found0 || !found1 || !found2) throw new Error("Decoded message is not valid")
+        if (!found0 || !found2) throw new Error("Decoded message is not valid")
         decode.bytes = offset - oldOffset
         return obj
       }
@@ -218,7 +229,6 @@ function defineRecord () {
         case 2:
         obj.op = encodings.enum.decode(buf, offset)
         offset += encodings.enum.decode.bytes
-        found1 = true
         break
         case 3:
         obj.type = encodings.string.decode(buf, offset)
@@ -240,6 +250,10 @@ function defineRecord () {
         case 7:
         obj.typeVersion = encodings.string.decode(buf, offset)
         offset += encodings.string.decode.bytes
+        break
+        case 8:
+        obj.deleted = encodings.bool.decode(buf, offset)
+        offset += encodings.bool.decode.bytes
         break
         default:
         offset = skip(prefix & 7, buf, offset)

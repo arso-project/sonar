@@ -60,7 +60,9 @@ tape('batch and query', t => {
       runAll([
         next => {
           const batch = records.map(value => ({ op: 'put', type: 'doc', value }))
+          // console.log('put batch')
           collection.batch(batch, (err, res) => {
+            // console.log('did put batch')
             t.error(err, 'batch ok')
             t.equal(res.length, 2)
             next()
@@ -70,6 +72,7 @@ tape('batch and query', t => {
           collection.query('search', 'hello', { waitForSync: true }, (err, res) => {
             t.error(err)
             t.equal(res.length, 2, 'hello search')
+            // console.log(res)
             const titles = res.map(r => r.value.title).sort()
             t.deepEqual(titles, ['Hello moon', 'Hello world'], 'hello results ok')
             next(err)
@@ -104,9 +107,10 @@ tape('put and get 1', t => {
       t.error(err)
       collection.putType({ name: 'doc', fields: { title: { type: 'string' } } }, err => {
         t.error(err)
-        collection.put({ type: 'doc', value: { title: 'hello' } }, (err, id) => {
+        collection.put({ type: 'doc', value: { title: 'hello' } }, (err, record) => {
           t.error(err)
-          collection.get({ id }, { waitForSync: true }, (err, records) => {
+          const id = record.id
+          collection.query('records', { id }, { waitForSync: true }, (err, records) => {
             t.error(err)
             t.equal(records.length, 1)
             t.equal(records[0].value.title, 'hello')
@@ -135,7 +139,7 @@ tape('share and unshare collections', t => {
         const config = collections.getCollectionConfig(hkey)
         t.equal(config.share, false, 'collection updated config not shared')
         const status = collections.network.status(collection.discoveryKey)
-        t.equal(status, null, 'collection updated network not shared')
+        t.false(status, 'collection updated network not shared')
         cleanup(err => {
           t.error(err)
           t.end()
@@ -163,7 +167,9 @@ tape('close collection', t => {
   })
 })
 
-tape('create collection with same name', t => {
+// TODO: This behavior was removed in the recent refactor - creating a collection
+// more than once does not fail but just returns the same collection.
+tape.skip('create collection with same name', t => {
   createStore({ network: false }, (err, collections, cleanup) => {
     t.error(err)
     runAll([

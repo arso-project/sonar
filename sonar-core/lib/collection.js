@@ -1,321 +1,844 @@
-const pretty = require('pretty-hash')
-const { Readable } = require('streamx')
-const datEncoding = require('dat-encoding')
-const p = require('path')
-const sub = require('subleveldown')
-const debug = require('debug')('sonar-core:collection')
 const hcrypto = require('hypercore-crypto')
-const Nanoresource = require('nanoresource/emitter')
+const datEncoding = require('dat-encoding')
+const pretty = require('pretty-hash')
+const inspect = require('inspect-custom-symbol')
+const pump = require('pump')
+const collectStream = require('stream-collector')
+const { Transform } = require('streamx')
+const { NanoresourcePromise: Nanoresource } = require('nanoresource-promise/emitter')
 
-const Database = require('./db')
-const Fs = require('./fs')
-const { loadTypesFromDir, once } = require('./util')
+const { Record, Type, Schema } = require('@arso-project/sonar-common')
+const Kappa = require('./kappa')
+const SyncMap = require('./level-utils/sync-map')
+const Workspace = require('./workspace')
+const RecordEncoder = require('./record-encoder')
+const { Header } = require('./messages')
+const { noop, uuid, deriveId, maybeCallback } = require('./util')
+const createKvView = require('../views/kv')
+const createRecordsView = require('../views/records')
+const createIndexView = require('../views/indexes')
+const createHistoryView = require('../views/history')
+const CORE_TYPE_SPECS = require('./types.json')
 
-const searchView = require('../views/search')
+const FEED_TYPE_ROOT = 'sonar.root'
+// const FEED_TYPE_DATA = 'sonar.data'
 
-function getDefaultTypes (cb) {
-  const typeSpecs = loadTypesFromDir(p.join(__dirname, '../types'))
-  cb(null, typeSpecs)
+const TYPE_FEED = 'sonar/feed'
+const TYPE_TYPE = 'sonar/type'
+
+const DEFAULT_CONFIG = {
+  share: true
 }
 
-module.exports = class Collection extends Nanoresource {
-  constructor (key, opts) {
+class Collection extends Nanoresource {
+  constructor (keyOrName, opts) {
     super()
-    const self = this
+    if (Buffer.isBuffer(keyOrName)) keyOrName = keyOrName.toString('hex')
+    this._workspace = opts.workspace || new Workspace(opts)
+    this._keyOrName = keyOrName
+    this._opts = opts
 
-    this.opts = opts
+    this.log = this._workspace.log.child({ collection: keyOrName })
 
-    key = datEncoding.decode(key)
-
-    debug('collection open %s (name %s, alias %s)', pretty(key), opts.name, opts.alias)
-
-    this.scope = opts.scope
-    this.corestore = opts.scope.corestore
-    this.name = opts.name
-
-    this._subscriptions = {}
-    this._level = {
-      db: sub(opts.level, 'd'),
-      fs: sub(opts.level, 'f')
+    const leveldbs = {
+      feeds: this._leveldb('f'),
+      schema: this._leveldb('s'),
+      kappa: this._leveldb('k'),
+      state: this._leveldb('l')
     }
 
-    this.key = key
-    this.discoveryKey = hcrypto.discoveryKey(this.key)
-
-    this.db = new Database({
-      collection: this,
-      rootKey: this.key,
-      scope: this.scope,
-      corestore: this.corestore,
-      db: this._level.db,
-      validate: false
+    this.schema = new PersistingSchema(leveldbs.schema, this)
+    this._localState = new SyncMap(leveldbs.state)
+    this._feedInfo = new SyncMap(leveldbs.feeds)
+    this._kappa = new Kappa({
+      db: leveldbs.kappa,
+      onget: onKappaGet.bind(this)
     })
+    this._queryHandlers = new Map()
+    this._onerror = (err) => err && this.emit('error', err)
+    this._subscriptions = new Map()
 
-    this.fs = new Fs({
-      corestore: this.corestore,
-      db: this._level.fs,
-      oninit (localkey, info) {
-        self.db.putFeed(localkey, {
-          type: 'hyperdrive',
-          alias: opts.alias
-        }, (err) => {
-          if (err) debug('error adding local hyperdrive as source', err)
-        })
-      },
-      resolveAlias (alias, cb) {
-        self.query('records', { type: 'sonar/feed' }, (err, records) => {
-          if (err) return cb(err)
-          const aliases = records
-            .map(r => r.value)
-            .filter(v => v.type === 'hyperdrive')
-            .filter(v => v.alias === alias)
-
-          if (aliases.length > 1) {
-            // TODO: Support named aliases (like foo-1, foo-2)
-            return cb(new Error('alias is ambigous, use keys'))
-          }
-          if (!aliases.length) {
-            return cb(new Error('alias not found'))
-          }
-
-          cb(null, aliases[0].key)
-        })
-      }
-    })
-
-    // Forward some events.
-    this.scope.on('remote-update', () => this.emit('remote-update'))
-    this.scope.on('feed', feed => this.emit('feed', feed))
-    this.scope.indexer.on('update', () => this.emit('update', this.scope.indexer.length))
-    this.db.on('schema-update', () => this.emit('schema-update'))
-
-    this.ready = this.open.bind(this)
-    this._eventStreams = new Set()
-    this._eventCounter = 0
-  }
-
-  emit (event, ...args) {
-    const id = ++this._eventCounter
-    let data
-    if (event === 'update') data = { lseq: args[0] }
-    if (event === 'feed') data = { key: args[0].key.toString('hex') }
-    const eventObject = { type: event, data, id }
-    for (const stream of this._eventStreams) {
-      stream.push(eventObject)
+    if (opts.defaultViews !== false) {
+      this._setupDefaultViews()
     }
-    super.emit(event, ...args)
   }
 
-  createEventStream () {
-    const stream = new Readable()
-    this._eventStreams.add(stream)
-    stream.on('destroy', () => this._eventStreams.delete(stream))
-    return stream
+  // Public API
+
+  get key () {
+    return this._rootFeed && this._rootFeed.key
   }
 
-  get writable () {
-    if (this._local && this._local.writable) return true
-    return false
+  get discoveryKey () {
+    return this._rootFeed && this._rootFeed.discoveryKey
   }
 
-  get schema () {
-    return this.db.schema
+  get view () {
+    return this._kappa.view
+  }
+
+  get api () {
+    return this._kappa.api
   }
 
   get localKey () {
-    return this.db.localKey
+    return this._localFeed && this._localFeed.key
   }
 
-  get rootKey () {
-    return this.db.rootKey
+  get dataKey () {
+    return this._dataFeed && this._dataFeed.key
   }
 
-  get length () {
-    return this.db.scope.indexer.length || 0
+  get rootFeed () {
+    return this._rootFeed
   }
 
-  _open (cb) {
-    cb = once(cb)
-    // db.open also calls scope.open.
-    this.db.open(err => {
-      if (err) return cb(err)
-      this._mountViews()
-      this.fs.ready(err => {
-        if (err) return cb(err)
-        debug(
-          'opened collection %s (dkey %s, feeds %d)',
-          pretty(this.key),
-          pretty(this.discoveryKey),
-          this.scope.status().feeds.length
-        )
-        cb()
-      })
-    })
+  ready (cb) {
+    cb = maybeCallback(cb)
+    if (this.opened) process.nextTick(cb)
+    else this.open().then(cb, cb)
+    return cb.promise
   }
 
-  _mountViews () {
-    if (this.opts.relations) {
-      this.db.use('relations', this.opts.relations.createView(this))
-    }
-    if (this.opts.indexCatalog) {
-      this.db.use('search', searchView, {
-        collection: this,
-        indexCatalog: this.opts.indexCatalog
-      })
+  registerQuery (name, handler) {
+    this._queryHandlers.set(name, handler)
+  }
+
+  use (name, view, opts) {
+    const flow = this._kappa.use(name, view, opts)
+    if (flow.view.query) {
+      this.registerQuery(name, flow.view.query)
+    } else if (view.query) {
+      this.registerQuery(name, view.query)
     }
   }
 
-  init (cb) {
-    cb = once(cb)
-
-    // Add default types to collection.
-    getDefaultTypes((err, typeSpecs) => {
-      if (err) return cb(err)
-      let pending = 0
-      for (const typeSpec of typeSpecs) {
-        ++pending
-        this.db.putType(typeSpec, done)
-      }
-      function done (err) {
-        if (err) return cb(err)
-        if (--pending === 0) cb()
-      }
-    })
+  feeds () {
+    return this._kappa.feeds()
   }
 
-  replicate (isInitator, opts) {
-    return this.corestore.replicate(isInitator, opts)
+  feed (key) {
+    return this._kappa.feed(key)
   }
 
-  put (record, cb) {
-    this.db.put(record, cb)
+  feedInfo (key) {
+    if (Buffer.isBuffer(key)) key = key.toString('hex')
+    return this._feedInfo.get(key)
   }
 
-  del (record, cb) {
-    this.db.del(record, cb)
-  }
-
-  get (req, opts, cb) {
-    this.scope.query('records', req, opts, cb)
-  }
-
-  batch (batch, cb) {
-    this.db.batch(batch, cb)
-  }
-
-  loadRecord (key, seq, cb) {
-    this.scope.loadRecord(key, seq, cb)
-  }
-
-  putType (spec, cb) {
-    this.db.putType(spec, cb)
-  }
-
-  getType (name) {
-    return this.db.getType(name)
-  }
-
-  serializeSchema () {
-    return this.db.schema.serializeSchema()
-  }
-
-  putFeed (key, info, cb) {
-    this.db.putFeed(key, info, cb)
-  }
-
-  query (name, args, opts, cb) {
-    return this.scope.query(name, args, opts, cb)
-  }
-
-  createQueryStream (name, args, opts) {
-    return this.scope.createQueryStream(name, args, opts)
-  }
-
-  drive (key, cb) {
-    this.fs.get(key, cb)
-  }
-
-  localDrive (cb) {
-    cb(null, this.fs.localwriter)
-  }
-
-  sync (cb) {
-    this.scope.sync(cb)
-  }
-
-  _close (cb) {
-    for (const stream of this._eventStreams) {
-      stream.destroy()
+  async configure (configuration = {}, save = true) {
+    // Apply network configuration.
+    if (configuration.share !== false) {
+      this._workspace.network.configure(this.discoveryKey, { announce: true, lookup: true })
+    } else {
+      this._workspace.network.configure(this.discoveryKey, { announce: false, lookup: false })
     }
-    this.fs.close(() => {
-      this.scope.sync(() => {
-        this.scope.close(() => {
-          cb()
-        })
-      })
-    })
+
+    if (save) {
+      await this._localState.setFlush('config', configuration)
+    }
   }
 
-  // Return some info on the collection synchronously.
+  getConfig () {
+    return this._localState.get('config')
+  }
+
+  async put (record, opts = {}) {
+    const batch = new Batch(this)
+    await batch.put(record, opts)
+    await batch.flush()
+    return batch.entries[0]
+  }
+
+  async del (record, opts = {}) {
+    const batch = new Batch(this)
+    await batch.del(record, opts)
+    await batch.flush()
+    return batch.entries[0]
+  }
+
+  async batch (records, opts = {}) {
+    const batch = new Batch(this)
+    if (!records) {
+      return batch
+    }
+    for (const record of records) {
+      await batch._append(record, opts)
+    }
+    await batch.flush()
+    return batch.entries
+  }
+
+  getRecord (req, opts, cb) {
+    return this._kappa.getBlock(req, opts, cb)
+  }
+
+  loadRecord (...args) {
+    return this.getRecord(...args)
+  }
+
+  get (req, cb) {
+    cb = maybeCallback(cb)
+    if (req.lseq || (req.key && req.seq)) {
+      this.getRecord(req).then(record => cb(null, [record]), cb)
+    } else if (req.id || req.type) {
+      this.query('records', req).then(records => cb(null, records), cb)
+    }
+    return cb.promise
+  }
+
+  async putFeed (key, info = {}) {
+    if (!info.type) info.type = FEED_TYPE_ROOT
+    if (!Buffer.isBuffer(key)) key = Buffer.from(key, 'hex')
+    info.key = key.toString('hex')
+    const record = {
+      type: TYPE_FEED,
+      id: deriveId(hcrypto.discoveryKey(key)),
+      value: info
+    }
+    const ret = await this.put(record)
+    await this.sync()
+    return ret
+  }
+
+  async putType (type) {
+    // validate, will throw if type spec is invalid
+    type = new Type(this.schema, type)
+    const record = {
+      type: TYPE_TYPE,
+      id: deriveId(type.address),
+      value: type.toJSON()
+    }
+    const ret = await this.put(record)
+    await this.sync()
+    return ret
+  }
+
+  getType (address) {
+    return this.schema.getType(address)
+  }
+
+  async query (name, args, opts = {}) {
+    const query = new Query(this, name, args, opts)
+    return query.collect()
+  }
+
+  createQueryStream (name, args, opts = {}) {
+    const query = new Query(this, name, args, opts)
+    return query.stream()
+  }
+
+  subscribe (name, opts) {
+    if (this._subscriptions.has(name)) return this._subscriptions.get(name)
+    const sub = new Subscription(this, name, opts)
+    this._subscriptions.set(name, sub)
+    return sub
+  }
+
+  sync (views, cb) {
+    if (typeof views === 'function') {
+      cb = views
+      views = null
+    }
+    cb = maybeCallback(cb)
+    this._kappa.sync(views, cb)
+    return cb.promise
+  }
+
+  async update () {
+    // Check all feeds for updates
+    try {
+      const updates = this.feeds().map(feed => feed.update({ ifAvailable: true, wait: false }))
+      await Promise.all(updates)
+    } catch (err) {}
+    // Wait for the indexer and the views to sync
+    await this.sync()
+  }
+
+  /**
+   * Get status information for this collection.
+   * @returns {CollectionStatus}
+   */
   status (cb) {
-    if (!this.opened) return cb(null, { opened: false, name: this.name })
-    const localDrive = this.fs.localwriter
-    if (localDrive) var localDriveKey = datEncoding.encode(localDrive.key)
-
+    if (!this.opened) return { opened: false }
+    const feeds = this.feeds().map(feed => feedStatus(this, feed))
+    const kappa = this._kappa.status()
     const status = {
-      ...this.scope.status(),
       name: this.name,
       opened: true,
-      key: this.key.toString('hex'),
-      discoveryKey: this.discoveryKey.toString('hex'),
-      localKey: datEncoding.encode(this.db.localKey),
-      rootKey: datEncoding.encode(this.db.rootKey),
-      dataKey: datEncoding.encode(this.db.dataKey),
-      localDrive: localDriveKey
+      key: datEncoding.encode(this.key),
+      discoveryKey: datEncoding.encode(this.discoveryKey),
+      rootKey: datEncoding.encode(this.key),
+      localKey: datEncoding.encode(this.localKey),
+      // dataKey: datEncoding.encode(this.dataKey),
+      feeds,
+      kappa
+      // localDrive: localDriveKey
     }
-
-    if (cb) {
-      let pending = 1
-      this.fs.status((err, fsStats) => {
-        if (err) status.fs = { error: err.message }
-        else status.fs = fsStats
-        if (--pending === 0) cb(null, status)
-      })
-    }
-
+    if (cb) process.nextTick(cb, null, status)
     return status
   }
 
-  createSubscription (name, opts = {}) {
-    const subscription = this.scope.indexer.createSubscription(name, opts)
-    this._subscriptions[name] = subscription
-    return subscription
+  // Internal methods
+
+  _setupDefaultViews () {
+    // Subscribe for new feeds and types.
+    const rootViewOpts = {
+      batch: false,
+      upcast: false,
+      filterFeed: (key) => {
+        const info = this.feedInfo(key)
+        const ret = info && info.type === FEED_TYPE_ROOT
+        return ret
+      }
+    }
+    const rootViewMap = async record => {
+      // The root view has the upcast opt set to false, which means that
+      // invalid records end here too (invalid = type unknown usually).
+      // we just ignore them as we care for records of type "feed" and "type" only.
+      try {
+        record = new Record(this.schema, record)
+        if (record.hasType(TYPE_FEED)) {
+          this._initFeed(record.value.key, record.value).catch(this._onerror)
+        }
+        if (record.hasType(TYPE_TYPE)) {
+          this._addTypeFromRecord(record)
+        }
+      } catch (err) {}
+    }
+    this.use('root', { map: rootViewMap }, rootViewOpts)
+
+    this.use('kv', createKvView(
+      this._leveldb('view/kv')
+    ))
+
+    this.use('records', createRecordsView(
+      this._leveldb('view/records'),
+      this,
+      {
+        schema: this.schema
+      }
+    ))
+    this.use('index', createIndexView(
+      this._leveldb('view/index'),
+      this,
+      {
+        schema: this.schema
+      }
+    ))
+    this.use('history', createHistoryView(
+      this._leveldb('view/history'),
+      this
+    ))
+
+    // this.use('debug', async function (records) {
+    //   console.log('MAP', records)
+    // })
   }
 
-  pullSubscription (name, opts, cb) {
-    if (!this._subscriptions[name]) {
-      this.createSubscription(name, opts)
+  _leveldb (name) {
+    // TODO: keyOrName is a bad measure. Setup leveldbs only in open and use key.
+    const prefix = this._keyOrName
+    const dbName = 'c/' + prefix + '/' + name
+    return this._workspace.LevelDB(dbName)
+  }
+
+  _feedName (type) {
+    // dat-sdk (through dat-encoding) considers every string that
+    // contains a 32-byte hex string a key, so we have to add a
+    // non-hex character somewhere.
+    const id = this.key.slice(0, 16).toString('hex') + '-' + this.key.slice(16).toString('hex')
+    return `sonar-collection-${id}-${type}`
+  }
+
+  async _open () {
+    await Promise.all([
+      this._workspace.open(),
+      this._feedInfo.open(),
+      this._localState.open(),
+      this.schema.load()
+    ])
+
+    // Init core types
+    // TODO: Check for version updates.
+    // TODO: Decide whether to store core types in the feeds as well.
+    if (!this.schema.hasType(TYPE_TYPE)) {
+      this.schema.addTypes(CORE_TYPE_SPECS)
+      // this.schema.persist()
     }
-    this._subscriptions[name].pull(opts, result => {
-      cb(null, result)
+
+    const rootInfo = { type: FEED_TYPE_ROOT }
+    // const dataInfo = { type: FEED_TYPE_DATA }
+
+    // Init root feed
+    this._rootFeed = await this._initFeed(this._keyOrName, rootInfo)
+
+    // Set default type namespace to root feed key
+    this.schema.setDefaultNamespace(this.key.toString('hex'))
+
+    // Init local root feed
+    if (this._rootFeed.writable) {
+      this._localFeed = this._rootFeed
+    } else {
+      this._localFeed = await this._initFeed(this._feedName(FEED_TYPE_ROOT), rootInfo)
+    }
+
+    // Init data feed
+    // this._dataFeed = await this._initFeed(this._feedName(FEED_TYPE_DATA), dataInfo)
+
+    // Init network configuration.
+    const config = this._localState.get('config')
+    if (config) {
+      await this.configure(config, false)
+    } else {
+      await this.configure(DEFAULT_CONFIG, true)
+    }
+
+    // Load feeds and add them to the kappa.
+    for (const info of this._feedInfo.values()) {
+      await this._initFeed(info.key, info)
+    }
+
+    // Alternative approach: Don't store feeds and types locally at all.
+    // Query the collection itself. This is nicer, likely.
+    // const feedRecords = await this.query('records', { type: 'sonar.feed' })
+    // for (const feedRecord of feedRecords) {
+    //   this._addFeedFromRecord(feedRecord)
+    // }
+    //
+    // Load types and add them to the schema.
+    // const typeRecords = await this.query('records', { type: 'sonar.type' })
+    // for (const typeRecord of typeRecords) {
+    //   this._addTypeFromRecord(typeRecord)
+    // }
+    //
+  }
+
+  async _close () {
+    // for (const feed of this.feeds()) {
+    //   await feed.close()
+    // }
+  }
+
+  async _initFeed (keyOrName, info = {}) {
+    const feed = this._workspace.Hypercore(keyOrName)
+    if (!feed.opened) await feed.ready()
+    // Don't do anything for feeds already opened
+    if (this._kappa.feed(feed.key)) return this._kappa.feed(feed.key)
+
+    if (info.type && info.type === 'hyperdrive') return
+
+    feed.on('download', (seq) => {
+      this.emit('feed-update')
+    })
+    feed.on('append', () => {
+      this.emit('feed-update')
+    })
+    feed.on('remote-update', () => this.emit('remote-update', feed))
+
+    // If the feed is unknown add it to the feed store.
+    info.key = feed.key.toString('hex')
+    if (!this._feedInfo.has(info.key)) {
+      this._feedInfo.set(info.key, info)
+    }
+
+    // Inititialize feed
+    if (feed.writable) {
+      await onFeedCreateLocal.call(this, feed, info)
+    } else {
+      await onFeedCreateRemote.call(this, feed, info)
+    }
+
+    // Add only non-empty feeds to the kappa. This means the type was set.
+    // if (await feed.has(0)) {
+    //   this._kappa.addFeed(feed)
+    // }
+    this._kappa.addFeed(feed)
+    // TODO: Start to not download everything, always.
+    feed.download({ start: 0, end: -1 })
+
+    this.emit('feed', feed, info)
+    // this.log.info('Added feed %o', info)
+
+    return feed
+  }
+
+  _addTypeFromRecord (typeRecord) {
+    this.schema.addType(typeRecord.value)
+    this.schema.persist()
+  }
+
+  [inspect] (depth, opts) {
+    const { stylize } = opts
+    var indent = ''
+    if (typeof opts.indentationLvl === 'number') {
+      while (indent.length < opts.indentationLvl) indent += ' '
+    }
+    const h = str => stylize(str, 'special')
+    const s = str => stylize(str)
+
+    const feeds = this.feeds().map(feed => {
+      const info = this.feedInfo(feed.key)
+      const len = feed.length
+      const dled = feed.downloaded()
+      const meta = feed.writable ? '+' : '/' + dled
+      const detail = h(len + meta, 'special')
+      const key = h(pretty(feed.key))
+      const at = s('@')
+      let str = `${key}${at}${detail}`
+      if (info.name) str += ' ' + info.name
+      if (info.type) str += stylize(' (' + info.type + ')')
+      str += ''
+      return str
+    }).join(', ')
+
+    function fmtkey (key) {
+      return h(key ? pretty(key) : '')
+    }
+
+    return 'Collection(\n' +
+          indent + '  key         : ' + fmtkey(this.key) + '\n' +
+          indent + '  discoveryKey: ' + fmtkey(this.discoveryKey) + '\n' +
+          indent + '  localKey:     ' + fmtkey(this.localKey) + '\n' +
+          indent + '  dataKey :     ' + fmtkey(this.dataKey) + '\n' +
+          indent + '  name        : ' + s(this._name) + '\n' +
+          // indent + '  opened      : ' + stylize(this.opened, 'boolean') + '\n' +
+          indent + '  feeds:      : ' + feeds + '\n' +
+          indent + ')'
+  }
+}
+
+async function onFeedCreateRemote (feed) {
+  if (feed.writable) throw new Error('Remote feed cannot be writable')
+  const hkey = feed.key.toString('hex')
+  // const info = this._feedInfo.get(hkey)
+  // If a type is set the feed was added.
+  // if (info.type) {
+  //   this._kappa.addFeed(feed)
+  //   return
+  // }
+
+  const onheader = async buf => {
+    const header = Header.decode(buf)
+    const type = header.type
+    this._feedInfo.update(hkey, info => {
+      info.type = type
+      info.header = header
+      return info
+    })
+    await this._feedInfo.flush()
+  }
+
+  // Try to load the header.
+  try {
+    const buf = await feed.get(0, { wait: false })
+    await onheader(buf)
+  } catch (err) {
+    // Try to load the header, waiting
+    feed.get(0, { wait: true }).then(buf => {
+      onheader(buf).catch(this._onerror)
+      // this._kappa.addFeed(feed)
+    })
+  }
+}
+
+async function onFeedCreateLocal (feed, info = {}) {
+  if (!feed.writable) throw new Error('Local feed must be writable')
+  // Feed was already initialized
+  if (feed.length) {
+    this._kappa.addFeed(feed)
+    return
+  }
+
+  if (!info.type) throw new Error('Type is required for new feeds')
+
+  // Append header if writable and empty
+  const hkey = feed.key.toString('hex')
+  await feed.append(Header.encode({
+    type: info.type
+  }))
+
+  // Append feed record once the collection is fully opened
+  this.open().then(() => {
+    this.putFeed(hkey, info).catch(this._onerror)
+  })
+}
+
+function onKappaGet (message, opts, cb, retry = false) {
+  const { key, seq, lseq, value } = message
+  // Decode protobuf. This should never fail at the moment.
+  let record
+  try {
+    record = RecordEncoder.decode(value, { key, seq, lseq })
+  } catch (err) {
+    this.emit('error', err)
+    cb(err)
+  }
+
+  if (opts.upcast === false) return cb(null, record)
+
+  try {
+    record = new Record(this.schema, record)
+    // TODO: Rethink where / how the delete property works.
+    cb(null, record)
+  } catch (err) {
+    if (retry) {
+      this.emit('error', err)
+      return cb(err)
+    }
+    // console.log('needs sync', key, seq, RecordEncoder.decode(value))
+    // TODO: Make sure this doesn't loop infinitely.
+    this.sync('root', err => {
+      if (err) return cb(err)
+      onKappaGet.call(this, message, opts, cb, true)
+    })
+  }
+}
+
+class Batch {
+  constructor (collection) {
+    this.collection = collection
+    this.entries = []
+    this.synced = false
+  }
+
+  async put (record, opts) {
+    return this._append(record, opts)
+  }
+
+  async del ({ id, type }, opts) {
+    const record = { id, type, deleted: true }
+    return this._append(record, opts)
+  }
+
+  async _append (record, opts = {}) {
+    if (!this.synced) {
+      await this.collection.sync('kv')
+      this.synced = true
+    }
+
+    if (!record.id) record.id = uuid()
+
+    // Upcast record
+    record = new Record(this.collection.schema, record)
+
+    // Set feed, links, timestamp
+    record.links = await this._getLinks(record, opts)
+    const feed = await this._findFeed(record, opts)
+    record.key = feed.key.toString('hex')
+    record.timestamp = Date.now()
+
+    // Never store value for deleted records
+    if (record.deleted) {
+      record.value = undefined
+    }
+    this.entries.push(record)
+  }
+
+  async flush () {
+    // Sort records into buckets by feed
+    const buckets = new ArrayMap()
+    for (const record of this.entries) {
+      buckets.push(record.key, record)
+    }
+
+    // Encode and append the records for each feed
+    const promises = Array.from(buckets.entries()).map(async ([key, records]) => {
+      const feed = this.collection.feed(key)
+      if (!feed) throw new Error('Feed not found: ' + key)
+      if (!feed.writable) throw new Error('Feed not writable: ' + key)
+      const blocks = records.map(record => RecordEncoder.encode(record.toJSON()))
+      await feed.append(blocks)
+      return records
+    })
+    await Promise.all(promises)
+  }
+
+  async _findFeed (record, opts) {
+    return this.collection._localFeed
+    // TODO: Support specifying the feed or type.
+    // if (record.hasType(TYPE_FEED) || record.hasType(TYPE_TYPE)) {
+    //   return this.collection._localFeed
+    // } else {
+    //   return this.collection._dataFeed
+    // }
+  }
+
+  async _getLinks (record) {
+    // Find links
+    const links = await new Promise((resolve, reject) => {
+      this.collection.view.kv.getLinks(record, (err, links) => {
+        if (err && err.status !== 404) return reject(err)
+        resolve(links || [])
+      })
+    })
+    // TODO: Track links within this batch, that's the whole idea :)
+    return links
+  }
+}
+
+class Subscription {
+  constructor (collection, name, opts) {
+    // if (typeof opts === 'function') {
+    //   opts = { map: opts }
+    // }
+    this.collection = collection
+    this.sub = collection._kappa._indexer.createSubscription(name, opts)
+    this.name = name
+    this.opts = opts
+    this.pullOpts = {
+      loadValue: (req, next) => {
+        if (req.seq === 0) next(null)
+        else {
+          collection.getRecord(req, (err, record) => {
+            if (err) next(null)
+            else next(record)
+          })
+        }
+      }
+    }
+  }
+
+  async pull (opts = {}) {
+    opts = { ...this.pullOpts, ...opts }
+    return new Promise((resolve, reject) => {
+      this.sub.pull(opts, (err, batch) => {
+        if (err) return reject(err)
+        resolve(batch)
+      })
     })
   }
 
-  pullSubscriptionStream (name, opts) {
-    if (opts.live === undefined) opts.live = true
-    if (!this._subscriptions[name]) {
-      this.createSubscription(name, opts)
-    }
-    return this._subscriptions[name].createPullStream(opts)
+  async ack (cursor) {
+    return new Promise((resolve, reject) => {
+      this.sub.setCursor(cursor, err => err ? reject(err) : resolve())
+    })
   }
 
-  ackSubscription (name, cursor, cb) {
-    if (!this._subscriptions[name]) return cb(new Error('Subscription does not exist'))
-    this._subscriptions[name].setCursor(cursor, cb)
-  }
-
-  reindex (views, cb) {
-    if (!cb) { cb = views; views = null }
-    this.db.reindex(views, cb)
+  stream (opts = {}) {
+    opts = { ...this.pullOpts, ...opts }
+    if (opts.live !== false) opts.live = true
+    return this.sub.createPullStream(opts)
   }
 }
+
+class Query {
+  constructor (collection, name, args, opts) {
+    const self = this
+    this.collection = collection
+    this.name = name
+    this.args = args
+    this.opts = opts
+
+    // const load = opts.load !== false
+    this.proxy = new Transform({
+      transform (req, cb) {
+        self.collection.getRecord(req, (err, record) => {
+          cb(err, record)
+        })
+      }
+    })
+  }
+
+  start () {
+    if (this.started) return
+    this.started = true
+
+    if (this.opts.remote) this._queryRemote()
+    else this._queryLocal()
+  }
+
+  stream () {
+    this.start()
+    return this.proxy
+  }
+
+  collect () {
+    this.start()
+    if (this.opts.live) throw new Error('Cannot collect live queries')
+    return collectAsync(this.proxy)
+  }
+
+  _queryLocal () {
+    const { name, args, opts, proxy } = this
+    const queryFn = this.collection._queryHandlers.get(name)
+    if (!queryFn) {
+      this.proxy.destroy(new Error('Invalid query name: ' + this.name))
+      return
+    }
+
+    if (opts.waitForSync) {
+      this.collection.sync(createStream)
+    } else {
+      createStream()
+    }
+
+    function createStream () {
+      const qs = queryFn(args, opts)
+      qs.once('sync', () => proxy.emit('sync'))
+      qs.on('error', err => proxy.emit('error', err))
+      pump(qs, proxy)
+    }
+  }
+
+  _queryRemote () {
+    this.proxy.destroy('Remote queries are not yet supported')
+  }
+}
+
+function PersistingSchema (db, emitter) {
+  const schema = new Schema()
+  schema.persist = (cb = noop) => {
+    const spec = schema.toJSON()
+    db.put('spec', JSON.stringify(spec), err => {
+      if (err) return cb(err)
+    })
+    emitter.emit('schema-update')
+  }
+  schema.load = (cb = noop) => {
+    db.get('spec', (err, str) => {
+      if (err && !err.notFound) return cb(err)
+      if (!err) {
+        const spec = JSON.parse(str)
+        schema.addTypes(spec)
+      }
+      cb()
+    })
+  }
+  return schema
+}
+
+class ArrayMap extends Map {
+  push (key, value) {
+    if (!this.has(key)) this.set(key, [])
+    this.get(key).push(value)
+  }
+}
+
+async function collectAsync (stream) {
+  return new Promise((resolve, reject) => {
+    collectStream(stream, (err, results) => {
+      if (err) reject(err)
+      resolve(results)
+    })
+  })
+}
+
+function feedStatus (collection, feed) {
+  const info = collection.feedInfo(feed.key)
+  const status = {
+    key: datEncoding.encode(feed.key),
+    discoveryKey: datEncoding.encode(feed.discoveryKey),
+    writable: feed.writable,
+    length: feed.length,
+    byteLength: feed.byteLength,
+    type: info.type
+  }
+  if (feed.opened) {
+    status.downloadedBlocks = feed.downloaded(0, feed.length)
+    status.stats = feed.stats
+  }
+  return status
+}
+
+module.exports = Collection

@@ -28,7 +28,7 @@ module.exports = function createRecordView (lvl, db, opts) {
     },
 
     api: {
-      query (kappa, req, opts = {}) {
+      query (req, opts = {}) {
         if (!req) return this.view.all(opts)
         if (typeof req === 'string') req = { id: req }
         let { type, id, key, seq, all } = req
@@ -51,23 +51,23 @@ module.exports = function createRecordView (lvl, db, opts) {
         return rs
       },
 
-      get (kappa, req, opts) {
+      get (req, opts) {
         return this.view.query(req, opts)
       },
 
-      all (kappa, cb, opts) {
+      all (cb, opts) {
         return query(lvl, includerange(['is']), opts)
       },
 
-      byType (kappa, type, opts) {
+      byType (type, opts) {
         return this.view.query({ type }, opts)
       },
 
-      byId (kappa, id, opts) {
+      byId (id, opts) {
         return this.view.query({ id }, opts)
       },
 
-      byIdAndSchema (kappa, id, type, opts) {
+      byIdAndSchema (id, type, opts) {
         return this.view.query({ id, type }, opts)
       }
     }
