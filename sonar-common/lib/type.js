@@ -23,7 +23,7 @@ class Type {
       const parts = parseAddress(spec.address)
       this._namespace = parts.namespace
       this._name = parts.type
-      this._version = parts.version || 0
+      this._version = parts.version || spec.version || 0
     } else {
       // This will throw if namespace is undefined and default namespace is not set.
       this._namespace = spec.namespace || this[SC].defaultNamespace()
@@ -36,6 +36,7 @@ class Type {
     this._address = encodeAddress({
       namespace: this._namespace,
       type: this._name,
+      // TODO: Think through if we want the version in the address.
       version: this._version
     })
 

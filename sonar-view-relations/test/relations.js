@@ -44,7 +44,7 @@ tape('relations', t => {
         type: 'friend',
         value: { name: 'Claire', friends: ['bob'] }
       }, next),
-      next => collection.scope.sync(next),
+      next => collection.sync(next),
       next => {
         const type = collection.getType('friend')
         const query = {

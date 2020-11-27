@@ -1,4 +1,6 @@
 const { SC, RECORD } = require('./symbols')
+const pretty = require('pretty-hash')
+const inspect = require('inspect-custom-symbol')
 const { bindSymbol } = require('./util')
 
 // Base class for Record and Entity
@@ -131,6 +133,16 @@ class Record extends Node {
     record[RECORD] = this
   }
 
+  update (nextValue) {
+    nextValue = Object.assign({}, this._value, nextValue)
+    const nextRecord = {
+      type: this.type,
+      id: this.id,
+      value: nextValue
+    }
+    return new Record(this[SC], nextRecord)
+  }
+
   get entity () {
     return this[SC].getEntity(this.id)
   }
@@ -141,6 +153,10 @@ class Record extends Node {
 
   get value () {
     return this._record.value
+  }
+
+  set value (value) {
+    this._record.value = value
   }
 
   get type () {
@@ -155,9 +171,12 @@ class Record extends Node {
     return this._record.deleted
   }
 
-  // TODO: Remove?
   get key () {
     return this._record.key
+  }
+
+  set key (key) {
+    this._record.key = key
   }
 
   get feed () {
@@ -174,6 +193,10 @@ class Record extends Node {
 
   get timestamp () {
     return this._record.timestamp
+  }
+
+  set timestamp (timestamp) {
+    this._record.timestamp = timestamp
   }
 
   get meta () {
@@ -193,6 +216,10 @@ class Record extends Node {
 
   get links () {
     return this._record.links
+  }
+
+  set links (links) {
+    this._record.links = links
   }
 
   getType () {
@@ -277,6 +304,25 @@ class Record extends Node {
       lseq: this.lseq,
       meta: this.meta
     }
+  }
+
+  [inspect] (depth, opts = {}) {
+    if (!opts.stylize) opts.stylize = obj => obj
+    const { stylize } = opts
+    let ind = ''
+    if (typeof opts.indentationLvl === 'number') {
+      while (ind.length < opts.indentationLvl) ind += ' '
+    }
+    const h = str => stylize(str, 'special')
+    const s = str => stylize(str)
+    const links = this.links ? this.links.length : 0
+    const lseq = this.lseq ? `#${this.lseq}` : ''
+    // const lseq = this.lseq ? ('#' + this.lseq) || ''
+    return `Record(
+${ind}  ${h(this.type)} ${this.id} ${h(pretty(this.key))}${s('@')}${h(this.seq)} ${lseq}
+${ind}  ${stylize(JSON.stringify(this.value).substring(0, 320))}
+${ind}  links: ${h(links)} del: ${h(this.deleted || false)}
+)`
   }
 }
 

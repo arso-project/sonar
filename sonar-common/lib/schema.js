@@ -116,7 +116,7 @@ module.exports = class Schema {
   toJSON () {
     const spec = {}
     for (const type of this._types.values()) {
-      spec[type.address] = type.toJSONSchema()
+      spec[type.address] = type.toJSON()
     }
     return spec
   }

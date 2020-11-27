@@ -20,9 +20,9 @@ module.exports = function createCollectionHandler (collections) {
       } else {
         record = req.body
       }
-      req.collection.put(record, (err, id) => {
+      req.collection.put(record, (err, record) => {
         if (err) return next(err)
-        res.send({ id })
+        res.send(record.toJSON())
       })
     },
 
@@ -54,7 +54,7 @@ module.exports = function createCollectionHandler (collections) {
       //   done = true
       //   next(new Error('Sync timeout'))
       // }, SYNC_TIMEOUT)
-      req.collection.scope.sync(view, (err) => {
+      req.collection.sync(view, (err) => {
         // if (done) return
         // done = true
         if (err) return next(err)
@@ -88,12 +88,12 @@ module.exports = function createCollectionHandler (collections) {
     putType (req, res, next) {
       const spec = req.body
       const collection = req.collection
-      collection.putType(spec, (err, id) => {
+      collection.putType(spec, (err, record) => {
         if (err) {
           err.statusCode = 400
           return next(err)
         }
-        const type = collection.getType(id)
+        const type = collection.getType(record.value.address)
         if (!type) return next(HttpError(404, 'Type not found after put - please report bug'))
         res.send(type.toJSONSchema())
       })

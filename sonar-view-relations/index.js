@@ -13,7 +13,7 @@ module.exports = class Relations {
 
   createView (collection) {
     const self = this
-    return () => ({
+    return {
       map (messages, cb) {
         self._map(collection, messages, cb)
       },
@@ -22,11 +22,11 @@ module.exports = class Relations {
         self.store.del(match, cb)
       },
       api: {
-        query (kappa, query, opts) {
+        query (query, opts) {
           return self._query(collection, query, opts)
         }
       }
-    })
+    }
   }
 
   _map (collection, messages, cb) {
@@ -41,7 +41,7 @@ module.exports = class Relations {
   }
 
   _query (collection, query, cb) {
-    query.predicate = collection.schema.resolveFieldAddress(query.predicate)
+    if (query.predicate) query.predicate = collection.schema.resolveFieldAddress(query.predicate)
     query.graph = collection.key.toString('hex')
     const quadStream = this.store.getStream(query)
     const transform = new Transform({

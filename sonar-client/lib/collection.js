@@ -209,7 +209,7 @@ class Collection {
     const type = this.schema.addType(spec)
     return this.fetch('/schema', {
       method: 'POST',
-      body: type.toJSONSchema()
+      body: type.toJSON()
     })
   }
 
