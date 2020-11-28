@@ -126,9 +126,9 @@ function runTests (create) {
     await c2.sync()
 
     let res = await c2.query('records', { type: 'doc' })
-    t.equal(res.length, 1)
+    t.equal(res.length, 1, 'c2 q len ok')
     const record = res[0]
-    t.equal(record.get('title'), 'hello')
+    t.equal(record.get('title'), 'hello', 'c2 q val ok')
 
     const updatedRecord = record.update({ title: 'hi' })
     await c2.put(updatedRecord)

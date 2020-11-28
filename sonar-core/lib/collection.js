@@ -7,14 +7,15 @@ const pump = require('pump')
 const collectStream = require('stream-collector')
 const { Transform } = require('streamx')
 const { NanoresourcePromise: Nanoresource } = require('nanoresource-promise/emitter')
+const Kappa = require('kappa-core')
+const Indexer = require('kappa-sparse-indexer')
 
 const { Record, Type, Schema } = require('@arso-project/sonar-common')
-const Kappa = require('./kappa')
 const SyncMap = require('./level-utils/sync-map')
 const Workspace = require('./workspace')
 const RecordEncoder = require('./record-encoder')
 const { Header } = require('./messages')
-const { noop, uuid, deriveId, maybeCallback } = require('./util')
+const { noop, uuid, once, deriveId, maybeCallback } = require('./util')
 const createKvView = require('../views/kv')
 const createRecordsView = require('../views/records')
 const createIndexView = require('../views/indexes')
@@ -23,6 +24,8 @@ const CORE_TYPE_SPECS = require('./types.json')
 
 const FEED_TYPE_ROOT = 'sonar.root'
 // const FEED_TYPE_DATA = 'sonar.data'
+
+// const SYNC_TIMEOUT = 10000
 
 const TYPE_FEED = 'sonar/feed'
 const TYPE_TYPE = 'sonar/type'
@@ -49,16 +52,14 @@ class Collection extends Nanoresource {
     }
 
     this.schema = new PersistingSchema(leveldbs.schema, this)
+    this._feeds = new Map()
     this._localState = new SyncMap(leveldbs.state)
     this._feedInfo = new SyncMap(leveldbs.feeds)
-    // this._indexer = new Indexer({
-    //   loadValue: false,
-    //   db: leveldbs.indexer
-    // })
-    this._kappa = new Kappa({
-      db: leveldbs.indexer,
-      onget: onKappaGet.bind(this)
+    this._indexer = new Indexer({
+      loadValue: false,
+      db: leveldbs.indexer
     })
+    this._kappa = new Kappa()
     this._queryHandlers = new Map()
     this._onerror = (err) => err && this.emit('error', err)
     this._subscriptions = new Map()
@@ -110,21 +111,72 @@ class Collection extends Nanoresource {
     this._queryHandlers.set(name, handler)
   }
 
-  use (name, view, opts) {
-    const flow = this._kappa.use(name, view, opts)
+  use (name, view, opts = {}) {
+    const self = this
+    if (typeof view === 'function') {
+      view = {
+        map: view
+      }
+    }
+
+    const sourceOpts = {
+      maxBatch: opts.maxBatch
+    }
+
+    // if (opts.filterFeed) {
+    //   // TODO: Make async?
+    //   sourceOpts.filterKey = function (key) {
+    //     return opts.filterFeed(key)
+    //   }
+    // }
+
+    if (opts.batch === false) {
+      const mapFn = view.map.bind(view)
+      view.map = async function (records) {
+        for (const record of records) {
+          await mapFn(record)
+        }
+      }
+    }
+
+    opts.transform = function (messages, next) {
+      const getOpts = {}
+      if (opts.upcast === false) getOpts.upcast = false
+      next = once(next)
+      let pending = messages.length
+      messages.forEach((req, i) => {
+        self.getBlock(req, getOpts)
+          .then(record => {
+            messages[i] = record
+            if (--pending === 0) next(messages.filter(m => m))
+          })
+          .catch(err => {
+            // console.error('getBlock error', err)
+            if (err) messages[i] = undefined
+            if (--pending === 0) next(messages.filter(m => m))
+          })
+      })
+    }
+
+    const flow = this._kappa.use(name, this._indexer.createSource(sourceOpts), view, opts)
     if (flow.view.query) {
       this.registerQuery(name, flow.view.query)
     } else if (view.query) {
       this.registerQuery(name, view.query)
     }
+
+    return flow
   }
 
   feeds () {
-    return this._kappa.feeds()
+    return Array.from(this._feeds.values())
+    // return this._kappa.feeds()
   }
 
   feed (key) {
-    return this._kappa.feed(key)
+    if (Buffer.isBuffer(key)) key = key.toString('hex')
+    return this._feeds.get(key)
+    // return this._kappa.feed(key)
   }
 
   feedInfo (key) {
@@ -135,9 +187,15 @@ class Collection extends Nanoresource {
   async configure (configuration = {}, save = true) {
     // Apply network configuration.
     if (configuration.share !== false) {
-      this._workspace.network.configure(this.discoveryKey, { announce: true, lookup: true })
+      this._workspace.network.configure(this.discoveryKey, {
+        announce: true,
+        lookup: true
+      })
     } else {
-      this._workspace.network.configure(this.discoveryKey, { announce: false, lookup: false })
+      this._workspace.network.configure(this.discoveryKey, {
+        announce: false,
+        lookup: false
+      })
     }
 
     if (save) {
@@ -175,8 +233,57 @@ class Collection extends Nanoresource {
     return batch.entries
   }
 
-  getRecord (req, opts, cb) {
-    return this._kappa.getBlock(req, opts, cb)
+  async getBlock (req, opts = {}) {
+    // Resolve the request through the indexer. This allows to use
+    // either an lseq or key and seq.
+    if (!req.key || !req.seq || !req.lseq) {
+      req = await new Promise((resolve, reject) => {
+        this._indexer.resolveBlock(req, (err, req) => {
+          err ? reject(err) : resolve(req)
+        })
+      })
+    }
+
+    const { key, seq } = req
+    const feed = this.feed(key)
+    if (!feed) throw new Error('Key not found')
+
+    if (seq === 0) throw new Error('Cannot get block 0 because it is the header')
+    // TODO: Support different decoders per feed type (to support hyperdrive).
+    const block = await feed.get(seq)
+    const decoded = RecordEncoder.decode(block, req)
+
+    if (opts.upcast === false) {
+      return decoded
+    }
+
+    try {
+      const record = new Record(this.schema, decoded)
+      return record
+    } catch (err) {
+      if (opts._isRetrying) throw err
+      await this.sync('root')
+      opts._isRetrying = true
+      return this.getBlock(req, opts)
+    }
+  }
+
+  createGetStream (opts) {
+    const self = this
+    return new Transform({
+      transform (req, cb) {
+        self.getBlock(req, opts).then(res => cb(null, res), cb)
+      }
+    })
+  }
+
+  getRecord (req, opts = {}, cb) {
+    if (typeof opts === 'function') {
+      cb = opts
+      opts = {}
+    }
+    if (!cb) return this.getBlock(req, opts)
+    else this.getBlock(req, opts).then(record => cb(null, record), cb)
   }
 
   loadRecord (...args) {
@@ -247,7 +354,18 @@ class Collection extends Nanoresource {
       views = null
     }
     cb = maybeCallback(cb)
-    this._kappa.sync(views, cb)
+
+    // const timeout = setTimeout(() => {
+    //   cb(new Error('Sync timeout')
+    // }, SYNC_TIMEOUT)
+
+    process.nextTick(() => {
+      this._kappa.ready(views, () => {
+        // clearTimeout(timeout)
+        cb()
+      })
+    })
+
     return cb.promise
   }
 
@@ -268,7 +386,7 @@ class Collection extends Nanoresource {
   status (cb) {
     if (!this.opened) return { opened: false }
     const feeds = this.feeds().map(feed => feedStatus(this, feed))
-    const kappa = this._kappa.status()
+    const kappa = this._kappa.getState()
     const status = {
       name: this.name,
       opened: true,
@@ -291,12 +409,12 @@ class Collection extends Nanoresource {
     // Subscribe for new feeds and types.
     const rootViewOpts = {
       batch: false,
-      upcast: false,
-      filterFeed: (key) => {
-        const info = this.feedInfo(key)
-        const ret = info && info.type === FEED_TYPE_ROOT
-        return ret
-      }
+      upcast: false
+      // filterFeed: (key) => {
+      //   const info = this.feedInfo(key)
+      //   const ret = info && info.type === FEED_TYPE_ROOT
+      //   return ret
+      // }
     }
     const rootViewMap = async record => {
       // The root view has the upcast opt set to false, which means that
@@ -431,9 +549,11 @@ class Collection extends Nanoresource {
   async _initFeed (keyOrName, info = {}) {
     const feed = this._workspace.Hypercore(keyOrName)
     if (!feed.opened) await feed.ready()
+    const hkey = feed.key.toString('hex')
     // Don't do anything for feeds already opened
-    if (this._kappa.feed(feed.key)) return this._kappa.feed(feed.key)
+    if (this._feeds.has(hkey)) return this._feeds.get(hkey)
 
+    // TODO: Deal with feed types again :)
     if (info.type && info.type === 'hyperdrive') return
 
     feed.on('download', (seq) => {
@@ -457,11 +577,9 @@ class Collection extends Nanoresource {
       await onFeedCreateRemote.call(this, feed, info)
     }
 
-    // Add only non-empty feeds to the kappa. This means the type was set.
-    // if (await feed.has(0)) {
-    //   this._kappa.addFeed(feed)
-    // }
-    this._kappa.addFeed(feed)
+    this._feeds.set(hkey, feed)
+    this._indexer.addReady(feed, { scan: true })
+
     // TODO: Start to not download everything, always.
     // Note: null as second argument is needed, see
     // https://github.com/geut/hypercore-promise/issues/8
@@ -544,10 +662,7 @@ async function onFeedCreateRemote (feed) {
 async function onFeedCreateLocal (feed, info = {}) {
   if (!feed.writable) throw new Error('Local feed must be writable')
   // Feed was already initialized
-  if (feed.length) {
-    this._kappa.addFeed(feed)
-    return
-  }
+  if (feed.length) return
 
   if (!info.type) throw new Error('Type is required for new feeds')
 
@@ -694,8 +809,8 @@ class Subscription {
     // if (typeof opts === 'function') {
     //   opts = { map: opts }
     // }
-    this.collection = collection
-    this.sub = collection._kappa._indexer.createSubscription(name, opts)
+    // this.collection = collection
+    this.sub = collection._indexer.createSubscription(name, opts)
     this.name = name
     this.opts = opts
     this.pullOpts = {
@@ -736,20 +851,11 @@ class Subscription {
 
 class Query {
   constructor (collection, name, args, opts) {
-    const self = this
     this.collection = collection
     this.name = name
     this.args = args
     this.opts = opts
-
-    // const load = opts.load !== false
-    this.proxy = new Transform({
-      transform (req, cb) {
-        self.collection.getRecord(req, (err, record) => {
-          cb(err, record)
-        })
-      }
-    })
+    this.proxy = this.collection.createGetStream()
   }
 
   start () {

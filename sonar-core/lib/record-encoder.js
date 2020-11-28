@@ -8,10 +8,10 @@ module.exports = class RecordEncoder {
     // Assign key and seq if provided (these are not part of the encoded record, but
     // must be provided when loading the record from the feed).
     if (props.key) {
-      record.key = Buffer.isBuffer(props.key) ? props.key.toString('hex') : props.key
+      props.key = Buffer.isBuffer(props.key) ? props.key.toString('hex') : props.key
     }
     if (typeof props.seq !== 'undefined') {
-      record.seq = Number(props.seq)
+      props.seq = Number(props.seq)
     }
     record = { ...props, ...record }
     return record
