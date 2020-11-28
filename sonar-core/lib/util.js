@@ -1,13 +1,12 @@
 const base32 = require('base32')
-const sodium = require('sodium-universal')
-const randomBytes = require('randombytes')
+const { randomBytes, createHash } = require('crypto')
 const { Writable, Transform } = require('streamx')
 
 const fs = require('fs')
 const p = require('path')
 const yaml = require('js-yaml')
 
-const SONAR_ID = Buffer.from('sonar-derive-id')
+const ID_NAMESPACE = Buffer.from('sonar-id')
 
 exports.loadTypesFromDir = function (paths) {
   if (!Array.isArray(paths)) paths = [paths]
@@ -36,11 +35,13 @@ exports.uuid = function () {
   return base32.encode(randomBytes(16))
 }
 
-exports.deriveId = function (buf) {
-  if (!Buffer.isBuffer(buf)) buf = Buffer.from(buf)
-  const digest = Buffer.allocUnsafe(32)
-  sodium.crypto_generichash(digest, buf)
-  return base32.encode(digest.slice(0, 16))
+exports.deriveId = function (value, opts = {}) {
+  let { encoding = 'utf8', namespace = ID_NAMESPACE } = opts
+  if (!Buffer.isBuffer(namespace)) namespace = Buffer.from(namespace, 'utf8')
+  if (!Buffer.isBuffer(value)) value = Buffer.from(value, encoding)
+  value = Buffer.concat([namespace, value])
+  const hash = createHash('sha256').update(value).digest()
+  return base32.encode(hash.slice(0, 16))
 }
 
 exports.through = function (transform) {

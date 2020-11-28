@@ -316,12 +316,14 @@ class Record extends Node {
     const h = str => stylize(str, 'special')
     const s = str => stylize(str)
     const links = this.links ? this.links.length : 0
-    const lseq = this.lseq ? `#${this.lseq}` : ''
-    // const lseq = this.lseq ? ('#' + this.lseq) || ''
+    const value = this.deleted ? '<deleted>' : JSON.stringify(this.value).substring(0, 320)
+    const meta = s('feed ') + h(pretty(this.key)) + s('@') + this.seq +
+      s(' lseq ') + (this.lseq || '--') +
+      s(' links ') + links
     return `Record(
-${ind}  ${h(this.type)} ${this.id} ${h(pretty(this.key))}${s('@')}${h(this.seq)} ${lseq}
-${ind}  ${stylize(JSON.stringify(this.value).substring(0, 320))}
-${ind}  links: ${h(links)} del: ${h(this.deleted || false)}
+${ind}  ${s('type')} ${this.type} ${s('id')} ${this.id}
+${ind}  ${s('value')} ${value}
+${ind}  ${meta}
 )`
   }
 }

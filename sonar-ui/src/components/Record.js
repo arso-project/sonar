@@ -205,17 +205,26 @@ export function RecordDrawerByID (props) {
 
 function ObjectViewer (props) {
   const { value, fieldType } = props
-  if (!value) return 'no object'
   return (
-    <div>
-      {Object.entries(fieldType.properties).map(([key, fieldType], i) => {
-        if (typeof value[key] === 'undefined') return null
-        return (
-          <FieldViewer key={i} fieldType={fieldType} value={value[key]} fieldName={key} />
-        )
-      })}
-    </div>
+    <JsonTree
+      data={value}
+      invertTheme
+      hideRoot
+      theme='bright'
+    />
   )
+  // const { value, fieldType } = props
+  // if (!value) return 'no object'
+  // return (
+  //   <div>
+  //     {Object.entries(fieldType.properties).map(([key, fieldType], i) => {
+  //       if (typeof value[key] === 'undefined') return null
+  //       return (
+  //         <FieldViewer key={i} fieldType={fieldType} value={value[key]} fieldName={key} />
+  //       )
+  //     })}
+  //   </div>
+  // )
 }
 
 function FieldViewer (props) {

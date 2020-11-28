@@ -22,7 +22,7 @@ const debug = require('debug')('sonar:fetch')
   *
   * TODO: Rethink the default responseType cascade.
   */
-module.exports = async function sonarFetch (url, opts) {
+module.exports = async function makeFetch (url, opts) {
   if (!url.match(/^https?:\/\//)) {
     if (url.indexOf('://') !== -1) throw new Error('Only http: and https: protocols are supported.')
     if (!url.startsWith('/')) url = '/' + url

@@ -44,15 +44,19 @@ class Collection extends Nanoresource {
     const leveldbs = {
       feeds: this._leveldb('f'),
       schema: this._leveldb('s'),
-      kappa: this._leveldb('k'),
+      indexer: this._leveldb('i'),
       state: this._leveldb('l')
     }
 
     this.schema = new PersistingSchema(leveldbs.schema, this)
     this._localState = new SyncMap(leveldbs.state)
     this._feedInfo = new SyncMap(leveldbs.feeds)
+    // this._indexer = new Indexer({
+    //   loadValue: false,
+    //   db: leveldbs.indexer
+    // })
     this._kappa = new Kappa({
-      db: leveldbs.kappa,
+      db: leveldbs.indexer,
       onget: onKappaGet.bind(this)
     })
     this._queryHandlers = new Map()
@@ -311,25 +315,25 @@ class Collection extends Nanoresource {
     this.use('root', { map: rootViewMap }, rootViewOpts)
 
     this.use('kv', createKvView(
-      this._leveldb('view/kv')
+      this._leveldb('view.kv')
     ))
 
     this.use('records', createRecordsView(
-      this._leveldb('view/records'),
+      this._leveldb('view.records'),
       this,
       {
         schema: this.schema
       }
     ))
     this.use('index', createIndexView(
-      this._leveldb('view/index'),
+      this._leveldb('view.index'),
       this,
       {
         schema: this.schema
       }
     ))
     this.use('history', createHistoryView(
-      this._leveldb('view/history'),
+      this._leveldb('view.history'),
       this
     ))
 
@@ -374,9 +378,10 @@ class Collection extends Nanoresource {
 
     // Init root feed
     this._rootFeed = await this._initFeed(this._keyOrName, rootInfo)
+    this._id = deriveId(this._rootFeed.discoveryKey)
 
     // Set default type namespace to root feed key
-    this.schema.setDefaultNamespace(this.key.toString('hex'))
+    this.schema.setDefaultNamespace(this._id)
 
     // Init local root feed
     if (this._rootFeed.writable) {
@@ -397,9 +402,11 @@ class Collection extends Nanoresource {
     }
 
     // Load feeds and add them to the kappa.
-    for (const info of this._feedInfo.values()) {
-      await this._initFeed(info.key, info)
-    }
+    await Promise.all(
+      this._feedInfo
+        .values()
+        .map(info => this._initFeed(info.key, info))
+    )
 
     // Alternative approach: Don't store feeds and types locally at all.
     // Query the collection itself. This is nicer, likely.
@@ -472,41 +479,30 @@ class Collection extends Nanoresource {
   }
 
   [inspect] (depth, opts) {
-    const { stylize } = opts
-    var indent = ''
-    if (typeof opts.indentationLvl === 'number') {
-      while (indent.length < opts.indentationLvl) indent += ' '
-    }
+    const { stylize = str => str, indentationLvl } = opts
+    const indent = ' '.repeat(indentationLvl || 0)
     const h = str => stylize(str, 'special')
     const s = str => stylize(str)
+    const n = str => stylize(str, 'number')
+    const fmtkey = key => key ? key.toString('hex') : ''
 
     const feeds = this.feeds().map(feed => {
       const info = this.feedInfo(feed.key)
-      const len = feed.length
-      const dled = feed.downloaded()
-      const meta = feed.writable ? '+' : '/' + dled
-      const detail = h(len + meta, 'special')
-      const key = h(pretty(feed.key))
-      const at = s('@')
-      let str = `${key}${at}${detail}`
+      const meta = feed.writable ? '*' : '/' + n(feed.downloaded())
+      let str = h(pretty(feed.key)) + s('@') + n(feed.length) + meta
       if (info.name) str += ' ' + info.name
-      if (info.type) str += stylize(' (' + info.type + ')')
-      str += ''
+      if (info.type) str += s(` (${info.type})`)
       return str
     }).join(', ')
 
-    function fmtkey (key) {
-      return h(key ? pretty(key) : '')
-    }
-
     return 'Collection(\n' +
-          indent + '  key         : ' + fmtkey(this.key) + '\n' +
-          indent + '  discoveryKey: ' + fmtkey(this.discoveryKey) + '\n' +
-          indent + '  localKey:     ' + fmtkey(this.localKey) + '\n' +
-          indent + '  dataKey :     ' + fmtkey(this.dataKey) + '\n' +
-          indent + '  name        : ' + s(this._name) + '\n' +
-          // indent + '  opened      : ' + stylize(this.opened, 'boolean') + '\n' +
-          indent + '  feeds:      : ' + feeds + '\n' +
+          indent + '  opened   : ' + stylize(this.opened, 'boolean') + '\n' +
+          indent + '  key      : ' + h(fmtkey(this.key)) + '\n' +
+          indent + '  localKey : ' + h(fmtkey(this.localKey)) + '\n' +
+          // indent + '  discoveryKey: ' + s(fmtkey(this.discoveryKey)) + '\n' +
+          indent + '  id       : ' + s(this._id) + '\n' +
+          // indent + '  name     : ' + s(this._name) + '\n' +
+          indent + '  feeds    : ' + feeds + '\n' +
           indent + ')'
   }
 }
@@ -541,7 +537,7 @@ async function onFeedCreateRemote (feed) {
     feed.get(0, { wait: true }).then(buf => {
       onheader(buf).catch(this._onerror)
       // this._kappa.addFeed(feed)
-    })
+    }).catch(() => {})
   }
 }
 

@@ -49,8 +49,12 @@ function createConfig (opts) {
     entry,
     mode: opts.dev ? 'development' : 'production',
     watch: argv.watch || argv.serve,
-    devtool: opts.dev ? 'inline-source-map' : 'none',
+    devtool: 'inline-source-map',
+    // devtool: opts.dev ? 'source-map' : 'none',
     stats: 'minimal',
+    devServer: {
+      contentBase: output
+    },
     module: {
       rules: [
         // Transpile JS and JSX with babel

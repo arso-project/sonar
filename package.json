@@ -16,7 +16,8 @@
   },
   "workspaces": [
     "*",
-    "bots/**"
+    "bots/**",
+    "packages/**"
   ],
   "license": "GPL-3.0",
   "private": true,
