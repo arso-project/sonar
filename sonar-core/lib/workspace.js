@@ -12,7 +12,7 @@ const { NanoresourcePromise: Nanoresource } = require('nanoresource-promise/emit
 
 const Collection = require('./collection')
 // const SyncMap = require('./level-utils/sync-map')
-const { maybeCallback } = require('./util')
+const { maybeCallback, noop } = require('./util')
 
 // Import for views - move into module.
 const Catalog = require('@arso-project/sonar-tantivy')
@@ -91,6 +91,7 @@ module.exports = class Workspace extends Nanoresource {
       const sdkOpts = { ...this._opts }
       sdkOpts.storage = file => RAF(this.storagePath('cores/' + file))
       this._sdk = await DatSDK(sdkOpts)
+      this._ownSDK = true
     } else {
       this._sdk = this._opts.sdk
     }
@@ -114,12 +115,18 @@ module.exports = class Workspace extends Nanoresource {
   }
 
   async _close () {
-    // why()
+    if (!this.opened) await this.open()
+    this.emit('closing')
+    await new Promise(resolve => process.nextTick(resolve))
     const promises = this.collections().map(c => c.close())
     await Promise.all(promises)
-    // await this._leveldb.close()
-    // this.network.close()
-    await this._sdk.close()
+    this._leveldb.close()
+    if (this._ownSDK) {
+      await this._sdk.close()
+    }
+    // this._sdk = null
+    // this._leveldb = null
+    // this._collections = new Map()
     this.emit('close')
   }
 

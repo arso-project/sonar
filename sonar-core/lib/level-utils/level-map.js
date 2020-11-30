@@ -1,28 +1,48 @@
 const codecs = require('codecs')
-const { NanoresourcePromise: Nanoresource } = require('nanoresource-promise/emitter')
+const { NanoresourcePromise: Nanoresource } = require('nanoresource-promise')
 const mutex = require('mutexify')
 const { maybeCallback } = require('../util')
 
-module.exports = class SyncMap extends Nanoresource {
+const SEPERATOR = '!'
+const END = '\uffff'
+
+module.exports = class LevelMap extends Nanoresource {
   constructor (db, opts = {}) {
     super()
     this.db = db
+    this._data = new Map()
     this._data = {}
     this._queue = {}
     this._valueEncoding = codecs(opts.valueEncoding || 'json')
     this._condition = opts.condition
-    this._lock = mutex()
-
-    this._onerror = err => err && this.emit('error', err)
+    this._lock = opts.lock || mutex()
+    this._prefix = opts.prefix || '_'
+    this._onerror = opts.onerror || (err => { throw err })
   }
 
-  _open () {
-    const cb = maybeCallback()
-    const rs = this.db.createReadStream()
+  prefix (prefix, opts = {}) {
+    if (this._prefix) prefix = this._prefix + SEPERATOR + prefix
+    opts.prefix = prefix
+    if (!opts.onerror) opts.onerror = this._onerror
+    return new this.constructor(this.db, opts)
+  }
+
+  _open (cb) {
+    cb = maybeCallback()
+    const opts = {}
+    if (this._prefix) {
+      opts.gt = this._prefix + SEPERATOR
+      opts.lt = this._prefix + SEPERATOR + END
+    }
+    const newData = this._data
+    this._data = {}
+    const rs = this.db.createReadStream(opts)
     rs.on('data', ({ key, value }) => {
+      if (this._prefix) key = key.substring(this._prefix.length + 1)
       this._data[key] = this._valueEncoding.decode(value)
     })
     rs.on('end', () => {
+      this._data = { ...this._data, ...newData }
       cb()
     })
     return cb.promise
@@ -69,9 +89,20 @@ module.exports = class SyncMap extends Nanoresource {
   }
 
   update (key, fn) {
+    if (!this.opened) throw new Error('Not opened')
     const value = this.get(key)
     const nextValue = fn(value)
     this.set(key, nextValue)
+  }
+
+  updateFlush (key, fn, cb) {
+    cb = maybeCallback(cb)
+    if (!this.opened) {
+      this.open(() => this.updateFlush(key, fn, cb))
+      return cb.promise
+    }
+    this.update(key, fn)
+    this.flush(cb)
   }
 
   batch (data, flush = true) {
@@ -113,56 +144,19 @@ module.exports = class SyncMap extends Nanoresource {
   flush (cb) {
     cb = maybeCallback(cb)
     this._lock(release => {
-      if (!Object.keys(this._queue).length) return release(cb)
-      const queue = Object.entries(this._queue).map(([key, { value, type }]) => {
-        if (value) value = this._valueEncoding.encode(value)
-        return { key, value, type }
-      })
-      this.queue = {}
-      this.db.batch(queue, release.bind(null, cb))
+      const doFlush = () => {
+        if (!Object.keys(this._queue).length) return release(cb)
+        const queue = Object.entries(this._queue).map(([key, { value, type }]) => {
+          if (this._prefix) key = this._prefix + SEPERATOR + key
+          if (value) value = this._valueEncoding.encode(value)
+          return { key, value, type }
+        })
+        this.queue = {}
+        this.db.batch(queue, release.bind(null, cb))
+      }
+      if (this.opened) doFlush()
+      else this.open(() => doFlush())
     })
     return cb.promise
   }
 }
-
-function noop () {}
-
-// const kCache = Symbol('promise-cache')
-// function createPromiseProxy (instance, callbackMethods) {
-//   if (!instance[kCache]) instance[kCache] = {}
-//   const cache = instance[kCache]
-//   return new Proxy(instance, {
-//     get (target, propKey) {
-//       const value = Reflect.get(target, propKey)
-//       if (typeof value !== 'function') return value
-//       if (!cache[propKey]) {
-//         cache[propKey] = promisify(target, propKey, value)
-//       }
-//       return cache[propKey]
-//     }
-//   })
-
-//   function promisify (target, propKey, func) {
-//     if (!callbackMethods.includes(propKey)) {
-//       return function (...args) {
-//         Reflect.apply(func, target, args)
-//       }
-//     }
-//     return function (...args) {
-//       // Support callbacks if last arg is a function.
-//       if (typeof args[args.length - 1] === 'function') {
-//         return Reflect.apply(func, target, args)
-//       }
-
-//       // Otherwise, return a promise.
-//       return new Promise((resolve, reject) => {
-//         args.push((err, ...result) => {
-//           if (err) return reject(err)
-//           if (result.length > 1) resolve(result)
-//           else resolve(result[0])
-//         })
-//         Reflect.apply(func, target, args)
-//       })
-//     }
-//   }
-// }

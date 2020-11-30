@@ -3,6 +3,7 @@ const { Workspace, Collection } = require('..')
 const { promisify } = require('util')
 const tempdir = promisify(require('temporary-directory'))
 const rimraf = promisify(require('rimraf'))
+// const why = require('why-is-node-running')
 
 const createNative = require('dat-sdk/test/lib/native')
 const createHyperspace = require('dat-sdk/test/lib/hyperspace')
@@ -10,6 +11,7 @@ const createMixed = require('dat-sdk/test/lib/mixed')
 
 Error.stackTraceLimit = 50
 
+// applyStacktrace()
 runAll()
 
 function runAll () {
@@ -36,7 +38,7 @@ async function createN (createSDK, n, opts = {}) {
     const workspace = new Workspace({
       storagePath: dir,
       sdk,
-      persist: false
+      persist: opts.persist || false
     })
     dirs.push(dir)
     workspaces.push(workspace)
@@ -48,7 +50,7 @@ async function createN (createSDK, n, opts = {}) {
   async function cleanup () {
     try {
       await Promise.all(workspaces.map(workspace => workspace.close()))
-      sdks.forEach(sdk => sdk.close())
+      await Promise.all(sdks.map(sdk => sdk.close()))
       cleanupSDK()
       await Promise.all(dirs.map(dir => rimraf(dir)))
     } catch (err) { console.error('Closing error', err) }
@@ -172,6 +174,30 @@ function runTests (create) {
     //   })
     // }
   })
+
+  test('open and close and open', async t => {
+    let [workspace, cleanup] = await create(1, { persist: true })
+    let col = workspace.Collection('first')
+    await col.ready()
+    await col.putType(DOC_SPEC)
+    const type1 = col.schema.getType('doc')
+    t.equal(type1.name, 'doc')
+
+    const sdk = workspace._sdk
+    const storagePath = workspace._storagePath
+
+    await workspace.close()
+
+    workspace = new Workspace({ storagePath, sdk })
+    await workspace.ready()
+    col = workspace.Collection('first')
+    await col.ready()
+    const type2 = col.schema.getType('doc')
+    t.equal(type2.name, 'doc')
+    t.deepEqual(type1, type2)
+    await workspace.close()
+    await cleanup()
+  })
 }
 
 async function timeout (ms) {
@@ -186,3 +212,23 @@ function applyLabel (label) {
     if (label) test.name = label + ': ' + test.name
   })
 }
+
+// function applyStacktrace () {
+//   process.nextTick(() => {
+//     const harness = test.getHarness()
+//     for (const test of harness._tests) {
+//       const cb = test._cb
+//       test._cb = handler
+//       test._cb.name = cb.name
+//       async function handler (t, ...args) {
+//         try {
+//           await cb(...args)
+//         } catch (err) {
+//           console.error('catch', err)
+//           t.fail(err)
+//         }
+//       }
+//     }
+//     console.log(harness)
+//   })
+// }

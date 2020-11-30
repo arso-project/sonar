@@ -11,7 +11,7 @@ const Kappa = require('kappa-core')
 const Indexer = require('kappa-sparse-indexer')
 
 const { Record, Type, Schema } = require('@arso-project/sonar-common')
-const SyncMap = require('./level-utils/sync-map')
+const LevelMap = require('./level-utils/level-map')
 const Workspace = require('./workspace')
 const RecordEncoder = require('./record-encoder')
 const { Header } = require('./messages')
@@ -45,7 +45,6 @@ class Collection extends Nanoresource {
     this.log = this._workspace.log.child({ collection: keyOrName })
 
     const leveldbs = {
-      feeds: this._leveldb('f'),
       schema: this._leveldb('s'),
       indexer: this._leveldb('i'),
       state: this._leveldb('l')
@@ -53,8 +52,11 @@ class Collection extends Nanoresource {
 
     this.schema = new PersistingSchema(leveldbs.schema, this)
     this._feeds = new Map()
-    this._localState = new SyncMap(leveldbs.state)
-    this._feedInfo = new SyncMap(leveldbs.feeds)
+
+    const statedb = new LevelMap(leveldbs.state)
+    this._localState = statedb.prefix('state')
+    this._feedInfo = statedb.prefix('feeds')
+
     this._indexer = new Indexer({
       loadValue: false,
       db: leveldbs.indexer
@@ -112,6 +114,7 @@ class Collection extends Nanoresource {
   }
 
   use (name, view, opts = {}) {
+    if (this.closing || this.closed) return
     const self = this
     if (typeof view === 'function') {
       view = {
@@ -542,8 +545,16 @@ class Collection extends Nanoresource {
   }
 
   async _close () {
+    if (!this.opening && !this.opened) return
+    if (this.opening) await this.open()
     // Wait until all batches are complete
     await this.lock()
+    await new Promise((resolve) => {
+      this._kappa.close(resolve)
+    })
+    await new Promise((resolve) => {
+      this._indexer.close(resolve)
+    })
   }
 
   async _initFeed (keyOrName, info = {}) {
@@ -557,17 +568,19 @@ class Collection extends Nanoresource {
     if (info.type && info.type === 'hyperdrive') return
 
     feed.on('download', (seq) => {
-      this.emit('feed-update')
+      this.emit('feed-update', feed)
     })
     feed.on('append', () => {
-      this.emit('feed-update')
+      this.emit('feed-update', feed)
     })
-    feed.on('remote-update', () => this.emit('remote-update', feed))
+    feed.on('remote-update', () => {
+      this.emit('remote-update', feed)
+    })
 
     // If the feed is unknown add it to the feed store.
-    info.key = feed.key.toString('hex')
-    if (!this._feedInfo.has(info.key)) {
-      this._feedInfo.set(info.key, info)
+    info.key = hkey
+    if (!this._feedInfo.has(hkey)) {
+      this._feedInfo.set(hkey, info)
     }
 
     // Inititialize feed
@@ -673,40 +686,9 @@ async function onFeedCreateLocal (feed, info = {}) {
   }))
 
   // Append feed record once the collection is fully opened
-  this.open().then(() => {
+  this.ready(() => {
     this.putFeed(hkey, info).catch(this._onerror)
   })
-}
-
-function onKappaGet (message, opts, cb, retry = false) {
-  const { key, seq, lseq, value } = message
-  // Decode protobuf. This should never fail at the moment.
-  let record
-  try {
-    record = RecordEncoder.decode(value, { key, seq, lseq })
-  } catch (err) {
-    this.emit('error', err)
-    cb(err)
-  }
-
-  if (opts.upcast === false) return cb(null, record)
-
-  try {
-    record = new Record(this.schema, record)
-    // TODO: Rethink where / how the delete property works.
-    cb(null, record)
-  } catch (err) {
-    if (retry) {
-      this.emit('error', err)
-      return cb(err)
-    }
-    // console.log('needs sync', key, seq, RecordEncoder.decode(value))
-    // TODO: Make sure this doesn't loop infinitely.
-    this.sync('root', err => {
-      if (err) return cb(err)
-      onKappaGet.call(this, message, opts, cb, true)
-    })
-  }
 }
 
 class Batch {
@@ -878,7 +860,8 @@ class Query {
   }
 
   _queryLocal () {
-    const { name, args, opts, proxy } = this
+    const self = this
+    const { name, args, opts } = this
     const queryFn = this.collection._queryHandlers.get(name)
     if (!queryFn) {
       this.proxy.destroy(new Error('Invalid query name: ' + this.name))
@@ -893,9 +876,9 @@ class Query {
 
     function createStream () {
       const qs = queryFn(args, opts)
-      qs.once('sync', () => proxy.emit('sync'))
-      qs.on('error', err => proxy.emit('error', err))
-      pump(qs, proxy)
+      qs.once('sync', () => self.proxy.emit('sync'))
+      qs.on('error', err => self.proxy.emit('error', err))
+      pump(qs, self.proxy)
     }
   }
 
@@ -937,7 +920,7 @@ async function collectAsync (stream) {
   return new Promise((resolve, reject) => {
     collectStream(stream, (err, results) => {
       if (err) reject(err)
-      resolve(results)
+      else resolve(results)
     })
   })
 }
