@@ -11,6 +11,7 @@ module.exports = class Schema {
     this._fields = new Map()
     this._typeVersions = new MapSet()
     this._defaultNamespace = opts.defaultNamespace
+    this._onchange = opts.onchange || noop
   }
 
   setDefaultNamespace (namespace) {
@@ -43,7 +44,7 @@ module.exports = class Schema {
     return encodeAddress(parts)
   }
 
-  addType (spec) {
+  addType (spec, opts = {}) {
     if (spec.address && this._types.has(spec.address)) {
       return this._types.get(spec.address)
     }
@@ -57,6 +58,7 @@ module.exports = class Schema {
     // TODO: Make sure types are immutable.
     this._types.set(type.address, type)
     this._typeVersions.add(type.namespace + '/' + type.name, type.version)
+    if (opts.onchange !== false) this._onchange(this)
     return type
   }
 
@@ -124,8 +126,9 @@ module.exports = class Schema {
   addTypes (spec) {
     const types = Array.isArray(spec) ? spec : Object.values(spec)
     for (const type of types) {
-      this.addType(type)
+      this.addType(type, { onchange: false })
     }
+    this._onchange(this)
   }
 
   // [inspect] (depth, opts) {
@@ -146,3 +149,5 @@ module.exports = class Schema {
   //         types + ')'
   // }
 }
+
+function noop () {}

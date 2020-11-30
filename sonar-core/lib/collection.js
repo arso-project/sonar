@@ -45,17 +45,22 @@ class Collection extends Nanoresource {
     this.log = this._workspace.log.child({ collection: keyOrName })
 
     const leveldbs = {
-      schema: this._leveldb('s'),
       indexer: this._leveldb('i'),
       state: this._leveldb('l')
     }
 
-    this.schema = new PersistingSchema(leveldbs.schema, this)
-    this._feeds = new Map()
-
     const statedb = new LevelMap(leveldbs.state)
     this._localState = statedb.prefix('state')
     this._feedInfo = statedb.prefix('feeds')
+
+    this.schema = new Schema({
+      onchange: (schema) => {
+        this._localState.set('schema', schema.toJSON())
+        this.emit('schema-update', schema)
+      }
+    })
+
+    this._feeds = new Map()
 
     this._indexer = new Indexer({
       loadValue: false,
@@ -482,16 +487,19 @@ class Collection extends Nanoresource {
     await Promise.all([
       this._workspace.open(),
       this._feedInfo.open(),
-      this._localState.open(),
-      this.schema.load()
+      this._localState.open()
     ])
+
+    const storedSchema = this._localState.get('schema')
+    if (storedSchema) {
+      this.schema.addTypes(storedSchema, { onchange: false })
+    }
 
     // Init core types
     // TODO: Check for version updates.
     // TODO: Decide whether to store core types in the feeds as well.
     if (!this.schema.hasType(TYPE_TYPE)) {
       this.schema.addTypes(CORE_TYPE_SPECS)
-      // this.schema.persist()
     }
 
     const rootInfo = { type: FEED_TYPE_ROOT }
@@ -885,28 +893,6 @@ class Query {
   _queryRemote () {
     this.proxy.destroy('Remote queries are not yet supported')
   }
-}
-
-function PersistingSchema (db, emitter) {
-  const schema = new Schema()
-  schema.persist = (cb = noop) => {
-    const spec = schema.toJSON()
-    db.put('spec', JSON.stringify(spec), err => {
-      if (err) return cb(err)
-    })
-    emitter.emit('schema-update')
-  }
-  schema.load = (cb = noop) => {
-    db.get('spec', (err, str) => {
-      if (err && !err.notFound) return cb(err)
-      if (!err) {
-        const spec = JSON.parse(str)
-        schema.addTypes(spec)
-      }
-      cb()
-    })
-  }
-  return schema
 }
 
 class ArrayMap extends Map {
