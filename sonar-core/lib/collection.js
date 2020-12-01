@@ -11,12 +11,12 @@ const Kappa = require('kappa-core')
 const Indexer = require('kappa-sparse-indexer')
 
 const { Record, Type, Schema } = require('@arso-project/sonar-common')
-const LevelMap = require('./level-utils/level-map')
+const LevelMap = require('./utils/level-map')
 const EventStream = require('./utils/eventstream')
 const Workspace = require('./workspace')
 const RecordEncoder = require('./record-encoder')
 const { Header } = require('./messages')
-const { noop, uuid, once, deriveId, maybeCallback } = require('./util')
+const { uuid, once, deriveId, maybeCallback } = require('./util')
 const createKvView = require('../views/kv')
 const createRecordsView = require('../views/records')
 const createIndexView = require('../views/indexes')
@@ -25,8 +25,6 @@ const CORE_TYPE_SPECS = require('./types.json')
 
 const FEED_TYPE_ROOT = 'sonar.root'
 // const FEED_TYPE_DATA = 'sonar.data'
-
-// const SYNC_TIMEOUT = 10000
 
 const TYPE_FEED = 'sonar/feed'
 const TYPE_TYPE = 'sonar/type'

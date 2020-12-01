@@ -211,7 +211,6 @@ function runTests (create) {
     await collection.open()
     const feeds = await collection.get({ type: 'sonar/feed' })
     const drives = feeds.filter(record => record.value.type === 'hyperdrive')
-    console.log(drives)
     t.equal(drives.length, 1)
     await cleanup()
   })

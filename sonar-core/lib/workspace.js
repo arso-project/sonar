@@ -11,7 +11,6 @@ const { NanoresourcePromise: Nanoresource } = require('nanoresource-promise/emit
 // const why = require('why-is-node-running')
 
 const Collection = require('./collection')
-// const SyncMap = require('./level-utils/sync-map')
 const { maybeCallback, noop } = require('./util')
 
 // Import for views - move into module.
