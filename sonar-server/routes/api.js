@@ -88,6 +88,7 @@ module.exports = function apiRoutes (api) {
         .filter(record => record.value.type === 'hyperdrive')
         .map(record => record.value)
       let pending = drives.length
+      if (!drives.length) return res.send([])
       drives.forEach(driveInfo => {
         collection.fs.get(driveInfo.key, (err, drive) => {
           if (err) driveInfo.error = err.message

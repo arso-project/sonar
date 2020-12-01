@@ -4,7 +4,8 @@ const { clock } = require('nanobench-utils')
 
 const createServerClient = require('./util/server')
 
-test('commands', async t => {
+// Disabled - will be replaced by bots API
+test.skip('commands', async t => {
   const [context, client1] = await createServerClient({ disableAuthentication: true })
   const client2 = context.createClient()
 
@@ -38,7 +39,8 @@ test('commands', async t => {
   t.end()
 })
 
-test('subscription commands', async t => {
+// Disabled - will be replaced by bots API
+test.skip('subscription commands', async t => {
   const timer = clock()
   const [context, client] = await createServerClient({ disableAuthentication: true })
   debug(timer.log('init', true))
@@ -84,7 +86,7 @@ test('subscription commands', async t => {
   t.end()
 })
 
-test('query commands', async t => {
+test.skip('query commands', async t => {
   const timer = clock()
   const [context, client] = await createServerClient({ disableAuthentication: true })
   debug(timer.log('init', true))

@@ -243,6 +243,8 @@ class Collection {
   }
 
   async _initEventSource () {
+    if (this._eventSourceInitializing) return
+    this._eventSourceInitializing = true
     try {
       if (!this._client.opened) await this._client.open()
       const headers = this._client.getAuthHeaders()
@@ -260,7 +262,7 @@ class Collection {
       // TODO: Where should the error go?
       console.error('Error initializing event source: ' + e.message)
     }
-    return this._eventSource
+    this._eventSourceInitializing = undefined
   }
 
   /**

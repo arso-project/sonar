@@ -166,8 +166,8 @@ tape('replicate resources', async t => {
   await collection2.open()
 
   const resource2 = await writeResource(collection2, 'two', 'onsecond')
-  t.equal(resource1.key, collection1.info.dataKey, 'key of resource1 ok')
-  t.equal(resource2.key, collection2.info.dataKey, 'key of resourc2 ok')
+  t.equal(resource1.key, collection1.info.localKey, 'key of resource1 ok')
+  t.equal(resource2.key, collection2.info.localKey, 'key of resourc2 ok')
 
   await timeout(500)
 

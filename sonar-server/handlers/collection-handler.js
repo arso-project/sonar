@@ -162,22 +162,12 @@ module.exports = function createCollectionHandler (collections) {
     },
 
     eventsSSE (req, res, next) {
-      const sseStream = new SseStream(req)
-      const eventStream = req.collection.createEventStream()
-      sseStream.pipe(res)
-
-      eventStream.on('data', message => {
-        const event = { type: message.type, data: message.data }
-        const data = JSON.stringify(event)
-        sseStream.write({
-          id: message.id,
-          // TODO: It would be nicer to pass the message type here.
-          // However, the EventSource API doesn't really allow a
-          // catch-all handler.
-          event: 'message',
-          data
-        })
+      const eventStream = req.collection.createEventStream({
+        lastId: req.header('Last-Event-ID'),
+        map: 'sse'
       })
+      const sseStream = new SseStream(req)
+      eventStream.pipe(sseStream).pipe(res)
 
       res.on('close', () => {
         sseStream.unpipe(res)
