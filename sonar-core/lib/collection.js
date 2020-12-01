@@ -12,6 +12,7 @@ const Indexer = require('kappa-sparse-indexer')
 
 const { Record, Type, Schema } = require('@arso-project/sonar-common')
 const LevelMap = require('./level-utils/level-map')
+const EventStream = require('./utils/eventstream')
 const Workspace = require('./workspace')
 const RecordEncoder = require('./record-encoder')
 const { Header } = require('./messages')
@@ -75,6 +76,25 @@ class Collection extends Nanoresource {
     if (opts.defaultViews !== false) {
       this._setupDefaultViews()
     }
+
+    this._eventStream = new EventStream()
+
+    // Forward some events
+    this._indexer.on('update', () => {
+      this.emit('update', this.length)
+    })
+
+    // Push some events into event streams
+    // Event streams are an easy way to forward events over RPC or HTTP.
+    this.on('update', (lseq) => {
+      this._eventStream.push('update', { lseq })
+    })
+    this.on('feed', (feed, info) => {
+      this._eventStream.push('feed', { ...info })
+    })
+    this.on('schema-update', () => {
+      this._eventStream.push('schema-update')
+    })
   }
 
   // Public API
@@ -105,6 +125,10 @@ class Collection extends Nanoresource {
 
   get rootFeed () {
     return this._rootFeed
+  }
+
+  get length () {
+    return this._indexer.length
   }
 
   ready (cb) {
@@ -241,6 +265,27 @@ class Collection extends Nanoresource {
     return batch.entries
   }
 
+  // async get (req, opts = {}) {
+  //   if (req.lseq || (req.key && req.seq)) {
+  //     const record = await this.getBlock(req, opts)
+  //     return [record]
+  //   } else if (req.id || req.type) {
+  //     const records = await this.query('records', { id: req.id, type: req.type })
+  //     return records
+  //   } else throw new Error('Invalid get request')
+  // }
+
+  get (req, opts = {}, cb) {
+    if (typeof opts === 'function') { cb = opts; opts = {} }
+    cb = maybeCallback(cb)
+    if (req.lseq || (req.key && req.seq)) {
+      this.getBlock(req).then(record => cb(null, [record]), cb)
+    } else if (req.id || req.type) {
+      this.query('records', req).then(records => cb(null, records), cb)
+    }
+    return cb.promise
+  }
+
   async getBlock (req, opts = {}) {
     // Resolve the request through the indexer. This allows to use
     // either an lseq or key and seq.
@@ -296,16 +341,6 @@ class Collection extends Nanoresource {
 
   loadRecord (...args) {
     return this.getRecord(...args)
-  }
-
-  get (req, cb) {
-    cb = maybeCallback(cb)
-    if (req.lseq || (req.key && req.seq)) {
-      this.getRecord(req).then(record => cb(null, [record]), cb)
-    } else if (req.id || req.type) {
-      this.query('records', req).then(records => cb(null, records), cb)
-    }
-    return cb.promise
   }
 
   async putFeed (key, info = {}) {
@@ -411,6 +446,10 @@ class Collection extends Nanoresource {
     return status
   }
 
+  createEventStream (opts) {
+    return this._eventStream.createReadStream(opts)
+  }
+
   // Internal methods
 
   _setupDefaultViews () {
@@ -484,8 +523,9 @@ class Collection extends Nanoresource {
   }
 
   async _open () {
+    if (!this._workspace.opened) await this._workspace.open()
+
     await Promise.all([
-      this._workspace.open(),
       this._feedInfo.open(),
       this._localState.open()
     ])
@@ -519,6 +559,11 @@ class Collection extends Nanoresource {
       this._localFeed = await this._initFeed(this._feedName(FEED_TYPE_ROOT), rootInfo)
     }
 
+    // Publish about ourselves in our own feed
+    if (!(await this._localFeed.has(1))) {
+      await this.putFeed(this.localKey, this.feedInfo(this.localKey))
+    }
+
     // Init data feed
     // this._dataFeed = await this._initFeed(this._feedName(FEED_TYPE_DATA), dataInfo)
 
@@ -536,6 +581,12 @@ class Collection extends Nanoresource {
         .values()
         .map(info => this._initFeed(info.key, info))
     )
+
+    const [openPromises, addOpenPromise] = promiseFactory()
+    this.emit('opening', addOpenPromise)
+    await Promise.all(openPromises)
+
+    this.emit('open')
 
     // Alternative approach: Don't store feeds and types locally at all.
     // Query the collection itself. This is nicer, likely.
@@ -563,9 +614,10 @@ class Collection extends Nanoresource {
     await new Promise((resolve) => {
       this._indexer.close(resolve)
     })
+    this._eventStream.destroy()
   }
 
-  async _initFeed (keyOrName, info = {}) {
+  async _initFeed (keyOrName, info = {}, opts = {}) {
     const feed = this._workspace.Hypercore(keyOrName)
     if (!feed.opened) await feed.ready()
     const hkey = feed.key.toString('hex')
@@ -591,14 +643,15 @@ class Collection extends Nanoresource {
       this._feedInfo.set(hkey, info)
     }
 
-    // Inititialize feed
+    this._feeds.set(hkey, feed)
+
+    // Inititialize feed and add to local db
     if (feed.writable) {
-      await onFeedCreateLocal.call(this, feed, info)
+      await this._initLocalFeed(feed, info)
     } else {
-      await onFeedCreateRemote.call(this, feed, info)
+      await this._initRemoteFeed(feed, info)
     }
 
-    this._feeds.set(hkey, feed)
     this._indexer.addReady(feed, { scan: true })
 
     // TODO: Start to not download everything, always.
@@ -612,9 +665,52 @@ class Collection extends Nanoresource {
     return feed
   }
 
+  async _initRemoteFeed (feed, info) {
+    if (feed.writable) throw new Error('Remote feed cannot be writable')
+    // If the type is set, there's nothing to to do.
+    if (info.type) return
+
+    const hkey = feed.key.toString('hex')
+
+    const onheader = async buf => {
+      const header = Header.decode(buf)
+      const type = header.type
+      this._feedInfo.update(hkey, info => {
+        info.type = type
+        info.header = header
+        return info
+      })
+      await this._feedInfo.flush()
+    }
+
+    // Try to load the header.
+    try {
+      const buf = await feed.get(0, { wait: false })
+      await onheader(buf)
+    } catch (err) {
+      // Try to load the header, waiting
+      feed.get(0, { wait: true }).then(buf => {
+        onheader(buf).catch(this._onerror)
+      }).catch(() => {})
+    }
+  }
+
+  async _initLocalFeed (feed, info = {}) {
+    if (!feed.writable) throw new Error('Local feed must be writable')
+    // Feed was already initialized
+    if (feed.length) return
+    // No type is error
+    if (!info.type) throw new Error('Type is required for new feeds')
+
+    // Append header if writable and empty
+    // const hkey = feed.key.toString('hex')
+    await feed.append(Header.encode({
+      type: info.type
+    }))
+  }
+
   _addTypeFromRecord (typeRecord) {
     this.schema.addType(typeRecord.value)
-    this.schema.persist()
   }
 
   [inspect] (depth, opts) {
@@ -646,58 +742,59 @@ class Collection extends Nanoresource {
   }
 }
 
-async function onFeedCreateRemote (feed) {
-  if (feed.writable) throw new Error('Remote feed cannot be writable')
-  const hkey = feed.key.toString('hex')
-  // const info = this._feedInfo.get(hkey)
-  // If a type is set the feed was added.
-  // if (info.type) {
-  //   this._kappa.addFeed(feed)
-  //   return
-  // }
+// async function onFeedCreateRemote (feed) {
+//   if (feed.writable) throw new Error('Remote feed cannot be writable')
+//   const hkey = feed.key.toString('hex')
+//   // const info = this._feedInfo.get(hkey)
+//   // If a type is set the feed was added.
+//   // if (info.type) {
+//   //   this._kappa.addFeed(feed)
+//   //   return
+//   // }
 
-  const onheader = async buf => {
-    const header = Header.decode(buf)
-    const type = header.type
-    this._feedInfo.update(hkey, info => {
-      info.type = type
-      info.header = header
-      return info
-    })
-    await this._feedInfo.flush()
-  }
+//   const onheader = async buf => {
+//     const header = Header.decode(buf)
+//     const type = header.type
+//     this._feedInfo.update(hkey, info => {
+//       info.type = type
+//       info.header = header
+//       return info
+//     })
+//     await this._feedInfo.flush()
+//   }
 
-  // Try to load the header.
-  try {
-    const buf = await feed.get(0, { wait: false })
-    await onheader(buf)
-  } catch (err) {
-    // Try to load the header, waiting
-    feed.get(0, { wait: true }).then(buf => {
-      onheader(buf).catch(this._onerror)
-      // this._kappa.addFeed(feed)
-    }).catch(() => {})
-  }
-}
+//   // Try to load the header.
+//   try {
+//     const buf = await feed.get(0, { wait: false })
+//     await onheader(buf)
+//   } catch (err) {
+//     // Try to load the header, waiting
+//     feed.get(0, { wait: true }).then(buf => {
+//       onheader(buf).catch(this._onerror)
+//       // this._kappa.addFeed(feed)
+//     }).catch(() => {})
+//   }
+// }
 
-async function onFeedCreateLocal (feed, info = {}) {
-  if (!feed.writable) throw new Error('Local feed must be writable')
-  // Feed was already initialized
-  if (feed.length) return
+// async function onFeedCreateLocal (feed, info = {}) {
+//   if (!feed.writable) throw new Error('Local feed must be writable')
+//   // Feed was already initialized
+//   if (feed.length) return
 
-  if (!info.type) throw new Error('Type is required for new feeds')
+//   if (!info.type) throw new Error('Type is required for new feeds')
 
-  // Append header if writable and empty
-  const hkey = feed.key.toString('hex')
-  await feed.append(Header.encode({
-    type: info.type
-  }))
+//   // Append header if writable and empty
+//   const hkey = feed.key.toString('hex')
+//   await feed.append(Header.encode({
+//     type: info.type
+//   }))
 
-  // Append feed record once the collection is fully opened
-  this.ready(() => {
-    this.putFeed(hkey, info).catch(this._onerror)
-  })
-}
+//   await this.putFeed(hkey, info)
+//   // Append feed record once the collection is fully opened
+//   // this.ready(() => {
+//   //   this.putFeed(hkey, info).catch(this._onerror)
+//   // })
+// }
 
 class Batch {
   constructor (collection) {
@@ -926,6 +1023,22 @@ function feedStatus (collection, feed) {
     status.stats = feed.stats
   }
   return status
+}
+
+function promiseFactory () {
+  const promises = []
+  return [promises, addPromise]
+  function addPromise (promise) {
+    if (promise && typeof promise === 'function') {
+      promises.push(promise())
+    } else if (promise && typeof promise === 'object' && promise.then) {
+      promises.push(promise)
+    } else {
+      const cb = maybeCallback()
+      promises.push(cb.promise)
+      return cb
+    }
+  }
 }
 
 module.exports = Collection

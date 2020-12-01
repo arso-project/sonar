@@ -5,7 +5,9 @@ const Nanoresource = require('nanoresource/emitter')
 const HyperFS = require('./fs')
 const Workspace = require('./workspace')
 
-module.exports = class CompatWorkspace extends Nanoresource {
+const COMPAT_WRAP = Symbol('compat-wrap')
+
+class CompatWorkspace extends Nanoresource {
   constructor (storagePath, opts) {
     super()
     opts.storagePath = storagePath || p.join(os.homedir(), '.sonar')
@@ -44,8 +46,12 @@ module.exports = class CompatWorkspace extends Nanoresource {
   get (keyOrName, opts = {}, cb) {
     if (typeof opts === 'function') { cb = opts; opts = {} }
     const collection = this.workspace.Collection(keyOrName, opts)
-    wrapCollection(collection)
-    if (opts.alias) this.workspace._collections.set(opts.alias, collection)
+    if (!collection[COMPAT_WRAP]) {
+      wrapCollection(collection)
+      if (opts.alias) this.workspace._collections.set(opts.alias, collection)
+      collection[COMPAT_WRAP] = true
+    }
+    if (collection.opened) return cb(null, collection)
     collection.open()
       .then(() => cb(null, collection))
       .catch(err => { console.error(err); cb(err) })
@@ -105,11 +111,16 @@ function useHyperFS (collection) {
   collection.fs = fs
   collection.drive = (...args) => collection.fs.get(...args)
 
+  collection.on('opening', (addPromise) => {
+    const done = addPromise()
+    fs.open(err => done(err))
+  })
+
   function oninit (localDriveKey, cb) {
     collection.putFeed(localDriveKey, {
       type: 'hyperdrive',
       alias: collection._opts.alias
-    }, cb)
+    }).then(res => cb(null, res), cb)
   }
 
   function resolveAlias (alias, cb) {
@@ -147,3 +158,7 @@ function asyncToCallback (obj, asyncFns) {
     }
   }
 }
+
+module.exports = Object.assign(CompatWorkspace, {
+  useHyperFS
+})

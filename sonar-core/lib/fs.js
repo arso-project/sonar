@@ -123,8 +123,13 @@ module.exports = class SonarFs extends Nanoresource {
       this.add(drive)
       this.db.put(LOCALW, hkey, err => {
         if (err) return cb(err)
-        if (this.handlers.oninit) this.handlers.oninit(hkey, err => cb(err, drive))
-        else cb(null, drive)
+        if (this.handlers.oninit) {
+          this.handlers.oninit(hkey, err => {
+            cb(err, drive)
+          })
+        } else {
+          cb(null, drive)
+        }
       })
     })
   }

@@ -26,13 +26,15 @@ function defaultStoragePath (opts) {
 
 function useSearch (workspace) {
   const indexCatalog = new Catalog(workspace.storagePath('tantivy'))
-  workspace.on('collection-open', collection => {
-    const view = createSearchView(
-      collection._leveldb('view/search'),
-      null,
-      { collection, indexCatalog }
-    )
-    collection.use('search', view)
+  workspace.on('collection', collection => {
+    collection.once('opening', () => {
+      const view = createSearchView(
+        collection._leveldb('view/search'),
+        null,
+        { collection, indexCatalog }
+      )
+      collection.use('search', view)
+    })
   })
   workspace.on('close', () => {
     indexCatalog.close()
@@ -136,19 +138,30 @@ module.exports = class Workspace extends Nanoresource {
   }
 
   Collection (keyOrName, opts = {}) {
-    if (this._collections.has(keyOrName)) return this._collections.get(keyOrName)
+    if (this._collections.has(keyOrName)) {
+      return this._collections.get(keyOrName)
+    }
 
     opts.workspace = this
-    const collection = new Collection(keyOrName, opts)
 
+    const collection = new Collection(keyOrName, opts)
     this._collections.set(collection._keyOrName, collection)
-    collection.once('opened', () => {
+
+    collection.once('open', () => {
       this._collections.set(collection.key.toString('hex'), collection)
-      this.emit('collection-open', collection)
+      process.nextTick(() => {
+        this.emit('collection-open', collection)
+      })
     })
 
     this.emit('collection', collection)
 
+    return collection
+  }
+
+  async openCollection (keyOrName, opts = {}) {
+    const collection = this.Collection(keyOrName, opts)
+    await collection.open()
     return collection
   }
 
@@ -170,7 +183,9 @@ module.exports = class Workspace extends Nanoresource {
     if (opts.lookup === undefined) {
       opts.lookup = false
     }
-    return this._sdk.Hypercore(keyOrName, opts)
+    const core = this._sdk.Hypercore(keyOrName, opts)
+    core.setMaxListeners(128)
+    return core
   }
 
   Hyperdrive (keyOrName, opts) {

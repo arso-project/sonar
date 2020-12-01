@@ -1,5 +1,4 @@
 const test = require('tape')
-const { Workspace, Collection } = require('..')
 const { promisify } = require('util')
 const tempdir = promisify(require('temporary-directory'))
 const rimraf = promisify(require('rimraf'))
@@ -9,6 +8,9 @@ const createNative = require('dat-sdk/test/lib/native')
 const createHyperspace = require('dat-sdk/test/lib/hyperspace')
 const createMixed = require('dat-sdk/test/lib/mixed')
 
+const { Workspace, Collection } = require('..')
+const { useHyperFS } = require('../lib/compat')
+
 Error.stackTraceLimit = 50
 
 // applyStacktrace()
@@ -16,8 +18,11 @@ runAll()
 
 function runAll () {
   run(createNative, 'native')
-  run(createHyperspace, 'hyperspace')
-  run(createMixed, 'mixed')
+  const only = !!test.getHarness()._results._only
+  if (!only) {
+    run(createHyperspace, 'hyperspace')
+    run(createMixed, 'mixed')
+  }
 }
 
 function run (createSDK, label) {
@@ -196,6 +201,18 @@ function runTests (create) {
     t.equal(type2.name, 'doc')
     t.deepEqual(type1, type2)
     await workspace.close()
+    await cleanup()
+  })
+
+  test('sonar fs', async t => {
+    const [workspace, cleanup] = await create(1, { persist: true })
+    const collection = workspace.Collection('default')
+    useHyperFS(collection)
+    await collection.open()
+    const feeds = await collection.get({ type: 'sonar/feed' })
+    const drives = feeds.filter(record => record.value.type === 'hyperdrive')
+    console.log(drives)
+    t.equal(drives.length, 1)
     await cleanup()
   })
 }
