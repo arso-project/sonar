@@ -55,9 +55,11 @@
   },
   "devDependencies": {
     "@hyperswarm/dht": "^4.0.1",
+    "hyperspace": "^3.15.0",
     "tape": "^5.0",
     "temporary-directory": "^1.0.2",
-    "why-is-node-running": "^2.2.0"
+    "why-is-node-running": "^2.2.0",
+    "webnet": "^1.0.0"
   },
   "publishConfig": {
     "access": "public"
