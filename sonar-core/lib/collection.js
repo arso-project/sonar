@@ -33,6 +33,10 @@ const DEFAULT_CONFIG = {
   share: true
 }
 
+function useDefaultViews (collection) {
+
+}
+
 class Collection extends Nanoresource {
   constructor (keyOrName, opts) {
     super()
@@ -41,19 +45,13 @@ class Collection extends Nanoresource {
     this._keyOrName = keyOrName
     this._opts = opts
 
+    if (opts.id) this._id = opts.id
+
     this.log = this._workspace.log.child({ collection: keyOrName })
-
-    const leveldbs = {
-      indexer: this._leveldb('i'),
-      state: this._leveldb('l')
-    }
-
-    const statedb = new LevelMap(leveldbs.state)
-    this._localState = statedb.prefix('state')
-    this._feedInfo = statedb.prefix('feeds')
 
     this.schema = new Schema({
       onchange: (schema) => {
+        if (!this._localState) return
         this._localState.set('schema', schema.toJSON())
         this.emit('schema-update', schema)
       }
@@ -61,26 +59,18 @@ class Collection extends Nanoresource {
 
     this._feeds = new Map()
 
-    this._indexer = new Indexer({
-      loadValue: false,
-      db: leveldbs.indexer
-    })
+    // Set in _open()
+    this._indexer = null
+    this._localState = null
+    this._feedInfo = null
+
     this._kappa = new Kappa()
     this._queryHandlers = new Map()
     this._onerror = (err) => err && this.emit('error', err)
     this._subscriptions = new Map()
     this.lock = opts.lock || mutexify()
 
-    if (opts.defaultViews !== false) {
-      this._setupDefaultViews()
-    }
-
     this._eventStream = new EventStream()
-
-    // Forward some events
-    this._indexer.on('update', () => {
-      this.emit('update', this.length)
-    })
 
     // Push some events into event streams
     // Event streams are an easy way to forward events over RPC or HTTP.
@@ -127,6 +117,14 @@ class Collection extends Nanoresource {
 
   get length () {
     return this._indexer.length
+  }
+
+  get id () {
+    return this._id
+  }
+
+  get name () {
+    return this._opts.name || this.id
   }
 
   ready (cb) {
@@ -312,6 +310,7 @@ class Collection extends Nanoresource {
       const record = new Record(this.schema, decoded)
       return record
     } catch (err) {
+      if (opts.wait === false) throw err
       if (opts._isRetrying) throw err
       await this.sync('root')
       opts._isRetrying = true
@@ -337,6 +336,7 @@ class Collection extends Nanoresource {
     else this.getBlock(req, opts).then(record => cb(null, record), cb)
   }
 
+  // TODO: Remove. Replaced with getRecord.
   loadRecord (...args) {
     return this.getRecord(...args)
   }
@@ -351,7 +351,7 @@ class Collection extends Nanoresource {
       value: info
     }
     const ret = await this.put(record)
-    await this.sync()
+    await this.sync('root')
     return ret
   }
 
@@ -364,7 +364,7 @@ class Collection extends Nanoresource {
       value: type.toJSON()
     }
     const ret = await this.put(record)
-    await this.sync()
+    await this.sync('root')
     return ret
   }
 
@@ -428,6 +428,8 @@ class Collection extends Nanoresource {
     if (!this.opened) return { opened: false }
     const feeds = this.feeds().map(feed => feedStatus(this, feed))
     const kappa = this._kappa.getState()
+    const network = this._workspace.network.status(this.discoveryKey)
+    const config = this.getConfig()
     const status = {
       name: this.name,
       opened: true,
@@ -435,9 +437,10 @@ class Collection extends Nanoresource {
       discoveryKey: datEncoding.encode(this.discoveryKey),
       rootKey: datEncoding.encode(this.key),
       localKey: datEncoding.encode(this.localKey),
-      // dataKey: datEncoding.encode(this.dataKey),
       feeds,
-      kappa
+      kappa,
+      network,
+      config
       // localDrive: localDriveKey
     }
     if (cb) process.nextTick(cb, null, status)
@@ -506,8 +509,11 @@ class Collection extends Nanoresource {
   }
 
   _leveldb (name) {
-    // TODO: keyOrName is a bad measure. Setup leveldbs only in open and use key.
-    const prefix = this._keyOrName
+    if (!this._id) {
+      console.error(new Error().stack)
+      throw new Error('LevelDB created too early')
+    }
+    const prefix = this._id
     const dbName = 'c/' + prefix + '/' + name
     return this._workspace.LevelDB(dbName)
   }
@@ -520,37 +526,80 @@ class Collection extends Nanoresource {
     return `sonar-collection-${id}-${type}`
   }
 
+  _prepare () {
+
+  }
+
   async _open () {
+    // Init workspace
+    // ====
     if (!this._workspace.opened) await this._workspace.open()
 
+    // Init core types
+    // ====
+    // TODO: Check for version updates.
+    // TODO: Decide whether to store core types in the feeds as well.
+    this.schema.addTypes(CORE_TYPE_SPECS, { onchange: false })
+
+    // Init root feed
+    // This is a bit more manual than other feeds, because
+    // our local resources are not yet initialized
+    // ====
+    const rootInfo = { type: FEED_TYPE_ROOT }
+    this._rootFeed = await this._initFeed(this._keyOrName, rootInfo, { index: false })
+    this._id = deriveId(this._rootFeed.discoveryKey)
+    if (this._keyOrName !== this._rootFeed.key.toString('hex')) {
+      this._name = this._keyOrName
+    }
+
+    // Init local state
+    // ====
+    const leveldbs = {
+      indexer: this._leveldb('i'),
+      state: this._leveldb('l')
+    }
+    this._localState = new LevelMap(leveldbs.state)
+    this._feedInfo = this._localState.prefix('feeds')
     await Promise.all([
-      this._feedInfo.open(),
-      this._localState.open()
+      this._localState.open(),
+      this._feedInfo.open()
     ])
 
+    // Save root feed info
+    // Normally this happens in _initFeed() automatically, but for the
+    // root feed the local state is only available now
+    const rootKey = this.key.toString('hex')
+    rootInfo.key = rootKey
+    if (!this._feedInfo.has(rootKey)) {
+      this._feedInfo.set(rootKey, rootInfo)
+    }
+
+    // Set default type namespace to root feed key
+    this.schema.setDefaultNamespace(this._id)
+    // Load persisted schema
     const storedSchema = this._localState.get('schema')
     if (storedSchema) {
       this.schema.addTypes(storedSchema, { onchange: false })
     }
 
-    // Init core types
-    // TODO: Check for version updates.
-    // TODO: Decide whether to store core types in the feeds as well.
-    if (!this.schema.hasType(TYPE_TYPE)) {
-      this.schema.addTypes(CORE_TYPE_SPECS)
-    }
+    // Init indexer
+    // ====
+    this._indexer = new Indexer({
+      loadValue: false,
+      db: leveldbs.indexer
+    })
+    this._indexer.on('update', () => {
+      this.emit('update', this.length)
+    })
+    this._indexer.addReady(this._rootFeed, { scan: true })
 
-    const rootInfo = { type: FEED_TYPE_ROOT }
-    // const dataInfo = { type: FEED_TYPE_DATA }
 
-    // Init root feed
-    this._rootFeed = await this._initFeed(this._keyOrName, rootInfo)
-    this._id = deriveId(this._rootFeed.discoveryKey)
+    // Init default views
+    // ====
+    this._setupDefaultViews()
 
-    // Set default type namespace to root feed key
-    this.schema.setDefaultNamespace(this._id)
-
-    // Init local root feed
+    // Init local feed
+    // ====
     if (this._rootFeed.writable) {
       this._localFeed = this._rootFeed
     } else {
@@ -561,9 +610,6 @@ class Collection extends Nanoresource {
     if (!(await this._localFeed.has(1))) {
       await this.putFeed(this.localKey, this.feedInfo(this.localKey))
     }
-
-    // Init data feed
-    // this._dataFeed = await this._initFeed(this._feedName(FEED_TYPE_DATA), dataInfo)
 
     // Init network configuration.
     const config = this._localState.get('config')
@@ -580,10 +626,12 @@ class Collection extends Nanoresource {
         .map(info => this._initFeed(info.key, info))
     )
 
+    // Give plugins a chance to open
     const [openPromises, addOpenPromise] = promiseFactory()
     this.emit('opening', addOpenPromise)
     await Promise.all(openPromises)
 
+    // Emit open event
     this.emit('open')
 
     // Alternative approach: Don't store feeds and types locally at all.
@@ -616,6 +664,7 @@ class Collection extends Nanoresource {
   }
 
   async _initFeed (keyOrName, info = {}, opts = {}) {
+    // console.log('initFeed', { keyOrName, info, stack: new Error().stack })
     const feed = this._workspace.Hypercore(keyOrName)
     if (!feed.opened) await feed.ready()
     const hkey = feed.key.toString('hex')
@@ -637,7 +686,7 @@ class Collection extends Nanoresource {
 
     // If the feed is unknown add it to the feed store.
     info.key = hkey
-    if (!this._feedInfo.has(hkey)) {
+    if (this._feedInfo && !this._feedInfo.has(hkey)) {
       this._feedInfo.set(hkey, info)
     }
 
@@ -650,7 +699,9 @@ class Collection extends Nanoresource {
       await this._initRemoteFeed(feed, info)
     }
 
-    this._indexer.addReady(feed, { scan: true })
+    if (opts.index !== false) {
+      this._indexer.addReady(feed, { scan: true })
+    }
 
     // TODO: Start to not download everything, always.
     // Note: null as second argument is needed, see

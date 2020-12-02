@@ -51,10 +51,13 @@ class CompatWorkspace extends Nanoresource {
       if (opts.alias) this.workspace._collections.set(opts.alias, collection)
       collection[COMPAT_WRAP] = true
     }
-    if (collection.opened) return cb(null, collection)
     collection.open()
       .then(() => cb(null, collection))
       .catch(err => { console.error(err); cb(err) })
+  }
+
+  status (cb) {
+    return this.workspace.status().then(res => cb(null, res), cb)
   }
 
   list (cb) {
@@ -88,7 +91,7 @@ class CompatWorkspace extends Nanoresource {
 
 function wrapCollection (collection) {
   const asyncFns = ['get', 'put', 'del', 'batch', 'putFeed', 'putType', 'query']
-  useHyperFS(collection)
+  // useHyperFS(collection)
   asyncToCallback(collection, asyncFns)
   collection.serializeSchema = function () {
     return collection.schema.toJSON()
@@ -98,49 +101,6 @@ function wrapCollection (collection) {
   }
   collection.pullSubscriptionStream = function (name, opts) {
     return collection.subscribe(name, opts).stream()
-  }
-}
-
-function useHyperFS (collection) {
-  const fs = new HyperFS({
-    corestore: collection._workspace.corestore,
-    db: collection._leveldb('fs'),
-    oninit,
-    resolveAlias
-  })
-  collection.fs = fs
-  collection.drive = (...args) => collection.fs.get(...args)
-
-  collection.on('opening', (addPromise) => {
-    const done = addPromise()
-    fs.open(err => done(err))
-  })
-
-  function oninit (localDriveKey, cb) {
-    collection.putFeed(localDriveKey, {
-      type: 'hyperdrive',
-      alias: collection._opts.alias
-    }).then(res => cb(null, res), cb)
-  }
-
-  function resolveAlias (alias, cb) {
-    collection.query('records', { type: 'sonar/feed' }, (err, records) => {
-      if (err) return cb(err)
-      const aliases = records
-        .map(r => r.value)
-        .filter(v => v.type === 'hyperdrive')
-        .filter(v => v.alias === alias)
-
-      if (aliases.length > 1) {
-        // TODO: Support named aliases (like foo-1, foo-2)
-        return cb(new Error('alias is ambigous, use keys'))
-      }
-      if (!aliases.length) {
-        return cb(new Error('alias not found'))
-      }
-
-      cb(null, aliases[0].key)
-    })
   }
 }
 
@@ -159,6 +119,4 @@ function asyncToCallback (obj, asyncFns) {
   }
 }
 
-module.exports = Object.assign(CompatWorkspace, {
-  useHyperFS
-})
+module.exports = CompatWorkspace

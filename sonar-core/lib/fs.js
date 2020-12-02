@@ -6,7 +6,57 @@ const collect = require('stream-collector')
 const DRIVES = 'd!'
 const LOCALW = 'w!'
 
-module.exports = class SonarFs extends Nanoresource {
+function useHyperdrive (workspace) {
+  workspace.on('collection-opening', onCollectionOpen)
+}
+
+function onCollectionOpen (collection, awaitOpen) {
+  const fs = new SonarHyperdrive({
+    corestore: collection._workspace.corestore,
+    db: collection._leveldb('fs'),
+    oninit,
+    resolveAlias
+  })
+
+  // TODO: Adding methods or objects to the collection object
+  // like this is not super nice
+  collection.fs = fs
+  collection.drive = (...args) => collection.fs.get(...args)
+  collection.once('close', () => fs.close())
+
+  // let the opening wait until fs is opened
+  const callback = awaitOpen()
+  fs.open(err => callback(err))
+
+  function oninit (localDriveKey, cb) {
+    collection.putFeed(localDriveKey, {
+      type: 'hyperdrive',
+      alias: collection._opts.alias
+    }).then(res => cb(null, res), cb)
+  }
+
+  function resolveAlias (alias, cb) {
+    collection.query('records', { type: 'sonar/feed' }, (err, records) => {
+      if (err) return cb(err)
+      const aliases = records
+        .map(r => r.value)
+        .filter(v => v.type === 'hyperdrive')
+        .filter(v => v.alias === alias)
+
+      if (aliases.length > 1) {
+        // TODO: Support named aliases (like foo-1, foo-2)
+        return cb(new Error('alias is ambigous, use keys'))
+      }
+      if (!aliases.length) {
+        return cb(new Error('alias not found'))
+      }
+
+      cb(null, aliases[0].key)
+    })
+  }
+}
+
+class SonarHyperdrive extends Nanoresource {
   constructor (opts) {
     super()
     this.corestore = opts.corestore
@@ -202,3 +252,6 @@ function once (fn) {
     fn(...args)
   }
 }
+
+module.exports = SonarHyperdrive
+module.exports.useHyperdrive = useHyperdrive

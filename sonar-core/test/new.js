@@ -9,11 +9,12 @@ const createHyperspace = require('dat-sdk/test/lib/hyperspace')
 const createMixed = require('dat-sdk/test/lib/mixed')
 
 const { Workspace, Collection } = require('..')
-const { useHyperFS } = require('../lib/compat')
 
+// Prepare and patch tape
 Error.stackTraceLimit = 50
+applyStacktrace()
 
-// applyStacktrace()
+// Run tests
 runAll()
 
 function runAll () {
@@ -107,35 +108,22 @@ function runTests (create) {
     await setup(c1)
     const c2 = w2.Collection(c1.key)
     await c2.open()
-    c1.use('debug', async records => {
-      // console.log('IN C1', records)
-    })
-    c2.use('debug', async records => {
-      // console.log('IN C2', records)
-    })
-    // console.log('w1', w1.network.allStatuses())
-    // console.log('w2', w2.network.allStatuses())
-    // console.log('c1', c1)
-    // console.log('c2', c2)
+    // c1.use('debug', async records => {
+    //   console.log('IN C1', records)
+    // })
+    // c2.use('debug', async records => {
+    //   console.log('IN C2', records)
+    // })
 
-    // await peerConnected
-
-    await c2.rootFeed.update()
-    // console.log('c2 post update', c2)
-    await c2.rootFeed.download({ start: 0, end: c2.rootFeed.length })
-    // console.log('c2 post download', c2)
-
-    await timeout(50)
+    // await timeout(50)
     await c2.update()
-    // console.log('post s1')
-    await timeout(50)
-    // console.log('post s2')
     await c2.sync()
+    // console.log('synced c2')
 
     let res = await c2.query('records', { type: 'doc' })
-    t.equal(res.length, 1, 'c2 q len ok')
+    t.equal(res.length, 1, 'c2 len ok')
     const record = res[0]
-    t.equal(record.get('title'), 'hello', 'c2 q val ok')
+    t.equal(record.get('title'), 'hello', 'c2 val ok')
 
     const updatedRecord = record.update({ title: 'hi' })
     await c2.put(updatedRecord)
@@ -146,10 +134,7 @@ function runTests (create) {
     await c1.putFeed(c2.localKey)
 
     await update(c1, 'first')
-    // await waitForFeed(c1)
-    // await update(c1, 'second')
-    // await waitForFeed(c1)
-    await update(c1, 'third')
+    await update(c1, 'second')
 
     res = await c1.query('records', { type: 'doc' })
     // console.log('c1 q after sync', res)
@@ -165,9 +150,11 @@ function runTests (create) {
       await new Promise(resolve => {
         c.once('feed-update', resolve)
       })
-      await new Promise(resolve => process.nextTick(resolve))
+      await new Promise(resolve => {
+        process.nextTick(resolve)
+      })
       // console.log(name + 'UP - wait up')
-      await c.update()
+      await c.sync()
       // console.log(name + 'UP - done')
     }
 
@@ -197,17 +184,27 @@ function runTests (create) {
     await workspace.ready()
     col = workspace.Collection('first')
     await col.ready()
+    const key = col.key
     const type2 = col.schema.getType('doc')
     t.equal(type2.name, 'doc')
     t.deepEqual(type1, type2)
     await workspace.close()
+
+    workspace = new Workspace({ storagePath, sdk })
+    await workspace.ready()
+    col = workspace.Collection(key)
+    await col.ready()
+    const type3 = col.schema.getType('doc')
+    t.equal(type3.name, 'doc')
+    t.deepEqual(type1, type2)
+    await workspace.close()
+
     await cleanup()
   })
 
   test('sonar fs', async t => {
     const [workspace, cleanup] = await create(1, { persist: true })
     const collection = workspace.Collection('default')
-    useHyperFS(collection)
     await collection.open()
     const feeds = await collection.get({ type: 'sonar/feed' })
     const drives = feeds.filter(record => record.value.type === 'hyperdrive')
@@ -229,22 +226,31 @@ function applyLabel (label) {
   })
 }
 
-// function applyStacktrace () {
-//   process.nextTick(() => {
-//     const harness = test.getHarness()
-//     for (const test of harness._tests) {
-//       const cb = test._cb
-//       test._cb = handler
-//       test._cb.name = cb.name
-//       async function handler (t, ...args) {
-//         try {
-//           await cb(...args)
-//         } catch (err) {
-//           console.error('catch', err)
-//           t.fail(err)
-//         }
-//       }
-//     }
-//     console.log(harness)
-//   })
-// }
+function applyStacktrace () {
+  process.nextTick(() => {
+    const harness = test.getHarness()
+    for (const test of harness._tests) {
+      const origCb = test._cb
+      test._cb = handler.bind(null, origCb)
+      test._cb.name = origCb.name
+    }
+  })
+
+  function handler (origCb, t, ...args) {
+    try {
+      let maybePromise = origCb(t, ...args)
+      if (maybePromise && maybePromise.then) {
+        return maybePromise
+          .catch(async err => {
+            console.error('Original error', err)
+            throw err
+            // t.fail(err)
+            // t.end()
+          })
+      }
+    } catch (err) {
+      t.fail(err)
+      t.end()
+    }
+  }
+}

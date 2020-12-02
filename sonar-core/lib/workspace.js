@@ -11,12 +11,14 @@ const { NanoresourcePromise: Nanoresource } = require('nanoresource-promise/emit
 // const why = require('why-is-node-running')
 
 const Collection = require('./collection')
+const LevelMap = require('./utils/level-map')
 const { maybeCallback, noop } = require('./util')
 
 // Import for views - move into module.
 const Catalog = require('@arso-project/sonar-tantivy')
 const createSearchView = require('../views/search')
 const Relations = require('@arso-project/sonar-view-relations')
+const { useHyperdrive } = require('./fs')
 
 function defaultStoragePath (opts) {
   const os = require('os')
@@ -25,15 +27,13 @@ function defaultStoragePath (opts) {
 
 function useSearch (workspace) {
   const indexCatalog = new Catalog(workspace.storagePath('tantivy'))
-  workspace.on('collection', collection => {
-    collection.once('opening', () => {
-      const view = createSearchView(
-        collection._leveldb('view/search'),
-        null,
-        { collection, indexCatalog }
-      )
-      collection.use('search', view)
-    })
+  workspace.on('collection-opening', collection => {
+    const view = createSearchView(
+      collection._leveldb('view/search'),
+      null,
+      { collection, indexCatalog }
+    )
+    collection.use('search', view)
   })
   workspace.on('close', () => {
     indexCatalog.close()
@@ -50,6 +50,7 @@ function useRelations (workspace) {
 function useDefaultViews (workspace) {
   useSearch(workspace)
   useRelations(workspace)
+  useHyperdrive(workspace)
 }
 
 module.exports = class Workspace extends Nanoresource {
@@ -107,12 +108,15 @@ module.exports = class Workspace extends Nanoresource {
 
     await this._leveldb.open()
 
+    this._collectionInfo = new LevelMap(this.LevelDB('w/collections'))
+    await this._collectionInfo.open()
+
     // this._collectionStore = new SyncMap(this.LevelDB('w/collections'))
     // await this._collectionStore.open()
   }
 
   collections () {
-    return Array.from(this._collections.values())
+    return Array.from(new Set(this._collections.values()))
   }
 
   async _close () {
@@ -131,12 +135,35 @@ module.exports = class Workspace extends Nanoresource {
     this.emit('close')
   }
 
+  async status () {
+    if (!this.opened) await this.open()
+    const openPromises = []
+    for (const collection of this.collections()) {
+      if (!collection.opened) openPromises.push(collection.open())
+    }
+    await Promise.all(openPromises)
+    const collections = {}
+    for (const collection of this.collections()) {
+      const hkey = collection.key.toString('hex')
+      collections[hkey] = collection.status()
+      // TODO: This doesn't really belong here
+      if (collection.fs.localwriter) {
+        collections[hkey].localDrive = collection.fs.localwriter.key.toString('hex')
+      }
+    }
+    return { collections }
+  }
+
   registerPlugin (plugin) {
-    if (this.opened) plugin(this)
+    if (this.opened) process.nextTick(plugin, this)
     else this.once('opened', () => plugin(this))
   }
 
   Collection (keyOrName, opts = {}) {
+    if (Buffer.isBuffer(keyOrName)) {
+      keyOrName = keyOrName.toString('hex')
+    }
+    // console.log('GET', keyOrName, this._collections)
     if (this._collections.has(keyOrName)) {
       return this._collections.get(keyOrName)
     }
@@ -144,13 +171,29 @@ module.exports = class Workspace extends Nanoresource {
     opts.workspace = this
 
     const collection = new Collection(keyOrName, opts)
-    this._collections.set(collection._keyOrName, collection)
+    this._collections.set(keyOrName, collection)
 
-    collection.once('open', () => {
-      this._collections.set(collection.key.toString('hex'), collection)
-      process.nextTick(() => {
-        this.emit('collection-open', collection)
-      })
+    collection.on('opening', awaitMe => {
+      const hkey = collection.key.toString('hex')
+      this._collections.set(hkey, collection)
+      this.emit('collection-opening', collection, awaitMe)
+    })
+
+    collection.on('open', awaitMe => {
+      const id = collection.id
+      if (!this._collectionInfo.has(id)) {
+        const status = collection.status()
+        const info = {
+          name: status.name,
+          key: status.key,
+          id: status.id,
+          localKey: status.localKey,
+          alias: opts.alias
+        }
+        this._collectionInfo.set(id, info)
+      }
+
+      this.emit('collection-open', collection)
     })
 
     this.emit('collection', collection)
