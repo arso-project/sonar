@@ -44,23 +44,38 @@ function createPrettifier () {
 }
 
 function prettify (obj) {
+  const opts = {
+    trace: !!process.env.ERROR_TRACE || false,
+    date: true,
+    raw: false
+  }
+  if (opts.raw) return obj
   if (typeof obj === 'string') {
     obj = { message: obj }
   }
   if (!obj.message && obj.msg) obj.message = obj.msg
   if (obj.err) obj.error = obj.err
+  const sp = ' '
 
   const date = formatDate()
   const level = formatLevel(obj)
 
-  let out = `[${date} ${level}`
-  if (obj.name) out += ' ' + chalk.gray(obj.name)
-  if (obj.namespace) out += ' ' + chalk.gray(obj.namespace)
-  if (obj.collection) out += ' ' + chalk.blue(collectionLabel(obj.collection))
+  if (obj.error && typeof obj.error === 'object' && obj.error.message) {
+    if (obj.message) obj.message += chalk.gray(' (' + obj.error.message + ')')
+    else obj.message = obj.error.message
+  }
+
+  let out = '['
+  if (date) out += date + sp
+  out += level
+  if (obj.name) out += sp + chalk.gray(obj.name)
+  if (obj.namespace) out += sp + chalk.gray(obj.namespace)
+  if (obj.collection) out += sp + chalk.blue(collectionLabel(obj.collection))
   out += '] '
-  if (obj.res && obj.req) out += formatHttp(obj) + ' '
+  if (obj.res && obj.req) out += formatHttp(obj) + sp
   out += obj.message
-  if (obj.record) out += ' ' + formatRecord(obj.record)
+  if (obj.record) out += sp + formatRecord(obj.record)
+  if (opts.trace && obj.error) out += formatTrace(obj.error)
   return out + '\n'
 }
 
@@ -69,6 +84,14 @@ function formatDate () {
   const z = date.getTimezoneOffset() * 60 * 1000
   const dateLocal = new Date(date - z)
   return dateLocal.toISOString().substring(0, 19)
+}
+
+function formatTrace (error) {
+  if (!error.stack) return ''
+  let out = '\n'
+  out += JSON.parse(JSON.stringify(error.stack))
+    .split('\n').slice(1).join('\n')
+  return out
 }
 
 function formatRecord (record) {
@@ -105,11 +128,6 @@ function formatHttp (obj) {
   return out
 }
 
-function formatKey (key) {
-  if (!key) return '<null>'
-  return prettyHash(key)
-}
-
 function convertLogNumber (obj) {
   if (obj.level === 10) return { name: 'trace', color: 'gray' }
   if (obj.level === 20) return { name: 'debug', color: 'gray' }
@@ -134,4 +152,8 @@ function convertLogNumber (obj) {
 //   }
 //   return Object.assign(log, logs)
 // }
-
+//
+// function formatKey (key) {
+//   if (!key) return '<null>'
+//   return prettyHash(key)
+// }
