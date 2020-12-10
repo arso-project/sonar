@@ -1,4 +1,5 @@
 const p = require('path')
+const { Transform } = require('streamx')
 const yargs = require('yargs')
 const yaml = require('js-yaml')
 const table = require('text-table')
@@ -131,12 +132,10 @@ async function serializeSpec (argv) {
 }
 
 async function runtimeStart (argv) {
-  console.log('ok')
   // start runtime
   const Runtime = require('./lib/runtime')
   const runtime = new Runtime()
   await runtime.open()
-  console.log('runtime started')
 
   // register bot
   const client = createClient(argv)
@@ -160,7 +159,7 @@ async function runtimeStart (argv) {
   }
   const handlers = { oncommand }
   await client.bots.register('runtime', spec, handlers)
-  console.log('connected to server')
+  client.log.info('connected and registered')
 
   // run forever
   await new Promise((resolve, reject) => {
@@ -182,7 +181,14 @@ async function runtimeStart (argv) {
       // TODO: Validate against whitelist
       const service = await runtime.startBot(spec.name, entry)
       const logs = service.createLogStream()
-      logs.on('data', data => console.log('LOG', botName, data.toString()))
+      const logLines = logs.pipe(new Transform({
+        transform (chunk, next) {
+          chunk.toString().split('\n').filter(x => x).forEach(line => this.push(line))
+          next()
+        }
+      }))
+      const log = client.log.child({ name: 'bot:' + spec.name + ':stderr' })
+      logLines.on('data', data => log.debug(data))
       return true
     } catch (err) {
       console.error('bot start error', err)

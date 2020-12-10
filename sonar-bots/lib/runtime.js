@@ -11,7 +11,6 @@ module.exports = class Runtime extends Nanoresource {
   }
 
   async _open () {
-    console.log('opn')
     // await new Promise((resolve, reject) => {
     //   console.log('ino', this)
     //   this.supervisor.ready((err) => {
@@ -19,7 +18,6 @@ module.exports = class Runtime extends Nanoresource {
     //     err ? reject(err) : resolve()
     //   })
     // })
-    console.log('opened')
   }
 
   async _close () {
