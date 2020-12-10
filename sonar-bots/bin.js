@@ -1,7 +1,9 @@
+const p = require('path')
 const yargs = require('yargs')
 const yaml = require('js-yaml')
 const table = require('text-table')
 const { Client } = require('@arso-project/sonar-client/node')
+const { readYaml } = require('./run')
 
 function createClient (opts) {
   const client = new Client(opts)
@@ -37,8 +39,13 @@ const command = {
       })
       .command({
         command: 'serialize-spec [bot]',
-        describe: 'Serialize bot spec to toml',
+        describe: 'Serialize bot spec to yaml',
         handler: serializeSpec
+      })
+      .command({
+        command: 'runtime',
+        describe: 'Start a bot runtime',
+        handler: runtimeStart
       })
   }
 }
@@ -60,13 +67,16 @@ async function list (argv) {
   for (const [name, spec] of bots) {
     console.log(name)
     console.log()
-    console.log('  Available commands:')
+    console.log('  commands:')
     const spacer = '  '
     const commands = spec.commands.map(command => {
-      const args = command.args.map(arg => `<${arg.name}>`).join(' ')
-      return [spacer, command.name, args, command.help]
+      const args = command.args.length
+        ? command.args.map(arg => `<${arg.name}>`).join(' ')
+        : ''
+      return [spacer, command.name, args, command.help || '']
     })
     console.log(table(commands))
+    console.log('')
   }
 }
 
@@ -78,11 +88,17 @@ async function join (argv) {
 
 async function runCommand (argv) {
   const client = createClient(argv)
-  let { bot, collection, command, args } = argv
+  let { bot, collection, command, args, workspace } = argv
   try {
     args = JSON.parse(args)
   } catch (err) {}
-  const res = await client.bots.command(bot, collection, command, args)
+
+  const env = {}
+  if (!workspace && collection) env.collection = collection
+  else if (!workspace) throw new Error('Either --workspace for workspace scope or a --collection is required')
+
+  // const res = await client.bots.command(bot, collection, command, args)
+  const res = await client.bots.command(bot, command, args, env)
   const { requestId, result, error } = res
   console.log('request id: ' + requestId)
   if (res.error) {
@@ -114,3 +130,77 @@ async function serializeSpec (argv) {
   console.log(encoded)
 }
 
+async function runtimeStart (argv) {
+  console.log('ok')
+  // start runtime
+  const Runtime = require('./lib/runtime')
+  const runtime = new Runtime()
+  await runtime.open()
+  console.log('runtime started')
+
+  // register bot
+  const client = createClient(argv)
+  const spec = {
+    name: 'Runtime',
+    commands: [
+      {
+        name: 'start',
+        args: [
+          { name: 'bot', type: 'string', title: 'Bot to run' }
+        ]
+      },
+      {
+        name: 'status',
+        args: []
+        // response: {
+        //   type: 'object
+        // }
+      }
+    ]
+  }
+  const handlers = { oncommand }
+  await client.bots.register('runtime', spec, handlers)
+  console.log('connected to server')
+
+  // run forever
+  await new Promise((resolve, reject) => {
+    runtime.once('err', reject)
+    runtime.once('close', resolve)
+  })
+
+  async function oncommand (command, args) {
+    if (command === 'start') return start(args)
+    if (command === 'status') return status(args)
+    throw new Error('command not found')
+  }
+
+  async function start (args) {
+    if (typeof args === 'string') args = { bot: args }
+    const { bot: botName } = args
+    try {
+      const { spec, entry, path } = resolveBot(botName)
+      // TODO: Validate against whitelist
+      const service = await runtime.startBot(spec.name, entry)
+      const logs = service.createLogStream()
+      logs.on('data', data => console.log('LOG', botName, data.toString()))
+      return true
+    } catch (err) {
+      console.error('bot start error', err)
+      return false
+    }
+  }
+
+  async function status () {
+    return runtime.status()
+  }
+}
+
+function resolveBot (botName) {
+  const packagePath = require.resolve(p.join(botName, 'package.json'))
+  const path = p.dirname(packagePath)
+  const spec = readYaml(p.join(path, 'bot.yaml'))
+  const packageJson = require(packagePath)
+  const entryModule = spec.entry || packageJson.main
+  const entry = p.join(path, entryModule)
+  return { spec, entry, path }
+}

@@ -16,6 +16,7 @@ function runSync (createBot, opts = {}, cb) {
 }
 
 async function run (createBot, opts) {
+  console.log('run bot')
   const client = new Client()
 
   const bot = createBot(client)

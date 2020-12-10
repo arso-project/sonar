@@ -12,18 +12,18 @@ class Bots {
     this._eventSource.close()
   }
 
-  async join (bot, collection) {
+  async join (botName, collection) {
     const res = await this.fetch('/join', {
       method: 'POST',
-      body: { bot, collection }
+      body: { bot: botName, collection }
     })
     return res
   }
 
-  async leave (bot, collection) {
+  async leave (botName, collection) {
     const res = await this.fetch('/leave', {
       method: 'POST',
-      body: { bot, collection }
+      body: { bot: botName, collection }
     })
     return res
   }
@@ -33,17 +33,17 @@ class Bots {
     return res
   }
 
-  async command (bot, collection, command, args) {
-    const path = `/command/${bot}/${collection}`
+  async command (botName, command, args, env) {
+    const path = '/command'
     const res = await this.fetch(path, {
       method: 'POST',
-      body: { command, args }
+      body: { bot: botName, command, args, env }
     })
     return res
   }
 
-  async commandStatus (bot, requestId) {
-    const path = `/status/${bot}/${requestId}`
+  async commandStatus (botName, requestId) {
+    const path = `/status/${botName}/${requestId}`
     const res = await this.fetch(path)
     return res
   }
@@ -101,7 +101,10 @@ class Bots {
           await bot.onleave(collection)
           await this.reply({ requestId })
         } else if (op === 'command') {
-          const collection = await this.client.openCollection(data.collection)
+          let collection = null
+          if (data.collection) {
+            collection = await this.client.openCollection(data.collection)
+          }
           const result = await bot.oncommand(collection, data.command, data.args)
           await this.reply({ requestId, result })
         }
@@ -163,10 +166,26 @@ class Bot {
     this.config = config
     this.handlers = handlers
     this.sessions = new Map()
+    this.opened = false
+  }
+
+  async open () {
+    if (this.opened) return
+    if (this.opening) return this.opening
+    let _resolve
+    this.opening = new Promise(resolve => (_resolve = resolve))
+    if (this.handlers.open) await this.handlers.open()
+    _resolve()
+    this.opened = true
   }
 
   async onjoin (collection, config) {
     await this._ensureTypes(collection)
+    await this.open()
+    if (!this.opened && this.handlers.open) {
+      await this.handlers.open()
+      this.opened = true
+    }
     const session = await this.handlers.onjoin(collection, config)
     if (session.open) {
       await session.open()
@@ -194,9 +213,16 @@ class Bot {
   }
 
   async oncommand (collection, command, args) {
+    await this.open()
+
+    if (!collection && this.handlers.oncommand) {
+      return await this.handlers.oncommand(command, args)
+    }
+
     const session = this.sessions.get(collection)
     if (!session) throw new Error('Bot did not join collection')
     if (!session.oncommand) throw new Error('Bot cannot handle commands')
+
     return await session.oncommand(command, args)
   }
 }

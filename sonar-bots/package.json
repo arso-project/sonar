@@ -5,6 +5,7 @@
   "license": "GPL-3.0",
   "dependencies": {
     "@arso-project/sonar-client": "^0.3.0-alpha.7",
-    "js-yaml": "^3.14.0"
+    "js-yaml": "^3.14.0",
+    "little-process-box": "^0.2.3"
   }
 }
