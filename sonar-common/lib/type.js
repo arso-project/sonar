@@ -148,6 +148,7 @@ class MissingType extends Type {
 Type.MissingType = MissingType
 
 module.exports = Type
+module.exports.jsonSchemaToSpec = jsonSchemaToSpec
 
 function jsonSchemaToSpec (spec) {
   if (!spec.fields) spec.fields = {}
