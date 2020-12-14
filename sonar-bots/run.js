@@ -11,17 +11,20 @@ function readYaml (path) {
 }
 
 function runSync (createBot, opts = {}, cb) {
-  cb = cb || (err => err && console.error(err))
-  run.catch(cb)
+  if (!cb) cb = err => err && console.error(err)
+  run(createBot, opts).catch(cb)
 }
 
 async function run (createBot, opts) {
-  console.log('run bot')
   const client = new Client()
-
-  const bot = createBot(client)
-  const { name, spec, handlers } = bot
-  await client.bots.register(name, spec, handlers)
-
-  console.log('bot registered with server')
+  try {
+    await client.open()
+    const bot = createBot(client)
+    const { name, spec, handlers } = bot
+    client.log.info('run bot: ' + name)
+    await client.bots.register(name, spec, handlers)
+    client.log.info('bot registered with server')
+  } catch (err) {
+    client.log.error({ err })
+  }
 }
