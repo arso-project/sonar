@@ -80,11 +80,11 @@ class Field {
     this._parent = parent.address
     parent._children.add(this.address)
 
-    for (const [key, value] of Object.entries(parent)) {
-      if (this._spec[key] === undefined) {
-        this._spec[key] = value
-      }
-    }
+    // for (const [key, value] of Object.entries(parent)) {
+    //   if (this._spec[key] === undefined) {
+    //     this._spec[key] = value
+    //   }
+    // }
   }
 
   getType () {

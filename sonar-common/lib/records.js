@@ -255,6 +255,7 @@ class Record extends Node {
       return
     }
     for (const field of fields) {
+      field._build(false)
       if (this._record.value[field.name] !== undefined) {
         // const fieldValue = new FieldValue(field, this._record.value[field.name])
         const fieldValue = new FieldValue(field, this._record.value[field.name], this)
