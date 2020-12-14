@@ -8,7 +8,7 @@ const Workspace = require('./workspace')
 const COMPAT_WRAP = Symbol('compat-wrap')
 
 class CompatWorkspace extends Nanoresource {
-  constructor (storagePath, opts) {
+  constructor (storagePath, opts = {}) {
     super()
     opts.storagePath = storagePath || p.join(os.homedir(), '.sonar')
     this.workspace = new Workspace(opts)
@@ -103,8 +103,19 @@ function wrapCollection (collection) {
   collection.replicate = function (...args) {
     return collection._workspace.corestore.replicate(...args)
   }
+  collection.createSubscription = function (name, opts) {
+    return collection.subscribe(name, opts)
+  }
   collection.pullSubscriptionStream = function (name, opts) {
     return collection.subscribe(name, opts).stream()
+  }
+  collection.pullSubscription = function (name, opts, cb) {
+    collection.subscribe(name, opts).pull()
+      .then(res => cb(null, res), cb)
+  }
+  collection.ackSubscription = function (name, cursor, cb) {
+    collection.subscribe(name).ack(cursor)
+      .then(res => cb(null, res), cb)
   }
 }
 

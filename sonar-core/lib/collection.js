@@ -33,10 +33,6 @@ const DEFAULT_CONFIG = {
   share: true
 }
 
-function useDefaultViews (collection) {
-
-}
-
 class Collection extends Nanoresource {
   constructor (keyOrName, opts) {
     super()
@@ -460,6 +456,11 @@ class Collection extends Nanoresource {
     return this._eventStream.createReadStream(opts)
   }
 
+  reindex (views, cb) {
+    if (!cb) { cb = views; views = null }
+    this._kappa.reset(views, cb)
+  }
+
   // Internal methods
 
   _setupDefaultViews () {
@@ -601,7 +602,6 @@ class Collection extends Nanoresource {
       this.emit('update', this.length)
     })
     this._indexer.addReady(this._rootFeed, { scan: true })
-
 
     // Init default views
     // ====
@@ -883,48 +883,58 @@ class Batch {
   }
 
   async _append (record, opts = {}) {
-    if (!this.locked) await this._lock()
-    if (!this.synced) {
-      await this.collection.sync('kv')
-      this.synced = true
+    try {
+      if (!this.locked) await this._lock()
+      if (!this.synced) {
+        await this.collection.sync('kv')
+        this.synced = true
+      }
+
+      if (!record.id) record.id = uuid()
+
+      // Upcast record
+      record = new Record(this.collection.schema, record)
+
+      // Set feed, links, timestamp
+      record.links = await this._getLinks(record, opts)
+      const feed = await this._findFeed(record, opts)
+      record.key = feed.key.toString('hex')
+      record.timestamp = Date.now()
+
+      // Never store value for deleted records
+      if (record.deleted) {
+        record.value = undefined
+      }
+      this.entries.push(record)
+    } catch (err) {
+      this._unlock()
+      throw err
     }
-
-    if (!record.id) record.id = uuid()
-
-    // Upcast record
-    record = new Record(this.collection.schema, record)
-
-    // Set feed, links, timestamp
-    record.links = await this._getLinks(record, opts)
-    const feed = await this._findFeed(record, opts)
-    record.key = feed.key.toString('hex')
-    record.timestamp = Date.now()
-
-    // Never store value for deleted records
-    if (record.deleted) {
-      record.value = undefined
-    }
-    this.entries.push(record)
   }
 
   async flush () {
-    // Sort records into buckets by feed
-    const buckets = new ArrayMap()
-    for (const record of this.entries) {
-      buckets.push(record.key, record)
-    }
+    try {
+      // Sort records into buckets by feed
+      const buckets = new ArrayMap()
+      for (const record of this.entries) {
+        buckets.push(record.key, record)
+      }
 
-    // Encode and append the records for each feed
-    const promises = Array.from(buckets.entries()).map(async ([key, records]) => {
-      const feed = this.collection.feed(key)
-      if (!feed) throw new Error('Feed not found: ' + key)
-      if (!feed.writable) throw new Error('Feed not writable: ' + key)
-      const blocks = records.map(record => RecordEncoder.encode(record.toJSON()))
-      await feed.append(blocks)
-      return records
-    })
-    await Promise.all(promises)
-    this._unlock()
+      // Encode and append the records for each feed
+      const promises = Array.from(buckets.entries()).map(async ([key, records]) => {
+        const feed = this.collection.feed(key)
+        if (!feed) throw new Error('Feed not found: ' + key)
+        if (!feed.writable) throw new Error('Feed not writable: ' + key)
+        const blocks = records.map(record => RecordEncoder.encode(record.toJSON()))
+        await feed.append(blocks)
+        return records
+      })
+      await Promise.all(promises)
+      this._unlock()
+    } catch (err) {
+      this._unlock()
+      throw err
+    }
   }
 
   async _findFeed (record, opts) {

@@ -1,3 +1,4 @@
+// const DatSDK = require('dat-sdk/hyperspace')
 const DatSDK = require('dat-sdk')
 const RAF = require('random-access-file')
 const p = require('path')

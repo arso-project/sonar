@@ -19,7 +19,7 @@ module.exports = function indexedView (lvl, db, opts) {
       clearLevelDb(lvl, cb)
     },
     api: {
-      query (kappa, opts, cb) {
+      query (opts, cb) {
         // const { type, prop, value, gt, lt, gte, lte, reverse, limit } = opts
         const proxy = transform(opts)
         if (!opts.field) {

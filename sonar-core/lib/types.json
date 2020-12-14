@@ -48,9 +48,10 @@
     "namespace": "sonar",
     "title": "Resource",
     "fields": {
-      "label": {
+      "filename": {
         "type": "string",
-        "title": "Label"
+        "title": "Filename",
+        "refines": "sonar/entity#label"
       },
       "description": {
         "type": "string",

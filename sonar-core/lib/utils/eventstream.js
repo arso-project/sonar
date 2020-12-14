@@ -10,8 +10,14 @@ module.exports = class EventStream extends Writable {
     this._streams = new Set()
   }
 
-  _write (eventObject, cb) {
-    this.push(eventObject)
+  _write (message, cb) {
+    if (this._messages.length === this._capacity) {
+      this._messages.shift()
+    }
+    this._messages.push(message)
+    for (const stream of this._streams) {
+      stream.push(message)
+    }
     cb()
   }
 
@@ -26,16 +32,10 @@ module.exports = class EventStream extends Writable {
     return this._messages.length
   }
 
-  push (event, data = {}) {
+  push ({ event, data }) {
     const id = ++this._counter
     const message = { event, data, id }
-    if (this._messages.length === this._capacity) {
-      this._messages.shift()
-    }
-    this._messages.push(message)
-    for (const stream of this._streams) {
-      stream.push(message)
-    }
+    this.write(message)
     // this.emit('event', message)
   }
 
