@@ -26,6 +26,11 @@ exports.builder = function (yargs) {
       handler: list
     })
     .command({
+      command: 'info',
+      describe: 'info about collection',
+      handler: info
+    })
+    .command({
       command: 'addFeed <name> <key>',
       describe: 'add a feed to the collection',
       handler: addFeed,
@@ -60,6 +65,13 @@ async function addFeed (argv) {
   const info = { name, type }
   const result = await collection.addFeed(key, info)
   console.log(result)
+}
+
+async function info (argv) {
+  const client = makeClient(argv)
+  const collection = await client.focusedCollection()
+  // const status = await collection.status()
+  console.log(JSON.stringify(collection.info))
 }
 
 async function list (argv) {

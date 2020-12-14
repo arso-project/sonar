@@ -46,7 +46,7 @@ function formatResults (results, opts) {
         r.meta.score || 0,
         formatType(r),
         r.id,
-        chalk.bold.yellow(r.getOne('title'))
+        chalk.bold.yellow(r.getOne('title') || r.getOne('sonar/entity#label'))
       ]
     })
     list = table(rows)
