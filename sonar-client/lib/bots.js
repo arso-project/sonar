@@ -91,22 +91,23 @@ class Bots {
       const { bot: name, op, data, requestId } = message
       const bot = this.bots.get(name)
       if (!bot) throw new Error('Unknown bot: ' + bot)
-
       try {
         if (op === 'join') {
-          const collection = await this.client.openCollection(data.collection)
+          const { collection: collectionKey } = data
+          const collection = await this.client.openCollection(collectionKey)
           await bot.onjoin(collection, data.config)
           await this.reply({ requestId })
         } else if (op === 'leave') {
-          const collection = await this.client.openCollection(data.collection)
+          const { collection: collectionKey } = data
+          const collection = await this.client.openCollection(collectionKey)
           await bot.onleave(collection)
           await this.reply({ requestId })
         } else if (op === 'command') {
-          let collection = null
-          if (data.collection) {
-            collection = await this.client.openCollection(data.collection)
+          const { command, args, env } = data
+          if (env.collection) {
+            env.collection = await this.client.openCollection(env.collection)
           }
-          const result = await bot.oncommand(collection, data.command, data.args)
+          const result = await bot.oncommand(command, args, env)
           await this.reply({ requestId, result })
         }
       } catch (err) {
@@ -140,7 +141,7 @@ class Bots {
   async register (name, spec, handlers) {
     if (typeof spec !== 'object') throw new Error('Spec must be an object')
     spec.name = name
-    const { config, sessionId } = await this.fetch('/announce', {
+    const { config, sessionId } = await this.fetch('/register', {
       method: 'POST',
       body: spec
     })
@@ -165,6 +166,9 @@ class Bot {
     this.name = spec.name
     this.client = client
     this.config = config
+    if (typeof handlers === 'function') {
+      handlers = handlers({ spec, config, client })
+    }
     this.handlers = handlers
     this.sessions = new Map()
     this.opened = false
@@ -210,20 +214,23 @@ class Bot {
   }
 
   async onleave (collection) {
-    const session = this.sessions.get(collection)
+    const session = this.sessions.get(collection.key)
     if (!session) return
     if (session.close) await session.close()
+    this.sessions.delete(collection.key)
     this.log.debug({ message: 'leave', collection })
   }
 
-  async oncommand (collection, command, args) {
+  async oncommand (command, args, env) {
     await this.open()
 
+    if (!env.collection && this.handlers.oncommand) {
       this.log.debug('workspace command: ' + command)
       return await this.handlers.oncommand(command, args)
     }
 
     this.log.debug({ message: 'collection command: ' + command, collection: env.collection })
+    const session = this.sessions.get(env.collection.key)
     if (!session) throw new Error('Bot did not join collection')
     if (!session.oncommand) throw new Error('Bot cannot handle commands')
 

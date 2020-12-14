@@ -1,11 +1,12 @@
 const randombytes = require('randombytes')
+const EventSource = require('eventsource')
 
 const sonarFetch = require('./fetch')
-const Commands = require('./commands')
 const Collection = require('./collection')
 const Bots = require('./bots')
 
 const Logger = require('@arso-project/sonar-common/log')
+
 const {
   DEFAULT_ENDPOINT
 } = require('./constants')
@@ -19,7 +20,7 @@ class Client {
    * @param {string} [opts.endpoint=http://localhost:9191/api] - The API endpoint to talk to.
    * @param {string} [opts.accessCode] - An access code to login at the endpoint.
    * @param {string} [opts.token] - A JSON web token to authorize to the endpoint.
-   * @param {string} [opts.name] - The name of this client. Only relevant if using persistent commands (for bots).
+   * @param {string} [opts.name] - The name of this client.
    */
   constructor (opts = {}) {
     this.endpoint = opts.endpoint || DEFAULT_ENDPOINT
@@ -33,15 +34,10 @@ class Client {
 
     this.log = opts.log || new Logger()
     this.bots = new Bots(this)
-
-    this.commands = new Commands({
-      url: this.endpoint + '/commands',
-      name: opts.name || 'client:' + this._id
-    })
   }
 
   /**
-   * Closes the client and all commands that maybe active.
+   * Closes the client.
    *
    * @async
    * @return {Promise<void>}
@@ -50,7 +46,6 @@ class Client {
     for (const collection of this._collections.values()) {
       collection.close()
     }
-    return this.commands.close()
   }
 
   async open () {
@@ -147,6 +142,10 @@ class Client {
     return headers
   }
 
+  getHeaders (opts = {}) {
+    return this.getAuthHeaders()
+  }
+
   /**
    * Fetch a resource.
    *
@@ -179,7 +178,28 @@ class Client {
       ...opts.headers,
       ...this.getAuthHeaders(opts)
     }
+    opts.log = message => this.log.debug({ message, name: 'fetch' })
     return sonarFetch(url, opts)
+  }
+
+  createEventSource (path, opts = {}) {
+    if (!opts.endpoint && this.endpoint) opts.endpoint = this.endpoint
+    opts.headers = Object.assign(opts.headers || {}, this.getHeaders(opts))
+    const url = (opts.endpoint || '') + path
+    const eventSource = new EventSource(url, opts)
+    eventSource.addEventListener('message', message => {
+      try {
+        const event = JSON.parse(message.data)
+        if (opts.onmessage) opts.onmessage(event)
+      } catch (e) {}
+    })
+    eventSource.addEventListener('error', err => {
+      // TODO: Where do these errors go?
+      // TODO: After a couple of fails die.
+      if (opts.onerror) opts.onerror(err)
+      else console.error('Event source error', err)
+    })
+    return eventSource
   }
 }
 

@@ -1,5 +1,6 @@
 const fetch = require('isomorphic-fetch')
 const debug = require('debug')('sonar:fetch')
+const isBuffer = require('is-buffer')
 
 /**
   * Fetch a resource.
@@ -31,7 +32,7 @@ module.exports = async function makeFetch (url, opts) {
 
   if (!opts.headers) opts.headers = {}
   if (!opts.requestType) {
-    if (Buffer.isBuffer(opts.body)) opts.requestType = 'buffer'
+    if (isBuffer(opts.body)) opts.requestType = 'buffer'
     else opts.requestType = 'json'
   }
 
@@ -52,6 +53,7 @@ module.exports = async function makeFetch (url, opts) {
   }
 
   const log = opts.log === false ? () => {} : (opts.log || debug)
+
   try {
     debug('fetch', url, opts)
     const res = await fetch(url, opts)
@@ -67,6 +69,7 @@ module.exports = async function makeFetch (url, opts) {
     }
 
     log(`ok ${res.status} fetch ${url}`)
+
     if (opts.responseType === 'stream') {
       return res.body
     }
@@ -85,7 +88,7 @@ module.exports = async function makeFetch (url, opts) {
   } catch (err) {
     // TODO: If error fails for insufficient authorization, try creating
     // a new token if accessCode is set
-    debug('fetch error', err)
+  debug('fetch error', err)
   log(`error: fetch ${url} ${err.message}`)
     throw err
   }

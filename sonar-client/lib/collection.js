@@ -1,8 +1,8 @@
 const base32Encode = require('base32-encode')
 const randomBytes = require('randombytes')
 const debug = require('debug')('sonar-client')
-const { Readable } = require('streamx')
-const EventSource = require('eventsource')
+const { Readable, Writable } = require('streamx')
+const { EventEmitter } = require('events')
 
 const Schema = require('@arso-project/sonar-common/schema')
 const Fs = require('./fs')
@@ -12,7 +12,7 @@ function uuid () {
   return base32Encode(randomBytes(16), 'Crockford').toLowerCase()
 }
 
-class Collection {
+class Collection extends EventEmitter {
   static uuid () {
     return uuid()
   }
@@ -26,6 +26,7 @@ class Collection {
    * @return {Collection}
    */
   constructor (client, name) {
+    super()
     this.endpoint = client.endpoint + '/collection/' + name
     this._client = client
     this._info = {}
@@ -227,43 +228,52 @@ class Collection {
   /**
    * Subscribe to events on this collection.
    *
-   * Returned events look like this: `{ event, data, id }`
+   * Returns a readable stream that emits event objects.
+   * They look like this:
+   * `{ event: string, data: object }`
+   *
    * Events are:
    *
-   * * `update`: with `{ lseq }`
-   * * `feed`: with `{ key }`
+   * * `update`: with data `{ lseq }`
+   * * `feed`: with data `{ key }`
    * * `schema-update`
    *
    * @return {Readable<object>}
    */
   createEventStream () {
-    const stream = new Readable()
-    this._eventStreams.add(stream)
-    if (!this._eventSource) this._initEventSource()
-    return stream
+    if (!this._eventStream) {
+      this._initEventSource()
+    }
+    return this._eventStream.subscribe()
   }
 
   async _initEventSource () {
-    if (this._eventSourceInitializing) return
-    this._eventSourceInitializing = true
+    if (this._eventStream) return
+    this._eventStream = new TeeStream()
+
+    const onerror = err => {
+      // TODO: Where should the error go?
+      this.log.error('Error initializing event source: ' + err.message)
+      if (this._eventStream) this._eventStream.destroy(err)
+      this._eventStream = null
+    }
+
     try {
       if (!this._client.opened) await this._client.open()
-      const headers = this._client.getAuthHeaders()
-      const path = this.endpoint + '/events'
-      this._eventSource = new EventSource(path, { headers })
-      this._eventSource.addEventListener('message', message => {
-        try {
-          const event = JSON.parse(message.data)
-          for (const stream of this._eventStreams) {
-            stream.push(event)
-          }
-        } catch (e) {}
-      })
-    } catch (e) {
-      // TODO: Where should the error go?
-      console.error('Error initializing event source: ' + e.message)
+    } catch (err) {
+      onerror(err)
+      return
     }
-    this._eventSourceInitializing = undefined
+
+    this._eventSource = this._client.createEventSource('/events', {
+      endpoint: this.endpoint,
+      onerror,
+      onmessage: (eventObject) => {
+        this.log.trace('event: ' + eventObject.event)
+        this._eventStream.write(eventObject)
+        this.emit(eventObject.event, eventObject.data)
+      }
+    })
   }
 
   /**
@@ -280,27 +290,21 @@ class Collection {
    */
   async subscribe (name, onRecord) {
     const self = this
+    await this._initEventSource()
 
     run().catch(err => {
       // TODO: How to deal with these errors?
-      console.error('subscription error', err)
+      this.log.error('subscription error', err)
     })
 
     return true
 
     async function run () {
-      const eventStream = self.createEventStream()
+      // const eventStream = self.createEventStream()
       while (true) {
-        const incomingEvent = new Promise((resolve, reject) => {
-          eventStream.on('data', ondata)
-          eventStream.once('error', reject)
-          function ondata (event) {
-            if (event.type === 'update') {
-              eventStream.removeListener('data', ondata)
-              eventStream.removeListener('error', reject)
-              resolve()
-            }
-          }
+        // wait for one incoming update event
+        const nextUpdatePromise = new Promise((resolve, reject) => {
+          self.once('update', resolve)
         })
 
         const batch = await self._pullSubscription(name)
@@ -310,15 +314,17 @@ class Collection {
             await onRecord(record)
             // TODO: Do we want to ack for each message or for each batch?
             // Likely let the subscriber decide.
-            self._ackSubscription(name, message.lseq)
+            await self._ackSubscription(name, message.lseq)
           } catch (err) {
             // TODO: What to do with errors here?
-            console.error(`Error in subscription ${name}: ${err.message}`)
+            self.log.error(`Error in subscription ${name}: ${err.message}`)
             debug(err)
+            // TODO: This will easily cause an endless loop becaues it'll
+            // just keep refreshing and running into errors ;-)
           }
         }
         if (batch.finished) {
-          await incomingEvent
+          await nextUpdatePromise
         }
       }
     }
@@ -356,6 +362,34 @@ class Collection {
   async fetch (path, opts = {}) {
     if (!opts.endpoint) opts.endpoint = this.endpoint
     return this._client.fetch(path, opts)
+  }
+}
+
+class TeeStream extends Writable {
+  constructor (opts) {
+    super(opts)
+    this._streams = new Set()
+  }
+
+  subscribe (opts) {
+    const stream = new Readable(opts)
+    stream.on('destroy', () => this._streams.remove(stream))
+    this._streams.add(stream)
+    return stream
+  }
+
+  _write (data, cb) {
+    for (const stream of this._streams) {
+      stream.push(data)
+    }
+    cb()
+  }
+
+  _destroy (err) {
+    for (const stream of this._streams) {
+      stream.destroy(err)
+    }
+    super.destroy(err)
   }
 }
 

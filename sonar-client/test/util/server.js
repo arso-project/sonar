@@ -7,6 +7,11 @@ const debug = require('debug')('test')
 // Increase stack trace limit during tests to get meaningful backtraces when CI breaks
 Error.stackTraceLimit = Infinity
 
+const DEV_DEBUG = '*,-express*,-hypercore-protocol*,-body-parser*,-babel*'
+if (process.env.DEBUG === 'dev') {
+  process.env.DEBUG = DEV_DEBUG
+}
+
 let CNT = 0
 const PORT = process.env.PORT || 10000
 

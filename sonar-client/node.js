@@ -6,7 +6,7 @@ const p = require('path')
 const fs = require('fs')
 
 class NodeClient extends Client {
-  constructor (opts) {
+  constructor (opts = {}) {
     if (!opts.token) {
       // TODO: Put filenames in constants.js in sonar-common
       const path = p.join(storagePath(opts.storage), 'tokens.json')
