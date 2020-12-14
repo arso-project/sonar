@@ -34,6 +34,7 @@ class Collection {
 
     this.fs = new Fs(this)
     this.resources = new Resources(this)
+    this.log = client.log.child({ collection: this })
   }
 
   get name () {

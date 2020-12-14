@@ -5,6 +5,7 @@ const Commands = require('./commands')
 const Collection = require('./collection')
 const Bots = require('./bots')
 
+const Logger = require('@arso-project/sonar-common/log')
 const {
   DEFAULT_ENDPOINT
 } = require('./constants')
@@ -30,6 +31,7 @@ class Client {
     this._token = opts.token
     this._accessCode = opts.accessCode
 
+    this.log = opts.log || new Logger()
     this.bots = new Bots(this)
 
     this.commands = new Commands({

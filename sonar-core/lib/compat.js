@@ -14,6 +14,10 @@ class CompatWorkspace extends Nanoresource {
     this.workspace = new Workspace(opts)
   }
 
+  get log () {
+    return this.workspace.log
+  }
+
   get network () {
     return this.workspace.network
   }

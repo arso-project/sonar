@@ -7,6 +7,7 @@ const expressWebSocket = require('express-ws')
 const shutdown = require('http-shutdown')
 const debug = require('debug')('sonar-server')
 const p = require('path')
+const pinoExpress = require('express-pino-logger')
 
 const swaggerUi = require('swagger-ui-express')
 const thunky = require('thunky')
@@ -50,6 +51,7 @@ module.exports = function SonarServer (opts = {}) {
 
   // Init collection store.
   const collections = new CollectionStore(config.storage, config.collections)
+  const log = collections.log
 
   // Init express app.
   const app = express()
@@ -58,15 +60,25 @@ module.exports = function SonarServer (opts = {}) {
   const api = {
     auth,
     collections,
-    config
+    config,
+    log
   }
 
   // Make the sonar api available on the app object.
   app.api = api
 
   if (config.auth.disableAuthentication) {
-    console.log('Authentication is disabled.')
+    log.warn('Authentication is disabled.')
   }
+
+  // Logger
+  const logger = pinoExpress({
+    logger: collections.log,
+    useLevel: 'debug',
+    customSuccessMessage: res => ' ',
+    customErrorMessage: err => err.message
+  })
+  app.use(logger)
 
   // If in dev mode, add a optional dev middlewares.
   let devMiddleware
@@ -139,11 +151,12 @@ module.exports = function SonarServer (opts = {}) {
 
   // Error handling
   app.use(function (err, req, res, next) {
-    debug('request produced error', err)
     const result = {
       error: err.message
     }
+    res.err = err
     res.status(err.statusCode || 500).send(result)
+    debug('request produced error', err, err.stack)
   })
 
   // Dev middleware.

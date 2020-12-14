@@ -6,6 +6,7 @@ class Bots {
   constructor (client) {
     this.client = client
     this.bots = new Map()
+    this.log = this.client.log.child({ name: 'bots' })
   }
 
   async close () {
@@ -70,7 +71,7 @@ class Bots {
     this._eventSource.addEventListener('error', err => {
       // TODO: Where do these errors go?
       // TODO: After a couple of fails die.
-      console.error('Event source error', err)
+      this.log.error({ err, message: 'Event source error' })
     })
   }
 
@@ -109,7 +110,7 @@ class Bots {
           await this.reply({ requestId, result })
         }
       } catch (err) {
-        console.error('bot produced error', err)
+        this.log.error({ message: 'bot onmessage handle error: ' + err.message, err })
         await this.reply({
           requestId: requestId,
           error: err.message
@@ -117,7 +118,7 @@ class Bots {
       }
     } catch (err) {
       // TODO: Where to these errors go?
-      console.error('Bot stream error', err)
+      this.log.error({ message: 'bot onmessage error', err })
     }
   }
 
@@ -167,6 +168,7 @@ class Bot {
     this.handlers = handlers
     this.sessions = new Map()
     this.opened = false
+    this.log = this.client.log.child({ name: 'bot:' + this.name })
   }
 
   async open () {
@@ -177,6 +179,7 @@ class Bot {
     if (this.handlers.open) await this.handlers.open()
     _resolve()
     this.opened = true
+    this.log.debug('open')
   }
 
   async onjoin (collection, config) {
@@ -193,7 +196,8 @@ class Bot {
     if (session.onrecord) {
       collection.subscribe('bot:' + this.name, session.onrecord.bind(session))
     }
-    this.sessions.set(collection, session)
+    this.sessions.set(collection.key, session)
+    this.log.debug({ message: 'join', collection })
   }
 
   async _ensureTypes (collection) {
@@ -209,17 +213,17 @@ class Bot {
     const session = this.sessions.get(collection)
     if (!session) return
     if (session.close) await session.close()
-    this.sessions.delete(collection)
+    this.log.debug({ message: 'leave', collection })
   }
 
   async oncommand (collection, command, args) {
     await this.open()
 
-    if (!collection && this.handlers.oncommand) {
+      this.log.debug('workspace command: ' + command)
       return await this.handlers.oncommand(command, args)
     }
 
-    const session = this.sessions.get(collection)
+    this.log.debug({ message: 'collection command: ' + command, collection: env.collection })
     if (!session) throw new Error('Bot did not join collection')
     if (!session.oncommand) throw new Error('Bot cannot handle commands')
 

@@ -1,6 +1,7 @@
 const pino = require('pino')
 const chalk = require('chalk')
 const prettyHash = require('pretty-hash')
+const prettyBytes = require('pretty-bytes')
 
 const isBrowser = process.title === 'browser'
 
@@ -125,6 +126,8 @@ function formatHttp (obj) {
   out += ' ' + req.url
   out += ' ' + chalk.gray(obj.responseTime + 'ms')
   out += ' ' + chalk[color].bold(res.statusCode)
+  const size = res.headers['content-length']
+  if (size) out += ' ' + chalk.gray(prettyBytes(Number(size)).replace(' ', ''))
   return out
 }
 

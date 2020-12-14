@@ -2,10 +2,11 @@ const debug = require('debug')('sonar-server')
 const p = require('path')
 const { fork, spawn } = require('child_process')
 const onexit = require('async-exit-hook')
+const chalk = require('chalk')
 const { printLogo } = require('@arso-project/sonar-cli/util/logo.js')
 const options = require('./lib/options')
 
-const DEV_DEBUG = '*,-express*,-hypercore-protocol*,-body-parser*,-babel*'
+const DEV_DEBUG = '*,-express*,-hypercore-protocol*,-body-parser*,-babel*,-send,-finalhandler'
 
 exports.command = 'server <command>'
 exports.describe = 'server'
@@ -28,7 +29,8 @@ exports.startServer = startServer
 exports.options = options
 
 function startServer (argv) {
-  printLogo()
+  const supportsColor = chalk.supportsColor
+  if (supportsColor.hasBasic) printLogo()
 
   if (argv.dev) {
     debug('starting server in developer\'s mode')
@@ -44,7 +46,7 @@ function startServer (argv) {
   const proc = spawn(nodeExe, args, {
     env: {
       ...process.env,
-      FORCE_COLOR: process.env.FORCE_COLOR || '2'
+      FORCE_COLOR: process.env.FORCE_COLOR || supportsColor.level
     },
     stdio: 'inherit'
   })

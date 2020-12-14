@@ -47,7 +47,9 @@ class Collection extends Nanoresource {
 
     if (opts.id) this._id = opts.id
 
-    this.log = this._workspace.log.child({ collection: keyOrName })
+    this.log = this._workspace.log.child({
+      collection: this
+    })
 
     this.schema = new Schema({
       onchange: (schema) => {
@@ -74,15 +76,20 @@ class Collection extends Nanoresource {
 
     // Push some events into event streams
     // Event streams are an easy way to forward events over RPC or HTTP.
-    this.on('update', (lseq) => {
-      this._eventStream.push('update', { lseq })
-    })
-    this.on('feed', (feed, info) => {
-      this._eventStream.push('feed', { ...info })
-    })
-    this.on('schema-update', () => {
-      this._eventStream.push('schema-update')
-    })
+    this._forwardEvent('open')
+    this._forwardEvent('update', lseq => ({ lseq }))
+    this._forwardEvent('feed', (feed, info) => ({ ...info }))
+    this._forwardEvent('schema-update', () => ({}))
+  }
+
+  _forwardEvent (event, map) {
+    if (!map) map = (data) => data
+    this.on(event, (...args) => this._pushEvent(event, map(...args)))
+  }
+
+  _pushEvent (event, data) {
+    this.log.trace('event: ' + event)
+    this._eventStream.write({ event, data })
   }
 
   // Public API
@@ -239,6 +246,7 @@ class Collection extends Nanoresource {
     const batch = new Batch(this)
     await batch.put(record, opts)
     await batch.flush()
+    this.log.debug({ message: 'put', record: batch.entries[0] })
     return batch.entries[0]
   }
 
@@ -246,6 +254,7 @@ class Collection extends Nanoresource {
     const batch = new Batch(this)
     await batch.del(record, opts)
     await batch.flush()
+    this.log.debug({ message: 'del', record: batch.entries[0] })
     return batch.entries[0]
   }
 
@@ -633,6 +642,7 @@ class Collection extends Nanoresource {
 
     // Emit open event
     this.emit('open')
+    this.log.debug(`Collection open: ${pretty(this.key)}`)
 
     // Alternative approach: Don't store feeds and types locally at all.
     // Query the collection itself. This is nicer, likely.

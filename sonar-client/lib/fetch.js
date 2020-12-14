@@ -51,6 +51,7 @@ module.exports = async function makeFetch (url, opts) {
     opts.headers['content-type'] = 'application/octet-stream'
   }
 
+  const log = opts.log === false ? () => {} : (opts.log || debug)
   try {
     debug('fetch', url, opts)
     const res = await fetch(url, opts)
@@ -61,9 +62,11 @@ module.exports = async function makeFetch (url, opts) {
       } else {
         message = await res.text()
       }
+      log(`error ${res.status} ${url}`)
       throw new Error('Remote error (code ' + res.status + '): ' + message)
     }
 
+    log(`ok ${res.status} fetch ${url}`)
     if (opts.responseType === 'stream') {
       return res.body
     }
@@ -83,6 +86,7 @@ module.exports = async function makeFetch (url, opts) {
     // TODO: If error fails for insufficient authorization, try creating
     // a new token if accessCode is set
     debug('fetch error', err)
+  log(`error: fetch ${url} ${err.message}`)
     throw err
   }
 }

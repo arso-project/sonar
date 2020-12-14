@@ -1,6 +1,5 @@
 const DatSDK = require('dat-sdk')
 const RAF = require('random-access-file')
-const pino = require('pino')
 const p = require('path')
 const level = require('level')
 const levelMem = require('level-mem')
@@ -9,6 +8,8 @@ const { promisify } = require('util')
 const mkdirp = promisify(require('mkdirp-classic'))
 const { NanoresourcePromise: Nanoresource } = require('nanoresource-promise/emitter')
 // const why = require('why-is-node-running')
+
+const createLogger = require('@arso-project/sonar-common/log')
 
 const Collection = require('./collection')
 const LevelMap = require('./utils/level-map')
@@ -62,10 +63,7 @@ module.exports = class Workspace extends Nanoresource {
     this._leveldbs = new Map()
     this._storagePath = opts.storagePath || defaultStoragePath()
 
-    this.log = pino({
-      level: 'debug',
-      prettyPrint: true
-    })
+    this.log = opts.log || createLogger()
 
     this.registerPlugin(useDefaultViews)
   }
