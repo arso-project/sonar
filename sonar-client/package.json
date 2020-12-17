@@ -26,7 +26,7 @@
     "rollup": "^2.34.0",
     "simple-rpc-protocol": "^0.4.0",
     "simple-websocket": "^8.1.1",
-    "streamx": "^2.6.0"
+    "streamx": "^2.10.0"
   },
   "devDependencies": {
     "@arso-project/sonar-server": "^0.3.0-alpha.7",
