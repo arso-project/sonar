@@ -5,3 +5,5 @@ fields:
   label:
     type: string
     name: Label
+    index:
+      basic: true

@@ -24,6 +24,10 @@ function onCollectionOpen (collection, awaitOpen) {
   collection.drive = (...args) => collection.fs.get(...args)
   collection.once('close', () => fs.close())
 
+  fs.on('drive-open', drive => {
+    collection._workspace.network.configure(drive.discoveryKey, { announce: true, lookup: true })
+  })
+
   // let the opening wait until fs is opened
   const callback = awaitOpen()
   fs.open(err => callback(err))
@@ -59,7 +63,7 @@ function onCollectionOpen (collection, awaitOpen) {
 class SonarHyperdrive extends Nanoresource {
   constructor (opts) {
     super()
-    this.corestore = opts.corestore
+    this.corestore = opts.corestore.namespace('sonar-fs')
     // this.db is a leveldb.
     this.db = opts.db
 
@@ -202,13 +206,17 @@ class SonarHyperdrive extends Nanoresource {
   }
 
   _openDrive (key, cb) {
+    const self = this
     key = datEncoding.decode(key)
     const hkey = datEncoding.encode(key)
-    const drive = hyperdrive(this.corestore, key)
-    this.drives[hkey] = drive
-    drive.ready((err) => {
-      if (err) return cb(err)
-      cb(null, drive)
+    this.corestore.ready((err) => {
+      const drive = hyperdrive(this.corestore, key)
+      this.drives[hkey] = drive
+      drive.ready((err) => {
+        if (err) return cb(err)
+        self.emit('drive-open', drive)
+        cb(null, drive)
+      })
     })
   }
 

@@ -1,5 +1,6 @@
-// const DatSDK = require('dat-sdk/hyperspace')
 const DatSDK = require('dat-sdk')
+// TODO: Think about using the hyperspace daemon :-)
+// const DatSDK = require('dat-sdk/hyperspace')
 const RAF = require('random-access-file')
 const p = require('path')
 const level = require('level')
@@ -95,6 +96,7 @@ module.exports = class Workspace extends Nanoresource {
       this._ownSDK = true
     } else {
       this._sdk = this._opts.sdk
+      this._ownSDK = false
     }
 
     if (this._opts.persist === false) {
@@ -128,6 +130,7 @@ module.exports = class Workspace extends Nanoresource {
     if (this._ownSDK) {
       await this._sdk.close()
     }
+    this._sdk = null
     // this._sdk = null
     // this._leveldb = null
     // this._collections = new Map()
@@ -162,7 +165,6 @@ module.exports = class Workspace extends Nanoresource {
     if (Buffer.isBuffer(keyOrName)) {
       keyOrName = keyOrName.toString('hex')
     }
-    // console.log('GET', keyOrName, this._collections)
     if (this._collections.has(keyOrName)) {
       return this._collections.get(keyOrName)
     }
@@ -178,7 +180,7 @@ module.exports = class Workspace extends Nanoresource {
       this.emit('collection-opening', collection, awaitMe)
     })
 
-    collection.on('open', awaitMe => {
+    collection.on('open', () => {
       const id = collection.id
       if (!this._collectionInfo.has(id)) {
         const status = collection.status()

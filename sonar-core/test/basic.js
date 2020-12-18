@@ -29,6 +29,7 @@ function createStore (opts, cb) {
 
 tape('open close', t => {
   createStore({ network: false }, (err, collections, cleanup) => {
+    if (err) t.fail(err)
     t.true(collections.opened, 'opened property is set')
     t.error(err)
     cleanup(err => {

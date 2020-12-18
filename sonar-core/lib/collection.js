@@ -5,7 +5,7 @@ const pretty = require('pretty-hash')
 const inspect = require('inspect-custom-symbol')
 const pump = require('pump')
 const collectStream = require('stream-collector')
-const { Transform } = require('streamx')
+const { Transform, Writable } = require('streamx')
 const { NanoresourcePromise: Nanoresource } = require('nanoresource-promise/emitter')
 const Kappa = require('kappa-core')
 const Indexer = require('kappa-sparse-indexer')
@@ -159,7 +159,7 @@ class Collection extends Nanoresource {
     }
 
     const sourceOpts = {
-      maxBatch: opts.maxBatch
+      maxBatch: opts.maxBatch || 1000
     }
 
     // if (opts.filterFeed) {
@@ -260,6 +260,33 @@ class Collection extends Nanoresource {
     await batch.flush()
     this.log.debug({ message: 'del', record: batch.entries[0] })
     return batch.entries[0]
+  }
+
+  createBatchStream (opts) {
+    const flushAfter = 1000
+    let batch = new Batch(this)
+    let i = 0
+    const stream = new Writable({
+      async write (record, cb) {
+        console.log('WRITE', record)
+        try {
+          await batch._append(record)
+          if (++i % flushAfter === 0) {
+            await batch.flush()
+            batch = new Batch(this)
+          }
+          cb()
+        } catch (err) { cb(err) }
+      },
+      final (cb) {
+        batch.flush().then(cb.bind(null, null)).catch(cb)
+      },
+      destroy (cb) {
+        if (batch) batch._unlock()
+      }
+
+    })
+    return stream
   }
 
   async batch (records, opts = {}) {
@@ -537,7 +564,6 @@ class Collection extends Nanoresource {
 
   _leveldb (name) {
     if (!this._id) {
-      console.error(new Error().stack)
       throw new Error('LevelDB created too early')
     }
     const prefix = this._id
@@ -545,16 +571,12 @@ class Collection extends Nanoresource {
     return this._workspace.LevelDB(dbName)
   }
 
-  _feedName (type) {
+  _feedName (name) {
     // dat-sdk (through dat-encoding) considers every string that
     // contains a 32-byte hex string a key, so we have to add a
     // non-hex character somewhere.
     const id = this.key.slice(0, 16).toString('hex') + '-' + this.key.slice(16).toString('hex')
-    return `sonar-collection-${id}-${type}`
-  }
-
-  _prepare () {
-
+    return `sonar-collection-${id}-${name}`
   }
 
   async _open () {
@@ -687,22 +709,24 @@ class Collection extends Nanoresource {
     await new Promise((resolve) => {
       this._indexer.close(resolve)
     })
+    this.emit('close')
     this._eventStream.destroy()
   }
 
   async _initFeed (keyOrName, info = {}, opts = {}) {
-    // console.log('initFeed', { keyOrName, info, stack: new Error().stack })
+    // Open the feed if it's not yet opened
+    // if (this._feeds.has(keyOrName)) return this._feeds.get(keyOrName)
     const feed = this._workspace.Hypercore(keyOrName)
     if (!feed.opened) await feed.ready()
     const hkey = feed.key.toString('hex')
-    // Don't do anything for feeds already opened
+    // Recheck if feed is opened (if it was opened by name first)
     if (this._feeds.has(hkey)) return this._feeds.get(hkey)
 
-    // TODO: Deal with feed types again :)
-    if (info.type && info.type === 'hyperdrive') return
+    // console.log('initFeed', { keyOrName, info, stack: new Error().stack })
 
+    // Forward some events
     feed.on('download', (seq) => {
-      this.emit('feed-update', feed)
+      this.emit('feed-update', feed, 'download', seq)
     })
     feed.on('append', () => {
       this.emit('feed-update', feed)
@@ -711,7 +735,7 @@ class Collection extends Nanoresource {
       this.emit('remote-update', feed)
     })
 
-    // If the feed is unknown add it to the feed store.
+    // If the feed is unknown add it to the local feed store.
     info.key = hkey
     if (this._feedInfo && !this._feedInfo.has(hkey)) {
       this._feedInfo.set(hkey, info)
@@ -726,6 +750,8 @@ class Collection extends Nanoresource {
       await this._initRemoteFeed(feed, info)
     }
 
+    // Add feed to indexer
+    // TODO: Change default to false?
     if (opts.index !== false) {
       this._indexer.addReady(feed, { scan: true })
     }
@@ -736,7 +762,7 @@ class Collection extends Nanoresource {
     feed.download({ start: 0, end: -1 }, null)
 
     this.emit('feed', feed, info)
-    // this.log.info('Added feed %o', info)
+    this.log.debug(`init feed [${info.type}] ${pretty(feed.key)} @ ${feed.length}`)
 
     return feed
   }
@@ -748,6 +774,7 @@ class Collection extends Nanoresource {
 
     const hkey = feed.key.toString('hex')
 
+    // When header is loaded, parse type and save locally.
     const onheader = async buf => {
       const header = Header.decode(buf)
       const type = header.type
@@ -759,15 +786,15 @@ class Collection extends Nanoresource {
       await this._feedInfo.flush()
     }
 
-    // Try to load the header.
     try {
+      // Try to load the header without waiting
       const buf = await feed.get(0, { wait: false })
       await onheader(buf)
     } catch (err) {
-      // Try to load the header, waiting
+      // Try to load the header with waiting, but return now
       feed.get(0, { wait: true }).then(buf => {
         onheader(buf).catch(this._onerror)
-      }).catch(() => {})
+      }).catch(noop)
     }
   }
 
@@ -775,11 +802,11 @@ class Collection extends Nanoresource {
     if (!feed.writable) throw new Error('Local feed must be writable')
     // Feed was already initialized
     if (feed.length) return
-    // No type is error
+    // No type is error for new local feeds
     if (!info.type) throw new Error('Type is required for new feeds')
 
     // Append header if writable and empty
-    // const hkey = feed.key.toString('hex')
+    // TODO: Support subtypes
     await feed.append(Header.encode({
       type: info.type
     }))
@@ -818,60 +845,9 @@ class Collection extends Nanoresource {
   }
 }
 
-// async function onFeedCreateRemote (feed) {
-//   if (feed.writable) throw new Error('Remote feed cannot be writable')
-//   const hkey = feed.key.toString('hex')
-//   // const info = this._feedInfo.get(hkey)
-//   // If a type is set the feed was added.
-//   // if (info.type) {
-//   //   this._kappa.addFeed(feed)
-//   //   return
-//   // }
-
-//   const onheader = async buf => {
-//     const header = Header.decode(buf)
-//     const type = header.type
-//     this._feedInfo.update(hkey, info => {
-//       info.type = type
-//       info.header = header
-//       return info
-//     })
-//     await this._feedInfo.flush()
-//   }
-
-//   // Try to load the header.
-//   try {
-//     const buf = await feed.get(0, { wait: false })
-//     await onheader(buf)
-//   } catch (err) {
-//     // Try to load the header, waiting
-//     feed.get(0, { wait: true }).then(buf => {
-//       onheader(buf).catch(this._onerror)
-//       // this._kappa.addFeed(feed)
-//     }).catch(() => {})
-//   }
-// }
-
-// async function onFeedCreateLocal (feed, info = {}) {
-//   if (!feed.writable) throw new Error('Local feed must be writable')
-//   // Feed was already initialized
-//   if (feed.length) return
-
-//   if (!info.type) throw new Error('Type is required for new feeds')
-
-//   // Append header if writable and empty
-//   const hkey = feed.key.toString('hex')
-//   await feed.append(Header.encode({
-//     type: info.type
-//   }))
-
-//   await this.putFeed(hkey, info)
-//   // Append feed record once the collection is fully opened
-//   // this.ready(() => {
-//   //   this.putFeed(hkey, info).catch(this._onerror)
-//   // })
-// }
-
+/**
+ * Helper class for append operations (put and del).
+ */
 class Batch {
   constructor (collection) {
     this.collection = collection
@@ -914,7 +890,7 @@ class Batch {
 
       // Set feed, links, timestamp
       record.links = await this._getLinks(record, opts)
-      const feed = await this._findFeed(record, opts)
+      const feed = this._findFeed(record, opts)
       record.key = feed.key.toString('hex')
       record.timestamp = Date.now()
 
@@ -930,31 +906,30 @@ class Batch {
   }
 
   async flush () {
-    try {
-      // Sort records into buckets by feed
-      const buckets = new ArrayMap()
-      for (const record of this.entries) {
-        buckets.push(record.key, record)
-      }
+    // Sort records into buckets by feed
+    const buckets = new ArrayMap()
+    for (const record of this.entries) {
+      buckets.push(record.key, record)
+    }
 
-      // Encode and append the records for each feed
-      const promises = Array.from(buckets.entries()).map(async ([key, records]) => {
-        const feed = this.collection.feed(key)
-        if (!feed) throw new Error('Feed not found: ' + key)
-        if (!feed.writable) throw new Error('Feed not writable: ' + key)
-        const blocks = records.map(record => RecordEncoder.encode(record.toJSON()))
-        await feed.append(blocks)
-        return records
-      })
+    // Encode and append the records for each feed
+    const promises = Array.from(buckets.entries()).map(async ([key, records]) => {
+      const feed = this.collection.feed(key)
+      if (!feed) throw new Error('Feed not found: ' + key)
+      if (!feed.writable) throw new Error('Feed not writable: ' + key)
+      const blocks = records.map(record => RecordEncoder.encode(record.toJSON()))
+      await feed.append(blocks)
+      return records
+    })
+
+    try {
       await Promise.all(promises)
+    } finally {
       this._unlock()
-    } catch (err) {
-      this._unlock()
-      throw err
     }
   }
 
-  async _findFeed (record, opts) {
+  _findFeed (record, opts) {
     return this.collection._localFeed
     // TODO: Support specifying the feed or type.
     // if (record.hasType(TYPE_FEED) || record.hasType(TYPE_TYPE)) {
@@ -1059,7 +1034,7 @@ class Query {
       return
     }
 
-    if (opts.waitForSync) {
+    if (opts.waitForSync || opts.sync) {
       this.collection.sync(createStream)
     } else {
       createStream()

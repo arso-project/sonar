@@ -1,7 +1,7 @@
 const IndexManager = require('./index-manager')
 const doQuery = require('./query')
 
-const log = require('../../lib/log').child({ component: 'view-sonar' })
+// const log = require('../../lib/log').child({ component: 'view-sonar' })
 const { clock } = require('../../lib/util')
 
 module.exports = searchView
@@ -13,6 +13,7 @@ function searchView (level, _scope, opts) {
     namespace: collection.key.toString('hex'),
     catalog: opts.indexCatalog
   })
+  const log = collection.log.child({ name: 'search' })
 
   // const types = {}
 
