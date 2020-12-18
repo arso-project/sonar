@@ -16,12 +16,20 @@ const EventStream = require('./utils/eventstream')
 const Workspace = require('./workspace')
 const RecordEncoder = require('./record-encoder')
 const { Header } = require('./messages')
-const { uuid, once, deriveId, maybeCallback } = require('./util')
+const { noop, uuid, once, deriveId, maybeCallback } = require('./util')
 const createKvView = require('../views/kv')
 const createRecordsView = require('../views/records')
 const createIndexView = require('../views/indexes')
 const createHistoryView = require('../views/history')
 const CORE_TYPE_SPECS = require('./types.json')
+
+const driveStruct = require('./struct/drive')
+const recordsStruct = require('./struct/records')
+
+function getStruct (feedType) {
+  if (feedType === 'hyperdrive') return driveStruct
+  else return recordsStruct
+}
 
 const FEED_TYPE_ROOT = 'sonar.root'
 // const FEED_TYPE_DATA = 'sonar.data'
@@ -287,6 +295,13 @@ class Collection extends Nanoresource {
     return cb.promise
   }
 
+  _struct (key) {
+    // Structs are our small abstraction around different feed types
+    const info = this.feedInfo(key)
+    const struct = getStruct(info.type)
+    return struct
+  }
+
   async getBlock (req, opts = {}) {
     // Resolve the request through the indexer. This allows to use
     // either an lseq or key and seq.
@@ -299,13 +314,15 @@ class Collection extends Nanoresource {
     }
 
     const { key, seq } = req
+    if (seq === 0) throw new Error('Cannot get block 0 because it is the header')
+
     const feed = this.feed(key)
     if (!feed) throw new Error('Key not found')
 
-    if (seq === 0) throw new Error('Cannot get block 0 because it is the header')
-    // TODO: Support different decoders per feed type (to support hyperdrive).
-    const block = await feed.get(seq)
-    const decoded = RecordEncoder.decode(block, req)
+    const struct = this._struct(key)
+    const decoded = await struct.get(feed, req)
+    // const block = await feed.get(seq)
+    // const decoded = RecordEncoder.decode(block, req)
 
     if (opts.upcast === false) {
       return decoded
