@@ -28,7 +28,6 @@ import {
 // import './Record.css'
 
 export function findWidget (field) {
-  console.log('FIELD: ', field)
   const { fieldType: type, format, address } = field
   if (type === 'string' && address === 'sonar/resource@0#contentUrl') return LinkViewer
   if (type === 'string' && format === 'date-time') return DateViewer

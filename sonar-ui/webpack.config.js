@@ -23,7 +23,6 @@ const opts = {
 module.exports = createConfig(opts)
 
 function createConfig (opts) {
-  debug('create webpack config', opts)
   const target = opts.dev ? 'debug' : 'dist'
   const output = p.join(opts.workdir, 'build', target)
 
@@ -42,15 +41,14 @@ function createConfig (opts) {
     fs.statSync(indexHtmlPath)
     htmlWebpackOpts.template = indexHtmlPath
   } catch (err) {}
-  console.log(htmlWebpackOpts)
   const htmlWebpackPlugin = new HtmlWebpackPlugin(htmlWebpackOpts)
 
   let config = {
     entry,
     mode: opts.dev ? 'development' : 'production',
     watch: argv.watch || argv.serve,
-    devtool: 'inline-source-map',
-    // devtool: opts.dev ? 'source-map' : 'none',
+    // devtool: 'inline-source-map',
+    devtool: opts.dev ? 'eval-cheap-module-source-map' : 'source-map',
     stats: 'minimal',
     devServer: {
       contentBase: output

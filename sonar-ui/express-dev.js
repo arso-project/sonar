@@ -1,6 +1,6 @@
 const p = require('path')
 const fs = require('fs')
-const debug = require('debug')('sonar-ui')
+const debug = require('debug')('sonar:ui')
 
 const DEFAULT_PUBLIC_PATH = '/ui-dev'
 
