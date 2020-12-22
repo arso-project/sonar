@@ -1,7 +1,7 @@
 const base32Encode = require('base32-encode')
 const randomBytes = require('randombytes')
 const debug = require('debug')('sonar-client')
-const { Readable, Writable } = require('streamx')
+const { Readable, Writable, Transform } = require('streamx')
 const { EventEmitter } = require('events')
 
 const Schema = require('@arso-project/sonar-common/schema')
@@ -213,6 +213,32 @@ class Collection extends EventEmitter {
       method: 'POST',
       body: type.toJSON()
     })
+  }
+
+  createBatchStream () {
+    const self = this
+    const stream = new Transform({
+      open (cb) {
+        stream.finished = self.fetch('/db', {
+          method: 'PUT',
+          requestType: 'stream',
+          headers: {
+            'content-type': 'application/x-ndjson'
+          },
+          params: { batch: true },
+          body: this
+        }).catch(err => stream.destroy(err))
+        cb()
+      },
+      transform (record, cb) {
+        if (!record.id) record.id = uuid()
+        record = self.schema.Record(record)
+        const json = JSON.stringify(record)
+        this.push(json + '\n')
+        cb()
+      }
+    })
+    return stream
   }
 
   /**
