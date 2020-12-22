@@ -2,7 +2,6 @@
   "name": "@arso-project/sonar-client",
   "version": "0.3.0-alpha.7",
   "description": "Client for sonar",
-  "module": "dist/sonar-client.bundle.esm.js",
   "main": "index.js",
   "scripts": {
     "build": "rollup --config",
