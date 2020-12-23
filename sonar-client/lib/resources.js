@@ -17,8 +17,8 @@ module.exports = class Resources {
   async writeFile (record, file, opts = {}) {
     const url = getContentUrl(record)
     if (!url) throw new Error('record has no file url')
-    if (!opts.metadata) opts.metadata = {}
-    opts.metadata[METADATA_ID] = record.id
+    // if (!opts.metadata) opts.metadata = {}
+    // opts.metadata[METADATA_ID] = record.id
     return this.collection.fs.writeFile(url, file, opts)
   }
 
@@ -28,7 +28,13 @@ module.exports = class Resources {
     return this.collection.fs.readFile(url, opts)
   }
 
-  async create (value, opts = {}) {
+  // TODO: Remove
+  async create (value, opts) {
+    return this.prepare(value, opts)
+  }
+
+  // TODO: Remove
+  async prepare (value, opts = {}) {
     const { filename, prefix } = value
     if (!filename) throw new Error('Filename is required')
     if (filename.indexOf('/') !== -1) throw new Error('Invalid filename')
@@ -59,7 +65,7 @@ module.exports = class Resources {
       }
     }
 
-    id = id || opts.id
+    id = id || opts.id || Math.random()
 
     const record = {
       type: SCHEMA_RESOURCE,
@@ -70,17 +76,20 @@ module.exports = class Resources {
         filename
       }
     }
-    const res = await this.collection.put(record)
-    // TODO: This should get by keyseq. Or put should just return the
-    // putted record.
-    const records = await this.collection.get({
-      id: res.id,
-      type: SCHEMA_RESOURCE
-    }, { waitForSync: true })
-    if (!records.length) {
-      throw new Error('error loading created resource')
-    }
-    return records[0]
+
+    return this.collection.schema.Record(record)
+
+    // const res = await this.collection.put(record)
+    // // TODO: This should get by keyseq. Or put should just return the
+    // // putted record.
+    // const records = await this.collection.get({
+    //   id: res.id,
+    //   type: SCHEMA_RESOURCE
+    // }, { waitForSync: true })
+    // if (!records.length) {
+    //   throw new Error('error loading created resource')
+    // }
+    // return records[0]
   }
 
   resolveFileURL (record) {

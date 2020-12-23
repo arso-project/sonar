@@ -210,6 +210,7 @@ class SonarHyperdrive extends Nanoresource {
     key = datEncoding.decode(key)
     const hkey = datEncoding.encode(key)
     this.corestore.ready((err) => {
+      if (err) return cb(err)
       const drive = hyperdrive(this.corestore, key)
       this.drives[hkey] = drive
       drive.ready((err) => {
@@ -230,9 +231,10 @@ class SonarHyperdrive extends Nanoresource {
   }
 
   _resolveAlias (alias, cb) {
-    if (!this.opened) this.open(() => this.resolveAlias(cb))
+    if (!this.opened) return this.open(() => this._resolveAlias(alias, cb))
     if (Buffer.isBuffer(alias)) return cb(null, alias.toString('hex'))
     if (validKey(alias)) return cb(null, alias)
+    if (alias === '~me') return cb(null, this.localwriter.key.toString('hex'))
     if (!this.handlers.resolveAlias) return cb(new Error('Cannot resolve alias'))
     this.handlers.resolveAlias(alias, (err, key) => {
       if (err || !key) return cb(err || new Error('invalid alias: ' + alias))

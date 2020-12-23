@@ -2,6 +2,7 @@ const { Stat } = require('hyperdrive-schemas')
 const mime = require('mime')
 const { Node } = require('hypertrie/lib/messages')
 const crypto = require('crypto')
+const { deriveId } = require('../util')
 
 module.exports = { get }
 // const DRIVE = Symbol('hyperdrive')
@@ -27,14 +28,22 @@ async function get (feed, req) {
     throw err
   }
 
+  if (!stat.isFile()) return null
+
   const pathParts = path.split('/')
   const filename = pathParts.pop() || '/'
 
   const url = 'hyper://' + key + '/' + path
+  let id
+  if (stat.metadata['sonar.id']) {
+    id = stat.metadata['sonar.id'].toString()
+  } else {
+    id = deriveId(url)
+  }
 
-  const hash = crypto.createHash('sha256')
-  hash.update(url)
-  const id = hash.digest('hex')
+  // const hash = crypto.createHash('sha256')
+  // hash.update(url)
+  // const id = hash.digest('hex')
 
   const encodingFormat = mime.getType(filename)
 
@@ -44,7 +53,7 @@ async function get (feed, req) {
     type: 'sonar/resource',
     links: [],
     value: {
-      label: filename,
+      filename,
       contentUrl: url,
       contentSize: stat.size,
       encodingFormat
