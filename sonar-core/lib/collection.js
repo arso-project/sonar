@@ -11,6 +11,7 @@ const Kappa = require('kappa-core')
 const Indexer = require('kappa-sparse-indexer')
 
 const { Record, Type, Schema } = require('@arso-project/sonar-common')
+const PromiseCache = require('@arso-project/sonar-common/lib/cache')
 const LevelMap = require('./utils/level-map')
 const EventStream = require('./utils/eventstream')
 const Workspace = require('./workspace')
@@ -32,7 +33,6 @@ function getStruct (feedType) {
 }
 
 const FEED_TYPE_ROOT = 'sonar.root'
-// const FEED_TYPE_DATA = 'sonar.data'
 
 const TYPE_FEED = 'sonar/feed'
 const TYPE_TYPE = 'sonar/type'
@@ -77,6 +77,9 @@ class Collection extends Nanoresource {
     this.lock = opts.lock || mutexify()
 
     this._eventStream = new EventStream()
+    this._recordCache = new PromiseCache({
+      key: record => record.key + '@' + record.seq
+    })
 
     // Push some events into event streams
     // Event streams are an easy way to forward events over RPC or HTTP.
@@ -184,17 +187,26 @@ class Collection extends Nanoresource {
       next = once(next)
       let pending = messages.length
       messages.forEach((req, i) => {
+        // filter out header messages
+        if (req.seq !== undefined && !req.seq) {
+          messages[i] = undefined
+          return ondone()
+        }
         self.getBlock(req, getOpts)
           .then(record => {
             messages[i] = record
-            if (--pending === 0) next(messages.filter(m => m))
+            ondone()
           })
           .catch(err => {
-            // console.error('getBlock error', err)
             if (err) messages[i] = undefined
-            if (--pending === 0) next(messages.filter(m => m))
+            ondone()
           })
       })
+      function ondone () {
+        if (--pending !== 0) return
+        messages = messages.filter(m => m)
+        next(messages.filter(m => m))
+      }
     }
 
     const flow = this._kappa.use(name, this._indexer.createSource(sourceOpts), view, opts)
@@ -301,27 +313,6 @@ class Collection extends Nanoresource {
     return batch.entries
   }
 
-  // async get (req, opts = {}) {
-  //   if (req.lseq || (req.key && req.seq)) {
-  //     const record = await this.getBlock(req, opts)
-  //     return [record]
-  //   } else if (req.id || req.type) {
-  //     const records = await this.query('records', { id: req.id, type: req.type })
-  //     return records
-  //   } else throw new Error('Invalid get request')
-  // }
-
-  get (req, opts = {}, cb) {
-    if (typeof opts === 'function') { cb = opts; opts = {} }
-    cb = maybeCallback(cb)
-    if (req.lseq || (req.key && req.seq)) {
-      this.getBlock(req).then(record => cb(null, [record]), cb)
-    } else if (req.id || req.type) {
-      this.query('records', req).then(records => cb(null, records), cb)
-    }
-    return cb.promise
-  }
-
   _struct (key) {
     // Structs are our small abstraction around different feed types
     const info = this.feedInfo(key)
@@ -340,16 +331,10 @@ class Collection extends Nanoresource {
       })
     }
 
-    const { key, seq } = req
-    if (seq === 0) throw new Error('Cannot get block 0 because it is the header')
-
-    const feed = this.feed(key)
-    if (!feed) throw new Error('Key not found')
-
-    const struct = this._struct(key)
-    const decoded = await struct.get(feed, req)
-    // const block = await feed.get(seq)
-    // const decoded = RecordEncoder.decode(block, req)
+    const decoded = await this._recordCache.getOrFetch(req, async () => {
+      const data = await this._getBlockFromFeed(req)
+      return data
+    })
 
     if (opts.upcast === false) {
       return decoded
@@ -360,11 +345,23 @@ class Collection extends Nanoresource {
       return record
     } catch (err) {
       if (opts.wait === false) throw err
-      if (opts._isRetrying) throw err
       await this.sync('root')
-      opts._isRetrying = true
-      return this.getBlock(req, opts)
+      const record = new Record(this.schema, decoded)
+      return record
     }
+  }
+
+  async _getBlockFromFeed (req) {
+    const { key, seq } = req
+    if (seq === 0) throw new Error('Invalid request: Seq 0 is the header, not a block')
+    if (!key) throw new Error('Invalid request: Missing key argument')
+
+    const feed = this.feed(key)
+    if (!feed) throw new Error('Feed not found')
+
+    const struct = this._struct(key)
+    const block = await struct.get(feed, req)
+    return block
   }
 
   createGetStream (opts) {
@@ -376,18 +373,33 @@ class Collection extends Nanoresource {
     })
   }
 
-  getRecord (req, opts = {}, cb) {
+  get (req, opts = {}, cb) {
     if (typeof opts === 'function') {
       cb = opts
       opts = {}
     }
-    if (!cb) return this.getBlock(req, opts)
-    else this.getBlock(req, opts).then(record => cb(null, record), cb)
+    return maybe(cb, async () => {
+      let list
+      if ((req.key && req.seq) || req.lseq) {
+        list = await this.getBlock(req)
+      } else if (req.type || req.id) {
+        list = await this.query('records', req)
+      } else {
+        throw new Error('Invalid request')
+      }
+      if (opts.single) return list[0]
+      return list
+    })
   }
 
-  // TODO: Remove. Replaced with getRecord.
+  // TODO: Remove. Replaced with get.
   loadRecord (...args) {
-    return this.getRecord(...args)
+    return this.get(...args)
+  }
+
+  // TODO: Remove. Replaced with get.
+  getRecord (...args) {
+    return this.get(...args)
   }
 
   async putFeed (key, info = {}) {
@@ -1100,6 +1112,11 @@ function promiseFactory () {
       return cb
     }
   }
+}
+
+function maybe (cb, asyncFn) {
+  if (!cb) return asyncFn()
+  else asyncFn().then(res => cb(null, res)).catch(cb)
 }
 
 module.exports = Collection
