@@ -716,8 +716,12 @@ class Collection extends Nanoresource {
     // Wait until all batches are complete
     await this.lock()
     await new Promise((resolve) => {
+      // Ignore closing errors for now.
+      this._kappa.on('error', () => {})
       this._kappa.close(resolve)
     })
+    // wait a tick
+    await new Promise(resolve => process.nextTick(resolve))
     await new Promise((resolve) => {
       this._indexer.close(resolve)
     })
