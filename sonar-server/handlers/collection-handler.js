@@ -1,4 +1,6 @@
 const SseStream = require('ssestream').default
+const split2 = require('split2')
+const { pipeline } = require('streamx')
 const { HttpError } = require('../lib/util')
 
 module.exports = function createCollectionHandler (collections) {
@@ -11,6 +13,17 @@ module.exports = function createCollectionHandler (collections) {
     },
     put (req, res, next) {
       let record
+      const { batch } = req.query
+
+      if (batch) {
+        const batchStream = req.collection.createBatchStream()
+        pipeline(req, split2(JSON.parse), batchStream, err => {
+          if (err) next(err)
+          else res.send({ done: true })
+        })
+        return
+      }
+
       if (req.params.schema) {
         record = {
           id: req.params.id,
