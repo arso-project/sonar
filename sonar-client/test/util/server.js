@@ -1,4 +1,4 @@
-const createServer = require('@arso-project/sonar-server')
+const createServer = require('@arsonar/server')
 const tmp = require('temporary-directory')
 const fp = require('find-free-port')
 const { SonarClient } = require('../..')

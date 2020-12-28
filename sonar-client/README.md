@@ -6,10 +6,10 @@ The client talks to [`sonar-server`](../sonar-server/README.md) over HTTP. Authe
 
 ### Usage
 
-`npm install @arso-project/sonar-client`
+`npm install @arsonar/client`
 
 ```javascript
-const Client = require('@arso-project/sonar-client')
+const Client = require('@arsonar/client')
 const client = new Client()
 
 ```

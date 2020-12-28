@@ -1,5 +1,5 @@
 {
-  "name": "@arso-project/sonar-client",
+  "name": "@arsonar/client",
   "version": "0.3.0-alpha.7",
   "description": "Client for sonar",
   "main": "index.js",
@@ -8,13 +8,13 @@
     "test": "tape test/*.js",
     "doc": "run-p doc:*",
     "doc:md": "jsdoc2md --files lib/client.js lib/collection.js lib/fs.js --param-list-format list --separators --partial doc-gen/scope.hbs --helper doc-gen/helpers.js > api.md",
-    "doc:html": "rm -rf apidocs && jsdoc --configure doc-gen/jsdoc.json --verbose . && mv apidocs/@arso-project/sonar-client/*/* apidocs && rm -r apidocs/@arso-project",
+    "doc:html": "rm -rf apidocs && jsdoc --configure doc-gen/jsdoc.json --verbose . && mv apidocs/@arsonar/client/*/* apidocs && rm -r apidocs/@arso-project",
     "doc:tsd": "jsdoc -t ../node_modules/tsd-jsdoc/dist -r ."
   },
   "author": "",
   "license": "GPL-3.0",
   "dependencies": {
-    "@arso-project/sonar-common": "^0.3.0-alpha.7",
+    "@arsonar/common": "^0.3.0-alpha.7",
     "base32-encode": "^1.1.1",
     "debug": "^4.1.1",
     "eventsource": "^1.0.7",
@@ -28,7 +28,7 @@
     "streamx": "^2.10.0"
   },
   "devDependencies": {
-    "@arso-project/sonar-server": "^0.3.0-alpha.7",
+    "@arsonar/server": "^0.3.0-alpha.7",
     "@hyperswarm/dht": "^3.6.5",
     "@rollup/plugin-alias": "^3.1.1",
     "@rollup/plugin-commonjs": "^17.0.0",

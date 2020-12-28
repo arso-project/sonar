@@ -1,4 +1,4 @@
-const { Client } = require('@arso-project/sonar-client')
+const { Client } = require('@arsonar/client')
 const fs = require('fs')
 const yaml = require('js-yaml')
 

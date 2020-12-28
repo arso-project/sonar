@@ -13,7 +13,7 @@ The **[Docs website](https://sonar.dev.arso.xyz)** has more documentation (WIP).
 ## Installation
 
 ```sh
-npm install -g @arso-project/sonar-server
+npm install -g @arsonar/server
 sonar help
 sonar start
 ```

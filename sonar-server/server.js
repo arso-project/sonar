@@ -1,4 +1,4 @@
-const { CollectionStore } = require('@arso-project/sonar-core')
+const { CollectionStore } = require('@arsonar/core')
 const bodyParser = require('body-parser')
 const onexit = require('async-exit-hook')
 const express = require('express')
@@ -12,7 +12,7 @@ const pinoExpress = require('express-pino-logger')
 const swaggerUi = require('swagger-ui-express')
 const thunky = require('thunky')
 
-const { storagePath } = require('@arso-project/sonar-common/storage.js')
+const { storagePath } = require('@arsonar/common/storage.js')
 const apiRouter = require('./routes/api')
 const Auth = require('./lib/auth')
 
@@ -136,14 +136,14 @@ module.exports = function SonarServer (opts = {}) {
 
   // Include the client api docs at /api-docs-client
   const clientApiDocsPath = p.join(
-    p.dirname(require.resolve('@arso-project/sonar-client/package.json')),
+    p.dirname(require.resolve('@arsonar/client/package.json')),
     'apidocs'
   )
   app.use('/api-docs-client', express.static(clientApiDocsPath))
 
   // Include the static UI at /
   const uiStaticPath = p.join(
-    p.dirname(require.resolve('@arso-project/sonar-ui/package.json')),
+    p.dirname(require.resolve('@arsonar/ui/package.json')),
     'build',
     'dist'
   )

@@ -5,7 +5,7 @@ const sonarFetch = require('./fetch')
 const Collection = require('./collection')
 const Bots = require('./bots')
 
-const Logger = require('@arso-project/sonar-common/log')
+const Logger = require('@arsonar/common/log')
 
 const {
   DEFAULT_ENDPOINT

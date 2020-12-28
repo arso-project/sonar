@@ -1,4 +1,4 @@
-const Client = require('@arso-project/sonar-client/node')
+const Client = require('@arsonar/client/node')
 
 module.exports = function getClient (argv) {
   const client = new Client({

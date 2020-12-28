@@ -1,5 +1,5 @@
 {
-  "name": "@arso-project/sonar-view-relations",
+  "name": "@arsonar/view-relations",
   "version": "0.3.0-alpha.7",
   "main": "index.js",
   "license": "MIT",
@@ -11,6 +11,6 @@
   },
   "devDependencies": {
     "tape": "^5.0.1",
-    "@arso-project/sonar-core": "^0.3.0-alpha.7"
+    "@arsonar/core": "^0.3.0-alpha.7"
   }
 }

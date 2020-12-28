@@ -1,4 +1,4 @@
-import Client from '@arso-project/sonar-client'
+import Client from '@arsonar/client'
 
 import config from './config'
 

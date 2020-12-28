@@ -1,5 +1,5 @@
 {
-  "name": "@arso-project/sonar-ui",
+  "name": "@arsonar/ui",
   "version": "0.3.0-alpha.7",
   "description": "",
   "main": "bin.js",
@@ -17,7 +17,7 @@
     "prepublishOnly": "node bin.js build"
   },
   "dependencies": {
-    "@arso-project/sonar-client": "^0.3.0-alpha.7",
+    "@arsonar/client": "^0.3.0-alpha.7",
     "debug": "^4.1.1",
     "express": "^4.17.1",
     "moment": "^2.26.0",
@@ -27,7 +27,7 @@
     "yargs-parser": "^18.1.2"
   },
   "devDependencies": {
-    "@arso-project/sonar-client": "^0.3.0-alpha.1",
+    "@arsonar/client": "^0.3.0-alpha.1",
     "@babel/core": "^7.9.0",
     "@babel/preset-env": "^7.9.5",
     "@babel/preset-react": "^7.9.4",

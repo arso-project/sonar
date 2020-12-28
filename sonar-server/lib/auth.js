@@ -1,7 +1,7 @@
 const crypto = require('crypto')
 const base32 = require('base32')
 const p = require('path')
-const Config = require('@arso-project/sonar-core/lib/config')
+const Config = require('@arsonar/core/lib/config')
 const Nanoresource = require('nanoresource')
 const jwt = require('jsonwebtoken')
 const { HttpError } = require('../lib/util')

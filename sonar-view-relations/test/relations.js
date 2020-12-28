@@ -1,6 +1,6 @@
 const tape = require('tape')
-const { runAll } = require('@arso-project/sonar-core/test/lib/util')
-const createStore = require('@arso-project/sonar-core/test/lib/create')
+const { runAll } = require('@arsonar/core/test/lib/util')
+const createStore = require('@arsonar/core/test/lib/create')
 
 tape('relations', t => {
   createStore({ network: false }, (err, collections, cleanup) => {

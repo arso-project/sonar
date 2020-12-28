@@ -11,7 +11,7 @@ const mkdirp = promisify(require('mkdirp-classic'))
 const { NanoresourcePromise: Nanoresource } = require('nanoresource-promise/emitter')
 // const why = require('why-is-node-running')
 
-const createLogger = require('@arso-project/sonar-common/log')
+const createLogger = require('@arsonar/common/log')
 
 const Collection = require('./collection')
 const LevelMap = require('./utils/level-map')
@@ -20,7 +20,7 @@ const { maybeCallback, noop } = require('./util')
 // Import for views - move into module.
 const Catalog = require('@arso-project/sonar-tantivy')
 const createSearchView = require('../views/search')
-const Relations = require('@arso-project/sonar-view-relations')
+const Relations = require('@arsonar/view-relations')
 const { useHyperdrive } = require('./fs')
 
 function defaultStoragePath (opts) {

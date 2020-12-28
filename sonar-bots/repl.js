@@ -1,4 +1,4 @@
-const { Client } = require('@arso-project/sonar-client')
+const { Client } = require('@arsonar/client')
 const p = require('path')
 const Bots = require('.')
 

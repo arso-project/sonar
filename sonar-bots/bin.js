@@ -3,7 +3,7 @@ const { Transform } = require('streamx')
 const yargs = require('yargs')
 const yaml = require('js-yaml')
 const table = require('text-table')
-const { Client } = require('@arso-project/sonar-client/node')
+const { Client } = require('@arsonar/client/node')
 const { readYaml } = require('./run')
 
 function createClient (opts) {

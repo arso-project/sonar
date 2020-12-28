@@ -10,8 +10,8 @@ const { NanoresourcePromise: Nanoresource } = require('nanoresource-promise/emit
 const Kappa = require('kappa-core')
 const Indexer = require('kappa-sparse-indexer')
 
-const { Record, Type, Schema } = require('@arso-project/sonar-common')
-const PromiseCache = require('@arso-project/sonar-common/lib/cache')
+const { Record, Type, Schema } = require('@arsonar/common')
+const PromiseCache = require('@arsonar/common/lib/cache')
 const LevelMap = require('./utils/level-map')
 const EventStream = require('./utils/eventstream')
 const Workspace = require('./workspace')

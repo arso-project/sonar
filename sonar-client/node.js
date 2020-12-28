@@ -1,7 +1,7 @@
 // A re-export of the Sonar client, while loading the default access token from the file system if sonar-server is installed.
 
 const Client = require('.')
-const { storagePath } = require('@arso-project/sonar-common/storage')
+const { storagePath } = require('@arsonar/common/storage')
 const p = require('path')
 const fs = require('fs')
 

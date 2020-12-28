@@ -3,7 +3,7 @@ const p = require('path')
 const { fork, spawn } = require('child_process')
 const onexit = require('async-exit-hook')
 const chalk = require('chalk')
-const { printLogo } = require('@arso-project/sonar-cli/util/logo.js')
+const { printLogo } = require('@arsonar/cli/util/logo.js')
 const options = require('./lib/options')
 
 const DEV_DEBUG = '*,-express*,-hypercore-protocol*,-body-parser*,-babel*,-send,-finalhandler'

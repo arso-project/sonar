@@ -2,7 +2,7 @@ const { EventEmitter } = require('events')
 const { Readable } = require('streamx')
 const base32 = require('base32')
 const { randomBytes } = require('crypto')
-// const EventStream = require('@arso-project/sonar-core/lib/utils/eventstream.js')
+// const EventStream = require('@arsonar/core/lib/utils/eventstream.js')
 
 const kCallbacks = Symbol('callbacks')
 module.exports = class BotBackend {

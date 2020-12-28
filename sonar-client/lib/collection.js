@@ -4,7 +4,7 @@ const debug = require('debug')('sonar-client')
 const { Readable, Writable, Transform } = require('streamx')
 const { EventEmitter } = require('events')
 
-const Schema = require('@arso-project/sonar-common/schema')
+const Schema = require('@arsonar/common/schema')
 const Fs = require('./fs')
 const Resources = require('./resources')
 

@@ -2,7 +2,7 @@ const express = require('express')
 const { HttpError } = require('../lib/util')
 const SseStream = require('ssestream').default
 
-const BotBackend = require('@arso-project/sonar-bots/lib/backend')
+const BotBackend = require('@arsonar/bots/lib/backend')
 
 const SESSION_HEADER = 'x-sonar-bot-session-id'
 
