@@ -5,7 +5,7 @@
     "url": "git+https://github.com/arso-project/sonar.git"
   },
   "scripts": {
-    "test": "tape */test/*.js",
+    "test": "tape packages/*/test/*.js",
     "start": "node sonar start",
     "dev": "node sonar start --dev --disable-authentication",
     "rebuild": "run-p build:*",
