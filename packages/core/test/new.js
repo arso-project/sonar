@@ -4,9 +4,9 @@ const tempdir = promisify(require('temporary-directory'))
 const rimraf = promisify(require('rimraf'))
 // const why = require('why-is-node-running')
 
-const createNative = require('dat-sdk/test/lib/native')
-const createHyperspace = require('dat-sdk/test/lib/hyperspace')
-const createMixed = require('dat-sdk/test/lib/mixed')
+const createNative = require('hyper-sdk/test/lib/native')
+const createHyperspace = require('hyper-sdk/test/lib/hyperspace')
+const createMixed = require('hyper-sdk/test/lib/mixed')
 
 const { Workspace, Collection } = require('..')
 

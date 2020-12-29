@@ -584,7 +584,7 @@ class Collection extends Nanoresource {
   }
 
   _feedName (name) {
-    // dat-sdk (through dat-encoding) considers every string that
+    // hyper-sdk (through dat-encoding) considers every string that
     // contains a 32-byte hex string a key, so we have to add a
     // non-hex character somewhere.
     const id = this.key.slice(0, 16).toString('hex') + '-' + this.key.slice(16).toString('hex')

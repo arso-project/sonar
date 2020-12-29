@@ -21,7 +21,7 @@
     "charwise": "^3.0.1",
     "codecs": "^2.1.0",
     "dat-encoding": "^5.0.1",
-    "dat-sdk": "github:Frando/sdk#hyperspace",
+    "hyper-sdk": "^3.0.3",
     "debug": "^4.1.1",
     "fast-bitfield": "^1.2.2",
     "hypercore-crypto": "^2.1.1",

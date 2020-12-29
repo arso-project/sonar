@@ -1,6 +1,6 @@
-const DatSDK = require('dat-sdk')
+const DatSDK = require('hyper-sdk')
 // TODO: Think about using the hyperspace daemon :-)
-// const DatSDK = require('dat-sdk/hyperspace')
+// const DatSDK = require('hyper-sdk/hyperspace')
 const RAF = require('random-access-file')
 const p = require('path')
 const level = require('level')
