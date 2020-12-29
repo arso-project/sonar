@@ -498,6 +498,7 @@ class Collection extends Nanoresource {
       discoveryKey: datEncoding.encode(this.discoveryKey),
       rootKey: datEncoding.encode(this.key),
       localKey: datEncoding.encode(this.localKey),
+      id: this.id,
       feeds,
       kappa,
       network,
@@ -636,7 +637,7 @@ class Collection extends Nanoresource {
     }
 
     // Set default type namespace to root feed key
-    this.schema.setDefaultNamespace(this._id)
+    this.schema.setDefaultNamespace(this.id)
     // Load persisted schema
     const storedSchema = this._localState.get('schema')
     if (storedSchema) {

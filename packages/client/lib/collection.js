@@ -55,6 +55,10 @@ class Collection extends EventEmitter {
     return this._info
   }
 
+  get id () {
+    return this._info && this._info.id
+  }
+
   /**
    * Populates info and schemas for this collection from server.
    *
@@ -66,7 +70,7 @@ class Collection extends EventEmitter {
     this._info = await this.fetch('/')
 
     this.schema = new Schema()
-    this.schema.setDefaultNamespace(this.key)
+    this.schema.setDefaultNamespace(this.id)
 
     const typeSpecs = await this.fetch('/schema')
     for (const typeSpec of Object.values(typeSpecs)) {
