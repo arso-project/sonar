@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "chalk": "^4.1.0",
+    "crypto-hash": "^1.3.0",
     "inspect-custom-symbol": "^1.1.1",
     "object-path": "^0.11.4",
     "pino": "^6.7.0",
