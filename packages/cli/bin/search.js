@@ -66,12 +66,14 @@ function formatResultFull (r) {
 
 function formatMeta (r) {
   const line = [
+    'score',
+    chalk.bold(Math.round(r.meta.score * 100) / 100),
     'type',
     chalk.bold(formatType(r)),
     'id',
     chalk.bold(r.id),
     'feed',
-    chalk.bold(prettyHash(r.key))
+    chalk.bold(prettyHash(r.key)) + '@' + r.seq
   ].join(' ')
   return line
   // return chalk.dim(line)
@@ -80,8 +82,9 @@ function formatMeta (r) {
 
 function formatValue (r) {
   let snippet = r.meta.snippet
-  snippet = snippet.replace('<b>', ansi.yellow.open)
-  snippet = snippet.replace('</b>', ansi.yellow.close)
+  if (!(typeof snippet === 'string')) return r.getOne('sonar/entity#about')
+  snippet = snippet.replace(/<b>/g, ansi.yellow.open + ansi.bold.open)
+  snippet = snippet.replace(/<\/b>/g, ansi.yellow.close + ansi.bold.close)
   return snippet
 }
 
