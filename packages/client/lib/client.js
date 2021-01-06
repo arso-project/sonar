@@ -186,6 +186,7 @@ class Client {
     if (!opts.endpoint && this.endpoint) opts.endpoint = this.endpoint
     opts.headers = Object.assign(opts.headers || {}, this.getHeaders(opts))
     const url = (opts.endpoint || '') + path
+    // opts.withCredentials = true
     const eventSource = new EventSource(url, opts)
     eventSource.addEventListener('message', message => {
       try {

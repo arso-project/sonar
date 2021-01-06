@@ -1,4 +1,4 @@
-const EventSource = require('eventsource')
+const debug = require('debug')('sonar:bots')
 
 const SESSION_HEADER = 'X-Sonar-Bot-Session-Id'
 
@@ -55,24 +55,34 @@ class Bots {
   async _initListener () {
     this._init = true
 
-    const path = this.client.endpoint + '/bot/events'
-    const headers = {
-      ...this.client.getAuthHeaders(),
-      ...this.getHeaders()
-    }
+    // const path = this.client.endpoint + '/bot/events'
+    // const headers = {
+    //   ...this.client.getAuthHeaders(),
+    //   ...this.getHeaders()
+    // }
 
-    this._eventSource = new EventSource(path, { headers })
-    this._eventSource.addEventListener('message', message => {
-      try {
-        const event = JSON.parse(message.data)
-        this._onmessage(event)
-      } catch (e) {}
+    const path = '/bot/events'
+    this._eventSource = this.client.createEventSource(path, {
+      headers: this.getHeaders(),
+      onmessage: this._onmessage.bind(this),
+      onerror: err => {
+        // TODO: Where do these errors go?
+        // TODO: After a couple of fails die.
+        this.log.error({ err, message: 'Event source error' })
+      }
     })
-    this._eventSource.addEventListener('error', err => {
-      // TODO: Where do these errors go?
-      // TODO: After a couple of fails die.
-      this.log.error({ err, message: 'Event source error' })
-    })
+    // this._eventSource = new EventSource(path, { headers })
+    // this._eventSource.addEventListener('message', message => {
+    //   try {
+    //     const event = JSON.parse(message.data)
+    //     this._onmessage(event)
+    //   } catch (e) {}
+    // })
+    // this._eventSource.addEventListener('error', err => {
+    //   // TODO: Where do these errors go?
+    //   // TODO: After a couple of fails die.
+    //   this.log.error({ err, message: 'Event source error' })
+    // })
   }
 
   async reply ({ requestId, error, result }) {
@@ -111,7 +121,8 @@ class Bots {
           await this.reply({ requestId, result })
         }
       } catch (err) {
-        this.log.error({ message: 'bot onmessage handle error: ' + err.message, err })
+        this.log.error({ message: 'bot onmessage handle error: ' + err.message + ' from ' + JSON.stringify(message), err })
+        debug(err)
         await this.reply({
           requestId: requestId,
           error: err.message

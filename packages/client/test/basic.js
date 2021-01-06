@@ -26,6 +26,24 @@ async function prepare (opts = {}) {
   }
 }
 
+tape('minimal open and put', async t => {
+  const [cleanup, client] = await prepare({ network: false })
+  const collection = await client.createCollection('foobar')
+  await collection.putType({
+    name: 'doc',
+    fields: {
+      title: {
+        type: 'string'
+      }
+    }
+  })
+  const putted = await collection.put({ type: 'doc', value: { title: 'hello world' } })
+  const queried = await collection.query('records', { id: putted.id }, { waitForSync: true })
+  t.equal(queried.length, 1)
+  t.equal(queried[0].id, putted.id, 'id matches')
+  await cleanup()
+})
+
 tape('db basic put and query', async t => {
   const [cleanup, client] = await prepare({ network: false })
 
