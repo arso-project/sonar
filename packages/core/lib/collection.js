@@ -321,6 +321,7 @@ class Collection extends Nanoresource {
   }
 
   async getBlock (req, opts = {}) {
+    if (!this.opened && !this.opening) await this.open()
     // Resolve the request through the indexer. This allows to use
     // either an lseq or key and seq.
     if (!req.key || !req.seq || !req.lseq) {

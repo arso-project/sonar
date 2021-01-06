@@ -7,3 +7,7 @@ fields:
     name: Label
     index:
       basic: true
+  about:
+    type: string
+    name: About
+

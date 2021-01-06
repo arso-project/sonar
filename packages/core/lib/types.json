@@ -6,7 +6,14 @@
     "fields": {
       "label": {
         "type": "string",
-        "name": "Label"
+        "name": "Label",
+        "index": {
+          "basic": true
+        }
+      },
+      "about": {
+        "type": "string",
+        "name": "About"
       }
     }
   },

@@ -1,5 +1,5 @@
 const { Stat } = require('hyperdrive-schemas')
-const mime = require('mime')
+const mime = require('mime-types')
 const { Node } = require('hypertrie/lib/messages')
 const crypto = require('crypto')
 const { deriveId } = require('../util')
@@ -45,7 +45,7 @@ async function get (feed, req) {
   // hash.update(url)
   // const id = hash.digest('hex')
 
-  const encodingFormat = mime.getType(filename)
+  const encodingFormat = mime.lookup(filename)
 
   const data = {
     ...req,
