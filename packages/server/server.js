@@ -1,4 +1,5 @@
-const { CollectionStore } = require('@arsonar/core')
+const { LegacyWorkspace } = require('@arsonar/core')
+const { NanoresourcePromise: Nanoresource } = require('nanoresource-promise')
 const bodyParser = require('body-parser')
 const onexit = require('async-exit-hook')
 const express = require('express')
@@ -29,8 +30,10 @@ module.exports = function SonarServer (opts = {}) {
       hostname: opts.hostname || DEFAULT_HOSTNAME,
       port: opts.port || DEFAULT_PORT
     },
-    collections: {
-      network: opts.network === undefined ? true : opts.network,
+    workspace: {
+      ...(opts.workspace || {}),
+      persist: opts.persist,
+      network: opts.network,
       swarm: {
         bootstrap: opts.bootstrap
       }
@@ -50,7 +53,7 @@ module.exports = function SonarServer (opts = {}) {
   const auth = new Auth(config.storage, config.auth)
 
   // Init collection store.
-  const collections = new CollectionStore(config.storage, config.collections)
+  const collections = new LegacyWorkspace(config.storage, config.workspace)
   const log = collections.log
 
   // Init express app.
@@ -173,22 +176,31 @@ module.exports = function SonarServer (opts = {}) {
         if (err) return cb(err)
         app.port = config.server.port
         app.hostname = config.server.hostname
+        if (app.closing) return
         // Start the HTTP server.
-        app.server = app.listen(config.server.port, config.server.hostname, cb)
+        const server = app.listen(config.server.port, config.server.hostname, err => {
+          if (err) return cb(err)
+          api.log.debug(`HTTP server listening on http://${app.hostname}:${app.port}`)
+          cb()
+        })
         // Mount the shutdown handler onto the server.
-        shutdown(app.server)
+        app.server = shutdown(server)
+        app.opened = true
       })
     })
   })
 
   // Add close method.
   app.close = thunky((cb = noop) => {
+    app.closing = true
     let pending = 3
     debug('shutting down')
-    app.server.forceShutdown(err => {
-      debug('closed http server', err || '')
-      finish()
-    })
+    if (app.server) {
+      app.server.forceShutdown(err => {
+        debug('closed http server', err || '')
+        finish()
+      })
+    } else finish()
     api.collections.close(finish)
     api.auth.close(finish)
     function finish () {

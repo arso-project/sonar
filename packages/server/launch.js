@@ -1,3 +1,4 @@
+require('make-promises-safe')
 const Server = require('./server')
 const options = require('./bin/lib/options')
 const args = require('yargs').options(options).argv
