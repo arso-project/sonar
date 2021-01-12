@@ -33,14 +33,22 @@ module.exports = class IndexManager {
     this._init = true
   }
 
-  async make (name, schema) {
+  async make (name, schema, opts = {}) {
     if (this.indexes[name]) return
     let indexSchema
     if (name === 'textdump') indexSchema = getTextdumpSchema()
     else indexSchema = makeTantivySchema(schema)
 
+    if (!opts.persist) opts.persist = true
+
     this.info[name] = indexSchema
-    this.indexes[name] = await this.catalog.openOrCreate(this._indexName(name), indexSchema)
+    this.indexes[name] = await this.catalog.openOrCreate(
+      this._indexName(name),
+      indexSchema,
+      {
+        ram: !opts.persist
+      }
+    )
 
     await this.level.put('indexes', JSON.stringify(this.info))
   }
