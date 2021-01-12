@@ -1,5 +1,5 @@
 const tmp = require('temporary-directory')
-const { CollectionStore } = require('../..')
+const { LegacyWorkspace } = require('../..')
 
 module.exports = function createStore (opts, cb) {
   if (typeof opts === 'function') {
@@ -7,10 +7,11 @@ module.exports = function createStore (opts, cb) {
     opts = {}
   }
   cb = maybepify(cb)
+  opts.swarmOpts = { bootstrap: false }
   tmp('sonar-test', ondircreated)
   function ondircreated (err, dir, cleanupTempdir) {
     if (err) return cb(err)
-    const collections = new CollectionStore(dir, opts)
+    const collections = new LegacyWorkspace(dir, opts)
     collections.ready(err => {
       if (err) return cb(err)
       cb(null, collections, cleanup)

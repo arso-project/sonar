@@ -1,7 +1,6 @@
 const tape = require('tape')
 const { runAll, replicate } = require('./lib/util')
 const pretty = require('pretty-hash')
-const Collections = require('..')
 const createStore = require('./lib/create')
 const { promisify } = require('util')
 

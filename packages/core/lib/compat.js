@@ -1,13 +1,11 @@
 const p = require('path')
 const os = require('os')
 const Nanoresource = require('nanoresource/emitter')
-
-const HyperFS = require('./fs')
 const Workspace = require('./workspace')
 
 const COMPAT_WRAP = Symbol('compat-wrap')
 
-class CompatWorkspace extends Nanoresource {
+class LegacyWorkspace extends Nanoresource {
   constructor (storagePath, opts = {}) {
     super()
     opts.storagePath = storagePath || p.join(os.homedir(), '.sonar')
@@ -134,4 +132,4 @@ function asyncToCallback (obj, asyncFns) {
   }
 }
 
-module.exports = CompatWorkspace
+module.exports = LegacyWorkspace

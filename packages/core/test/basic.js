@@ -2,23 +2,24 @@ const tape = require('tape')
 const tmp = require('temporary-directory')
 const { runAll } = require('./lib/util')
 
-const { CollectionStore } = require('..')
+const { LegacyWorkspace } = require('..')
 
 function createStore (opts, cb) {
   if (typeof opts === 'function') {
     cb = opts
     opts = {}
   }
+  opts.swarmOpts = { bootstrap: false }
   tmp('sonar-test', ondircreated)
   function ondircreated (err, dir, cleanupTempdir) {
     if (err) return cb(err)
-    const collections = new CollectionStore(dir, opts)
-    collections.ready(err => {
+    const workspace = new LegacyWorkspace(dir, opts)
+    workspace.ready(err => {
       if (err) return cb(err)
-      cb(null, collections, cleanup)
+      cb(null, workspace, cleanup)
     })
     function cleanup (cb) {
-      collections.close(() => {
+      workspace.close(() => {
         cleanupTempdir(err => {
           cb(err)
         })
@@ -28,9 +29,9 @@ function createStore (opts, cb) {
 }
 
 tape('open close', t => {
-  createStore({ network: false }, (err, collections, cleanup) => {
+  createStore({ network: false }, (err, workspace, cleanup) => {
     if (err) t.fail(err)
-    t.true(collections.opened, 'opened property is set')
+    t.true(workspace.opened, 'opened property is set')
     t.error(err)
     cleanup(err => {
       t.error(err)
@@ -40,9 +41,9 @@ tape('open close', t => {
 })
 
 tape('batch and query', t => {
-  createStore({ network: false }, (err, collections, cleanup) => {
+  createStore({ network: false }, (err, workspace, cleanup) => {
     t.error(err, 'tempdir ok')
-    collections.create('first', (err, collection) => {
+    workspace.create('first', (err, collection) => {
       t.error(err, 'collection created')
 
       const records = [
@@ -102,9 +103,9 @@ tape('batch and query', t => {
 })
 
 tape('put and get 1', t => {
-  createStore({ network: false }, (err, collections, cleanup) => {
+  createStore({ network: false }, (err, workspace, cleanup) => {
     t.error(err, 'tempdir ok')
-    collections.create('default', (err, collection) => {
+    workspace.create('default', (err, collection) => {
       t.error(err)
       collection.putType({ name: 'doc', fields: { title: { type: 'string' } } }, err => {
         t.error(err)
@@ -123,23 +124,23 @@ tape('put and get 1', t => {
   })
 })
 
-tape('share and unshare collections', t => {
-  createStore({ network: true }, (err, collections, cleanup) => {
+tape('share and unshare workspace', t => {
+  createStore({ network: true }, (err, workspace, cleanup) => {
     t.error(err, 'tempdir ok')
-    collections.create('collection', (err, collection) => {
+    workspace.create('collection', (err, collection) => {
       t.error(err, 'collection created')
       const hkey = collection.key.toString('hex')
-      const config = collections.getCollectionConfig(hkey)
+      const config = workspace.getCollectionConfig(hkey)
       t.true(config, 'collection config exists')
       t.true(config.share, 'collection config init shared')
-      const status = collections.network.status(collection.discoveryKey)
+      const status = workspace.network.status(collection.discoveryKey)
       t.equal(status.announce, true, 'collection network init shared')
       t.equal(status.lookup, true, 'collection network init shared')
-      collections.updateCollection(hkey, { share: false }, (err) => {
+      workspace.updateCollection(hkey, { share: false }, (err) => {
         t.error(err, 'no error at update')
-        const config = collections.getCollectionConfig(hkey)
+        const config = workspace.getCollectionConfig(hkey)
         t.equal(config.share, false, 'collection updated config not shared')
-        const status = collections.network.status(collection.discoveryKey)
+        const status = workspace.network.status(collection.discoveryKey)
         t.false(status, 'collection updated network not shared')
         cleanup(err => {
           t.error(err)
@@ -151,9 +152,9 @@ tape('share and unshare collections', t => {
 })
 
 tape('close collection', t => {
-  createStore({ network: false }, (err, collections, cleanup) => {
+  createStore({ network: false }, (err, workspace, cleanup) => {
     t.error(err, 'tempdir ok')
-    collections.create('collection', (err, collection) => {
+    workspace.create('collection', (err, collection) => {
       t.error(err, 'collection created')
       t.true(collection.opened, 'opened property set')
       collection.close(err => {
@@ -171,17 +172,17 @@ tape('close collection', t => {
 // TODO: This behavior was removed in the recent refactor - creating a collection
 // more than once does not fail but just returns the same collection.
 tape.skip('create collection with same name', t => {
-  createStore({ network: false }, (err, collections, cleanup) => {
+  createStore({ network: false }, (err, workspace, cleanup) => {
     t.error(err)
     runAll([
       next => {
-        collections.create('first', (err, collection) => {
+        workspace.create('first', (err, collection) => {
           t.error(err, 'no error for first collection')
           next()
         })
       },
       next => {
-        collections.create('first', (err, collection) => {
+        workspace.create('first', (err, collection) => {
           t.ok(err, 'error with same name')
           t.equal(err.message, 'collection exists', 'correct error message')
           next()
@@ -194,9 +195,9 @@ tape.skip('create collection with same name', t => {
 })
 
 tape('query empty collection', t => {
-  createStore({ network: false }, (err, collections, cleanup) => {
+  createStore({ network: false }, (err, workspace, cleanup) => {
     t.error(err)
-    collections.create('collection', (err, collection) => {
+    workspace.create('collection', (err, collection) => {
       t.error(err)
       collection.query('search', 'anything', { waitForSync: true }, (err, res) => {
         t.error(err, 'query on empty collection')

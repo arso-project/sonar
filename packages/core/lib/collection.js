@@ -236,18 +236,19 @@ class Collection extends Nanoresource {
   }
 
   async configure (configuration = {}, save = true) {
-    // Apply network configuration.
+    let promise
     if (configuration.share !== false) {
-      this._workspace.network.configure(this.discoveryKey, {
+      promise = this._workspace.network.configure(this.discoveryKey, {
         announce: true,
         lookup: true
       })
     } else {
-      this._workspace.network.configure(this.discoveryKey, {
+      promise = this._workspace.network.configure(this.discoveryKey, {
         announce: false,
         lookup: false
       })
     }
+    // if (promise) promise.then(() => console.log('swarm configure resolved')).catch(console.error)
 
     if (save) {
       await this._localState.setFlush('config', configuration)
@@ -280,7 +281,6 @@ class Collection extends Nanoresource {
     let i = 0
     const stream = new Writable({
       async write (record, cb) {
-        console.log('WRITE', record)
         try {
           await batch._append(record)
           if (++i % flushAfter === 0) {

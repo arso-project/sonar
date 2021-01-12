@@ -44,7 +44,10 @@ async function createN (createSDK, n, opts = {}) {
     const workspace = new Workspace({
       storagePath: dir,
       sdk,
-      persist: opts.persist || false
+      persist: opts.persist || false,
+      swarmOpts: {
+        bootstrap: false
+      }
     })
     dirs.push(dir)
     workspaces.push(workspace)
@@ -57,8 +60,10 @@ async function createN (createSDK, n, opts = {}) {
     try {
       await Promise.all(workspaces.map(workspace => workspace.close()))
       await Promise.all(sdks.map(sdk => sdk.close()))
+      await new Promise(resolve => setTimeout(resolve, 100))
       cleanupSDK()
       await Promise.all(dirs.map(dir => rimraf(dir)))
+      await new Promise(resolve => setTimeout(resolve, 100))
     } catch (err) { console.error('Closing error', err) }
   }
 }

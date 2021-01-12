@@ -1,6 +1,6 @@
 const tape = require('tape')
 const tmp = require('temporary-directory')
-const { CollectionStore } = require('..')
+const { LegacyWorkspace } = require('..')
 const debug = require('debug')('time')
 
 tape('subscription stream', async t => {
@@ -71,11 +71,12 @@ function createPromiseCallback () {
 }
 
 function createStore (opts = {}) {
+  opts.swarmOpts = { bootstrap: false }
   return new Promise((resolve, reject) => {
     tmp('sonar-test', ondircreated)
     function ondircreated (err, dir, cleanupTempdir) {
       if (err) return reject(err)
-      const collections = new CollectionStore(dir, opts)
+      const collections = new LegacyWorkspace(dir, opts)
       collections.ready(err => {
         if (err) return reject(err)
         resolve([collections, cleanup])

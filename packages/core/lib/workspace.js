@@ -57,7 +57,7 @@ function useDefaultViews (workspace) {
 }
 
 module.exports = class Workspace extends Nanoresource {
-  constructor (opts) {
+  constructor (opts = {}) {
     super()
     this._opts = opts
     this._collections = new Map()
@@ -67,7 +67,9 @@ module.exports = class Workspace extends Nanoresource {
 
     this.log = opts.log || createLogger()
 
-    this.registerPlugin(useDefaultViews)
+    if (opts.defaultViews !== false) {
+      this.registerPlugin(useDefaultViews)
+    }
   }
 
   get corestore () {
@@ -90,7 +92,10 @@ module.exports = class Workspace extends Nanoresource {
 
   async _open () {
     if (!this._opts.sdk) {
-      const sdkOpts = { ...this._opts }
+      const sdkOpts = {
+        ...this._opts,
+        swarmOpts: this._opts.swarm || this._opts.swarmOpts
+      }
       sdkOpts.storage = file => RAF(this.storagePath('cores/' + file))
       this._sdk = await DatSDK(sdkOpts)
       this._ownSDK = true
