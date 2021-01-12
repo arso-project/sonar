@@ -1,8 +1,8 @@
 const tape = require('tape')
-const createServerClient = require('./util/server')
+const { createOne } = require('./lib/create')
 
 tape('sync', async t => {
-  const [context, client] = await createServerClient({ disableAuthentication: true })
+  const { client, cleanup } = await createOne()
   try {
     await client.putType('foo', { fields: { title: { type: 'string' } } })
     const { id } = await client.put({
@@ -17,11 +17,11 @@ tape('sync', async t => {
   } catch (err) {
     t.fail(err)
   }
-  await context.stop()
+  await cleanup()
 })
 
 tape('events', async t => {
-  const [context, client] = await createServerClient({ disableAuthentication: true })
+  const { client, cleanup } = await createOne()
   try {
     const collection = await client.createCollection('test')
     const eventStream = collection.createEventStream()
@@ -42,6 +42,6 @@ tape('events', async t => {
     console.log(e)
     throw e
   }
-  await context.stop()
+  await cleanup()
   t.end()
 })

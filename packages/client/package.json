@@ -36,6 +36,7 @@
     "@rollup/plugin-json": "^4.1.0",
     "@rollup/plugin-node-resolve": "^11.0.0",
     "express-oas-generator": "^1.0.25",
+    "find-free-ports": "^2.0.3",
     "jsdoc": "^3.6.4",
     "jsdoc-to-markdown": "^6.0",
     "minami": "^1.2.3",

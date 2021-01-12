@@ -31,6 +31,7 @@ class Client {
     this._id = opts.id || randombytes(16).toString('hex')
     this._token = opts.token
     this._accessCode = opts.accessCode
+    this._eventSources = []
 
     this.log = opts.log || new Logger()
     this.bots = new Bots(this)
@@ -43,6 +44,9 @@ class Client {
    * @return {Promise<void>}
    */
   async close () {
+    for (const eventSource of this._eventSources) {
+      eventSource.close()
+    }
     for (const collection of this._collections.values()) {
       collection.close()
     }
@@ -186,7 +190,6 @@ class Client {
     if (!opts.endpoint && this.endpoint) opts.endpoint = this.endpoint
     opts.headers = Object.assign(opts.headers || {}, this.getHeaders(opts))
     const url = (opts.endpoint || '') + path
-    // opts.withCredentials = true
     const eventSource = new EventSource(url, opts)
     eventSource.addEventListener('message', message => {
       try {
@@ -200,6 +203,7 @@ class Client {
       if (opts.onerror) opts.onerror(err)
       else console.error('Event source error', err)
     })
+    this._eventSources.push(eventSource)
     return eventSource
   }
 }
