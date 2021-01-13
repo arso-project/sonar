@@ -1,8 +1,8 @@
-# sonar-client
+# @arsonar/client
 
-A JavaScript client for Sonar.
+A JavaScript client for Sonar for browsers and Node.js.
 
-The client talks to [`sonar-server`](../sonar-server/README.md) over HTTP. Authentication is not yet implemented, so currently the expectation is that a server is running on localhost.
+The client talks to [`@arsonar/server`](../server/README.md) over HTTP.
 
 ### Usage
 

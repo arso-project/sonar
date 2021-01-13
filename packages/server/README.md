@@ -1,6 +1,6 @@
-# Sonar-server
+# @arsonar/server
 
-A HTTP server with a REST style API for Sonar.
+Sonar REST API server
 
 ## Usage
 
