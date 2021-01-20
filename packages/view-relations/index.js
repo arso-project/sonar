@@ -1,25 +1,42 @@
-const { QuadStore } = require('quadstore')
-const { Transform } = require('stream')
-// const SparqlEngine = require('quadstore-sparql');
+const { Quadstore } = require('quadstore')
+const { Transform, Readable } = require('streamx')
+const { parseAddress } = require('@arsonar/common/lib/address')
+const { batchToDiff } = require('@arsonar/core/lib/utils/batch-diff')
+
+// HACK: Quadstore is not compatible with subleveldown
+function monkeypatchSublevelStatus (db) {
+  if (!db.status && db.db) {
+    Object.defineProperty(db, 'status', {
+      get: () => db.db.status
+    })
+  }
+}
 
 module.exports = class Relations {
-  constructor (db, opts) {
-    this.db = db
-    this.opts = opts
-    this.flows = {}
-    this.store = new QuadStore(db, opts)
-    // this.sparql = new SparqlEngine(this.store)
+  constructor (db, opts = {}) {
+    monkeypatchSublevelStatus(db)
+    const quadstoreOpts = {
+      backend: db
+    }
+    this.store = new Quadstore(quadstoreOpts)
+    this.df = this.store.dataFactory
   }
 
   createView (collection) {
     const self = this
     return {
-      map (messages, cb) {
-        self._map(collection, messages, cb)
+      version: 2,
+      open (_flow, cb) {
+        self.store.open().then(cb, cb)
+      },
+      async map (batch) {
+        return self._map(collection, batch)
       },
       reset (cb) {
-        const match = { graph: collection.key.toString('hex') }
-        self.store.del(match, cb)
+        const graph = self.df.namedNode(collection.id)
+        const stream = self.store.removeMatches(null, null, null, graph)
+        stream.on('end', cb)
+        stream.on('error', cb)
       },
       api: {
         query (query, opts) {
@@ -29,62 +46,125 @@ module.exports = class Relations {
     }
   }
 
-  _map (collection, messages, cb) {
-    const quads = []
-    for (const message of messages) {
-      quads.push(...messageToQuads(collection, message))
-    }
-    if (!quads.length) return cb()
-    this.store.put(quads, (err) => {
-      cb(err)
-    })
+  async _map (collection, batch) {
+    const { left, right } = await batchToDiff(collection, batch)
+    const putQuads = recordsToQuads(this.df, collection, right)
+    const delQuads = recordsToQuads(this.df, collection, left)
+    await this.store.multiPatch(delQuads, putQuads)
   }
 
   _query (collection, query, cb) {
-    if (query.predicate) query.predicate = collection.schema.resolveFieldAddress(query.predicate)
-    query.graph = collection.key.toString('hex')
-    const quadStream = this.store.getStream(query)
-    const transform = new Transform({
-      objectMode: true,
-      transform (quad, _enc, next) {
-        collection.get({ id: quad.subject }, (err, records) => {
-          if (err || !records.length) return next()
-          const record = records[0]
-          this.push({
-            lseq: record.lseq,
-            meta: {
-              predicate: quad.predicate,
-              object: quad.object
-            }
-          })
-          next()
-        })
-      }
-    })
-    const resultStream = quadStream.pipe(transform)
-    return resultStream
+    return quadstoreMatchQuery(collection, this.store, query)
   }
 }
 
-function messageToQuads (collection, message) {
-  const quads = []
-  const graph = collection.key.toString('hex')
-  if (message.deleted) {
-    // TODO: Support deletes.
-    return []
+function quadstoreMatchQuery (collection, store, query) {
+  const match = upcastQuery(store.dataFactory, collection, query)
+  const quadStream = new QuadstoreMatchQueryStream(store, match)
+  const proxy = new QuadToRecordStream(collection)
+  return quadStream.pipe(proxy)
+}
+
+class QuadstoreMatchQueryStream extends Readable {
+  constructor (store, query) {
+    super()
+    this.query = query
+    this.store = store
   }
-  const relationValues = message.fields().filter(fieldValue => {
+
+  _open (cb) {
+    this.store.getStream(this.query)
+      .catch(err => cb(err))
+      .then((result) => {
+        const { iterator } = result
+        // this is an uncommon stream/iterator that has no pipe method
+        // and also is not a native AsyncIterator.
+        // see docs here https://www.npmjs.com/package/asynciterator
+        // TODO: See how to properly convert to streamx
+        iterator.on('data', quad => this.push(quad))
+        iterator.on('end', () => this.push(null))
+        cb()
+      })
+  }
+}
+
+class QuadToRecordStream extends Transform {
+  constructor (collection, opts) {
+    super(opts)
+    this.collection = collection
+  }
+
+  _transform (quad, cb) {
+    const id = quad.subject.value
+    const type = typeFromPredicate(quad)
+    const meta = {
+      predicate: quad.predicate.value,
+      object: quad.object.value
+    }
+    cb(null, { id, type, meta })
+  }
+}
+
+function upcastQuery (df, collection, query) {
+  if (query.subject) query.subject = df.namedNode(query.subject)
+  if (query.object) query.object = df.namedNode(query.object)
+  if (query.predicate) {
+    const resolved = collection.schema.resolveFieldAddress(query.predicate)
+    query.predicate = df.namedNode(resolved)
+  }
+  query.graph = df.namedNode(collection.id)
+  return query
+}
+
+function typeFromPredicate (quad) {
+  const { namespace, type } = parseAddress(quad.predicate.value)
+  return `${namespace}/${type}`
+}
+
+function recordsToQuads (df, collection, records) {
+  return records
+    .map(record => recordToQuads(df, collection, record))
+    .flat()
+}
+
+function recordToQuads (df, collection, record) {
+  const quads = []
+  const graph = df.namedNode(collection.id)
+  const relationValues = record.fields().filter(fieldValue => {
     return fieldValue.fieldType === 'relation'
   })
   for (const fieldValue of relationValues) {
     for (const value of fieldValue.values()) {
-      quads.push({
-        subject: message.id,
-        predicate: fieldValue.fieldAddress,
-        object: value,
+      quads.push(df.quad(
+        df.namedNode(record.id),
+        df.namedNode(fieldValue.fieldAddress),
+        df.namedNode(value),
         graph
-      })
+      ))
     }
   }
   return quads
 }
+
+// getRecordsFromQuad(this.collection, quad)
+//   .catch(cb)
+//   .then(records => {
+//     for (const record of records) {
+//       record.meta = {
+//         predicate: quad.predicate.value,
+//         object: quad.object.value
+//       }
+//       this.push(record)
+//     }
+//     cb()
+//   })
+// async function getRecordsFromQuad (collection, quad) {
+//   const id = quad.subject.value
+//   const type = typeFromPredicate(quad)
+//   try {
+//     return await collection.get({ type, id })
+//   } catch (err) {
+//     return []
+//   }
+// }
+

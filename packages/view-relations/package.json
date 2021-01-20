@@ -7,7 +7,7 @@
     "test": "tape test/*.js"
   },
   "dependencies": {
-    "quadstore": "^6.0.1"
+    "quadstore": "^7.3.1"
   },
   "devDependencies": {
     "tape": "^5.0.1",

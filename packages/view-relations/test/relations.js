@@ -14,9 +14,6 @@ tape('relations', t => {
         friends: {
           type: 'relation',
           multiple: true
-          // type: 'array',
-          // index: { relation: true },
-          // items: { type: 'string' }
         }
       }
     }
@@ -45,12 +42,14 @@ tape('relations', t => {
         value: { name: 'Claire', friends: ['bob'] }
       }, next),
       next => collection.sync(next),
+
       next => {
         const type = collection.getType('friend')
         const query = {
           object: 'bob',
           predicate: type.name + '#' + 'friends'
         }
+
         collection.query('relations', query, (err, results) => {
           t.error(err)
           t.deepEqual(results.map(r => r.id).sort(), ['alice', 'claire'])
