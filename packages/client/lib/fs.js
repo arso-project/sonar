@@ -69,7 +69,7 @@ class Fs {
     if (path === '/') {
       const drives = await this.listDrives()
       return drives.map(drive => ({
-        name: drive.alias,
+        name: drive.alias || drive.key,
         link: '',
         resource: null,
         length: null,

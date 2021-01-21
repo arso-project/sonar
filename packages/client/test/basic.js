@@ -54,7 +54,6 @@ tape('db basic put and query', async t => {
     id: res.id,
     value: { color: 'red' }
   })
-  
   // const id = res.id
   // await collection.sync()
   const results = await collection.query('records', { id: res.id }, { waitForSync: true })
@@ -62,9 +61,9 @@ tape('db basic put and query', async t => {
   // t.equal(results[0].id, id)
   // t.equal(results[0].value.title, 'hello world')
   // console.log(results.map(record => record.get('title')))
-  console.log(results.map(record => record.address))
-  console.log(results.map(record => record.id))
-  console.log(results.map(record => record.fields().map(f => f.fieldAddress).join('  !!  ')))
+  // console.log(results.map(record => record.address))
+  // console.log(results.map(record => record.id))
+  // console.log(results.map(record => record.fields().map(f => f.fieldAddress).join('  !!  ')))
   const record = results[0]
   // const record2 = results[1]
   t.equal(record.entity.id, res.id)
@@ -73,7 +72,7 @@ tape('db basic put and query', async t => {
   // t.equal(record.get('color'), 'red')
   // t.equal(record.get('fun#color'), 'red')
   // t.equal(record.get('fun#color'), 'red')
-  console.log(record.entity.getTypes().map(t => t.title))
+  // console.log(record.entity.getTypes().map(t => t.title))
   t.equal(record.entity.id, res.id)
 
   await cleanup()

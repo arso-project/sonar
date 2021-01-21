@@ -1,2 +1,4 @@
 apidocs
 dist
+build
+node_modules
