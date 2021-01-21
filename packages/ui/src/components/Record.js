@@ -10,6 +10,7 @@ import {
   Box,
   Button,
   List,
+  Heading,
   Menu,
   MenuButton,
   MenuList,
@@ -33,6 +34,7 @@ export function findWidget (field) {
   if (type === 'string' && format === 'date-time') return DateViewer
   if (type === 'string' && format === 'uri') return LinkViewer
   if (type === 'string' || type === 'integer' || type === 'number') return TextViewer
+  if (type === 'relation') return RelationViewer
   if (type === 'boolean') return BooleanViewer
   if (type === 'array') return ArrayViewer
   if (type === 'object') return ObjectViewer
@@ -50,12 +52,16 @@ function getDisplays () {
 }
 
 export function RecordLink (props) {
-  let { record, type, children } = props
-  if (!props.record) return <MissingRecordError />
-  const { id } = record
-  children = children || (
-    <RecordLabelDisplay record={record} type={type} />
-  )
+  let { record, id, children } = props
+  if (record) {
+    id = record.id
+    children = children || (
+      <RecordLabelDisplay record={record} />
+    )
+  } else if (id) {
+    children = children || id
+  } else return null
+
   return (
     <Link to={recordPath(id)}>
       {children}
@@ -105,14 +111,15 @@ export function Record (props) {
   const Display = display.component
 
   return (
-    <div className='sonar-record' flex={1}>
+    <Box className='sonar-record' mb='4' flex={1}>
+      <Heading size='md' mt='2' mb='2'>{record.getType().title}</Heading>
       <Box display={['block', 'flex']}>
         <RecordMeta record={record} type={type} />
         <Box flex={1} />
         <DisplayMenu displays={displays} onChange={setDisplay} value={display.id} />
       </Box>
       <Display record={record} type={type} />
-    </div>
+    </Box>
   )
 }
 
@@ -132,7 +139,7 @@ export function RecordJsonDisplay (props) {
   const { record } = props
   return (
     <JsonTree
-      data={record}
+      data={record.toJSON()}
       invertTheme
       hideRoot
       theme='bright'
@@ -266,8 +273,17 @@ function LinkViewer (props) {
   const { collection } = useCollection()
   if (typeof value === 'undefined' || !collection) return null
   const httpLink = collection.fs.resolveURL(String(value))
-  console.log('LINK',httpLink)
   return <a href={httpLink}>{httpLink}</a>
+}
+
+function RelationViewer (props) {
+  const { value } = props
+  if (typeof value === 'undefined') return null
+  // if (!Array.isArray(value)) value = []
+  const id = value
+  return (
+    <RecordLink id={id} />
+  )
 }
 
 function BooleanViewer (props) {

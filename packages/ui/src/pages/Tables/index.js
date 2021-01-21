@@ -83,8 +83,9 @@ function createCellFormatter (column) {
   const { Widget, type } = column
   return function CellFormatter (props) {
     const { cell: { value, row } } = props
+    const record = row.original
     // TODO: Rethink if we wanna do row.original = record.
-    if (Widget) return <Widget value={value} fieldType={type} record={row.original} />
+    if (Widget) return <Widget value={value} fieldType={type} record={record} />
     return String(value)
   }
 }
@@ -95,40 +96,47 @@ function createHeaderFormatter (column) {
 }
 
 function typeColumns (type) {
-  return type.fields().map(field => {
-    return fieldColumn(field.address, field)
+  return type.fields().map((field, i) => {
+    const showDefault = i < 8
+    return fieldColumn(field.address, field, showDefault)
   })
 }
 
-function fieldColumn (key, fieldType) {
+function fieldColumn (key, fieldType, showDefault) {
   const Widget = findWidget(fieldType)
   return {
     type: fieldType,
     title: fieldType.title,
     id: 'value.' + key,
-    accessor: row => row.value[key],
+    accessor,
+    showDefault,
     Widget
+  }
+  function accessor (record) {
+    return record.get(key)
+    // return 'ok'
   }
 }
 
 function defaultColumns () {
   return [
-    {
-      title: 'Actions',
-      Widget: ActionsFormatter,
-      showDefault: true,
-      id: '_actions',
-      disableSortBy: true,
-      disableFilters: true,
-      // TODO: The formatter doesn't use an acessor, it uses the record which is
-      // the full row at the moment.
-      accessor: () => undefined
-    },
+    // {
+    //   title: 'Actions',
+    //   Widget: ActionsFormatter,
+    //   showDefault: true,
+    //   id: '_actions',
+    //   disableSortBy: true,
+    //   disableFilters: true,
+    //   // TODO: The formatter doesn't use an acessor, it uses the record which is
+    //   // the full row at the moment.
+    //   accessor: () => undefined
+    // },
     {
       Header: 'ID',
       id: 'id',
       showDefault: true,
-      accessor: 'id'
+      accessor: 'id',
+      Widget: IdLink,
     },
     {
       Header: 'Source',
@@ -145,6 +153,15 @@ function defaultColumns () {
       accessor: 'seq'
     }
   ]
+}
+
+function IdLink (props) {
+  // const { value, fieldType, record } = props
+  // TODO: Rethink if the way we get hold of a "record" here is sound enough.
+  const { record } = props
+  return (
+    <RecordLink record={record}>{record.id}</RecordLink>
+  )
 }
 
 function ActionsFormatter (props) {
