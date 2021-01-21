@@ -164,7 +164,7 @@ class Record extends Node {
   }
 
   get address () {
-    return this._record.key + '+' + this._record.seq
+    return this._record.key + '@' + this._record.seq
   }
 
   get deleted () {
