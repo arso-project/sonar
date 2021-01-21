@@ -93,9 +93,7 @@ function cleanStat (stat, opts = {}) {
     name,
     directory: stat.isDirectory(),
     metadata
-
   }
-  return stat
 }
 
 function onput (req, res, next) {
@@ -167,15 +165,3 @@ function mkdirp (fs, path, cb) {
     else process.nextTick(next)
   }
 }
-
-// function hyperdriveRoutes (fastify, opts, done) {
-//   const collections = opts.collections
-
-//   fastify.get('/:key/*', (req, res) => {
-//     const { key, '*': wildcard } = req.params
-//     hyperdriveHandler(collections, key, wildcard, req, res)
-//   })
-
-//   done()
-// }
-

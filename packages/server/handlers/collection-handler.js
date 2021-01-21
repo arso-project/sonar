@@ -1,6 +1,6 @@
 const SseStream = require('ssestream').default
 const split2 = require('split2')
-const { pipeline } = require('streamx')
+const { pipeline, Transform } = require('streamx')
 const { HttpError } = require('../lib/util')
 
 module.exports = function createCollectionHandler (collections) {
@@ -181,6 +181,10 @@ module.exports = function createCollectionHandler (collections) {
       })
       const sseStream = new SseStream(req)
       eventStream.pipe(sseStream).pipe(res)
+      eventStream.on('error', err => {
+        // TODO: Can this happen? Log where?
+        console.error('event stream error', err)
+      })
 
       res.on('close', () => {
         sseStream.unpipe(res)

@@ -12,6 +12,7 @@ async function createMany (n, opts = {}) {
   const cleanups = []
   const ports = await findFreePorts(n, { startPort: 10000 })
 
+  // TODO: Test work without this too, why is that? mDNS maybe?
   // let DHT
   // if (opts.network !== false) {
   //   DHT = await createDHT()
