@@ -369,7 +369,12 @@ class Collection extends Nanoresource {
     const self = this
     return new Transform({
       transform (req, cb) {
-        self.getBlock(req, opts).then(res => cb(null, res), cb)
+        self.get(req, opts)
+          .catch(cb)
+          .then(records => {
+            records.forEach(record => record && this.push(record))
+            cb()
+          })
       }
     })
   }
@@ -382,7 +387,7 @@ class Collection extends Nanoresource {
     return maybe(cb, async () => {
       let list
       if ((req.key && req.seq) || req.lseq) {
-        list = await this.getBlock(req)
+        list = [await this.getBlock(req)]
       } else if (req.type || req.id) {
         list = await this.query('records', req)
       } else {
@@ -394,13 +399,15 @@ class Collection extends Nanoresource {
   }
 
   // TODO: Remove. Replaced with get.
-  loadRecord (...args) {
-    return this.get(...args)
+  loadRecord (args, opts = {}, cb) {
+    return this.getRecord(args, opts, cb)
   }
 
   // TODO: Remove. Replaced with get.
-  getRecord (...args) {
-    return this.get(...args)
+  getRecord (args, opts = {}, cb) {
+    if (typeof opts === 'function') { cb = opts; opts = {} }
+    opts.single = true
+    return this.get(args, opts, cb)
   }
 
   async putFeed (key, info = {}) {
