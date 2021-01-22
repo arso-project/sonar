@@ -1,6 +1,6 @@
 const tape = require('tape')
 const tmp = require('temporary-directory')
-const { LegacyWorkspace } = require('..')
+const { createOne } = require('./lib/create')
 const debug = require('debug')('time')
 
 tape('subscription stream', async t => {
@@ -9,15 +9,14 @@ tape('subscription stream', async t => {
     debug('start')
     const complete = clock()
     let timer = clock()
-    const [collections, cleanup] = await createStore({ network: false })
+    const { workspace, cleanup } = await createOne()
     debug('init', timer())
     const alltimer = clock()
     timer = clock()
-    const collection = await pify(cb => collections.create('default', cb))
+    const collection = await workspace.createCollection('default')
     debug('create collection', timer())
 
-    timer = clock()
-    const sub = collection.pullSubscriptionStream('foo', { live: true })
+    const sub = collection.subscribe('foo', { live: true }).stream()
     debug('create subscription', timer())
 
     const [promise, cb] = createPromiseCallback()
@@ -36,8 +35,8 @@ tape('subscription stream', async t => {
     })
 
     timer = clock()
-    await pify(cb => collection.putType({ name: 'foo', fields: { title: { type: 'string' } } }, cb))
-    await pify(cb => collection.put({ type: 'foo', value: { title: 'hello' } }, cb))
+    await collection.putType({ name: 'foo', fields: { title: { type: 'string' } } })
+    await collection.put({ type: 'foo', value: { title: 'hello' } })
     debug('put took', timer())
     timer = clock()
     const fail = setTimeout(() => t.fail('record was not in subscription stream'), 1000)
@@ -50,10 +49,8 @@ tape('subscription stream', async t => {
     await cleanup()
     debug('cleanup took', timer())
     debug('total', complete())
-    t.end()
   } catch (err) {
     t.fail(err)
-    t.end()
   }
 })
 
@@ -70,29 +67,6 @@ function createPromiseCallback () {
   return [promise, cb]
 }
 
-function createStore (opts = {}) {
-  opts.swarmOpts = { bootstrap: false }
-  return new Promise((resolve, reject) => {
-    tmp('sonar-test', ondircreated)
-    function ondircreated (err, dir, cleanupTempdir) {
-      if (err) return reject(err)
-      const collections = new LegacyWorkspace(dir, opts)
-      collections.ready(err => {
-        if (err) return reject(err)
-        resolve([collections, cleanup])
-      })
-      function cleanup () {
-        return new Promise((resolve, reject) => {
-          collections.close(() => {
-            cleanupTempdir(err => {
-              err ? reject(err) : resolve()
-            })
-          })
-        })
-      }
-    }
-  })
-}
 function clock () {
   const [ss, sn] = process.hrtime()
   return () => {
@@ -108,16 +82,4 @@ function clock () {
 
 function round (num, decimals = 2) {
   return Math.round(num * Math.pow(10, decimals)) / Math.pow(10, decimals)
-}
-
-function pify (fn) {
-  return new Promise((resolve, reject) => {
-    function cb (err, ...res) {
-      if (err) return reject(err)
-      if (!res.length) res = undefined
-      if (res.length === 1) res = res[0]
-      resolve(res)
-    }
-    fn(cb)
-  })
 }

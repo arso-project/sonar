@@ -35,6 +35,27 @@ async function createOne (opts = {}) {
   }
 }
 
+async function createMany (n, opts = {}) {
+  const workspaces = []
+  const cleanups = []
+
+  const { bootstrap, cleanup: cleanupDHT } = await createDHT()
+
+  opts.swarmOpts = { bootstrap }
+
+  for (let i = 0; i < n; i++) {
+    const { workspace, cleanup } = await createOne({ ...opts })
+    workspaces.push(workspace)
+    cleanups.push(cleanup)
+  }
+  return { workspaces, cleanup }
+
+  async function cleanup () {
+    await Promise.all(cleanups.map(cleanup => cleanup()))
+    await cleanupDHT()
+  }
+}
+
 async function createStorage () {
   const { path, cleanup } = await tmpPromise.dir({
     prefix: 'sonar-test',
@@ -43,8 +64,21 @@ async function createStorage () {
   return { storage: path, cleanup }
 }
 
-async function createMany (n, opts) {
-  // TODO: Implement.
+async function createDHT () {
+  const bootstrapper = require('@hyperswarm/dht')({
+    bootstrap: false
+  })
+  bootstrapper.listen()
+  await new Promise(resolve => {
+    return bootstrapper.once('listening', resolve)
+  })
+  const bootstrapPort = bootstrapper.address().port
+  const bootstrapOpt = [`localhost:${bootstrapPort}}`]
+  return { bootstrap: bootstrapOpt, cleanup }
+
+  async function cleanup () {
+    await bootstrapper.destroy()
+  }
 }
 
 // TODO: Remove.

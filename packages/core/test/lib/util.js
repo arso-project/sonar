@@ -18,12 +18,11 @@ exports.runAll = function runAll (ops, cb) {
   else return promise
 }
 
-exports.replicate = function replicate (a, b, opts, cb) {
+exports.replicate = async function replicate (a, b, opts) {
   if (typeof opts === 'function') return replicate(a, b, null, opts)
   if (!opts) opts = { live: true }
   const stream = a.replicate(true, opts)
   pump(stream, b.replicate(false, opts), stream, err => {
     // console.log('replication closed', err)
   })
-  setImmediate(cb)
 }

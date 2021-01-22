@@ -45,9 +45,9 @@ async function createN (createSDK, n, opts = {}) {
       storagePath: dir,
       sdk,
       persist: opts.persist || false,
-      swarmOpts: {
-        bootstrap: false
-      }
+      // swarmOpts: {
+      //   bootstrap: false
+      // }
     })
     dirs.push(dir)
     workspaces.push(workspace)

@@ -235,6 +235,10 @@ class Collection extends Nanoresource {
     return this._feedInfo.get(key)
   }
 
+  replicate (...args) {
+    return this._workspace.corestore.replicate(...args)
+  }
+
   async configure (configuration = {}, save = true) {
     let promise
     if (configuration.share !== false) {
