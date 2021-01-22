@@ -7,11 +7,11 @@ const express = require('express')
 const speedometer = require('speedometer')
 const debug = require('debug')('sonar-server:fs')
 
-module.exports = function hyperdriveMiddleware (collections) {
+module.exports = function hyperdriveMiddleware (workspace) {
   const router = express.Router()
 
   router.use('/:drive', function (req, res, next) {
-    req.collection.drive(req.params.drive, (err, drive) => {
+    req.collection.fs.get(req.params.drive, (err, drive) => {
       if (err) return next(err)
       req.drive = drive
       next()

@@ -207,6 +207,7 @@ module.exports = class Workspace extends Nanoresource {
     collection.on('opening', awaitMe => {
       const hkey = collection.key.toString('hex')
       this._collections.set(hkey, collection)
+      this._collections.set(collection.name, collection)
       this.emit('collection-opening', collection, awaitMe)
     })
 

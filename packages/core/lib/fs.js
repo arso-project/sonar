@@ -33,30 +33,29 @@ function onCollectionOpen (collection, awaitOpen) {
   fs.open(err => callback(err))
 
   function oninit (localDriveKey, cb) {
+    const config = collection.getConfig()
     collection.putFeed(localDriveKey, {
       type: 'hyperdrive',
-      alias: collection._opts.alias
+      alias: collection._opts.alias || collection.name
     }).then(res => cb(null, res), cb)
   }
 
-  function resolveAlias (alias, cb) {
-    collection.query('records', { type: 'sonar/feed' }, (err, records) => {
-      if (err) return cb(err)
-      const aliases = records
-        .map(r => r.value)
-        .filter(v => v.type === 'hyperdrive')
-        .filter(v => v.alias === alias)
+  async function resolveAlias (alias) {
+    const records = await collection.query('records', { type: 'sonar/feed' })
+    const aliases = records
+      .map(r => r.value)
+      .filter(v => v.type === 'hyperdrive')
+      .filter(v => v.alias === alias)
 
-      if (aliases.length > 1) {
-        // TODO: Support named aliases (like foo-1, foo-2)
-        return cb(new Error('alias is ambigous, use keys'))
-      }
-      if (!aliases.length) {
-        return cb(new Error('alias not found'))
-      }
+    if (aliases.length > 1) {
+      // TODO: Support named aliases (like foo-1, foo-2)
+      throw new Error('alias is ambigous, use keys')
+    }
+    if (!aliases.length) {
+      throw new Error('alias not found')
+    }
 
-      cb(null, aliases[0].key)
-    })
+    return aliases[0].key
   }
 }
 
@@ -236,10 +235,12 @@ class SonarHyperdrive extends Nanoresource {
     if (validKey(alias)) return cb(null, alias)
     if (alias === '~me') return cb(null, this.localwriter.key.toString('hex'))
     if (!this.handlers.resolveAlias) return cb(new Error('Cannot resolve alias'))
-    this.handlers.resolveAlias(alias, (err, key) => {
-      if (err || !key) return cb(err || new Error('invalid alias: ' + alias))
-      cb(null, key)
-    })
+    this.handlers.resolveAlias(alias)
+      .catch(cb)
+      .then(key => {
+        if (!key) return cb(new Error('invalid alias: ' + alias))
+        cb(null, key)
+      })
   }
 }
 

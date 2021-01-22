@@ -1,4 +1,4 @@
-const { LegacyWorkspace } = require('@arsonar/core')
+const { Workspace } = require('@arsonar/core')
 const { NanoresourcePromise: Nanoresource } = require('nanoresource-promise')
 const bodyParser = require('body-parser')
 const onexit = require('async-exit-hook')
@@ -21,8 +21,9 @@ const DEFAULT_PORT = 9191
 const DEFAULT_HOSTNAME = 'localhost'
 
 module.exports = function SonarServer (opts = {}) {
+  const storage = storagePath(opts.storage)
   const config = {
-    storage: storagePath(opts.storage),
+    storage,
     auth: {
       disableAuthentication: opts.disableAuthentication
     },
@@ -32,6 +33,7 @@ module.exports = function SonarServer (opts = {}) {
     },
     workspace: {
       ...(opts.workspace || {}),
+      storagePath: storage,
       persist: opts.persist,
       network: opts.network,
       swarm: {
@@ -53,8 +55,8 @@ module.exports = function SonarServer (opts = {}) {
   const auth = new Auth(config.storage, config.auth)
 
   // Init collection store.
-  const collections = new LegacyWorkspace(config.storage, config.workspace)
-  const log = collections.log
+  const workspace = new Workspace(config.workspace)
+  const log = workspace.log
 
   // Init express app.
   const app = express()
@@ -62,7 +64,7 @@ module.exports = function SonarServer (opts = {}) {
   // Assemble api object.
   const api = {
     auth,
-    collections,
+    workspace,
     config,
     log
   }
@@ -76,7 +78,7 @@ module.exports = function SonarServer (opts = {}) {
 
   // Logger
   const logger = pinoExpress({
-    logger: collections.log,
+    logger: log,
     useLevel: 'debug',
     customSuccessMessage: res => ' ',
     customErrorMessage: err => err.message
@@ -167,48 +169,49 @@ module.exports = function SonarServer (opts = {}) {
     devMiddleware.initBottom(app, config.server.dev)
   }
 
-  // Add start method.
-  app.start = thunky((cb = noop) => {
-    // Open the collection store.
-    api.collections.ready(err => {
-      if (err) return cb(err)
-      api.auth.open(err => {
-        if (err) return cb(err)
-        app.port = config.server.port
-        app.hostname = config.server.hostname
-        if (app.closing) return
-        // Start the HTTP server.
-        const server = app.listen(config.server.port, config.server.hostname, err => {
-          if (err) return cb(err)
-          api.log.debug(`HTTP server listening on http://${app.hostname}:${app.port}`)
-          cb()
-        })
-        // Mount the shutdown handler onto the server.
-        app.server = shutdown(server)
+  async function start () {
+    await api.workspace.ready()
+    await api.auth.open()
+    // TODO: Take from running express server instead.
+    app.port = config.server.port
+    app.hostname = config.server.hostname
+    await new Promise((resolve, reject) => {
+      const server = app.listen(config.server.port, config.server.hostname, err => {
+        if (err) return reject(err)
+        api.log.debug(`HTTP server listening on http://${app.hostname}:${app.port}`)
         app.opened = true
+        resolve()
       })
+      // Mount the shutdown handler onto the server.
+      app.server = shutdown(server)
     })
-  })
+  }
 
-  // Add close method.
-  app.close = thunky((cb = noop) => {
+  async function close () {
     app.closing = true
-    let pending = 3
-    debug('shutting down')
-    if (app.server) {
-      app.server.forceShutdown(err => {
-        debug('closed http server', err || '')
-        finish()
-      })
-    } else finish()
-    api.collections.close(finish)
-    api.auth.close(finish)
-    function finish () {
-      if (--pending !== 0) return
-      debug('closed')
-      cb()
-    }
-  })
+    if (openPromise) await openPromise
+    const promises = [
+      api.workspace.close(),
+      new Promise(resolve => api.auth.close(resolve)),
+      new Promise(resolve => app.server.forceShutdown(resolve))
+    ]
+    await Promise.all(promises)
+    app.closed = true
+  }
+
+  let openPromise, closePromise
+
+  app.start = function (cb) {
+    if (!openPromise) openPromise = start()
+    if (cb) openPromise.then(cb, cb)
+    else return openPromise
+  }
+
+  app.close = function (cb) {
+    if (!closePromise) closePromise = close()
+    if (cb) closePromise.then(cb, cb)
+    else return closePromise
+  }
 
   // Ensure everything gets closed when the node process exits.
   onexit((cb) => {

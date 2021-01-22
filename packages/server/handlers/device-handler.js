@@ -1,28 +1,17 @@
-module.exports = function createDeviceHandler (collections) {
+const AH = require('../lib/async-handler')
+
+module.exports = function createDeviceHandler (workspace) {
   return {
-    info (req, res, next) {
-      collections.status((err, status) => {
-        if (err) return next(err)
-        res.send(status)
-      })
-    },
+    info: AH(async (req, res, next) => {
+      const status = await workspace.status()
+      return status
+    }),
 
-    createCollection (req, res, next) {
+    createCollection: AH(async (req, res, next) => {
       const { name, key, alias } = req.body
-      collections.create(name, { key, alias }, (err, collection) => {
-        if (err) return next(err)
-        res.send({
-          key: collection.key.toString('hex')
-        })
-        res.end()
-      })
-    },
-
-    updateCollection (req, res, next) {
-      collections.updateCollection(req.collection.key, req.body, (err, newConfig) => {
-        if (err) return next(err)
-        res.send(newConfig)
-      })
-    }
+      const opts = { alias, name }
+      const collection = await workspace.createCollection(key || name, opts)
+      return collection.status()
+    }),
   }
 }

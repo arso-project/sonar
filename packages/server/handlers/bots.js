@@ -1,6 +1,7 @@
 const express = require('express')
 const { HttpError } = require('../lib/util')
 const SseStream = require('ssestream').default
+const ah = require('../lib/async-handler')
 
 const BotBackend = require('@arsonar/bots/lib/backend')
 
@@ -131,15 +132,4 @@ module.exports = function createBotRouter () {
 
 function MissingSessionError () {
   return HttpError(403, 'Missing session header')
-}
-
-// Wrap request handlers so that they can throw errors.
-function ah (asyncfn) {
-  return async function (req, res, next) {
-    try {
-      await asyncfn(req, res, next)
-    } catch (err) {
-      next(err)
-    }
-  }
 }
