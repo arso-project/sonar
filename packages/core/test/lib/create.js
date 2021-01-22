@@ -1,13 +1,54 @@
 const tmp = require('temporary-directory')
+const tmpPromise = require('tmp-promise')
 const { Workspace, LegacyWorkspace } = require('../..')
 
-async function createOne (opts) {
+module.exports = Object.assign(createStore, {
+  createOne,
+  createMany
+})
+
+async function createOne (opts = {}) {
+  let cleanupStorage
+  // Use in-memory storage where possible by default (faster)
+  if (opts.persist === undefined) {
+    opts.persist = false
+  }
+  // Disable networking by default (don't bootstrap the DHT)
+  if (!opts.swarmOpts) {
+    opts.swarmOpts = { bootstrap: false }
+  }
+
+  if (!opts.storagePath) {
+    const { storage, cleanup } = await createStorage()
+    cleanupStorage = cleanup
+    opts.storagePath = storage
+  }
+
+  const workspace = new Workspace(opts)
+  await workspace.open()
+
+  return { workspace, cleanup }
+
+  async function cleanup () {
+    await workspace.close()
+    if (cleanupStorage) await cleanupStorage()
+  }
+}
+
+async function createStorage () {
+  const { path, cleanup } = await tmpPromise.dir({
+    prefix: 'sonar-test',
+    unsafeCleanup: true
+  })
+  return { storage: path, cleanup }
 }
 
 async function createMany (n, opts) {
+  // TODO: Implement.
 }
 
-module.exports = function createStore (opts, cb) {
+// TODO: Remove.
+function createStore (opts, cb) {
   if (typeof opts === 'function') {
     cb = opts
     opts = {}

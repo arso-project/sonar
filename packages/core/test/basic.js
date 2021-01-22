@@ -1,18 +1,28 @@
 const tape = require('tape')
 const { runAll } = require('./lib/util')
 
+// TODO: Remove.
 const createStore = require('./lib/create')
 
-tape('open close', t => {
-  createStore({ network: false }, (err, workspace, cleanup) => {
-    if (err) t.fail(err)
-    t.true(workspace.opened, 'opened property is set')
-    t.error(err)
-    cleanup(err => {
-      t.error(err)
-      t.end()
-    })
-  })
+const { createOne } = require('./lib/create')
+
+tape('open close', async t => {
+  const { cleanup, workspace } = await createOne()
+  t.true(workspace.opened, 'opened property is set')
+  await cleanup()
+})
+
+tape('put and get 1', async t => {
+  const { cleanup, workspace } = await createOne()
+  const collection = await workspace.openCollection('default')
+  await collection.putType({ name: 'doc', fields: { title: { type: 'string' } } })
+  const record = await collection.put({ type: 'doc', value: { title: 'hello' } })
+  t.equal(record.value.title, 'hello')
+  const id = record.id
+  const records = await collection.query('records', { id }, { sync: true })
+  t.equal(records.length, 1)
+  t.equal(records[0].value.title, 'hello')
+  await cleanup()
 })
 
 tape('batch and query', t => {
@@ -73,28 +83,6 @@ tape('batch and query', t => {
         },
         next => cleanup(next)
       ]).catch(err => t.fail(err)).then(() => t.end())
-    })
-  })
-})
-
-tape('put and get 1', t => {
-  createStore({ network: false }, (err, workspace, cleanup) => {
-    t.error(err, 'tempdir ok')
-    workspace.create('default', (err, collection) => {
-      t.error(err)
-      collection.putType({ name: 'doc', fields: { title: { type: 'string' } } }, err => {
-        t.error(err)
-        collection.put({ type: 'doc', value: { title: 'hello' } }, (err, record) => {
-          t.error(err)
-          const id = record.id
-          collection.query('records', { id }, { waitForSync: true }, (err, records) => {
-            t.error(err)
-            t.equal(records.length, 1)
-            t.equal(records[0].value.title, 'hello')
-            cleanup(() => t.end())
-          })
-        })
-      })
     })
   })
 })
