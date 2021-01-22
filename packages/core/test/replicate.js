@@ -32,7 +32,7 @@ function doc (title, id) {
   return { type: 'doc', value: { title }, id }
 }
 
-tape('simple replication', async t => {
+tape('simple replication', { timeout: 5000 }, async t => {
   const [collections1, cleanup1] = await createStore({ network: true })
   const [collections2, cleanup2] = await createStore({ network: true })
   const collection = await promisify(collections1.create.bind(collections1))('collection1')

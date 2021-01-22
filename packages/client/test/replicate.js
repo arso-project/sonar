@@ -2,7 +2,7 @@ const tape = require('tape')
 const { promisify } = require('util')
 
 const { createMany } = require('./lib/create')
-tape('replicate resources', async t => {
+tape('replicate resources', { timeout: 5000 }, async t => {
   const { cleanup, clients } = await createMany(2)
   const [client1, client2] = clients
 
