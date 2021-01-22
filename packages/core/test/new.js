@@ -59,11 +59,12 @@ async function createN (createSDK, n, opts = {}) {
   async function cleanup () {
     try {
       await Promise.all(workspaces.map(workspace => workspace.close()))
+      await new Promise(resolve => setTimeout(resolve, 200))
       await Promise.all(sdks.map(sdk => sdk.close()))
-      await new Promise(resolve => setTimeout(resolve, 100))
+      await new Promise(resolve => setTimeout(resolve, 200))
       cleanupSDK()
       await Promise.all(dirs.map(dir => rimraf(dir)))
-      await new Promise(resolve => setTimeout(resolve, 100))
+      await new Promise(resolve => setTimeout(resolve, 200))
     } catch (err) { console.error('Closing error', err) }
   }
 }

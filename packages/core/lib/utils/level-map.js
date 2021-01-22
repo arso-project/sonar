@@ -68,7 +68,11 @@ module.exports = class LevelMap extends Nanoresource {
   }
 
   find (fn) {
-    return Object.values(this._data).filter(fn)
+    let values = Array.from(Object.values(this._data))
+    if (!values.length) return null
+    values = values.filter(fn)
+    if (!values.length) return null
+    return values[0]
   }
 
   has (key) {

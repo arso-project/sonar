@@ -23,6 +23,10 @@ const createSearchView = require('../views/search')
 const Relations = require('@arsonar/view-relations')
 const { useHyperdrive } = require('./fs')
 
+const DEFAULT_CONFIG = {
+  share: true
+}
+
 function defaultStoragePath (opts) {
   const os = require('os')
   return p.join(os.homedir(), '.sonar')
@@ -144,12 +148,15 @@ module.exports = class Workspace extends Nanoresource {
 
   async status () {
     if (!this.opened) await this.open()
+
+    const collections = {}
+
+    // 1. List all opened collections
     const openPromises = []
     for (const collection of this.collections()) {
       if (!collection.opened) openPromises.push(collection.open())
     }
     await Promise.all(openPromises)
-    const collections = {}
     for (const collection of this.collections()) {
       const hkey = collection.key.toString('hex')
       collections[hkey] = collection.status()
@@ -158,6 +165,24 @@ module.exports = class Workspace extends Nanoresource {
         collections[hkey].localDrive = collection.fs.localwriter.key.toString('hex')
       }
     }
+
+    // 2. List all not opened collections
+    for (const info of this._collectionInfo.values()) {
+      const key = info.key
+      if (!collections[key]) {
+        collections[key] = {
+          localDrive: '',
+          config: {},
+          kappa: {},
+          alias: null,
+          feeds: [],
+          network: {},
+          opened: false,
+          ...info
+        }
+      }
+    }
+
     return { collections }
   }
 
@@ -186,19 +211,6 @@ module.exports = class Workspace extends Nanoresource {
     })
 
     collection.on('open', () => {
-      const id = collection.id
-      if (!this._collectionInfo.has(id)) {
-        const status = collection.status()
-        const info = {
-          name: status.name,
-          key: status.key,
-          id: status.id,
-          localKey: status.localKey,
-          alias: opts.alias
-        }
-        this._collectionInfo.set(id, info)
-      }
-
       this.emit('collection-open', collection)
     })
 
@@ -207,10 +219,59 @@ module.exports = class Workspace extends Nanoresource {
     return collection
   }
 
+  async createCollection (keyOrName, opts = {}) {
+    opts.create = true
+    return this.openCollection(keyOrName, opts)
+  }
+
+  _findCollectionInfo (keyOrName) {
+    return this._collectionInfo.find(
+      info => {
+        return info.key === keyOrName || info.name === keyOrName
+      }
+    )
+  }
+
   async openCollection (keyOrName, opts = {}) {
+    if (this._collections.has(keyOrName)) {
+      return this._collections.get(keyOrName)
+    }
+
+    const collectionInfo = this._findCollectionInfo(keyOrName)
+    if (collectionInfo) {
+      opts.name = collectionInfo.name
+      keyOrName = collectionInfo.key
+    } else if (opts.create === false) {
+      throw new Error('Collection does not exist')
+    }
+
     const collection = this.Collection(keyOrName, opts)
     await collection.open()
     return collection
+  }
+
+  _saveCollection (collection, config) {
+    const id = collection.id
+    const status = collection.status()
+    const lastInfo = this._collectionInfo.get(id) || {}
+    const nextConfig = { ...(lastInfo.config || {}), ...config }
+    const nextInfo = {
+      name: status.name,
+      key: status.key,
+      id: status.id,
+      localKey: status.localKey,
+      discoveryKey: status.discoveryKey,
+      rootKey: status.rootKey,
+      config: nextConfig
+    }
+    this._collectionInfo.set(id, nextInfo)
+  }
+
+  _getCollectionConfig (collection) {
+    const id = collection.id
+    const info = this._collectionInfo.get(id)
+    if (!info || !info.config) return DEFAULT_CONFIG
+    return { ...info.config }
   }
 
   storagePath (name) {

@@ -1,32 +1,7 @@
 const tape = require('tape')
-const tmp = require('temporary-directory')
 const { runAll } = require('./lib/util')
 
-const { LegacyWorkspace } = require('..')
-
-function createStore (opts, cb) {
-  if (typeof opts === 'function') {
-    cb = opts
-    opts = {}
-  }
-  opts.swarmOpts = { bootstrap: false }
-  tmp('sonar-test', ondircreated)
-  function ondircreated (err, dir, cleanupTempdir) {
-    if (err) return cb(err)
-    const workspace = new LegacyWorkspace(dir, opts)
-    workspace.ready(err => {
-      if (err) return cb(err)
-      cb(null, workspace, cleanup)
-    })
-    function cleanup (cb) {
-      workspace.close(() => {
-        cleanupTempdir(err => {
-          cb(err)
-        })
-      })
-    }
-  }
-}
+const createStore = require('./lib/create')
 
 tape('open close', t => {
   createStore({ network: false }, (err, workspace, cleanup) => {

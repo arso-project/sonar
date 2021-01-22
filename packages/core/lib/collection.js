@@ -138,7 +138,7 @@ class Collection extends Nanoresource {
   }
 
   get name () {
-    return this._opts.name || this.id
+    return this._name || this._opts.name || this.id
   }
 
   ready (cb) {
@@ -251,12 +251,12 @@ class Collection extends Nanoresource {
     // if (promise) promise.then(() => console.log('swarm configure resolved')).catch(console.error)
 
     if (save) {
-      await this._localState.setFlush('config', configuration)
+      await this._workspace._saveCollection(this, configuration)
     }
   }
 
   getConfig () {
-    return this._localState.get('config')
+    return this._workspace._getCollectionConfig(this)
   }
 
   async put (record, opts = {}) {
@@ -618,8 +618,13 @@ class Collection extends Nanoresource {
     const rootInfo = { type: FEED_TYPE_ROOT }
     this._rootFeed = await this._initFeed(this._keyOrName, rootInfo, { index: false })
     this._id = deriveId(this._rootFeed.discoveryKey)
+
     if (this._keyOrName !== this._rootFeed.key.toString('hex')) {
       this._name = this._keyOrName
+    } else if (this._opts.name) {
+      this._name = this._opts.name
+    } else {
+      this._name = this._id
     }
 
     // Init local state
@@ -681,7 +686,7 @@ class Collection extends Nanoresource {
     }
 
     // Init network configuration.
-    const config = this._localState.get('config')
+    const config = this.getConfig()
     if (config) {
       await this.configure(config, false)
     } else {
@@ -701,8 +706,8 @@ class Collection extends Nanoresource {
     await Promise.all(openPromises)
 
     // Emit open event
-    this.emit('open')
     this.log.debug(`Collection open: ${pretty(this.key)}`)
+    process.nextTick(() => this.emit('open'))
 
     // Alternative approach: Don't store feeds and types locally at all.
     // Query the collection itself. This is nicer, likely.

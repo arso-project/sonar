@@ -37,25 +37,29 @@ class LegacyWorkspace extends Nanoresource {
   }
 
   create (name, opts, cb) {
+    if (typeof opts === 'function') { cb = opts; opts = {} }
     let { key, alias } = opts
     const nameOrKey = key || name
     if (!alias && name) alias = name
     opts.key = undefined
     opts.alias = alias
+    opts.create = true
+    opts = { ...opts }
     return this.get(nameOrKey, opts, cb)
   }
 
   get (keyOrName, opts = {}, cb) {
     if (typeof opts === 'function') { cb = opts; opts = {} }
-    const collection = this.workspace.Collection(keyOrName, opts)
-    if (!collection[COMPAT_WRAP]) {
-      wrapCollection(collection)
-      if (opts.alias) this.workspace._collections.set(opts.alias, collection)
-      collection[COMPAT_WRAP] = true
-    }
-    collection.open()
-      .then(() => cb(null, collection))
-      .catch(err => { console.error(err); cb(err) })
+    this.workspace.openCollection(keyOrName, opts)
+      .then(collection => {
+        if (!collection[COMPAT_WRAP]) {
+          wrapCollection(collection)
+          if (opts.alias) this.workspace._collections.set(opts.alias, collection)
+          collection[COMPAT_WRAP] = true
+        }
+        cb(null, collection)
+      })
+      .catch(err => cb(err))
   }
 
   status (cb) {

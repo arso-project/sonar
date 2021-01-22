@@ -1,5 +1,11 @@
 const tmp = require('temporary-directory')
-const { LegacyWorkspace } = require('../..')
+const { Workspace, LegacyWorkspace } = require('../..')
+
+async function createOne (opts) {
+}
+
+async function createMany (n, opts) {
+}
 
 module.exports = function createStore (opts, cb) {
   if (typeof opts === 'function') {
