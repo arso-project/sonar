@@ -1,62 +1,47 @@
 const tape = require('tape')
-const { runAll } = require('@arsonar/core/test/lib/util')
-const createStore = require('@arsonar/core/test/lib/create')
+const { createOne } = require('@arsonar/core/test/lib/create')
 
-tape('relations', t => {
-  createStore({ network: false }, (err, collections, cleanup) => {
-    t.error(err, 'tempdir ok')
-    const type = {
-      name: 'friend',
-      fields: {
-        name: {
-          type: 'string'
-        },
-        friends: {
-          type: 'relation',
-          multiple: true
-        }
+tape('relations', async t => {
+  const { workspace, cleanup } = await createOne()
+  const type = {
+    name: 'friend',
+    fields: {
+      name: {
+        type: 'string'
+      },
+      friends: {
+        type: 'relation',
+        multiple: true
       }
     }
+  }
 
-    let collection
-    runAll([
-      next => collections.create('default', (err, _collection) => {
-        if (err) return t.fail(err)
-        collection = _collection
-        next()
-      }),
-      next => collection.putType(type, next),
-      next => collection.put({
-        id: 'alice',
-        type: 'friend',
-        value: { name: 'Alice', friends: ['bob'] }
-      }, next),
-      next => collection.put({
-        id: 'bob',
-        type: 'friend',
-        value: { name: 'Bob', friends: ['alice', 'claire'] }
-      }, next),
-      next => collection.put({
-        id: 'claire',
-        type: 'friend',
-        value: { name: 'Claire', friends: ['bob'] }
-      }, next),
-      next => collection.sync(next),
-
-      next => {
-        const type = collection.getType('friend')
-        const query = {
-          object: 'bob',
-          predicate: type.name + '#' + 'friends'
-        }
-
-        collection.query('relations', query, (err, results) => {
-          t.error(err)
-          t.deepEqual(results.map(r => r.id).sort(), ['alice', 'claire'])
-          next()
-        })
-      },
-      next => cleanup(next)
-    ]).catch(err => t.fail(err)).then(() => t.end())
+  const collection = await workspace.openCollection('default')
+  await collection.putType(type)
+  await collection.put({
+    id: 'alice',
+    type: 'friend',
+    value: { name: 'Alice', friends: ['bob'] }
   })
+  await collection.put({
+    id: 'bob',
+    type: 'friend',
+    value: { name: 'Bob', friends: ['alice', 'claire'] }
+  })
+  await collection.put({
+    id: 'claire',
+    type: 'friend',
+    value: { name: 'Claire', friends: ['bob'] }
+  })
+  await collection.sync()
+
+  const friendType = collection.getType('friend')
+  const query = {
+    object: 'bob',
+    predicate: friendType.name + '#' + 'friends'
+  }
+
+  const results = await collection.query('relations', query)
+  t.deepEqual(results.map(r => r.id).sort(), ['alice', 'claire'])
+  await cleanup()
 })
