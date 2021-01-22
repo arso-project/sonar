@@ -108,7 +108,7 @@ function runTests (create) {
     // }catch(err){console.error(err)}
   })
 
-  test.only('basic replication', { timeout: 5000 }, async t => {
+  test('basic replication', { timeout: 5000 }, async t => {
     const [w1, w2, cleanup] = await create(2)
 
     const c1 = w1.Collection('default')
