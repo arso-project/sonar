@@ -68,13 +68,22 @@ async function createOne (opts = {}) {
   return { server, cleanup, endpoint }
 
   async function cleanup () {
-    await new Promise((resolve, reject) => {
-      server.close(err => err ? reject(err) : resolve())
+    await abortAfter(1000, 'Cleanup timeout', async () => {
+      await new Promise((resolve, reject) => {
+        server.close(err => err ? reject(err) : resolve())
+      })
+      if (cleanupStorage) await cleanupStorage()
     })
-    await Promise.all([
-      cleanupStorage || Promise.resolve()
-    ])
   }
+}
+
+async function abortAfter (ms, message, fn) {
+  await Promise.race([
+    fn(),
+    new Promise((resolve, reject) => {
+      setTimeout(() => reject(new Error(message)), ms)
+    })
+  ])
 }
 
 async function createStorage () {

@@ -51,8 +51,10 @@ async function createMany (n, opts = {}) {
   return { workspaces, cleanup }
 
   async function cleanup () {
-    await Promise.all(cleanups.map(cleanup => cleanup()))
-    await cleanupDHT()
+    await aboftAfter(1000, 'Cleanup timeout', async () => {
+      await Promise.all(cleanups.map(cleanup => cleanup()))
+      await cleanupDHT()
+    })
   }
 }
 
@@ -62,6 +64,15 @@ async function createStorage () {
     unsafeCleanup: true
   })
   return { storage: path, cleanup }
+}
+
+async function abortAfter (ms, message, fn) {
+  await Promise.race([
+    fn(),
+    new Promise((resolve, reject) => {
+      setTimeout(() => reject(new Error(message)), ms)
+    })
+  ])
 }
 
 async function createDHT () {
