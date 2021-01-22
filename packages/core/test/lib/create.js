@@ -51,7 +51,7 @@ async function createMany (n, opts = {}) {
   return { workspaces, cleanup }
 
   async function cleanup () {
-    await aboftAfter(1000, 'Cleanup timeout', async () => {
+    await abortAfter(1000, 'Cleanup timeout', async () => {
       await Promise.all(cleanups.map(cleanup => cleanup()))
       await cleanupDHT()
     })
