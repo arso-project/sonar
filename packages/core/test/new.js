@@ -108,69 +108,42 @@ function runTests (create) {
     // }catch(err){console.error(err)}
   })
 
-  test('basic replication', async t => {
+  test.only('basic replication', { timeout: 5000 }, async t => {
     const [w1, w2, cleanup] = await create(2)
+
     const c1 = w1.Collection('default')
     await setup(c1)
+
     const c2 = w2.Collection(c1.key)
     await c2.open()
-    // c1.use('debug', async records => {
-    //   console.log('IN C1', records)
-    // })
-    // c2.use('debug', async records => {
-    //   console.log('IN C2', records)
-    // })
 
-    // await timeout(50)
-    await c2.update()
-    await c2.sync()
-    // console.log('synced c2')
+    await waitForUpdate(c2)
 
     let res = await c2.query('records', { type: 'doc' })
     t.equal(res.length, 1, 'c2 len ok')
     const record = res[0]
-    t.equal(record.get('title'), 'hello', 'c2 val ok')
+    t.equal(record && record.get('title'), 'hello', 'c2 val ok')
 
     const updatedRecord = record.update({ title: 'hi' })
     await c2.put(updatedRecord)
     await c2.sync()
     res = await c2.query('records', { type: 'doc' })
-    // console.log('c2 q after put', res)
-    // console.log('now add c2 feed to c1')
-    await c1.putFeed(c2.localKey)
+    t.equal(res.length, 1, 'c2 len ok')
+    t.equal(res[0].get('title'), 'hi', 'c2 val updated')
 
-    await update(c1, 'first')
-    await update(c1, 'second')
+    await c1.putFeed(c2.localKey)
+    await waitForUpdate(c1, true)
 
     res = await c1.query('records', { type: 'doc' })
-    // console.log('c1 q after sync', res)
     t.equal(res.length, 1)
-    t.equal(res[0].get('title'), 'hi')
+    t.equal(res[0].get('title'), 'hi', 'c1 query correct')
 
-    // console.log('c1', c1.status())
-    // console.log('c2', c2.status())
     await cleanup()
 
-    async function update (c, name) {
-      // console.log(name + 'UP - wait dl')
-      await new Promise(resolve => {
-        c.once('feed-update', resolve)
-      })
-      await new Promise(resolve => {
-        process.nextTick(resolve)
-      })
-      // console.log(name + 'UP - wait up')
-      await c.sync()
-      // console.log(name + 'UP - done')
+    async function waitForUpdate (col) {
+      await new Promise(resolve => col.once('update', resolve))
+      await col.update()
     }
-
-    // async function waitForFeed (c) {
-    //   await new Promise(resolve => {
-    //     c.once('feed', feed => {
-    //       resolve()
-    //     })
-    //   })
-    // }
   })
 
   test('open and close and open', async t => {

@@ -485,8 +485,17 @@ class Collection extends Nanoresource {
       const updates = this.feeds().map(feed => feed.update({ ifAvailable: true, wait: false }))
       await Promise.all(updates)
     } catch (err) {}
-    // Wait for the indexer and the views to sync
-    await this.sync()
+
+    let resync = true
+
+    this.on('feed-update', () => {
+      resync = true
+    })
+
+    while (resync) {
+      resync = false
+      await this.sync()
+    }
   }
 
   /**
@@ -752,10 +761,9 @@ class Collection extends Nanoresource {
     // Recheck if feed is opened (if it was opened by name first)
     if (this._feeds.has(hkey)) return this._feeds.get(hkey)
 
-    // console.log('initFeed', { keyOrName, info, stack: new Error().stack })
-
     // Forward some events
     feed.on('download', (seq) => {
+    // Forward some events
       this.emit('feed-update', feed, 'download', seq)
     })
     feed.on('append', () => {
