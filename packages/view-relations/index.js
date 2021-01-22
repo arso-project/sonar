@@ -1,4 +1,7 @@
-const { Quadstore } = require('quadstore')
+// the quadstore npm package defaults to a bundled version (with webpack)
+// of the quadstore module plus dependencies. the bundler causes
+// stack traces to go missing. import the unbundled version.
+const { Quadstore } = require('quadstore/dist/lib/quadstore')
 const { Transform, Readable } = require('streamx')
 const { parseAddress } = require('@arsonar/common/lib/address')
 const { batchToDiff } = require('@arsonar/core/lib/utils/batch-diff')
