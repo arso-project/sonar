@@ -4,6 +4,8 @@ const findFreePorts = require('find-free-ports')
 require('make-promises-safe')
 tmp.setGracefulCleanup()
 
+const CLEANUP_TIMEOUT = 5000
+
 module.exports = { createOne, createMany }
 
 async function createMany (n, opts = {}) {
@@ -68,7 +70,7 @@ async function createOne (opts = {}) {
   return { server, cleanup, endpoint }
 
   async function cleanup () {
-    await abortAfter(1000, 'Cleanup timeout', async () => {
+    await abortAfter(CLEANUP_TIMEOUT, 'Cleanup timeout', async () => {
       await new Promise((resolve, reject) => {
         server.close(err => err ? reject(err) : resolve())
       })
