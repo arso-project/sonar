@@ -10,6 +10,7 @@ async function batchToDiff (col, batch) {
 }
 
 async function createDiff (col, batch) {
+  console.log('create diff', col, batch)
   const records = new Set()
   const links = new Set()
   const left = new Set()
@@ -28,7 +29,7 @@ async function createDiff (col, batch) {
   // Check where this record goes
   for (const record of records) {
     if (links.has(record.address)) {
-      links.remove(record.address)
+      links.delete(record.address)
       left.add(record)
     } else if (record.deleted) {
       // left.add(record)
