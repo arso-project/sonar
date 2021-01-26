@@ -21,6 +21,7 @@ tape('minimal open and put', async t => {
   t.equal(queried.length, 1)
   t.equal(queried[0].id, putted.id, 'id matches')
   await cleanup()
+  t.ok(true, 'cleanup ok')
 })
 
 tape('db basic put and query', async t => {
@@ -76,6 +77,7 @@ tape('db basic put and query', async t => {
   t.equal(record.entity.id, res.id)
 
   await cleanup()
+  t.ok(true, 'cleanup ok')
 })
 
 tape('get and delete record', async t => {
@@ -96,6 +98,7 @@ tape('get and delete record', async t => {
   t.equals(nuRecords.length, 0)
 
   await cleanup()
+  t.ok(true, 'cleanup ok')
 })
 
 tape('fs with strings', async t => {
@@ -108,6 +111,7 @@ tape('fs with strings', async t => {
   t.ok(Buffer.isBuffer(result), 'res is buffer')
   t.equal(result.toString(), 'world', 'string matches')
   await cleanup()
+  t.ok(true, 'cleanup ok')
 })
 
 tape('fs with buffers', async t => {
@@ -123,6 +127,7 @@ tape('fs with buffers', async t => {
   t.equal(buf.toString('hex'), result.toString('hex'), 'buffer matches')
 
   await cleanup()
+  t.ok(true, 'cleanup ok')
 })
 
 // TODO: This test breaks CI.
