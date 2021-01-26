@@ -39,10 +39,8 @@ tape('simple replication', { timeout: 5000 }, async t => {
   await checkOne(t, collection, { type: 'doc' }, '1rev2', 'init collection1 ok')
   // await logCollection(collection2, cb)
   replicate(collection, collection2)
-    console.log('A')
   await collection2.sync()
   // await waitForUpdate(collection2)
-    console.log('B')
   // TODO: Find an event callback that tells us when colleciton2 has updated.
   await checkOne(t, collection2, { type: 'doc' }, '1rev2', 'init collection2 ok')
   const collection2localkey = collection2.localKey
