@@ -190,12 +190,12 @@ module.exports = function SonarServer (opts = {}) {
   async function close () {
     app.closing = true
     if (openPromise) await openPromise
-    const promises = [
-      api.workspace.close(),
-      new Promise(resolve => api.auth.close(resolve)),
-      new Promise(resolve => app.server.forceShutdown(resolve))
-    ]
-    await Promise.all(promises)
+    await new Promise(resolve => app.server.forceShutdown(resolve))
+    console.log('server closed')
+    await new Promise(resolve => api.auth.close(resolve))
+    console.log('auth closed')
+    await api.workspace.close()
+    console.log('workspace closed')
     app.closed = true
   }
 
