@@ -169,6 +169,8 @@ module.exports = function SonarServer (opts = {}) {
     devMiddleware.initBottom(app, config.server.dev)
   }
 
+  let openPromise, closePromise
+
   async function start () {
     await api.workspace.ready()
     await api.auth.open()
@@ -188,18 +190,16 @@ module.exports = function SonarServer (opts = {}) {
   }
 
   async function close () {
+    api.log.trace('Starting to close')
     app.closing = true
     if (openPromise) await openPromise
     await new Promise(resolve => app.server.forceShutdown(resolve))
-    console.log('server closed')
     await new Promise(resolve => api.auth.close(resolve))
-    console.log('auth closed')
+    api.log.trace('HTTP server closed')
     await api.workspace.close()
-    console.log('workspace closed')
+    api.log.trace('Workspace closed')
     app.closed = true
   }
-
-  let openPromise, closePromise
 
   app.start = function (cb) {
     if (!openPromise) openPromise = start()
