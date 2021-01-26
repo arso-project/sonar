@@ -2,6 +2,7 @@ const DatSDK = require('hyper-sdk')
 // TODO: Think about using the hyperspace daemon :-)
 // const DatSDK = require('hyper-sdk/hyperspace')
 const RAF = require('random-access-file')
+const RAM = require('random-access-memory')
 const p = require('path')
 const level = require('level')
 const levelMem = require('level-mem')
@@ -100,7 +101,11 @@ module.exports = class Workspace extends Nanoresource {
         ...this._opts,
         swarmOpts: this._opts.swarm || this._opts.swarmOpts
       }
-      sdkOpts.storage = file => RAF(this.storagePath('cores/' + file))
+      if (this._opts.persist === false) {
+        sdkOpts.storage = RAM
+      } else {
+        sdkOpts.storage = file => RAF(this.storagePath('cores/' + file))
+      }
       this._sdk = await DatSDK(sdkOpts)
       this._ownSDK = true
     } else {
