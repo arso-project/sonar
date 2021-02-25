@@ -1,0 +1,9 @@
+{
+  "name": "recommender",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "dependencies": {
+    "@arsonar/core": "^0.3.0-alpha.7"
+  }
+}
