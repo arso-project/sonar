@@ -10,7 +10,6 @@ async function batchToDiff (col, batch) {
 }
 
 async function createDiff (col, batch) {
-  console.log('create diff', col, batch)
   const records = new Set()
   const links = new Set()
   const left = new Set()
