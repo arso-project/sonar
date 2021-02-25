@@ -559,7 +559,8 @@ class Collection extends Nanoresource {
       try {
         record = new Record(this.schema, record)
         if (record.hasType(TYPE_FEED)) {
-          this._initFeed(record.value.key, record.value).catch(this._onerror)
+          const opts = { origin: record.key }
+          this._initFeed(record.value.key, record.value, opts).catch(this._onerror)
         }
         if (record.hasType(TYPE_TYPE)) {
           this._addTypeFromRecord(record)
@@ -771,10 +772,13 @@ class Collection extends Nanoresource {
       this.emit('feed-update', feed, 'download', seq)
     })
     feed.on('append', () => {
-      this.emit('feed-update', feed)
+      this.emit('feed-update', feed, 'append')
     })
     feed.on('remote-update', () => {
       this.emit('remote-update', feed)
+    })
+    feed.on('peer-open', (peer) => {
+      this.emit('peer-open', feed, peer)
     })
 
     // If the feed is unknown add it to the local feed store.
@@ -802,6 +806,14 @@ class Collection extends Nanoresource {
     // Note: null as second argument is needed, see
     // https://github.com/geut/hypercore-promise/issues/8
     feed.download({ start: 0, end: -1 }, null)
+
+    // Look for the feed in the swarm if added by myself
+    if (!opts.origin || opts.origin === this.localKey.toString('hex')) {
+      const networkPromise = this._workspace.network.configure(feed.discoveryKey, {
+        announce: true,
+        lookup: true
+      })
+    }
 
     this.emit('feed', feed, info)
     this.log.debug(`init feed [${info.type}] ${pretty(feed.key)} @ ${feed.length}`)
