@@ -19,7 +19,7 @@ const LevelMap = require('./utils/level-map')
 const { maybeCallback, noop } = require('./util')
 
 // Import for views - move into module.
-const { registerHyperdrive } = require('./fs')
+const registerHyperdrive = require('./fs')
 
 const DEFAULT_CONFIG = {
   share: true

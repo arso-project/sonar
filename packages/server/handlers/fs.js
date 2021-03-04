@@ -11,11 +11,10 @@ module.exports = function hyperdriveMiddleware (workspace) {
   const router = express.Router()
 
   router.use('/:drive', function (req, res, next) {
-    req.collection.fs.get(req.params.drive, (err, drive) => {
-      if (err) return next(err)
+    req.collection.drive(req.params.drive).then(drive => {
       req.drive = drive
       next()
-    })
+    }).catch(err => next(err))
   })
   router.get('/:drive/*', onget)
   router.put('/:drive/*', onput)
