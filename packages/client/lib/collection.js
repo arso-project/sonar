@@ -18,19 +18,19 @@ class Collection extends EventEmitter {
   }
 
   /**
-   * Create a collection instance
+   * Remote collection
    *
    * @constructor
-   * @param {Client} client - A client instance.
-   * @param {string} name - Name of the collection.
+   * @param {Workspace} workspace - Remote workspace
+   * @param {string} nameOrKey - Name or key of the collection
    * @return {Collection}
    */
-  constructor (client, name) {
+  constructor (client, nameOrKey) {
     super()
-    this.endpoint = client.endpoint + '/collection/' + name
+    this.endpoint = client.endpoint + '/collection/' + nameOrKey
     this._client = client
     this._info = {}
-    this._name = name
+    this._nameOrKey = nameOrKey
     this._eventStreams = new Set()
 
     this.fs = new Fs(this)
@@ -40,7 +40,7 @@ class Collection extends EventEmitter {
 
   get name () {
     if (this._info) return this._info.name
-    return this._name
+    return this._nameOrKey
   }
 
   get key () {
@@ -60,7 +60,7 @@ class Collection extends EventEmitter {
   }
 
   /**
-   * Populates info and schemas for this collection from server.
+   * Populate info and schemas for this collection from server.
    *
    * @async
    * @throws Will throw if this collection does not exist or cannot be accessed.
@@ -107,19 +107,30 @@ class Collection extends EventEmitter {
   }
 
   /**
-   * Query the database. Returns an array of matching records.
+   * Query the collection.
+   *
+   * Returns an array of matching records.
+   *
    * Records may have a meta property that includes query-specific metadata (e.g. the score for search queries).
    *
    * @async
-   * @param {string} name - The name of a supported query. Options at the moment are search, records, history and indexes.
+   * @param {string} name - The name of a supported query.
+   *                        Supported queries that ship with @arsonar/core are:
+   *                        records, search, relations, history and indexes.
    * @param {object} args - The arguments for the query. Depends on the query being used.
-   *                         For records: { schema, name, id }
-   *                         For history: { from: timestamp, to: timestamp }
-   *                         For search: Either a "string" for a simple full-text search, or an tantivy query object (to be documented)
-   *                         For indexes: { schema, prop, value, from, to, reverse, limit } (to be documented)
+   *                        For records: `{ schema, name, id }`
+   *                        For history: `{ from: timestamp, to: timestamp }`
+   *                        For search: Either a "string" for a simple full-text search, or a
+   *                           tantivy query object.
+   *                        For indexes: `{ schema, prop, value, from, to, reverse, limit }`
+   *                           (to be documented)
+   *                        For relations: `{ subject, object, predicate }`
+   *                           where subject and object are ids and predicate is `type#field`
+   *
    * @param {object} [opts] - Optional options
-   * @param {boolean} [opts.waitForSync=false] Wait for all pending indexing operations to be finished.
-   * @return {Promise<Array<object>>} A promise that resolves to an array of record objects.
+   * @param {boolean} [opts.sync=false] Wait for all pending indexing operations to be finished.
+   *
+   * @return {Promise<Array<Record>>} A promise that resolves to an array of record objects.
    */
   async query (name, args, opts) {
     if (this._cacheid) {
@@ -153,7 +164,7 @@ class Collection extends EventEmitter {
   }
 
   /**
-   * Put a new record into the database.
+   * Put a new record into the collection.
    *
    * @async
    * @param {object} record - The record.
@@ -173,12 +184,12 @@ class Collection extends EventEmitter {
   }
 
   /**
-   * Get records by schema and id. Returns an array of matching records.
+   * Get records by their semantic address (type and id) or by their storage address (key and seq).
    *
    * @async
-   * @param {object} req - The get request. Should either be `{ schema, id }` or `{ key, seq }`.
+   * @param {object} req - The get request. Either `{ type, id }` or `{ key, seq }`.
    * @param {object} [opts] - Optional options.
-   * @param {boolean} [opts.waitForSync=false] Wait for all pending indexing operations to be finished.
+   * @param {boolean} [opts.sync=false] Wait for all pending indexing operations to be finished.
    * @return {Promise<Array<object>>} A promise that resolves to an array of record objects.
    */
   async get (req, opts) {
@@ -193,8 +204,8 @@ class Collection extends EventEmitter {
    * Deletes a record.
    *
    * @async
-   * @param {object} record - The record to delete. Has to have `{ id, schema }` properties set.
-   * @return {Promise<object>} - An object with `{ id, schema }` properties of the deleted record.
+   * @param {object} record - The record to delete. Has to have `{ id, type }` properties set.
+   * @return {Promise<object>} - An object with `{ id, type }` properties of the deleted record.
    */
   async del (record) {
     return this.fetch('/db/' + record.id, {
@@ -204,7 +215,7 @@ class Collection extends EventEmitter {
   }
 
   /**
-   * Adds a new type to the collection.
+   * Add a new type to the collection.
    *
    * @async
    * @param {object} schema - A schema object.
@@ -219,6 +230,18 @@ class Collection extends EventEmitter {
     })
   }
 
+  /**
+   * Create a writable stream to put records into the collection.
+   *
+   * Example:
+   * ```javascript
+   * const batchStream = collection.createBatchStream()
+   * batch.write(record)
+   * batch.close()
+   * ```
+   *
+   * @return {Writable<Record>} A writable stream
+   */
   createBatchStream () {
     const self = this
     const stream = new Transform({

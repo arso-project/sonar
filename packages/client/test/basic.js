@@ -101,7 +101,7 @@ tape('get and delete record', async t => {
   t.ok(true, 'cleanup ok')
 })
 
-tape('fs with strings', async t => {
+tape.skip('fs with strings', async t => {
   const { client, cleanup } = await createOne({ network: false })
   const collection = await client.createCollection('test')
 
@@ -114,7 +114,7 @@ tape('fs with strings', async t => {
   t.ok(true, 'cleanup ok')
 })
 
-tape('fs with buffers', async t => {
+tape.skip('fs with buffers', async t => {
   const { client, cleanup } = await createOne({ network: false })
   const collection = await client.createCollection('test')
 

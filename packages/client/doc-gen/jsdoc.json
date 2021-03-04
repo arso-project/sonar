@@ -4,13 +4,13 @@
         "dictionaries": ["jsdoc"]
     },
     "source": {
-        "include": ["lib", "package.json", "README.md"],
-        "includePattern": ".js$",
-        "excludePattern": "(node_modules/|apidocs)"
+        "include": ["index.js", "README.md"],
+        "excludePattern": "(node_modules/|apidocs|build|dist|doc-gen)"
     },
     "plugins": [
         "plugins/markdown"
     ],
+    "readme": "README.md",
     "templates": {
         "cleverLinks": false,
         "monospaceLinks": true,
@@ -22,6 +22,6 @@
         "encoding": "utf8",
         "private": true,
         "recurse": true,
-        "template": "../node_modules/minami"
+        "template": "../../node_modules/minami"
     }
 }
