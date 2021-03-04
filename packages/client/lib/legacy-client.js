@@ -1,8 +1,8 @@
-const Client = require('./client')
+const Workspace = require('./workspace')
 const { DEFAULT_COLLECTION } = require('./constants')
 const SearchQueryBuilder = require('./searchquerybuilder')
 
-module.exports = class LegacyClient extends Client {
+module.exports = class LegacyClient extends Workspace {
   constructor (opts) {
     super(opts)
     this._focus = null

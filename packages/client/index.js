@@ -1,11 +1,11 @@
 const LegacyClient = require('./lib/legacy-client')
 const SearchQueryBuilder = require('./lib/searchquerybuilder')
-const Client = require('./lib/client')
+const Workspace = require('./lib/workspace')
 
 let globalClient = null
 
 function setup (opts) {
-  globalClient = new Client(opts)
+  globalClient = createClient(opts)
   return globalClient
 }
 
@@ -18,7 +18,7 @@ function createClient (...args) {
 }
 
 module.exports = Object.assign(createClient, {
-  Client,
+  Workspace,
   SonarClient: LegacyClient,
   SearchQueryBuilder,
   client,

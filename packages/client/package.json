@@ -8,8 +8,8 @@
     "build": "rollup --config",
     "test": "tape test/*.js",
     "doc": "run-p doc:*",
-    "doc:md": "jsdoc2md --files lib/client.js lib/collection.js lib/fs.js --param-list-format list --separators --partial doc-gen/scope.hbs --helper doc-gen/helpers.js > api.md",
-    "doc:html": "rm -rf apidocs && jsdoc --configure doc-gen/jsdoc.json --verbose . && mv apidocs/@arsonar/client/*/* apidocs && rm -r apidocs/@arso-project",
+    "doc:md": "jsdoc2md --files lib/workspace.js lib/collection.js lib/fs.js --param-list-format list --separators --partial doc-gen/scope.hbs --helper doc-gen/helpers.js > api.md",
+    "doc:html": "rm -rf apidocs && jsdoc --configure doc-gen/jsdoc.json --verbose . && mv apidocs/@arsonar/client/*/* apidocs && rm -r apidocs/@arsonar",
     "doc:tsd": "jsdoc -t ../node_modules/tsd-jsdoc/dist -r ."
   },
   "author": "",

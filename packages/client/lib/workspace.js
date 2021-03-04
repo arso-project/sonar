@@ -11,9 +11,9 @@ const {
   DEFAULT_ENDPOINT
 } = require('./constants')
 
-class Client {
+class Workspace {
   /**
-   * Creates a new Client to communicate with a Sonar server.
+   * The manager for a remote connection to a Sonar workspace.
    *
    * @constructor
    * @param {object} [opts] - Optional options.
@@ -59,12 +59,12 @@ class Client {
   }
 
   async _open () {
-    await this.login()
+    await this._login()
     this.opened = true
   }
 
   // TODO: Support re-logins
-  async login () {
+  async _login () {
     if (this._accessCode && !this._token) {
       const res = await this.fetch('/login', { params: { code: this._accessCode }, method: 'POST', opening: true })
       const token = res.token
@@ -73,7 +73,7 @@ class Client {
   }
 
   /**
-   * Get a list of all collections available on this server.
+   * Get a list of all collections available on this endpoint.
    *
    * @async
    * @return {Promise.<object[]>} Promise that resolves to an array of collection info objects.
@@ -208,4 +208,4 @@ class Client {
   }
 }
 
-module.exports = Client
+module.exports = Workspace
