@@ -1,0 +1,23 @@
+namespace: sonar
+name: type
+title: Type
+version: 1
+fields:
+  name:
+    type: string
+    title: Name
+    index:
+      basic: true
+  namespace:
+    type: string
+    name: Namespace
+  title:
+    type: string
+    title: Title
+  description:
+    type: string
+    title: Description
+  fields:
+    type: object
+    additionalProperties:
+      type: object

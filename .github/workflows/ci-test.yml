@@ -12,7 +12,7 @@ jobs:
         # disabled windows for now. needs to be fixed.
         # os: [ubuntu-latest, macOS-latest, windows-latest]
         os: [ubuntu-latest, macOS-latest]
-        node-version: [10.x, 12.x, 13.x]
+        node-version: [12.x, 14.x]
 
     steps:
     - uses: actions/checkout@v2
@@ -23,7 +23,7 @@ jobs:
     - run: yarn install
     - run: yarn test
       env:
-        DEBUG: "*,-express*,-hypercore-protocol*,-body-parser*,-babel*,-send,-time"
+        # DEBUG: "*,-express*,-hypercore-protocol*,-body-parser*,-babel*,-send,-time"
         RUST_LOG: "debug"
         RUST_BACKTRACE: 1
         CI: true

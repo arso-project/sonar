@@ -8,9 +8,9 @@
 # $HOME/.yarn/bin, which
 # which likely is in your $PATH.
 # if not, add it to your .bashrc or .zshrc
-for PACKAGE in sonar-client sonar-ui sonar-server sonar-core
+for PACKAGE in client ui server core
 do
-  cd $PACKAGE
+  cd packages/$PACKAGE
   yarn link
-  cd ..
+  cd ../..
 done

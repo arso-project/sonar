@@ -13,7 +13,7 @@ The **[Docs website](https://sonar.dev.arso.xyz)** has more documentation (WIP).
 ## Installation
 
 ```sh
-npm install -g @arso-project/sonar-server
+npm install -g @arsonar/server
 sonar help
 sonar start
 ```
@@ -79,12 +79,12 @@ More on this project on [arso.xyz](https://arso.xyz).
 
 The repo is structured as a monorepo of different packages (that are interdependent at several points). 
 
-* **[sonar-core](sonar-core/README.md)** it the core module. It manages *collections*, which are our notion of "a group of feeds*. Each collection has a [kappa-record-db](https://github.com/arso-project/kappa-record-db) that's plugged into a search index through [sonar-tantivy](https://github.com/arso-project/sonar-tantivy). Each collection has also a list of associated [hyperdrives](https://github.com/mafintosh/hyperdrive).
+* **[core](packages/core/README.md)** it the core module. It manages *collections*, which are our notion of "a group of feeds*. Each collection has a [kappa-record-db](https://github.com/arso-project/kappa-record-db) that's plugged into a search index through [tantivy](https://github.com/arso-project/packages/tantivy). Each collection has also a list of associated [hyperdrives](https://github.com/mafintosh/hyperdrive).
 
-* **[sonar-server](sonar-server/README.md)** provides a REST style HTTP api that's used both by the CLI and the UI to access and manage the data in sonar-core.
+* **[server](packages/server/README.md)** provides a REST style HTTP api that's used both by the CLI and the UI to access and manage the data in packages/core.
 
-* **[sonar-client](sonar-client/README.md)** is a Javascript client library. It's used by both the CLI and the UI. It speaks to sonar-server over HTTP.
+* **[client](packages/client/README.md)** is a Javascript client library. It's used by both the CLI and the UI. It speaks to packages/server over HTTP.
 
-* **[sonar-ui](sonar-ui/README.md)** is a single-page application to browse data in Sonar.
+* **[ui](packages/ui/README.md)** is a single-page application to browse data in Sonar.
 
-* **[sonar-cli](sonar-cli/README.md)** is a command-line application. It can manage collections, put and get into the database, upload and download files, and make search queries.
+* **[cli](packages/cli/README.md)** is a command-line application. It can manage collections, put and get into the database, upload and download files, and make search queries.

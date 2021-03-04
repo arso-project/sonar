@@ -1,0 +1,27 @@
+{
+    "tags": {
+        "allowUnknownTags": true,
+        "dictionaries": ["jsdoc"]
+    },
+    "source": {
+        "include": ["index.js", "README.md"],
+        "excludePattern": "(node_modules/|apidocs|build|dist|doc-gen)"
+    },
+    "plugins": [
+        "plugins/markdown"
+    ],
+    "readme": "README.md",
+    "templates": {
+        "cleverLinks": false,
+        "monospaceLinks": true,
+        "useLongnameInNav": false,
+        "showInheritedInNav": true
+    },
+    "opts": {
+        "destination": "./apidocs/",
+        "encoding": "utf8",
+        "private": true,
+        "recurse": true,
+        "template": "../../node_modules/minami"
+    }
+}

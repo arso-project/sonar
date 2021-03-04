@@ -1,0 +1,25 @@
+syntax = "proto2";
+
+// The Header is DEP-0007 compatible.
+// It is written as the first message to every feed.
+// Metadata is currently empty.
+message Header {
+  required string type = 1;
+  optional bytes metadata = 2;
+}
+
+message Record {
+  enum Op {
+    PUT = 0;
+    DEL = 1;
+  }
+  required string id = 1;
+  // TODO: Remove
+  optional Op op = 2;
+  required string type = 3;
+  optional bytes value = 4;
+  optional uint32 timestamp = 5;
+  repeated string links = 6;
+  optional string typeVersion = 7;
+  optional bool deleted = 8;
+}

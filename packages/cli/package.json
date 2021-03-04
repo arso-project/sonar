@@ -1,0 +1,32 @@
+{
+  "name": "@arsonar/cli",
+  "version": "0.3.0-alpha.7",
+  "description": "",
+  "main": "cli.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "GPL-3.0",
+  "dependencies": {
+    "@arsonar/client": "^0.3.0-alpha.7",
+    "ansi-styles": "^4.2.1",
+    "chalk": "^4.0.0",
+    "date-fns": "^2.11.1",
+    "debug": "^4.1.1",
+    "mime-types": "^2.1.26",
+    "pretty-bytes": "^5.3.0",
+    "pretty-hash": "^1.0.1",
+    "speedometer": "^1.1.0",
+    "stream-collector": "^1.0.1",
+    "text-table": "^0.2.0",
+    "yargs": "^15.3.1"
+  },
+  "pkg": {
+    "scripts": "bin/**"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

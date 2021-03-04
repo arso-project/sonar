@@ -1,0 +1,152 @@
+[
+  {
+    "namespace": "sonar",
+    "name": "entity",
+    "title": "Entity",
+    "fields": {
+      "label": {
+        "type": "string",
+        "name": "Label",
+        "index": {
+          "basic": true
+        }
+      },
+      "about": {
+        "type": "string",
+        "name": "About"
+      }
+    }
+  },
+  {
+    "namespace": "sonar",
+    "name": "feed",
+    "title": "Feed",
+    "refines": "sonar.entity",
+    "fields": {
+      "type": {
+        "type": "string",
+        "title": "Type"
+      },
+      "key": {
+        "type": "string",
+        "pattern": "^[0-9a-f]{64}$",
+        "title": "key"
+      },
+      "alias": {
+        "type": "string",
+        "title": "Alias"
+      },
+      "parent": {
+        "type": "relation",
+        "targetKind": "record",
+        "targetTypes": [
+          "sonar.feed"
+        ],
+        "title": "Parent"
+      },
+      "description": {
+        "type": "string",
+        "title": "Description"
+      }
+    }
+  },
+  {
+    "name": "resource",
+    "namespace": "sonar",
+    "title": "Resource",
+    "fields": {
+      "filename": {
+        "type": "string",
+        "title": "Filename",
+        "refines": "sonar/entity#label"
+      },
+      "description": {
+        "type": "string",
+        "title": "Description"
+      },
+      "contentUrl": {
+        "type": "string",
+        "format": "uri",
+        "title": "URL to file",
+        "index": {
+          "basic": true
+        }
+      },
+      "contentSize": {
+        "type": "number",
+        "title": "File size"
+      },
+      "contentHash": {
+        "type": "string",
+        "title": "Content hash",
+        "index": {
+          "basic": true
+        }
+      },
+      "encodingFormat": {
+        "type": "string",
+        "title": "Encoding format (MIME type)",
+        "index": {
+          "basic": true,
+          "search": {
+            "mode": "facet"
+          }
+        }
+      },
+      "duration": {
+        "type": "number",
+        "title": "Duration in seconds"
+      },
+      "mediaType": {
+        "type": "string",
+        "title": "Media type",
+        "enum": [
+          "audio",
+          "video",
+          "image",
+          "document",
+          "other"
+        ],
+        "index": {
+          "basic": true,
+          "search": {
+            "mode": "facet"
+          }
+        }
+      }
+    }
+  },
+  {
+    "namespace": "sonar",
+    "name": "type",
+    "title": "Type",
+    "version": 1,
+    "fields": {
+      "name": {
+        "type": "string",
+        "title": "Name",
+        "index": {
+          "basic": true
+        }
+      },
+      "namespace": {
+        "type": "string",
+        "name": "Namespace"
+      },
+      "title": {
+        "type": "string",
+        "title": "Title"
+      },
+      "description": {
+        "type": "string",
+        "title": "Description"
+      },
+      "fields": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "object"
+        }
+      }
+    }
+  }
+]

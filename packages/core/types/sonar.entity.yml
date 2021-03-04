@@ -1,0 +1,13 @@
+namespace: sonar
+name: entity
+title: Entity
+fields:
+  label:
+    type: string
+    name: Label
+    index:
+      basic: true
+  about:
+    type: string
+    name: About
+

@@ -1,0 +1,23 @@
+namespace: sonar
+name: feed
+title: Feed
+refines: sonar.entity
+fields:
+  type:
+    type: string
+    title: Type
+  key:
+    type: string
+    pattern: '^[0-9a-f]{64}$'
+    title: key
+  alias:
+    type: string
+    title: Alias
+  parent:
+    type: relation
+    targetKind: record
+    targetTypes: ['sonar.feed']
+    title: Parent
+  description:
+    type: string
+    title: Description
