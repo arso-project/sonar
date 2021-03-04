@@ -2,7 +2,7 @@ const IndexManager = require('./index-manager')
 const doQuery = require('./query')
 
 // const log = require('../../lib/log').child({ component: 'view-sonar' })
-const { clock } = require('../../lib/util')
+const { clock } = require('./util')
 
 module.exports = searchView
 

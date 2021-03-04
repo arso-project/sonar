@@ -1,7 +1,7 @@
 {
-  "name": "@arsonar/view-relations",
+  "name": "@arsonar/plugin-relations",
   "version": "0.3.0-alpha.7",
-  "main": "index.js",
+  "main": "plugin.js",
   "license": "MIT",
   "scripts": {
     "test": "tape test/*.js"

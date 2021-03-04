@@ -13,9 +13,9 @@
   "author": "arso team <hi@arso.xyz>",
   "license": "GPL-3.0",
   "dependencies": {
-    "@arso-project/sonar-tantivy": "^0.2.14",
     "@arsonar/common": "^0.3.0-alpha.7",
-    "@arsonar/view-relations": "^0.3.0-alpha.7",
+    "@arsonar/plugin-relations": "^0.3.0-alpha.7",
+    "@arsonar/plugin-search": "^0.3.0-alpha.7",
     "@frando/level-live": "^1.1.0",
     "base32": "^0.0.6",
     "charwise": "^3.0.1",

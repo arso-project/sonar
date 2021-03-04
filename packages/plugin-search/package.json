@@ -1,0 +1,17 @@
+{
+  "name": "@arsonar/plugin-search",
+  "version": "0.3.0-alpha.7",
+  "main": "plugin.js",
+  "license": "MIT",
+  "scripts": {
+    "test": "tape test/*.js"
+  },
+  "dependencies": {
+    "@arso-project/sonar-tantivy": "^0.2.14",
+    "through2": "^4.0.2"
+  },
+  "devDependencies": {
+    "tape": "^5.0.1",
+    "@arsonar/core": "^0.3.0-alpha.7"
+  }
+}

@@ -19,10 +19,7 @@ const LevelMap = require('./utils/level-map')
 const { maybeCallback, noop } = require('./util')
 
 // Import for views - move into module.
-const Catalog = require('@arso-project/sonar-tantivy')
-const createSearchView = require('../views/search')
-const Relations = require('@arsonar/view-relations')
-const { useHyperdrive } = require('./fs')
+const { registerHyperdrive } = require('./fs')
 
 const DEFAULT_CONFIG = {
   share: true
@@ -31,34 +28,6 @@ const DEFAULT_CONFIG = {
 function defaultStoragePath (opts) {
   const os = require('os')
   return p.join(os.homedir(), '.sonar')
-}
-
-function useSearch (workspace) {
-  const indexCatalog = new Catalog(workspace.storagePath('tantivy'))
-  workspace.on('collection-opening', collection => {
-    const view = createSearchView(
-      collection._leveldb('view/search'),
-      null,
-      { collection, indexCatalog }
-    )
-    collection.use('search', view)
-  })
-  workspace.on('close', () => {
-    indexCatalog.close()
-  })
-}
-
-function useRelations (workspace) {
-  const relations = new Relations(workspace.LevelDB('relations'))
-  workspace.on('collection-open', collection => {
-    collection.use('relations', relations.createView(collection))
-  })
-}
-
-function useDefaultViews (workspace) {
-  useSearch(workspace)
-  useRelations(workspace)
-  useHyperdrive(workspace)
 }
 
 module.exports = class Workspace extends Nanoresource {
@@ -72,8 +41,18 @@ module.exports = class Workspace extends Nanoresource {
 
     this.log = opts.log || createLogger()
 
-    if (opts.defaultViews !== false) {
-      this.registerPlugin(useDefaultViews)
+    if (opts.defaultPlugins !== false) {
+      const defaultPlugins = require('./default-plugins')
+      for (const plugin of defaultPlugins) {
+        this.registerPlugin(plugin)
+      }
+      this.registerPlugin(registerHyperdrive)
+    }
+
+    if (opts.plugins) {
+      for (const plugin of opts.plugins) {
+        this.registerPlugin(plugin)
+      }
     }
   }
 

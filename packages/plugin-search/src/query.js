@@ -1,8 +1,8 @@
 const { Readable } = require('stream')
 const through = require('through2')
-// const log = require('../../lib/log').child({ component: 'view-sonar' })
 const debug = require('debug')('sonar-core:search')
-const { clock } = require('../../lib/util')
+// const log = require('../../lib/log').child({ component: 'view-sonar' })
+const { clock } = require('./util')
 
 module.exports = function doQuery (indexManager, query, indexName) {
   indexName = indexName || 'textdump'

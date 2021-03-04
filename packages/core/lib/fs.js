@@ -6,7 +6,7 @@ const collect = require('stream-collector')
 const DRIVES = 'd!'
 const LOCALW = 'w!'
 
-function useHyperdrive (workspace) {
+function registerHyperdrive (workspace) {
   workspace.on('collection-opening', onCollectionOpen)
 }
 
@@ -265,4 +265,4 @@ function once (fn) {
 }
 
 module.exports = SonarHyperdrive
-module.exports.useHyperdrive = useHyperdrive
+module.exports.registerHyperdrive = registerHyperdrive
