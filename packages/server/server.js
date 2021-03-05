@@ -214,11 +214,13 @@ module.exports = function SonarServer (opts = {}) {
   }
 
   // Ensure everything gets closed when the node process exits.
-  onexit((cb) => {
-    app.close(() => {
-      cb()
-    })
-  })
+  // TODO: This is disabled for now because it makes tests take forever sometimes.
+  // Likely we only want to enable this only if not in test mode (to catch Ctrl-C).
+  // onexit((cb) => {
+  //   app.close(() => {
+  //     cb()
+  //   })
+  // })
 
   return app
 }

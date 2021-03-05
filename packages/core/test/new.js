@@ -83,7 +83,6 @@ async function setup (collection) {
     type: 'doc',
     value: { title: 'hello' }
   })
-  await collection.sync()
 }
 
 function runTests (create) {
@@ -116,8 +115,7 @@ function runTests (create) {
 
     const c2 = w2.Collection(c1.key)
     await c2.open()
-
-    await waitForUpdate(c2)
+    await c2.sync()
 
     let res = await c2.query('records', { type: 'doc' })
     t.equal(res.length, 1, 'c2 len ok')
@@ -142,7 +140,7 @@ function runTests (create) {
 
     async function waitForUpdate (col) {
       await new Promise(resolve => col.once('update', resolve))
-      await col.update()
+      await col.sync()
     }
   })
 
@@ -158,6 +156,7 @@ function runTests (create) {
     const storagePath = workspace._storagePath
 
     await workspace.close()
+    await timeout(100)
 
     workspace = new Workspace({ storagePath, sdk })
     await workspace.ready()
@@ -168,6 +167,7 @@ function runTests (create) {
     t.equal(type2.name, 'doc')
     t.deepEqual(type1, type2)
     await workspace.close()
+    await timeout(100)
 
     workspace = new Workspace({ storagePath, sdk })
     await workspace.ready()

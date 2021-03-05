@@ -20,10 +20,17 @@ async function onCollectionOpen (collection) {
   // TODO: Move into collection.api
   collection.drive = getDrive
 
+  // Create a live stream for future drives being added to the collection.
+  collection.createQueryStream(
+    'records',
+    { type: 'sonar/feed' },
+    { live: true, old: false }
+  ).on('data', onFeedRecord)
+
   // Query for hyperdrive feeds in the corrent collection.
   const rs = collection.createQueryStream('records', { type: 'sonar/feed' })
+  rs.on('data', onFeedRecord)
   await new Promise((resolve, reject) => {
-    rs.on('data', onFeedRecord)
     rs.once('error', reject)
     rs.once('end', resolve)
   })
@@ -33,13 +40,6 @@ async function onCollectionOpen (collection) {
   if (!map.has('~me')) {
     await initLocalDrive()
   }
-
-  // Create a live stream for future drives being added to the collection.
-  collection.createQueryStream(
-    'records',
-    { type: 'sonar/feed' },
-    { live: true, old: false }
-  ).on('data', onFeedRecord)
 
   async function getDrive (keyOrAlias) {
     if (!map.has(keyOrAlias)) throw new Error('Drive not found: ' + keyOrAlias)

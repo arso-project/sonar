@@ -932,11 +932,6 @@ class Batch {
   async _append (record, opts = {}) {
     try {
       if (!this.locked) await this._lock()
-      if (!this.synced) {
-        await this.collection.sync('kv')
-        this.synced = true
-      }
-
       if (!record.id) record.id = uuid()
 
       // Upcast record
@@ -983,6 +978,9 @@ class Batch {
 
     try {
       await Promise.all(promises)
+      // Wait for the transaction to "commit".
+      // TODO: Make extra-sure that this cannot deadlock.
+      await this.collection.sync('kv')
     } finally {
       this._unlock()
     }
