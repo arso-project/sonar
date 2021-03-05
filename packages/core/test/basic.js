@@ -25,66 +25,28 @@ tape('put and get 1', async t => {
   await cleanup()
 })
 
-tape('batch and query', t => {
-  createStore({ network: false }, (err, workspace, cleanup) => {
-    t.error(err, 'tempdir ok')
-    workspace.create('first', (err, collection) => {
-      t.error(err, 'collection created')
-
-      const records = [
-        { title: 'Hello world', body: 'so rough' },
-        { title: 'Hello moon', body: 'so dark' }
-      ]
-
-      collection.schema.addType({
-        name: 'doc',
-        fields: {
-          title: { type: 'string' },
-          body: { type: 'String' }
-        }
-      })
-
-      runAll([
-        next => {
-          const batch = records.map(value => ({ op: 'put', type: 'doc', value }))
-          // console.log('put batch')
-          collection.batch(batch, (err, res) => {
-            // console.log('did put batch')
-            t.error(err, 'batch ok')
-            t.equal(res.length, 2)
-            next()
-          })
-        },
-        next => {
-          collection.query('search', 'hello', { waitForSync: true }, (err, res) => {
-            t.error(err)
-            t.equal(res.length, 2, 'hello search')
-            // console.log(res)
-            const titles = res.map(r => r.value.title).sort()
-            t.deepEqual(titles, ['Hello moon', 'Hello world'], 'hello results ok')
-            next(err)
-          })
-        },
-        next => {
-          collection.query('search', 'moon', (err, res) => {
-            t.error(err)
-            t.equal(res.length, 1, 'moon search')
-            const titles = res.map(r => r.value.title).sort()
-            t.deepEqual(titles, ['Hello moon'], 'moon results ok')
-            next()
-          })
-        },
-        next => {
-          collection.query('records', { type: 'doc' }, (err, res) => {
-            t.error(err)
-            t.equal(res.length, 2)
-            next()
-          })
-        },
-        next => cleanup(next)
-      ]).catch(err => t.fail(err)).then(() => t.end())
-    })
-  })
+tape.only('batch and query', async t => {
+  const { cleanup, workspace } = await createOne()
+  const collection = await workspace.openCollection('first')
+  const records = [
+    { title: 'Hello world', body: 'so rough' },
+    { title: 'Hello moon', body: 'so dark' }
+  ]
+  await collection.putType({ name: 'doc', fields: { title: { type: 'string', body: { type: 'String' } } } })
+  const batch = records.map(value => ({ op: 'put', type: 'doc', value }))
+  await collection.batch(batch)
+  await collection.sync()
+  let res = await collection.query('search', 'hello', { sync: true })
+  t.equal(res.length, 2, 'hello search')
+  let titles = res.map(r => r.value.title).sort()
+  t.deepEqual(titles, ['Hello moon', 'Hello world'], 'hello results ok')
+  res = await collection.query('search', 'moon')
+  t.equal(res.length, 1, 'moon search')
+  titles = res.map(r => r.value.title).sort()
+  t.deepEqual(titles, ['Hello moon'], 'moon results ok')
+  res = await collection.query('records', { type: 'doc' })
+  t.equal(res.length, 2)
+  await cleanup()
 })
 
 tape('share and unshare workspace', t => {
