@@ -151,39 +151,4 @@ module.exports = class LegacyClient extends Workspace {
     const collection = await this.focusedCollection()
     return collection.ackSubscription(name, cursor)
   }
-
-  // Commands
-  async initCommandStream (opts = {}) {
-    return this.openCommandStream(opts)
-  }
-
-  async initCommandClient (opts = {}) {
-    await this.openCommandStream(opts)
-    return this.commands
-  }
-
-  async openCommandStream (opts = {}) {
-    await this.commands.open()
-    return this.commands
-  }
-
-  async callCommand (command, args) {
-    const collection = await this.focusedCollection()
-    const env = { collection: collection.name }
-    return this.commands.call(command, args, env)
-  }
-
-  async callCommandStreaming (command, args) {
-    const collection = await this.focusedCollection()
-    const env = { collection: collection.name }
-    return this.commands.callStreaming(command, args, env)
-  }
-
-  async createQueryStream (name, args, opts) {
-    return this.callCommandStreaming('@collection query', [name, args, opts])
-  }
-
-  async createSubscriptionStream (name, opts = {}) {
-    return this.callCommandStreaming('@collection subscribe', [name, opts])
-  }
 }
