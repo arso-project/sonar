@@ -47,7 +47,7 @@ tape('batch and query', async t => {
   await cleanup()
 })
 
-tape.only('share and unshare workspace', async t => {
+tape('share and unshare workspace', async t => {
   const { cleanup, workspace } = await createOne()
   const collection = await workspace.createCollection('default')
   const config = await collection.getConfig()
@@ -56,23 +56,22 @@ tape.only('share and unshare workspace', async t => {
   const status = await collection.status()
   t.equal(status.network.announce, true, 'collection network init shared')
   t.equal(status.network.lookup, true, 'collection network init shared')
-  await collection.configure({share: false})
-  const config_unshare = await collection.getConfig()
-  t.equal(config_unshare.share, false, 'collection updated config not shared')
-  const status_unshare = await collection.status()
-  t.false(status_unshare.network, 'collection updated network not shared')
+  await collection.configure({ share: false })
+  const config2 = await collection.getConfig()
+  t.equal(config2.share, false, 'collection updated config not shared')
+  const status2 = await collection.status()
+  t.false(status2.network, 'collection updated network not shared')
   await cleanup()
 })
 
 tape('close collection', async t => {
-  const {cleanup, workspace} = await createOne()
+  const { cleanup, workspace } = await createOne()
   const collection = await workspace.openCollection('collection')
   t.true(collection.opened, 'opened property set')
   await collection.close()
   t.true(collection.closed, 'closed property set')
   await cleanup()
 })
-
 
 // TODO: This behavior was removed in the recent refactor - creating a collection
 // more than once does not fail but just returns the same collection.
