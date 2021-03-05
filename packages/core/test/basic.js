@@ -114,23 +114,15 @@ tape('share and unshare workspace', t => {
   })
 })
 
-tape('close collection', t => {
-  createStore({ network: false }, (err, workspace, cleanup) => {
-    t.error(err, 'tempdir ok')
-    workspace.create('collection', (err, collection) => {
-      t.error(err, 'collection created')
-      t.true(collection.opened, 'opened property set')
-      collection.close(err => {
-        t.error(err, 'collection closed')
-        t.true(collection.closed, 'closed property set')
-        cleanup(err => {
-          t.error(err)
-          t.end()
-        })
-      })
-    })
-  })
+tape('close collection', async t => {
+  const {cleanup, workspace} = await createOne()
+  const collection = await workspace.openCollection('collection')
+  t.true(collection.opened, 'opened property set')
+  await collection.close()
+  t.true(collection.closed, 'closed property set')
+  await cleanup()
 })
+
 
 // TODO: This behavior was removed in the recent refactor - creating a collection
 // more than once does not fail but just returns the same collection.
