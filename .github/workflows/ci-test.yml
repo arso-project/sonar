@@ -11,7 +11,9 @@ jobs:
       matrix:
         # disabled windows for now. needs to be fixed.
         # os: [ubuntu-latest, macOS-latest, windows-latest]
-        os: [ubuntu-latest, macOS-latest]
+        # disabled macos for now, macos github actions do not start at the moment..
+        # os: [ubuntu-latest, macOS-latest]
+        os: [ubuntu-latest]
         node-version: [12.x, 14.x]
 
     steps:
