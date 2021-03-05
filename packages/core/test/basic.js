@@ -149,19 +149,10 @@ tape.skip('create collection with same name', t => {
   })
 })
 
-tape('query empty collection', t => {
-  createStore({ network: false }, (err, workspace, cleanup) => {
-    t.error(err)
-    workspace.create('collection', (err, collection) => {
-      t.error(err)
-      collection.query('search', 'anything', { waitForSync: true }, (err, res) => {
-        t.error(err, 'query on empty collection')
-        t.deepEquals(res, [], 'empty result')
-        cleanup(err => {
-          t.error(err)
-          t.end()
-        })
-      })
-    })
-  })
+tape('query empty collection', async t => {
+  const {cleanup, workspace} = await createOne()
+  const collection = await workspace.openCollection('collection')
+  const result = await collection.query('search', 'anything', { sync: true })
+  t.deepEquals(result, [], 'empty result')
+  await cleanup()
 })
