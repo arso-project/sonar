@@ -47,7 +47,7 @@ tape('simple replication', { timeout: 5000 }, async t => {
   await collection.putFeed(collection2localkey, { alias: 'w2' })
   await collection.sync()
   await collection2.put(doc('2rev1', id))
-  await waitForUpdate(collection)
+  // await waitForUpdate(collection)
   await checkOne(t, collection, { type: 'doc' }, '2rev1', 'end collection1 ok')
   await checkOne(t, collection2, { type: 'doc' }, '2rev1', 'end collection2 ok')
 

@@ -70,12 +70,12 @@ async function createOne (opts = {}) {
   return { server, cleanup, endpoint }
 
   async function cleanup () {
-    await abortAfter(CLEANUP_TIMEOUT, 'Cleanup timeout', async () => {
-      await new Promise((resolve, reject) => {
-        server.close(err => err ? reject(err) : resolve())
-      })
-      if (cleanupStorage) await cleanupStorage()
+    // await abortAfter(CLEANUP_TIMEOUT, 'Cleanup timeout', async () => {
+    // })
+    await new Promise((resolve, reject) => {
+      server.close(err => err ? reject(err) : resolve())
     })
+    if (cleanupStorage) await cleanupStorage()
   }
 }
 

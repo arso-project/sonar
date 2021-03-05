@@ -13,17 +13,16 @@ tape('replicate resources', { timeout: 5000 }, async t => {
   t.equal(collection2.info.key, collection1.info.key)
   t.notEqual(collection2.info.key, collection2.info.localKey)
 
-  const resource1 = await writeResource(collection1, 'one', 'onfirst')
+  await writeResource(collection1, 'one', 'onfirst')
 
   // TODO: This refetches the schema. We should automate this.
-  await timeout(500)
   await collection2.open()
 
-  const resource2 = await writeResource(collection2, 'two', 'onsecond')
+  await writeResource(collection2, 'two', 'onsecond')
   // t.equal(resource1.key, collection1.info.localKey, 'key of resource1 ok')
   // t.equal(resource2.key, collection2.info.localKey, 'key of resourc2 ok')
 
-  await timeout(500)
+  // await timeout(500)
 
   let contents1 = await readResources(collection1)
   t.deepEqual(contents1.sort(), ['onfirst'], 'collection 1 ok')
@@ -31,8 +30,7 @@ tape('replicate resources', { timeout: 5000 }, async t => {
   t.deepEqual(contents2.sort(), ['onfirst', 'onsecond'], 'collection 2 ok')
 
   await collection1.addFeed(collection2.info.localKey, { alias: 'seconda' })
-
-  await timeout(500)
+  await collection1.sync()
 
   contents1 = await readResources(collection1)
   t.deepEqual(contents1.sort(), ['onfirst', 'onsecond'], 'collection 1 ok')
@@ -46,7 +44,7 @@ async function readResources (collection) {
   const records = await collection.query(
     'records',
     { type: 'sonar/resource' },
-    { waitForSync: true }
+    { sync: true }
   )
   const contents = await Promise.all(records.map(r => {
     return collection.resources.readFile(r).then(c => c.toString())

@@ -45,8 +45,9 @@ function createPrettifier () {
 }
 
 function prettify (obj) {
+  const trace = !!process.env.ERROR_TRACE || (process.env.LOG === 'debug' || process.env.LOG === 'trace') || false
   const opts = {
-    trace: !!process.env.ERROR_TRACE || false,
+    trace,
     date: true,
     raw: false
   }
