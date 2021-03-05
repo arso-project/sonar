@@ -87,31 +87,21 @@ tape('batch and query', t => {
   })
 })
 
-tape('share and unshare workspace', t => {
-  createStore({ network: true }, (err, workspace, cleanup) => {
-    t.error(err, 'tempdir ok')
-    workspace.create('collection', (err, collection) => {
-      t.error(err, 'collection created')
-      const hkey = collection.key.toString('hex')
-      const config = workspace.getCollectionConfig(hkey)
-      t.true(config, 'collection config exists')
-      t.true(config.share, 'collection config init shared')
-      const status = workspace.network.status(collection.discoveryKey)
-      t.equal(status.announce, true, 'collection network init shared')
-      t.equal(status.lookup, true, 'collection network init shared')
-      workspace.updateCollection(hkey, { share: false }, (err) => {
-        t.error(err, 'no error at update')
-        const config = workspace.getCollectionConfig(hkey)
-        t.equal(config.share, false, 'collection updated config not shared')
-        const status = workspace.network.status(collection.discoveryKey)
-        t.false(status, 'collection updated network not shared')
-        cleanup(err => {
-          t.error(err)
-          t.end()
-        })
-      })
-    })
-  })
+tape.only('share and unshare workspace', async t => {
+  const { cleanup, workspace } = await createOne()
+  const collection = await workspace.createCollection('default')
+  const config = await collection.getConfig()
+  t.true(config, 'collection config exists')
+  t.true(config.share, 'collection config init shared')
+  const status = await collection.status()
+  t.equal(status.network.announce, true, 'collection network init shared')
+  t.equal(status.network.lookup, true, 'collection network init shared')
+  await collection.configure({share: false})
+  const config_unshare = await collection.getConfig()
+  t.equal(config_unshare.share, false, 'collection updated config not shared')
+  const status_unshare = await collection.status()
+  t.false(status_unshare.network, 'collection updated network not shared')
+  await cleanup()
 })
 
 tape('close collection', t => {
