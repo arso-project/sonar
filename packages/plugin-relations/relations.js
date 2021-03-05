@@ -170,4 +170,3 @@ function recordToQuads (df, collection, record) {
 //     return []
 //   }
 // }
-

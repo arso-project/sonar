@@ -88,8 +88,8 @@ module.exports = async function makeFetch (url, opts) {
   } catch (err) {
     // TODO: If error fails for insufficient authorization, try creating
     // a new token if accessCode is set
-  debug('fetch error', err)
-  log(`error: fetch ${url} ${err.message}`)
+    debug('fetch error', err)
+    log(`error: fetch ${url} ${err.message}`)
     throw err
   }
 }

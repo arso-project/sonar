@@ -3,7 +3,7 @@ const {
   // MissingEntity,
   Record,
   // FieldValue,
-  FieldValueList,
+  FieldValueList
   // MissingFieldValue
 } = require('./records')
 

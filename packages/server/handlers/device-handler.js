@@ -12,6 +12,6 @@ module.exports = function createDeviceHandler (workspace) {
       const opts = { alias, name }
       const collection = await workspace.createCollection(key || name, opts)
       return collection.status()
-    }),
+    })
   }
 }

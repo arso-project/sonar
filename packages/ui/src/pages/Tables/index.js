@@ -136,7 +136,7 @@ function defaultColumns () {
       id: 'id',
       showDefault: true,
       accessor: 'id',
-      Widget: IdLink,
+      Widget: IdLink
     },
     {
       Header: 'Source',
