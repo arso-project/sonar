@@ -28,10 +28,8 @@ tape('put and get 1', async t => {
 tape('batch and query', async t => {
   const { cleanup, workspace } = await createOne()
   const collection = await workspace.openCollection('first')
-  const records = [
-    { title: 'Hello world', body: 'so rough' },
-    { title: 'Hello moon', body: 'so dark' }
-  ]
+  const records = [{ title: 'Hello world', body: 'so rough' },
+  { title: 'Hello moon', body: 'so dark' }]
   await collection.putType({ name: 'doc', fields: { title: { type: 'string', body: { type: 'String' } } } })
   const batch = records.map(value => ({ op: 'put', type: 'doc', value }))
   await collection.batch(batch)
