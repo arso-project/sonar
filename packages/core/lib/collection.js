@@ -279,8 +279,8 @@ class Collection extends Nanoresource {
     return batch.entries[0]
   }
 
-  createBatchStream (opts) {
-    const flushAfter = 1000
+  createBatchStream (opts = {}) {
+    const flushAfter = opts.flushAfter || 1000
     let batch = new Batch(this)
     let i = 0
     const stream = new Writable({
@@ -940,6 +940,9 @@ class Batch {
       if (!record.id) record.id = uuid()
 
       // Upcast record
+      // Throws an error if the record is invalid.
+      // TODO: Currently it only checks if id and value are non-empty and type is valid
+      // type in the schema.
       record = new Record(this.collection.schema, record)
 
       // Set feed, links, timestamp
@@ -961,6 +964,8 @@ class Batch {
 
   async flush () {
     // Sort records into buckets by feed
+    // buckets will look like this:
+    // { key1: [record1, record4], key2: [record2, record3] }
     const buckets = new ArrayMap()
     for (const record of this.entries) {
       buckets.push(record.key, record)

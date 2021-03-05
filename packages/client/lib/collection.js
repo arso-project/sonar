@@ -175,7 +175,11 @@ class Collection extends EventEmitter {
    * @return {Promise<object>} An object with an `{ id }` property.
    */
   async put (record) {
+    // If the record has no id set (= is a new record), generate and add a random id.
     if (!record.id) record.id = uuid()
+    // This checks if the record has type, id, value set and if the type is present 
+    // in the collection's schema. Throws an error if not.
+    // TODO: Add feature to @arsonar/common to validate the record's value against the schema.
     record = this.schema.Record(record)
     return this.fetch('/db', {
       method: 'PUT',

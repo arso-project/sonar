@@ -33,9 +33,9 @@ module.exports = function createCollectionRoutes (workspace) {
 
   router.put('/:collection/db', AH(async (req, res, next) => {
     let record
-    const { batch } = req.query
-
-    if (batch) {
+    // If called with ?batch=1, accept a stream of newline-delimited JSON objects
+    // and put each as a record.
+    if (req.query.batch) {
       const batchStream = req.collection.createBatchStream()
       pipeline(req, split2(JSON.parse), batchStream, err => {
         if (err) next(err)
@@ -44,10 +44,13 @@ module.exports = function createCollectionRoutes (workspace) {
       return
     }
 
-    if (req.params.schema) {
+    // Currently, two forms are accepted:
+    // a) JSON body with an object `{ id, type, value }`
+    // b) JSON body with just the value, and query parameters for type and id
+    if (req.query.type && req.query.id) {
       record = {
-        id: req.params.id,
-        schema: req.params.schema,
+        id: req.query.id,
+        type: req.query.type,
         value: req.body
       }
     } else {
