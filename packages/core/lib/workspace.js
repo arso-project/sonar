@@ -144,10 +144,6 @@ module.exports = class Workspace extends Nanoresource {
     for (const collection of this.collections()) {
       const hkey = collection.key.toString('hex')
       collections[hkey] = collection.status()
-      // TODO: This doesn't really belong here
-      if (collection.fs.localwriter) {
-        collections[hkey].localDrive = collection.fs.localwriter.key.toString('hex')
-      }
     }
 
     // 2. List all not opened collections
@@ -255,7 +251,7 @@ module.exports = class Workspace extends Nanoresource {
   _getCollectionConfig (collection) {
     const id = collection.id
     const info = this._collectionInfo.get(id)
-    if (!info || !info.config) return DEFAULT_CONFIG
+    if (!info || !info.config) return null
     return { ...info.config }
   }
 

@@ -87,5 +87,6 @@ export default function Key (props) {
 }
 
 function formatKey (key) {
+  if (!key) return 'n/a'
   return key.substring(0, 5) + '..' + key.substring(key.length - 2)
 }

@@ -511,7 +511,7 @@ class Collection extends Nanoresource {
     const feeds = this.feeds().map(feed => feedStatus(this, feed))
     const kappa = this._kappa.getState()
     const network = this._workspace.network.status(this.discoveryKey)
-    const config = this.getConfig()
+    const config = this.getConfig() || DEFAULT_CONFIG
     const status = {
       name: this.name,
       opened: true,
@@ -704,7 +704,7 @@ class Collection extends Nanoresource {
     if (config) {
       await this.configure(config, false)
     } else {
-      await this.configure(DEFAULT_CONFIG, true)
+      await this.configure(DEFAULT_CONFIG, false)
     }
 
     // Load feeds and add them to the kappa.
@@ -722,6 +722,13 @@ class Collection extends Nanoresource {
     // Emit open event
     this.log.debug(`Collection open: ${pretty(this.key)}`)
     process.nextTick(() => this.emit('open'))
+
+    // Save new collection (that don't have a saved config yet) right after it's opened.
+    process.nextTick(() => {
+      if (!config) {
+        this._workspace._saveCollection(this, DEFAULT_CONFIG)
+      }
+    })
 
     // Alternative approach: Don't store feeds and types locally at all.
     // Query the collection itself. This is nicer, likely.
