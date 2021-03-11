@@ -2,7 +2,7 @@ const crypto = require('crypto')
 const base32 = require('base32')
 const p = require('path')
 const Config = require('@arsonar/core/lib/config')
-const Nanoresource = require('nanoresource')
+const { NanoresourcePromise: Nanoresource } = require('nanoresource-promise')
 const jwt = require('jsonwebtoken')
 const { HttpError } = require('../lib/util')
 
@@ -14,23 +14,27 @@ module.exports = class Authenticator extends Nanoresource {
     this._store = new Config(p.join(storage, 'tokens.json'))
   }
 
-  _open (cb) {
-    this._store.open(err => {
-      if (err) return cb(err)
-      if (!this._store.get().secret) {
-        this._store.update(config => {
-          config.secret = crypto.randomBytes(32).toString('hex')
-          config.tokens = {
-            root: generateRootToken(config.secret)
-          }
-          const rootAccessCode = generateRootAccessCode()
-          config.accessCodes = {
-            [rootAccessCode.code]: rootAccessCode.access
-          }
-          config.rootAccessCode = rootAccessCode.code
-          return config
-        }, cb)
-      } else cb()
+  async _open () {
+    return new Promise((resolve, reject) => {
+      this._store.open(err => {
+        if (err) return reject(err)
+        if (!this._store.get().secret) {
+          this._store.update(config => {
+            config.secret = crypto.randomBytes(32).toString('hex')
+            config.tokens = {
+              root: generateRootToken(config.secret)
+            }
+            const rootAccessCode = generateRootAccessCode()
+            config.accessCodes = {
+              [rootAccessCode.code]: rootAccessCode.access
+            }
+            config.rootAccessCode = rootAccessCode.code
+            return config
+          }, err => {
+            err ? reject(err) : resolve()
+          })
+        } else resolve()
+      })
     })
   }
 
@@ -54,8 +58,10 @@ module.exports = class Authenticator extends Nanoresource {
     return this._store.get().secret
   }
 
-  _close (cb) {
-    this._store.close(cb)
+  async _close () {
+    return new Promise((resolve, reject) => {
+      this._store.close(err => err ? reject(err) : resolve())
+    })
   }
 
   createAccessCode (opts, cb) {
