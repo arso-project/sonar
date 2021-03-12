@@ -39,9 +39,9 @@ module.exports = class Authenticator extends Nanoresource {
   }
 
   getSecret (cb) {
-    this.open((err) => {
-      cb(err, this._secret)
-    })
+    this.open().then(() => {
+      cb(null, this._secret)
+    }).catch(cb)
   }
 
   getRootToken () {
@@ -84,6 +84,7 @@ module.exports = class Authenticator extends Nanoresource {
       expiresIn: 86400 * 30
     }
     const token = this.generateToken(access, opts)
+    console.log('TOKEN', token)
     return cb(null, token)
   }
 
