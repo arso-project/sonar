@@ -84,7 +84,6 @@ module.exports = class Authenticator extends Nanoresource {
       expiresIn: 86400 * 30
     }
     const token = this.generateToken(access, opts)
-    console.log('TOKEN', token)
     return cb(null, token)
   }
 
