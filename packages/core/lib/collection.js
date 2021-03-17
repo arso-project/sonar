@@ -507,24 +507,22 @@ class Collection extends Nanoresource {
    * @returns {CollectionStatus}
    */
   status (cb) {
-    if (!this.opened) return { opened: false }
     const feeds = this.feeds().map(feed => feedStatus(this, feed))
     const kappa = this._kappa.getState()
     const network = this._workspace.network.status(this.discoveryKey)
     const config = this.getConfig() || DEFAULT_CONFIG
     const status = {
+      opened: this.opened,
       name: this.name,
-      opened: true,
-      key: datEncoding.encode(this.key),
-      discoveryKey: datEncoding.encode(this.discoveryKey),
-      rootKey: datEncoding.encode(this.key),
-      localKey: datEncoding.encode(this.localKey),
+      key: this.key && datEncoding.encode(this.key),
+      discoveryKey: this.discoveryKey && datEncoding.encode(this.discoveryKey),
+      rootKey: this.key && datEncoding.encode(this.key),
+      localKey: this.localKey && datEncoding.encode(this.localKey),
       id: this.id,
       feeds,
       kappa,
       network,
       config
-      // localDrive: localDriveKey
     }
     if (cb) process.nextTick(cb, null, status)
     return status
@@ -724,11 +722,9 @@ class Collection extends Nanoresource {
     process.nextTick(() => this.emit('open'))
 
     // Save new collection (that don't have a saved config yet) right after it's opened.
-    process.nextTick(() => {
-      if (!config) {
-        this._workspace._saveCollection(this, DEFAULT_CONFIG)
-      }
-    })
+    if (!config) {
+      this._workspace._saveCollection(this, DEFAULT_CONFIG)
+    }
 
     // Alternative approach: Don't store feeds and types locally at all.
     // Query the collection itself. This is nicer, likely.
