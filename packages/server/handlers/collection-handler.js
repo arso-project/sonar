@@ -7,19 +7,20 @@ const AH = require('../lib/async-handler')
 
 const createFsRouter = require('./fs')
 
-module.exports = function createCollectionRoutes (workspace) {
+module.exports = function createCollectionRoutes () {
   const router = express.Router()
 
   router.use('/:collection', AH(async (req, res, next) => {
     const { collection: keyOrName } = req.params
+
     if (!keyOrName) return next()
     // TODO: Implement auth :-)
-    const collection = await workspace.openCollection(keyOrName)
+    const collection = await req.workspace.openCollection(keyOrName)
     req.collection = collection
     next()
   }))
 
-  router.use('/:collection/fs', createFsRouter(workspace))
+  router.use('/:collection/fs', createFsRouter())
 
   router.get('/:collection', AH(async (req, res, next) => {
     return req.collection.status()
@@ -204,7 +205,7 @@ module.exports = function createCollectionRoutes (workspace) {
     let pending = drives.length
     if (!drives.length) return res.send([])
     drives.forEach(driveInfo => {
-      collection.fs.get(driveInfo.key, (err, drive) => {
+      collection.drive(driveInfo.key, (err, drive) => {
         if (err) driveInfo.error = err.message
         else {
           driveInfo.writable = drive.writable

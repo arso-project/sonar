@@ -1,4 +1,3 @@
-const { Workspace } = require('@arsonar/core')
 const { NanoresourcePromise: Nanoresource } = require('nanoresource-promise')
 const bodyParser = require('body-parser')
 const onexit = require('async-exit-hook')
@@ -14,6 +13,7 @@ const swaggerUi = require('swagger-ui-express')
 const thunky = require('thunky')
 
 const { storagePath } = require('@arsonar/common/storage.js')
+const { WorkspaceManager } = require('@arsonar/core')
 const apiRouter = require('./routes/api')
 const Auth = require('./lib/auth')
 
@@ -55,8 +55,8 @@ module.exports = function SonarServer (opts = {}) {
   const auth = new Auth(config.storage, config.auth)
 
   // Init collection store.
-  const workspace = new Workspace(config.workspace)
-  const log = workspace.log
+  const workspaces = new WorkspaceManager(config.workspace)
+  const log = workspaces.log
 
   // Init express app.
   const app = express()
@@ -64,7 +64,7 @@ module.exports = function SonarServer (opts = {}) {
   // Assemble api object.
   const api = {
     auth,
-    workspace,
+    workspaces,
     config,
     log
   }
@@ -114,12 +114,6 @@ module.exports = function SonarServer (opts = {}) {
   app.use(cors({
     origin: '*'
   }))
-
-  // Make the collection api available to all requests
-  app.use(function collectionMiddleware (req, res, next) {
-    req.collections = api.collections
-    next()
-  })
 
   // Main API
   const apiRoutes = apiRouter(api)
@@ -172,7 +166,7 @@ module.exports = function SonarServer (opts = {}) {
   let openPromise, closePromise
 
   async function start () {
-    await api.workspace.ready()
+    await api.workspaces.open()
     await api.auth.open()
     // TODO: Take from running express server instead.
     app.port = config.server.port
@@ -196,7 +190,7 @@ module.exports = function SonarServer (opts = {}) {
     await new Promise(resolve => app.server.forceShutdown(resolve))
     await new Promise(resolve => api.auth.close(resolve))
     api.log.trace('HTTP server closed')
-    await api.workspace.close()
+    await api.workspaces.close()
     api.log.trace('Workspace closed')
     app.closed = true
   }

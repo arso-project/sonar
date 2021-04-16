@@ -16,18 +16,13 @@ const createLogger = require('@arsonar/common/log')
 
 const Collection = require('./collection')
 const LevelMap = require('./utils/level-map')
-const { maybeCallback, noop } = require('./util')
+const { defaultStoragePath, maybeCallback, deriveId, resolveKeyOrName, discoveryKey, uuid } = require('./util')
 
 // Import for views - move into module.
 const registerHyperdrive = require('./fs')
 
-const DEFAULT_CONFIG = {
-  share: true
-}
-
-function defaultStoragePath (opts) {
-  const os = require('os')
-  return p.join(os.homedir(), '.sonar')
+function defaultWorkspaceStoragePath () {
+  return p.join(defaultStoragePath(), 'workspace', '_default')
 }
 
 module.exports = class Workspace extends Nanoresource {
@@ -37,7 +32,8 @@ module.exports = class Workspace extends Nanoresource {
     this._collections = new Map()
     this._leveldb = null
     this._leveldbs = new Map()
-    this._storagePath = opts.storagePath || defaultStoragePath()
+    this._storagePath = opts.storagePath || defaultWorkspaceStoragePath()
+    this._opening = new Map()
 
     this.log = opts.log || createLogger()
 
@@ -105,6 +101,18 @@ module.exports = class Workspace extends Nanoresource {
     this._collectionInfo = new LevelMap(this.LevelDB('w/collections'))
     await this._collectionInfo.open()
 
+    this._workspaceInfo = new LevelMap(this.LevelDB('w/workspace'))
+    await this._workspaceInfo.open()
+
+    this.id = this._workspaceInfo.get('id')
+    if (this.id && this._opts.id && this._opts.id !== this.id) {
+      throw new Error(`Opening workspace failed: ID mismatch(saved: ${this.id}, requested: ${this._opts.id}`)
+    }
+    if (!this.id) {
+      this.id = this._opts.id || uuid()
+      await this._workspaceInfo.setFlush('id', this.id)
+    }
+
     // this._collectionStore = new SyncMap(this.LevelDB('w/collections'))
     // await this._collectionStore.open()
   }
@@ -115,11 +123,14 @@ module.exports = class Workspace extends Nanoresource {
 
   async _close () {
     if (!this.opened) await this.open()
-    this.emit('closing')
     await new Promise(resolve => process.nextTick(resolve))
     const promises = this.collections().map(c => c.close())
     await Promise.all(promises)
-    this._leveldb.close()
+    await this._workspaceInfo.close()
+    await this._collectionInfo.close()
+    try {
+      this._leveldb.close()
+    } catch (err) {}
     if (this._ownSDK) {
       await this._sdk.close()
     }
@@ -171,17 +182,84 @@ module.exports = class Workspace extends Nanoresource {
     else this.once('opened', () => plugin(this))
   }
 
-  Collection (keyOrName, opts = {}) {
-    if (Buffer.isBuffer(keyOrName)) {
-      keyOrName = keyOrName.toString('hex')
-    }
+  async createCollection (keyOrName, opts = {}) {
+    opts.create = true
+    return this.openCollection(keyOrName, opts)
+  }
+
+  _findCollectionInfo (keyOrName) {
+    return this._collectionInfo.find(
+      info => {
+        return info.key === keyOrName || info.name === keyOrName
+      }
+    )
+  }
+
+  async _nameToKey (keyOrName) {
+    const core = this.Hypercore(keyOrName)
+    await core.ready()
+    return core.key
+  }
+
+  async _localNameToKey (id, localName) {
+    return this._nameToKey(`localwriter:${this.id}:${id}:${localName}`)
+  }
+
+  async openCollection (keyOrName, opts = {}) {
+    if (Buffer.isBuffer(keyOrName)) keyOrName = keyOrName.toString('hex')
     if (this._collections.has(keyOrName)) {
       return this._collections.get(keyOrName)
     }
 
-    opts.workspace = this
+    if (!this._opening.has(keyOrName)) {
+      const promise = this._openCollection(keyOrName, opts)
+      this._opening.set(keyOrName, promise)
+      if (opts.name) {
+        this._opening.set(opts.name, promise)
+      }
+    }
 
-    const collection = new Collection(keyOrName, opts)
+    return this._opening.get(keyOrName)
+  }
+
+  async _openCollection (keyOrName, opts = {}) {
+    // Resolve basic info
+    let { key, name } = resolveKeyOrName(keyOrName)
+    if (!key) {
+      key = await this._nameToKey(name)
+    }
+    const id = deriveId(discoveryKey(key))
+
+    const isLocalCreate = name && opts.create
+
+    if (this._collections.has(id)) {
+      return this._collections.get(id)
+    }
+
+    let info = this._findCollectionInfo(keyOrName)
+
+    if (!info && !opts.create) {
+      throw new Error('Collection does not exist')
+    }
+
+    if (!info) info = { key, name, id }
+
+    let localKey = info.localKey
+    if (!isLocalCreate && !localKey && info.writable !== false) {
+      localKey = await this._localNameToKey('local')
+    }
+    if (!name && info.name) {
+      name = info.name
+    }
+
+    opts.workspace = this
+    opts.name = info.name
+    opts.localKey = localKey
+
+    const collection = new Collection(key, opts)
+
+    this._collections.set(id, collection)
+    this._collections.set(key, collection)
     this._collections.set(keyOrName, collection)
 
     collection.on('opening', awaitMe => {
@@ -196,38 +274,8 @@ module.exports = class Workspace extends Nanoresource {
     })
 
     this.emit('collection', collection)
-
-    return collection
-  }
-
-  async createCollection (keyOrName, opts = {}) {
-    opts.create = true
-    return this.openCollection(keyOrName, opts)
-  }
-
-  _findCollectionInfo (keyOrName) {
-    return this._collectionInfo.find(
-      info => {
-        return info.key === keyOrName || info.name === keyOrName
-      }
-    )
-  }
-
-  async openCollection (keyOrName, opts = {}) {
-    if (this._collections.has(keyOrName)) {
-      return this._collections.get(keyOrName)
-    }
-
-    const collectionInfo = this._findCollectionInfo(keyOrName)
-    if (collectionInfo) {
-      opts.name = collectionInfo.name
-      keyOrName = collectionInfo.key
-    } else if (opts.create === false) {
-      throw new Error('Collection does not exist')
-    }
-
-    const collection = this.Collection(keyOrName, opts)
     await collection.open()
+    this._opening.delete(keyOrName)
     return collection
   }
 

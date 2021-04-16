@@ -50,6 +50,7 @@ module.exports = class LevelMap extends Nanoresource {
 
   _close (cb) {
     cb = maybeCallback(cb)
+    this._closing = true
     this.flush(cb)
     return cb.promise
   }
@@ -88,7 +89,9 @@ module.exports = class LevelMap extends Nanoresource {
   setFlush (key, value, cb) {
     cb = maybeCallback(cb)
     this.set(key, value)
-    this.flush(cb)
+    this.flush(() => {
+      cb()
+    })
     return cb.promise
   }
 
@@ -140,6 +143,7 @@ module.exports = class LevelMap extends Nanoresource {
     if (this._flushQueued) return
     this._flushQueued = true
     process.nextTick(() => {
+      if (this._closing) return
       this._flushQueued = false
       this.flush()
     })
@@ -147,6 +151,7 @@ module.exports = class LevelMap extends Nanoresource {
 
   flush (cb) {
     cb = maybeCallback(cb)
+    let stack = new Error().stack
     this._lock(release => {
       const doFlush = () => {
         if (!Object.keys(this._queue).length) return release(cb)
@@ -155,7 +160,7 @@ module.exports = class LevelMap extends Nanoresource {
           if (value) value = this._valueEncoding.encode(value)
           return { key, value, type }
         })
-        this.queue = {}
+        this._queue = {}
         this.db.batch(queue, release.bind(null, cb))
       }
       if (this.opened) doFlush()

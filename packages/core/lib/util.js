@@ -1,12 +1,17 @@
 const base32 = require('base32')
+const hcrypto = require('hypercore-crypto')
+const DatEncoding = require('dat-encoding')
 const { randomBytes, createHash } = require('crypto')
 const { Writable, Transform } = require('streamx')
 
 const fs = require('fs')
 const p = require('path')
+const os = require('os')
 const yaml = require('js-yaml')
 
 const ID_NAMESPACE = Buffer.from('sonar-id')
+
+exports.discoveryKey = hcrypto.discoveryKey
 
 exports.loadTypesFromDir = function (paths) {
   if (!Array.isArray(paths)) paths = [paths]
@@ -104,6 +109,26 @@ exports.clock = function clock () {
     if (ms >= 0.01) return ms + 'ms'
     if (ns) return ns + 'ns'
   }
+}
+
+// Taken from hyper-sdk/sdk.js line 242
+exports.resolveKeyOrName = function resolveKeyOrName (nameOrKey) {
+  let key, name, id
+  try {
+    key = DatEncoding.decode(nameOrKey)
+    id = key.toString('hex')
+    // Normalize keys to be hex strings of the key instead of dat URLs
+  } catch (e) {
+    // Probably isn't a `dat://` URL, so it must be a name
+    name = nameOrKey
+    id = name
+  }
+  return { key, name, id }
+}
+
+exports.defaultStoragePath = function defaultStoragePath (opts) {
+  const os = require('os')
+  return p.join(os.homedir(), '.sonar')
 }
 
 function round (num, decimals = 2) {
