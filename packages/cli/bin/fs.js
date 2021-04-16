@@ -152,18 +152,12 @@ async function _importfile ({ client, path, opts }) {
     else throw new Error('path is a folder and recursive is not set')
   }
   const filename = p.basename(path)
-  const record = await client.createResource({
-    filename,
-    prefix: opts.prefix,
-    encodingFormat: mime.lookup(filename),
-    contentSize: stat.size
-  }, opts)
+  const targetPath = p.join('~me', opts.prefix, filename)
 
-  console.log('created resource: ' + record.id)
   console.log('starting upload (' + pretty(stat.size) + ')')
   const readStream = fs.createReadStream(path)
   reportProgress(readStream, { msg: 'Uploading', total: stat.size })
-  await client.writeResourceFile(record, readStream)
+  await client.writeFile(targetPath, readStream)
   console.log('ok')
 }
 
