@@ -46,18 +46,33 @@ function QueryRecords (props) {
 function ViewRecord (props = {}) {
   const { path, onSelect } = props
   const record = useRecord({ path })
+  const [version, setVersion] = React.useState(null)
   if (!record) return null
+  const current = version || record
   return (
     <div className='ViewRecord'>
       <dl>
         <dt>Type</dt>
-        <dd>{record.type}</dd>
+        <dd>{current.type}</dd>
         <dt>ID</dt>
-        <dd>{record.id}</dd>
+        <dd>{current.id}</dd>
         <dt>Address</dt>
-        <dd>{record.shortAddress}</dd>
+        <dd>{current.shortAddress}</dd>
         <dt>Label</dt>
-        <dd>{record.get('label')}</dd>
+        <dd>{current.get('label')}</dd>
+        <dt>Loaded versions</dt>
+        <dd>
+          Current: <strong>{record.versions().length}</strong>
+          &nbsp; All: <em>{record.allVersions().length}</em>
+          <div>
+            <button onClick={e => setVersion(null)}>latest</button>
+            {record.versions().map(version => (
+              <button key={version.address} onClick={e => setVersion(version)}>
+                {version.shortAddress}
+              </button>
+            ))}
+          </div>
+        </dd>
       </dl>
       <button onClick={e => onSelect(record.path)}>Edit</button>
     </div>
@@ -90,10 +105,8 @@ function EditRecord (props = {}) {
       value: data,
       id: current ? current.id : undefined
     }
-    console.log('SAVE', record)
     try {
       const created = await collection.put(record)
-      console.log(created)
     } catch (e) {
       console.error(e)
       setError(e)

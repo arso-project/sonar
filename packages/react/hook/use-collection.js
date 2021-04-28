@@ -25,9 +25,7 @@ export default function useCollection (name = null, opts = {}) {
 
   React.useEffect(() => {
     if (!collection) return
-    console.log('setup effect', collection)
     const onevent = () => {
-      console.log('ONEVENT')
       setUpdateCounter(i => i + 1)
     }
     collection.on('open', onevent)
