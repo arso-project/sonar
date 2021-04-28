@@ -1,0 +1,37 @@
+body {
+  font-family: sans-serif;
+  min-height: 100vh;
+  background: #eee;
+  margin: 0;
+  padding: 0;
+}
+
+.App {
+  padding: 20px;
+}
+
+.App > h2 {
+  margin: 20px;
+}
+
+.App-main {
+  display: flex;
+}
+
+.App-main > * {
+  margin: 20px;
+  padding: 20px;
+  background-color: #fff;
+}
+
+.ViewRecord {
+  margin: 0 0 2rem 0;
+  padding: 1rem;
+  border: 2px solid #ccc;
+  border-radius: 10px;
+}
+
+.ViewRecord > dl {
+  display: grid;
+  grid-template-columns: min-content 1fr;
+}

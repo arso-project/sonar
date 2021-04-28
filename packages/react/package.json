@@ -1,0 +1,47 @@
+{
+  "name": "@arsonar/react",
+  "version": "0.0.1",
+  "description": "A arsonar module",
+  "main": "index.js",
+  "scripts": {
+    "test": "tape test/*.js"
+  },
+  "dependencies": {
+    "@arsonar/client": "^0.3.0-alpha.7",
+    "react": "^17.0.1",
+    "react-dom": "^17.0.2"
+  },
+  "devDependencies": {
+    "estrella": "^1.4.0",
+    "express": "^4.17.1",
+    "instant": "^1.11.0",
+    "standard": "^14.3.3",
+    "tape": "^5.0"
+  },
+  "standard": {
+    "env": [
+      "es6",
+      "node",
+      "browser"
+    ]
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sonarso/sonar.git"
+  },
+  "keywords": [
+    "sonarso"
+  ],
+  "author": {
+    "name": "arso contributors",
+    "email": "hi@arso.xyz"
+  },
+  "license": "GPL-3.0",
+  "bugs": {
+    "url": "https://github.com/sonarso/sonar/issues"
+  },
+  "homepage": "https://github.com/sonarso/sonar#readme",
+  "publishConfig": {
+    "access": "public"
+  }
+}

@@ -1,0 +1,35 @@
+# directories 
+node_modules/
+build/
+SANDBOX/
+.data/
+
+# log
+logs/
+*.log
+
+# editor stuff
+.vscode
+
+# npm and yarn
+package-lock.json
+pnpm-lock.yaml
+pnpm-debug.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+yarn.lock
+.yarn-integrity
+lerna-debug.log
+.eslintcache
+.npm
+
+# dotenv environment variables file
+.env
+
+# Optional REPL history
+.node_repl_history
+
+# next.js build output
+.next
+
