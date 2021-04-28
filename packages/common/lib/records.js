@@ -169,7 +169,11 @@ class Record extends Node {
   }
 
   get address () {
-    return this._latest.key + '@' + this._latest.seq
+    return this._latest.adress
+  }
+
+  get shortAddress () {
+    return this._latest.shortAddress
   }
 
   get deleted () {
@@ -292,6 +296,11 @@ class RecordVersion extends Node {
 
   get address () {
     return this._record.key + '@' + this._record.seq
+  }
+
+  get shortAddress () {
+    return this._record.key.substring(0, 8) + '..' + this._record.key.substring(30, 32) + '@' + this._record.seq
+    // return pretty(this._record.key) + '@' + this._record.seq
   }
 
   get path () {
