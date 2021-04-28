@@ -4,6 +4,7 @@
   "description": "A arsonar module",
   "main": "index.js",
   "scripts": {
+    "example": "cd examples && node build.js -w",
     "test": "tape test/*.js"
   },
   "dependencies": {
