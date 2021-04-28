@@ -29,6 +29,7 @@ module.exports = class Versions extends Emitter {
   }
 
   put (version) {
+    if (this._versions.has(version.address)) return
     this._versions.set(version.address, version)
     let isCurrent = true
     if (!version.links) version.links = []
