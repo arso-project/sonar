@@ -4,6 +4,7 @@ const { parseAddress, encodeAddress } = require('./address')
 // const Store = require('./store')
 const Type = require('./type')
 const Field = require('./field')
+const { Record, Entity } = require('./records')
 
 module.exports = class Schema {
   constructor (opts = {}) {
@@ -12,6 +13,14 @@ module.exports = class Schema {
     this._typeVersions = new MapSet()
     this._defaultNamespace = opts.defaultNamespace
     this._onchange = opts.onchange || noop
+  }
+
+  Record (record) {
+    return new Record(this, record)
+  }
+
+  Entity (records) {
+    return new Entity(this, records)
   }
 
   setDefaultNamespace (namespace) {

@@ -4,7 +4,7 @@ const debug = require('debug')('sonar-client')
 const { Readable, Writable, Transform } = require('streamx')
 const { EventEmitter } = require('events')
 
-const Schema = require('@arsonar/common/schema')
+const { Schema, Store } = require('@arsonar/common')
 const Fs = require('./fs')
 const Resources = require('./resources')
 
@@ -69,13 +69,12 @@ class Collection extends EventEmitter {
   async open () {
     this._info = await this.fetch('/')
 
-    this.schema = new Schema()
-    this.schema.setDefaultNamespace(this.id)
-
+    this.schema = new Schema({ defaultNamespace: this.id })
     const typeSpecs = await this.fetch('/schema')
     for (const typeSpec of Object.values(typeSpecs)) {
       this.schema.addType(typeSpec)
     }
+    this.store = new Store({ schema: this.schema })
   }
 
   /**
@@ -92,18 +91,25 @@ class Collection extends EventEmitter {
   }
 
   /**
-   * Add a new feed to the collection.
+   * Put a new feed to the collection.
    *
    * @async
    * @param {string} key - The hex-encoded key of the feed to add.
    * @param {object} [info] - Optional information about the feed.
    *                          TODO: Document
    */
-  async addFeed (key, info = {}) {
+  async putFeed (key, info = {}) {
     return this.fetch('/feed/' + key, {
       method: 'PUT',
       body: info
     })
+  }
+
+  /**
+   * @deprecated see Collection.putFeed
+   */
+  async addFeed (key, info = {}) {
+    return this.putFeed(key, info)
   }
 
   /**
@@ -146,7 +152,7 @@ class Collection extends EventEmitter {
     for (const key of records.keys()) {
       const record = records[key]
       try {
-        records[key] = this.schema.Record(record)
+        records[key] = this.store.cacheRecord(record)
       } catch (err) {
         // TODO: Where should these errors go
         console.error('Error when upcasting record', err)
@@ -181,10 +187,11 @@ class Collection extends EventEmitter {
     // in the collection's schema. Throws an error if not.
     // TODO: Add feature to @arsonar/common to validate the record's value against the schema.
     record = this.schema.Record(record)
-    return this.fetch('/db', {
+    const resultRecord = await this.fetch('/db', {
       method: 'PUT',
       body: record
     })
+    return this.store.cacheRecord(resultRecord)
   }
 
   /**
@@ -263,7 +270,7 @@ class Collection extends EventEmitter {
       },
       transform (record, cb) {
         if (!record.id) record.id = uuid()
-        record = self.schema.Record(record)
+        record = self.store.cacheRecord(record)
         const json = JSON.stringify(record)
         this.push(json + '\n')
         cb()
@@ -367,7 +374,7 @@ class Collection extends EventEmitter {
         const batch = await self._pullSubscription(name)
         for (const message of batch.messages) {
           try {
-            const record = self.schema.Record(message)
+            const record = self.store.cacheRecord(message)
             await onRecord(record)
             // TODO: Do we want to ack for each message or for each batch?
             // Likely let the subscriber decide.

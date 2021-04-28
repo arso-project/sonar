@@ -50,16 +50,16 @@ class Node {
     return this.get(name, false)
   }
 
-  gotoOne (name) {
-    return this._goto(name, true)
+  gotoOne (store, name) {
+    return this._goto(store, name, true)
   }
 
-  gotoMany (name) {
-    return this._goto(name, false)
+  gotoMany (store, name) {
+    return this._goto(store, name, false)
   }
 
   // Invoked by the Node high-level methods.
-  _goto (name, single = false) {
+  _goto (store, name, single = false) {
     const field = this.field(name)
     // TODO: This means crash.
     if (!field) throw new Error('Field not found: ' + name)
@@ -69,7 +69,7 @@ class Node {
     // TODO: Deal with multiple values
     const targetAddresses = field.values()
     const targetEntities = targetAddresses.map(address => {
-      let entity = this[SC].getEntity(address)
+      let entity = store.getEntity(address)
       if (!entity) entity = new MissingEntity(this[SC], address)
       return entity
     })
@@ -141,10 +141,6 @@ class Record extends Node {
       value: nextValue
     }
     return new Record(this[SC], nextRecord)
-  }
-
-  get entity () {
-    return this[SC].getEntity(this.id)
   }
 
   get id () {

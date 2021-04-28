@@ -1,6 +1,6 @@
 const tape = require('tape')
 const table = require('text-table')
-const Schema = require('../schema')
+const { Schema, Store } = require('..')
 
 tape('basics', t => {
   const schema = new Schema({ defaultNamespace: 'sonar' })
@@ -76,6 +76,9 @@ tape('basics', t => {
     }
   })
 
+  const store = new Store({ schema })
+  store.cacheRecord(record)
+
   console.log('\n# Table\n')
   const rows = [['ID', 'Field', 'Value']]
   for (const fieldValue of record.fields()) {
@@ -89,7 +92,7 @@ tape('basics', t => {
   }
 
   console.log('\n# Get tag labels (Tags missing)\n')
-  for (const tag of record.gotoMany('tags')) {
+  for (const tag of record.gotoMany(store, 'tags')) {
     console.log('Label: ' + tag.getOne('label'))
   }
 
@@ -103,9 +106,11 @@ tape('basics', t => {
     type: 'entity',
     value: { label: 'Cool things' }
   })
+  store.cacheRecord(tag1)
+  store.cacheRecord(tag2)
 
   console.log('\n# Get tag labels (Tags present)\n')
-  for (const tag of record.gotoMany('tags')) {
+  for (const tag of record.gotoMany(store, 'tags')) {
     console.log('Label: ' + tag.getOne('label'))
   }
 
@@ -205,17 +210,21 @@ tape('relations', t => {
       target: ['afile', 'bfile', 'cfile']
     }
   })
+  const store = new Store({ schema })
+  store.cacheRecord(tag)
+  store.cacheRecord(file)
+  store.cacheRecord(file2)
   console.log(
     'tag: target',
     tag.get('target')
   )
   console.log(
     'tag: target one',
-    tag.gotoOne('target').get('label')
+    tag.gotoOne(store, 'target').get('label')
   )
   console.log(
     'tag: target many',
-    tag.gotoMany('target').map(e => [e.id, e.get('label')])
+    tag.gotoMany(store, 'target').map(e => [e.id, e.get('label')])
   )
 
   t.end()

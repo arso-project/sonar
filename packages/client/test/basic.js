@@ -67,14 +67,15 @@ tape('db basic put and query', async t => {
   // console.log(results.map(record => record.fields().map(f => f.fieldAddress).join('  !!  ')))
   const record = results[0]
   // const record2 = results[1]
-  t.equal(record.entity.id, res.id)
-  t.equal(record.entity.get('fun#color'), 'red')
-  t.equal(record.entity.get('doc#title'), 'hello world')
+  const entity = collection.store.getEntity(record.id)
+  // t.equal(record.entity.id, res.id)
+  t.equal(entity.get('fun#color'), 'red')
+  t.equal(entity.get('doc#title'), 'hello world')
   // t.equal(record.get('color'), 'red')
   // t.equal(record.get('fun#color'), 'red')
   // t.equal(record.get('fun#color'), 'red')
   // console.log(record.entity.getTypes().map(t => t.title))
-  t.equal(record.entity.id, res.id)
+  t.equal(entity.id, res.id)
 
   await cleanup()
   t.ok(true, 'cleanup ok')
