@@ -3,10 +3,12 @@ const pretty = require('pretty-hash')
 const inspect = require('inspect-custom-symbol')
 const { bindSymbol } = require('./util')
 const Versions = require('./versions')
+const Emitter = require('./emitter')
 
 // Base class for Record and Entity
-class Node {
+class Node extends Emitter {
   constructor (schema) {
+    super()
     bindSymbol(this, SC, schema)
   }
 
@@ -109,6 +111,7 @@ class Record extends Node {
     super(schema)
     this._versions = new Versions()
     this.addVersion(initialVersion)
+    this._versions.subscribe(() => this.emit())
   }
 
   versions () {

@@ -151,3 +151,39 @@ tape.skip('fs with streams', async t => {
 
   await cleanup()
 })
+
+tape.only('subscribe to record', async t => {
+  const { client, cleanup } = await createOne({ network: false })
+  const collection = await client.createCollection('foobar')
+  await collection.putType({
+    name: 'doc',
+    fields: {
+      title: {
+        type: 'string'
+      }
+    }
+  })
+  const putted = await collection.put({
+    type: 'doc',
+    value: { title: 'hello world' }
+  })
+
+  let didNotify = false
+  const notifyPromise = new Promise((resolve) => {
+    putted.subscribe(record => {
+      if (didNotify) t.fail('subscribe emitted more than once')
+      t.equal(record.get('title'), 'hello moon', 'subscribe called correctly')
+      didNotify = true
+      resolve()
+    })
+  })
+
+  const newVersion = putted.latest.update({
+    title: 'hello moon'
+  })
+  await collection.put(newVersion)
+  await notifyPromise
+
+  await cleanup()
+  t.ok(true, 'cleanup ok')
+})

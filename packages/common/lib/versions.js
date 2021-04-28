@@ -1,8 +1,8 @@
-// const Emitter = require('./emitter')
+const Emitter = require('./emitter')
 
-module.exports = class Versions {
+module.exports = class Versions extends Emitter {
   constructor (opts = {}) {
-    // super()
+    super()
     this._versions = new Map()
     this._current = new Set()
   }
@@ -45,5 +45,6 @@ module.exports = class Versions {
       }
       this._current.add(version)
     }
+    this.emit()
   }
 }
