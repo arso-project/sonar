@@ -36,6 +36,10 @@ exports.builder = function (yargs) {
           describe: 'type',
           required: true
         },
+        id: {
+          alias: 'i',
+          describe: 'id'
+        },
         data: {
           alias: 'd',
           describe: 'data (if not passed STDIN is used)'
