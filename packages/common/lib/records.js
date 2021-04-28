@@ -2,6 +2,7 @@ const { SC, RECORD } = require('./symbols')
 const pretty = require('pretty-hash')
 const inspect = require('inspect-custom-symbol')
 const { bindSymbol } = require('./util')
+const Versions = require('./versions')
 
 // Base class for Record and Entity
 class Node {
@@ -104,8 +105,135 @@ class FieldValueList extends Array {
 }
 
 class Record extends Node {
+  constructor (schema, initialVersion) {
+    super(schema)
+    this._versions = new Versions()
+    this.addVersion(initialVersion)
+  }
+
+  versions () {
+    return this._versions.current()
+  }
+
+  allVersions () {
+    return this._versions.all()
+  }
+
+  get latest () {
+    return this._latest
+  }
+
+  addVersion (recordVersion) {
+    if (!(recordVersion instanceof RecordVersion)) {
+      recordVersion = new RecordVersion(this[SC], recordVersion)
+    }
+    if (!this._id) {
+      this._id = recordVersion.id
+      this._type = recordVersion.type
+    }
+    if (recordVersion.path !== this.path) {
+      throw new Error('RecordVersion does not match Record path')
+    }
+    this._versions.put(recordVersion)
+  }
+
+  hasVersion (address) {
+    this._versions.has(address)
+  }
+
+  get path () {
+    return this._type + '/' + this._id
+  }
+
+  get _latest () {
+    return this._versions.latest()
+  }
+
+  get id () {
+    return this._latest.id
+  }
+
+  get value () {
+    return this._latest.value
+  }
+
+  set value (value) {
+    this._latest.value = value
+  }
+
+  get type () {
+    return this._latest.type
+  }
+
+  get address () {
+    return this._latest.key + '@' + this._latest.seq
+  }
+
+  get deleted () {
+    return this._latest.deleted
+  }
+
+  get key () {
+    return this._latest.key
+  }
+
+  set key (key) {
+    this._latest.key = key
+  }
+
+  get feed () {
+    return this._latest.key
+  }
+
+  get seq () {
+    return this._latest.seq
+  }
+
+  get lseq () {
+    return this._latest.lseq
+  }
+
+  get timestamp () {
+    return this._latest.timestamp
+  }
+
+  set timestamp (timestamp) {
+    this._latest.timestamp = timestamp
+  }
+
+  get meta () {
+    return this._meta || this._latest.meta || {}
+  }
+
+  set lseq (lseq) {
+    this._latest.lseq = lseq
+  }
+
+  get links () {
+    return this._latest.links
+  }
+
+  set links (links) {
+    this._latest.links = links
+  }
+
+  getType () {
+    return this._latest.getType()
+  }
+
+  hasType (typeAddress) {
+    return this._latest.hasType(typeAddress)
+  }
+
+  // Invoked by the Node high-level methods.
+  _field (fieldName, single = true) {
+    return this._latest._field(fieldName, single)
+  }
+}
+
+class RecordVersion extends Node {
   constructor (schema, record) {
-    if (record instanceof Record) record = record._record
+    if (record instanceof RecordVersion) record = record._record
 
     if (!record.type) {
       throw new Error('Cannot upcast record: Missing type')
@@ -135,12 +263,12 @@ class Record extends Node {
 
   update (nextValue) {
     nextValue = Object.assign({}, this._value, nextValue)
-    const nextRecord = {
+    const nextVersion = {
       type: this.type,
       id: this.id,
       value: nextValue
     }
-    return new Record(this[SC], nextRecord)
+    return new RecordVersion(this[SC], nextVersion)
   }
 
   get id () {
@@ -161,6 +289,10 @@ class Record extends Node {
 
   get address () {
     return this._record.key + '@' + this._record.seq
+  }
+
+  get path () {
+    return this.type + '/' + this.id
   }
 
   get deleted () {
@@ -317,7 +449,7 @@ class Record extends Node {
     const meta = s('feed ') + h(pretty(this.key)) + s('@') + this.seq +
       s(' lseq ') + (this.lseq || '--') +
       s(' links ') + links
-    return `Record(
+    return `RecordVersion(
 ${ind}  ${s('type')} ${this.type} ${s('id')} ${this.id}
 ${ind}  ${s('value')} ${value}
 ${ind}  ${meta}
@@ -410,7 +542,6 @@ class Entity extends Node {
   }
 
   add (record) {
-    record = this[SC].Record(record)
     if (!this._id) {
       this._id = record.id
     } else if (this._id !== record.id) {
@@ -465,6 +596,7 @@ module.exports = {
   Entity,
   MissingEntity,
   Record,
+  RecordVersion,
   FieldValue,
   FieldValueList,
   MissingFieldValue

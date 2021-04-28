@@ -4,7 +4,7 @@ const { parseAddress, encodeAddress } = require('./address')
 // const Store = require('./store')
 const Type = require('./type')
 const Field = require('./field')
-const { Record, Entity } = require('./records')
+const { Record, RecordVersion, Entity } = require('./records')
 
 module.exports = class Schema {
   constructor (opts = {}) {
@@ -17,6 +17,10 @@ module.exports = class Schema {
 
   Record (record) {
     return new Record(this, record)
+  }
+
+  RecordVersion (recordVersion) {
+    return new RecordVersion(this, recordVersion)
   }
 
   Entity (records) {

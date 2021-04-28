@@ -186,7 +186,7 @@ class Collection extends EventEmitter {
     // This checks if the record has type, id, value set and if the type is present
     // in the collection's schema. Throws an error if not.
     // TODO: Add feature to @arsonar/common to validate the record's value against the schema.
-    record = this.schema.Record(record)
+    record = this.schema.RecordVersion(record)
     const resultRecord = await this.fetch('/db', {
       method: 'PUT',
       body: record
