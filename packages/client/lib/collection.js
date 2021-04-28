@@ -59,6 +59,10 @@ class Collection extends EventEmitter {
     return this._info && this._info.id
   }
 
+  get length () {
+    return this._length || this._info.length || 0
+  }
+
   /**
    * Populate info and schemas for this collection from server.
    *
@@ -66,7 +70,12 @@ class Collection extends EventEmitter {
    * @throws Will throw if this collection does not exist or cannot be accessed.
    * @return {Promise<void>}
    */
-  async open () {
+  async open (reset = false) {
+    if (!this._openPromise || reset) this._openPromise = this._open()
+    return this._openPromise
+  }
+
+  async _open () {
     this._info = await this.fetch('/')
 
     this.schema = new Schema({ defaultNamespace: this.id })
@@ -75,6 +84,8 @@ class Collection extends EventEmitter {
       this.schema.addType(typeSpec)
     }
     this.store = new Store({ schema: this.schema })
+    this.opened = true
+    this.emit('open')
   }
 
   /**
@@ -317,8 +328,9 @@ class Collection extends EventEmitter {
 
     const onerror = err => {
       // TODO: Where should the error go?
-      this.log.error('Error initializing event source: ' + err.message)
-      if (this._eventStream) this._eventStream.destroy(err)
+      // this.log.error('Error initializing event source: ' + err.message)
+      // if (this._eventStream) this._eventStream.destroy(err)
+      // if (this._eventStream) this._eventStream.close()
       this._eventStream = null
     }
 
@@ -337,6 +349,30 @@ class Collection extends EventEmitter {
         this._eventStream.write(eventObject)
         this.emit(eventObject.event, eventObject.data)
       }
+    })
+  }
+
+  /**
+   * Pull live updates from the server as they happen.
+   *
+   * After calling this method once, all new records and record versions
+   * are pulled from the server once available. The `update` event
+   * is emitted when new records are about to arrive.
+   */
+  pullLiveUpdates () {
+    if (this._liveUpdates) return
+    this._liveUpdates = true
+    const eventStream = this.createEventStream()
+    eventStream.on('data', event => {
+      if (event.event !== 'update') return
+      const lseq = event.data.lseq
+      if (!lseq || lseq < this.length) return
+      const oldLength = this.length
+      this._length = lseq + 1
+      for (let i = oldLength; i < this.length; i++) {
+        this.get({ lseq: i }).catch(e => {})
+      }
+      this.emit('update', lseq)
     })
   }
 

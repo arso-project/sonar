@@ -135,8 +135,14 @@ class Workspace {
    * @return {Promise<Collection>}
    */
   async openCollection (keyOrName) {
-    if (this._collections.get(keyOrName)) return this._collections.get(keyOrName)
+    if (this._collections.has(keyOrName)) {
+      const collection = this._collections.get(keyOrName)
+      if (!collection.opened) await collection.open()
+      return collection
+    }
+
     const collection = new Collection(this, keyOrName)
+    this._collections.set(keyOrName, collection)
     // This will throw if the collection does not exist.
     await collection.open()
     this._collections.set(collection.name, collection)
