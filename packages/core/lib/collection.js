@@ -378,7 +378,11 @@ class Collection extends Nanoresource {
     return new Transform({
       transform (req, cb) {
         self.get(req, opts)
-          .catch(cb)
+          .catch(() => {
+            // Ignore missing records.
+            // TODO: Check if this is what we want.
+            cb()
+          })
           .then(records => {
             records.forEach(record => record && this.push(record))
             cb()
@@ -395,7 +399,11 @@ class Collection extends Nanoresource {
     return maybe(cb, async () => {
       let list
       if ((req.key && req.seq) || req.lseq) {
-        list = [await this.getBlock(req)]
+        try {
+          list = [await this.getBlock(req)]
+        } catch (err) {
+          list = []
+        }
       } else if (req.type || req.id) {
         list = await this.query('records', req)
       } else {
@@ -523,6 +531,7 @@ class Collection extends Nanoresource {
       rootKey: this.key && datEncoding.encode(this.key),
       localKey: this.localKey && datEncoding.encode(this.localKey),
       id: this.id,
+      length: this.length,
       feeds,
       kappa,
       network,
@@ -987,8 +996,12 @@ class Batch {
       const feed = this.collection.feed(key)
       if (!feed) throw new Error('Feed not found: ' + key)
       if (!feed.writable) throw new Error('Feed not writable: ' + key)
+      let seq = feed.length - 1
       const blocks = records.map(record => RecordEncoder.encode(record.toJSON()))
       await feed.append(blocks)
+      for (const record of records) {
+        record._record.seq = ++seq
+      }
       return records
     })
 
