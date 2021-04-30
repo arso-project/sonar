@@ -370,7 +370,7 @@ class Collection extends EventEmitter {
       if (!lseq || lseq < this.length) return
       const oldLength = this.length
       this._length = lseq + 1
-      for (let i = oldLength; i < this.length; i++) {
+      for (let i = oldLength + 1; i < this.length; i++) {
         this.get({ lseq: i }).catch(e => {})
       }
       this.emit('update', lseq)
