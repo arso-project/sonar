@@ -121,6 +121,7 @@ function CollectionOverview () {
   return (
     <div className='CollectionOverview'>
       <h2>{collection.name}</h2>
+      Length: {collection.length}
       <h3>Feeds</h3>
       <table>
         <thead>
@@ -253,4 +254,3 @@ function formDataFromEvent (e) {
   formData.forEach((value, key) => (data[key] = value))
   return data
 }
-
