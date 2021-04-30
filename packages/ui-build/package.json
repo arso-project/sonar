@@ -1,0 +1,36 @@
+{
+  "name": "@arsonar/ui-build",
+  "version": "0.0.1",
+  "description": "JS bundler based on esbuild and estrella",
+  "main": "build.js",
+  "bin": {
+    "ui-build": "build.js"
+  },
+  "dependencies": {
+    "estrella": "^1.4.0",
+    "express": "^4.17.1",
+    "instant": "^1.11.0",
+    "mirror-folder": "^3.1.0",
+    "pretty-bytes": "^5.6.0",
+    "standard": "^14.3.3"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/arso-project/sonar.git"
+  },
+  "keywords": [
+    "arso-project"
+  ],
+  "author": {
+    "name": "arso contributors",
+    "email": "hi@arso.xyz"
+  },
+  "license": "GPL-3.0",
+  "bugs": {
+    "url": "https://github.com/arso-project/sonar/issues"
+  },
+  "homepage": "https://github.com/arso-project/sonar#readme",
+  "publishConfig": {
+    "access": "public"
+  }
+}
