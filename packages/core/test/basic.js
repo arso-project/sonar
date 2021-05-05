@@ -14,7 +14,7 @@ tape('open close', async t => {
 
 tape('put and get 1', async t => {
   const { cleanup, workspace } = await createOne()
-  const collection = await workspace.openCollection('default')
+  const collection = await workspace.createCollection('default')
   await collection.putType({ name: 'doc', fields: { title: { type: 'string' } } })
   const record = await collection.put({ type: 'doc', value: { title: 'hello' } })
   t.equal(record.value.title, 'hello')
@@ -27,7 +27,7 @@ tape('put and get 1', async t => {
 
 tape('batch and query', async t => {
   const { cleanup, workspace } = await createOne()
-  const collection = await workspace.openCollection('first')
+  const collection = await workspace.createCollection('first')
   const records = [{ title: 'Hello world', body: 'so rough' },
     { title: 'Hello moon', body: 'so dark' }]
   await collection.putType({ name: 'doc', fields: { title: { type: 'string', body: { type: 'String' } } } })
@@ -66,7 +66,7 @@ tape('share and unshare workspace', async t => {
 
 tape('close collection', async t => {
   const { cleanup, workspace } = await createOne()
-  const collection = await workspace.openCollection('collection')
+  const collection = await workspace.createCollection('collection')
   t.true(collection.opened, 'opened property set')
   await collection.close()
   t.true(collection.closed, 'closed property set')
@@ -100,7 +100,7 @@ tape.skip('create collection with same name', t => {
 
 tape('query empty collection', async t => {
   const { cleanup, workspace } = await createOne()
-  const collection = await workspace.openCollection('collection')
+  const collection = await workspace.createCollection('collection')
   const result = await collection.query('search', 'anything', { sync: true })
   t.deepEquals(result, [], 'empty result')
   await cleanup()

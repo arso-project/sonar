@@ -8,8 +8,13 @@ const Bots = require('./bots')
 const Logger = require('@arsonar/common/log')
 
 const {
-  DEFAULT_ENDPOINT
+  DEFAULT_ENDPOINT,
+  DEFAULT_WORKSPACE
 } = require('./constants')
+
+function defaultWorkspace () {
+  return (process && process.env && process.env.WORKSPACE) || DEFAULT_WORKSPACE
+}
 
 class Workspace {
   /**
@@ -23,10 +28,12 @@ class Workspace {
    * @param {string} [opts.name] - The name of this client.
    */
   constructor (opts = {}) {
+    this._workspace = opts.workspace || defaultWorkspace()
     this.endpoint = opts.endpoint || DEFAULT_ENDPOINT
     if (this.endpoint.endsWith('/')) {
       this.endpoint = this.endpoint.substring(0, this.endpoint.length - 1)
     }
+    this.endpoint = this.endpoint + '/workspace/' + this._workspace
     this._collections = new Map()
     this._id = opts.id || randombytes(16).toString('hex')
     this._token = opts.token

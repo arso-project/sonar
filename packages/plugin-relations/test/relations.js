@@ -16,7 +16,7 @@ tape('relations', async t => {
     }
   }
 
-  const collection = await workspace.openCollection('default')
+  const collection = await workspace.createCollection('default')
   await collection.putType(type)
   await collection.put({
     id: 'alice',

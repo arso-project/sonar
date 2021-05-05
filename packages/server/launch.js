@@ -4,7 +4,12 @@ const options = require('./bin/lib/options')
 const args = require('yargs').options(options).argv
 
 const server = new Server(args)
-server.start(() => {
+server.start((err) => {
+  if (err) {
+    console.error(err)
+    server.api.log.error(err)
+    process.exit(1)
+  }
   const address = `http://${server.hostname}:${server.port}`
   server.api.log.info(`API is listening on ${address}`)
   const code = server.api.auth.getRootAccessCode()

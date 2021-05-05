@@ -8,7 +8,7 @@ const createNative = require('hyper-sdk/test/lib/native')
 const createHyperspace = require('hyper-sdk/test/lib/hyperspace')
 const createMixed = require('hyper-sdk/test/lib/mixed')
 
-const { Workspace, Collection } = require('..')
+const { Workspace } = require('..')
 
 // Prepare and patch tape
 Error.stackTraceLimit = 50
@@ -89,7 +89,7 @@ function runTests (create) {
   test('basic put and get', async t => {
     // try {
     const [w1, cleanup] = await create(1)
-    const c1 = w1.Collection('default')
+    const c1 = await w1.createCollection('default')
     await setup(c1)
     const res = await c1.query('records', { type: 'doc' })
     t.equal(res.length, 1)
@@ -110,10 +110,10 @@ function runTests (create) {
   test('basic replication', { timeout: 5000 }, async t => {
     const [w1, w2, cleanup] = await create(2)
 
-    const c1 = w1.Collection('default')
+    const c1 = await w1.createCollection('default')
     await setup(c1)
 
-    const c2 = w2.Collection(c1.key)
+    const c2 = await w2.createCollection(c1.key)
     await c2.open()
     await c2.sync()
 
@@ -146,7 +146,7 @@ function runTests (create) {
 
   test('open and close and open', async t => {
     let [workspace, cleanup] = await create(1, { persist: true })
-    let col = workspace.Collection('first')
+    let col = await workspace.createCollection('first')
     await col.ready()
     await col.putType(DOC_SPEC)
     const type1 = col.schema.getType('doc')
@@ -160,7 +160,7 @@ function runTests (create) {
 
     workspace = new Workspace({ storagePath, sdk })
     await workspace.ready()
-    col = workspace.Collection('first')
+    col = await workspace.createCollection('first')
     await col.ready()
     const key = col.key
     const type2 = col.schema.getType('doc')
@@ -171,7 +171,7 @@ function runTests (create) {
 
     workspace = new Workspace({ storagePath, sdk })
     await workspace.ready()
-    col = workspace.Collection(key)
+    col = await workspace.openCollection(key)
     await col.ready()
     const type3 = col.schema.getType('doc')
     t.equal(type3.name, 'doc')
@@ -183,7 +183,7 @@ function runTests (create) {
 
   test('sonar fs', async t => {
     const [workspace, cleanup] = await create(1, { persist: true })
-    const collection = workspace.Collection('default')
+    const collection = await workspace.createCollection('default')
     await collection.open()
     const feeds = await collection.get({ type: 'sonar/feed' })
     const drives = feeds.filter(record => record.value.type === 'hyperdrive')

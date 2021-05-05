@@ -101,6 +101,10 @@ class Collection extends Nanoresource {
 
   // Public API
 
+  get writable () {
+    return this._localFeed && this._localFeed.writable
+  }
+
   get key () {
     return this._rootFeed && this._rootFeed.key
   }
@@ -686,15 +690,14 @@ class Collection extends Nanoresource {
 
     // Init local feed
     // ====
-    if (this._rootFeed.writable) {
-      this._localFeed = this._rootFeed
-    } else {
-      this._localFeed = await this._initFeed(this._feedName(FEED_TYPE_ROOT), rootInfo)
-    }
-
-    // Publish about ourselves in our own feed
-    if (!(await this._localFeed.has(1))) {
-      await this.putFeed(this.localKey, this.feedInfo(this.localKey))
+    if (this._opts.localKey) {
+      await this._setLocalWriter(this._opts.localKey)
+    } else if (this._opts.writable !== false) {
+      if (this._rootFeed.writable) {
+        await this._setLocalWriter(this._rootFeed.key)
+      } else {
+        await this._setLocalWriter(this._feedName(FEED_TYPE_ROOT))
+      }
     }
 
     // Init network configuration.
@@ -739,6 +742,16 @@ class Collection extends Nanoresource {
     //   this._addTypeFromRecord(typeRecord)
     // }
     //
+  }
+
+  async _setLocalWriter (keyOrName, info = {}) {
+    info = { type: FEED_TYPE_ROOT, ...info }
+    this._localFeed = await this._initFeed(keyOrName, info)
+
+    // Publish about ourselves in our own feed
+    if (!(await this._localFeed.has(1))) {
+      await this.putFeed(this.localKey, this.feedInfo(this.localKey))
+    }
   }
 
   async _close () {

@@ -5,6 +5,7 @@ const { createOne } = require('./lib/create')
 
 async function prepare (t) {
   const { client, cleanup } = await createOne()
+  await client.createCollection('default')
   try {
     await client.putType('doc', { fields: { title: { type: 'string' } } })
     await client.put({ type: 'doc', value: { title: 'hello world' } })
