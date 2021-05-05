@@ -1,4 +1,5 @@
 const through = require('through2')
+const { Readable } = require('streamx')
 const keyEncoding = require('charwise')
 const {
   mapRecordsIntoOps,
@@ -30,6 +31,12 @@ module.exports = function createRecordView (lvl, db, opts) {
     api: {
       query (req, opts = {}) {
         if (!req) return this.view.all(opts)
+        if (req.lseq) {
+          const stream = new Readable()
+          stream.push(req)
+          stream.push(null)
+          return stream
+        }
         if (typeof req === 'string') req = { id: req }
         let { type, id, key, seq, all } = req
 

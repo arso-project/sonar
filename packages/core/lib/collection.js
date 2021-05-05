@@ -10,7 +10,7 @@ const { NanoresourcePromise: Nanoresource } = require('nanoresource-promise/emit
 const Kappa = require('kappa-core')
 const Indexer = require('kappa-sparse-indexer')
 
-const { Record, Type, Schema } = require('@arsonar/common')
+const { RecordVersion, Type, Schema } = require('@arsonar/common')
 const PromiseCache = require('@arsonar/common/lib/cache')
 const LevelMap = require('./utils/level-map')
 const EventStream = require('./utils/eventstream')
@@ -350,12 +350,12 @@ class Collection extends Nanoresource {
     }
 
     try {
-      const record = new Record(this.schema, decoded)
+      const record = new RecordVersion(this.schema, decoded)
       return record
     } catch (err) {
       if (opts.wait === false) throw err
       await this.sync('root')
-      const record = new Record(this.schema, decoded)
+      const record = new RecordVersion(this.schema, decoded)
       return record
     }
   }
@@ -378,7 +378,11 @@ class Collection extends Nanoresource {
     return new Transform({
       transform (req, cb) {
         self.get(req, opts)
-          .catch(cb)
+          .catch(() => {
+            // Ignore missing records.
+            // TODO: Check if this is what we want.
+            cb()
+          })
           .then(records => {
             records.forEach(record => record && this.push(record))
             cb()
@@ -395,7 +399,11 @@ class Collection extends Nanoresource {
     return maybe(cb, async () => {
       let list
       if ((req.key && req.seq) || req.lseq) {
-        list = [await this.getBlock(req)]
+        try {
+          list = [await this.getBlock(req)]
+        } catch (err) {
+          list = []
+        }
       } else if (req.type || req.id) {
         list = await this.query('records', req)
       } else {
@@ -523,6 +531,7 @@ class Collection extends Nanoresource {
       rootKey: this.key && datEncoding.encode(this.key),
       localKey: this.localKey && datEncoding.encode(this.localKey),
       id: this.id,
+      length: this.length,
       feeds,
       kappa,
       network,
@@ -559,7 +568,7 @@ class Collection extends Nanoresource {
       // invalid records end here too (invalid = type unknown usually).
       // we just ignore them as we care for records of type "feed" and "type" only.
       try {
-        record = new Record(this.schema, record)
+        record = new RecordVersion(this.schema, record)
         if (record.hasType(TYPE_FEED)) {
           const opts = { origin: record.key }
           this._initFeed(record.value.key, record.value, opts).catch(this._onerror)
@@ -954,7 +963,7 @@ class Batch {
       // Throws an error if the record is invalid.
       // TODO: Currently it only checks if id and value are non-empty and type is valid
       // type in the schema.
-      record = new Record(this.collection.schema, record)
+      record = new RecordVersion(this.collection.schema, record)
 
       // Set feed, links, timestamp
       record.links = await this._getLinks(record, opts)
@@ -987,8 +996,12 @@ class Batch {
       const feed = this.collection.feed(key)
       if (!feed) throw new Error('Feed not found: ' + key)
       if (!feed.writable) throw new Error('Feed not writable: ' + key)
+      let seq = feed.length - 1
       const blocks = records.map(record => RecordEncoder.encode(record.toJSON()))
       await feed.append(blocks)
+      for (const record of records) {
+        record._record.seq = ++seq
+      }
       return records
     })
 

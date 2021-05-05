@@ -67,14 +67,15 @@ tape('db basic put and query', async t => {
   // console.log(results.map(record => record.fields().map(f => f.fieldAddress).join('  !!  ')))
   const record = results[0]
   // const record2 = results[1]
-  t.equal(record.entity.id, res.id)
-  t.equal(record.entity.get('fun#color'), 'red')
-  t.equal(record.entity.get('doc#title'), 'hello world')
+  const entity = collection.store.getEntity(record.id)
+  // t.equal(record.entity.id, res.id)
+  t.equal(entity.get('fun#color'), 'red')
+  t.equal(entity.get('doc#title'), 'hello world')
   // t.equal(record.get('color'), 'red')
   // t.equal(record.get('fun#color'), 'red')
   // t.equal(record.get('fun#color'), 'red')
   // console.log(record.entity.getTypes().map(t => t.title))
-  t.equal(record.entity.id, res.id)
+  t.equal(entity.id, res.id)
 
   await cleanup()
   t.ok(true, 'cleanup ok')
@@ -149,4 +150,40 @@ tape.skip('fs with streams', async t => {
   t.equal(Buffer.concat(chunks).toString(), 'foobar', 'result matches')
 
   await cleanup()
+})
+
+tape.only('subscribe to record', async t => {
+  const { client, cleanup } = await createOne({ network: false })
+  const collection = await client.createCollection('foobar')
+  await collection.putType({
+    name: 'doc',
+    fields: {
+      title: {
+        type: 'string'
+      }
+    }
+  })
+  const putted = await collection.put({
+    type: 'doc',
+    value: { title: 'hello world' }
+  })
+
+  let didNotify = false
+  const notifyPromise = new Promise((resolve) => {
+    putted.subscribe(record => {
+      if (didNotify) t.fail('subscribe emitted more than once')
+      t.equal(record.get('title'), 'hello moon', 'subscribe called correctly')
+      didNotify = true
+      resolve()
+    })
+  })
+
+  const newVersion = putted.latest.update({
+    title: 'hello moon'
+  })
+  await collection.put(newVersion)
+  await notifyPromise
+
+  await cleanup()
+  t.ok(true, 'cleanup ok')
 })
