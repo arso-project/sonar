@@ -1,115 +1,341 @@
 import React from 'react'
-
-import { useCollection, useRecord, useConfig, useWorkspace, useQuery } from '..'
-import './app.css'
+import { useCollection, useRecord, useConfig, useQuery } from '..'
+import './app.scss'
 
 export default function App () {
   return (
     <div className='App'>
-      <WorkspaceSettings />
+      <Header />
       <CollectionPage />
     </div>
   )
 }
 
+function useToggle (defaultValue) {
+  const [state, setState] = React.useState(defaultValue)
+  function toggle () {
+    setState(state => !state)
+  }
+  return [state, toggle, setState]
+}
+
+function Header () {
+  const { collection, pending, error } = useCollection(null, { liveUpdates: true, state: true })
+  const collectionName = collection ? collection.name : '<none>'
+  const [showWorkspace, toggleWorkspace] = useToggle(false)
+  const [showCollection, toggleCollection] = useToggle(false)
+  return (
+    <div className='Header'>
+      <div className='Header-Bar'>
+        <a href='#' className={showWorkspace ? 'active' : ''} onClick={() => toggleWorkspace()}>
+          Workspace settings
+        </a>
+        <a href='#' className={showCollection ? 'active' : ''} onClick={() => toggleCollection()}>
+          Collection settings
+        </a>
+        <h3>Collection: {collectionName}</h3>
+      </div>
+      {showWorkspace && <WorkspaceSettings />}
+      {showCollection && <CollectionOverview />}
+    </div>
+  )
+}
+
 function CollectionPage () {
-  const collection = useCollection(null, { liveUpdates: true })
-  const [current, setCurrent] = React.useState(undefined)
-  if (!collection) return <em>Loading collection...</em>
+  const { collection, pending, error } = useCollection(null, { liveUpdates: true, state: true })
+  const [currentRecord, setCurrentRecord] = React.useState(undefined)
+  const [query, setQuery] = React.useState(null)
+  if (error) return <Error error={error} />
+  if (pending) return <em>Loading collection...</em>
   return (
     <>
-      <CollectionOverview />
-      <button onClick={e => setCurrent(null)}>Create record</button>
       <div className='App-main'>
-        <QueryRecords onSelect={path => setCurrent(path)} />
-        <EditRecord path={current} />
+        <div>
+          <h2>Query</h2>
+          <QueryBuilder query={query} setQuery={setQuery} />
+          {query && <QueryRecords query={query} onSelect={path => setCurrentRecord(path)} selected={currentRecord} />}
+        </div>
+        <div>
+          <button onClick={e => setCurrentRecord(null)}>Create record</button>
+          <EditRecord path={currentRecord} />
+        </div>
       </div>
     </>
   )
 }
 
+function QueryBuilder (props) {
+  const { query, setQuery } = props
+  const [selectedQueryId, setSelectedQueryId] = React.useState('records')
+  const queryTypes = [
+    { id: 'records', name: 'Records by type', component: RecordsQueryBuilder },
+    { id: 'search', name: 'Search', component: SearchQueryBuilder }
+  ]
+  const queryType = queryTypes.find(queryType => queryType.id === selectedQueryId)
+  const QueryTypeBuilder = queryType && queryType.component
+  return (
+    <div>
+      <select onChange={e => setSelectedQueryId(e.target.value)} value={selectedQueryId}>
+        {queryTypes.map(queryType => (
+          <option key={queryType.id} value={queryType.id}>{queryType.name}</option>
+        ))}
+      </select>
+      {QueryTypeBuilder && <QueryTypeBuilder query={query} setQuery={setQuery} />}
+    </div>
+  )
+}
+
+function RecordsQueryBuilder (props) {
+  let { query, setQuery } = props
+  if (!query || query.id !== 'records') query = { id: 'records', args: {} }
+  const selectedType = query.args.type || null
+  return (
+    <TypeSelector selected={selectedType} onSelect={onTypeSelect} />
+  )
+  function onTypeSelect (type) {
+    setQuery({ id: 'records', args: { type } })
+  }
+}
+
+function SearchQueryBuilder (props) {
+  let { query, setQuery } = props
+  const [inputValue, setInputValue] = React.useState('')
+  React.useEffect(() => {
+    console.log('EFFECT', inputValue)
+    if (!query || query.id !== 'search') query = { id: 'search', args: '' }
+    if (query.args !== inputValue) {
+      query.args = inputValue
+      console.log('SET')
+      setQuery({ ...query })
+    }
+  }, [inputValue, query])
+  return (
+    <input type='text' placeholder='Type to search ...' onChange={onInputChange} value={inputValue} />
+  )
+  function onInputChange (e) {
+    const text = e.target.value
+    setInputValue(text)
+  }
+}
+
+function TypeSelector (props) {
+  const { selected, onSelect } = props
+  const collection = useCollection()
+  const types = React.useMemo(() => collection && collection.schema.getTypes(), [collection])
+  React.useEffect(() => {
+    if (!selected && types && types.length) onSelect(types[0].address)
+  }, [types])
+  if (!types) return null
+  return (
+    <select onChange={e => onSelect(e.target.value)} value={selected || undefined}>
+      {types.map(type => <option key={type.address} value={type.address}>{type.title} ({type.address})</option>)}
+    </select>
+  )
+}
+
 function QueryRecords (props) {
-  const { onSelect } = props
-  const query = useQuery('records', { type: 'sonar/entity' })
+  const { query: queryProp, onSelect, selected, perPage = 100 } = props
+  const query = useQuery(queryProp.id, queryProp.args)
+  const [page, setPage] = React.useState(0)
+  const pagedRecords = React.useMemo(() => {
+    if (!query.records) return null
+    if (query.records.length < perPage) return query.records
+    const from = page * perPage
+    const to = (page + 1) * perPage
+    return query.records.slice(from, to)
+  }, [query.records, page, perPage])
   if (query.pending) return <em>Loading</em>
   if (query.error) return <em>Error: {query.error.message}</em>
-  if (!query.records) return <em>No results</em>
+  if (!pagedRecords) return <em>No results</em>
+  const numPages = Math.ceil(query.records.length / perPage)
   return (
-    <ul>
-      {query.records.map(record => (
-        <ViewRecord key={record.path} path={record.path} onSelect={onSelect} />
+    <div className='QueryRecords'>
+      <div>
+        total: {query.records.length},
+        showing: {pagedRecords.length},
+        page:
+        <select onChange={e => setPage(Number(e.target.value))} value={page}>
+          {new Array(numPages).fill(0).map((val, idx) => <option key={idx} value={idx}>{idx + 1}</option>)}
+        </select>
+      </div>
+      {pagedRecords.map((record, i) => (
+        <ViewRecord key={i} path={record.path} onSelect={onSelect} selected={selected} />
       ))}
-    </ul>
+    </div>
   )
 }
 
 function ViewRecord (props = {}) {
-  const { path, onSelect } = props
+  const { path, selected, onSelect } = props
   const record = useRecord({ path })
   const [version, setVersion] = React.useState(null)
   if (!record) return null
   const current = version || record
+  let className = 'ViewRecord'
+  if (selected === path) className += ' ViewRecord-selected'
   return (
-    <div className='ViewRecord'>
-      <dl>
-        <dt>Type</dt>
-        <dd>{current.type}</dd>
-        <dt>ID</dt>
-        <dd>{current.id}</dd>
-        <dt>Address</dt>
-        <dd>{current.shortAddress}</dd>
-        <dt>Label</dt>
-        <dd>{current.get('label')}</dd>
-        <dt>Loaded versions</dt>
-        <dd>
-          Current: <strong>{record.versions().length}</strong>
-          &nbsp; All: <em>{record.allVersions().length}</em>
-          <div>
-            <button onClick={e => setVersion(null)}>latest</button>
-            {record.versions().map(version => (
-              <button key={version.address} onClick={e => setVersion(version)}>
-                {version.shortAddress}
-              </button>
-            ))}
-          </div>
-        </dd>
-      </dl>
-      <button onClick={e => onSelect(record.path)}>Edit</button>
+    <div className={className}>
+      <div className='ViewRecord-fields'>
+        {current.fields().map((field, i) => (
+          <Row key={i} label={field.title}><FieldValue field={field} /></Row>
+        ))}
+      </div>
+      <div className='RecordFooter'>
+        <RecordMeta record={current} />
+        <div>
+          <RecordVersionSelector record={record} selected={version} onSelect={setVersion} />
+          <a href='#' onClick={e => onSelect(record.path)}>Edit</a>
+        </div>
+      </div>
     </div>
   )
+}
+
+function RecordMeta (props) {
+  const { record } = props
+  return (
+    <div className='RecordMeta'>
+      <div>
+        <em>Type: </em>
+        <strong>{record.type}</strong>
+      </div>
+      <div>
+        <em>ID: </em>
+        <strong>{record.id}</strong>
+      </div>
+      <div>
+        <em>Address: </em>
+        <strong>{record.shortAddress}</strong>
+      </div>
+    </div>
+  )
+}
+
+function RecordVersionSelector (props) {
+  const { record, selected, onSelect } = props
+  const isSelected = val => selected === val ? 'selected' : ''
+  const latest = record.versions().length
+  return (
+    <div className='RecordVersionSelector'>
+      Versions:
+      &nbsp;{record.allVersions().length}&nbsp;
+      {latest > 1 && <span>({latest} current)&nbsp;</span>}
+      <a
+        href='#'
+        onClick={e => onSelect(null)}
+        className={isSelected(null)}
+      >
+        latest
+      </a>
+      {record.versions().map(version => (
+        <a
+          key={version.address}
+          href='#'
+          onClick={e => { onSelect(version) }}
+          className={isSelected(version)}
+        >
+          {version.shortAddress}
+        </a>
+      ))}
+    </div>
+  )
+}
+
+function Row (props) {
+  const { label, children } = props
+  return (
+    <div className='Row'>
+      <div className='Row-label'>{label}</div>
+      <div className='Row-content'>{children}</div>
+    </div>
+  )
+}
+
+function FieldValue (props) {
+  const { field } = props
+  return valueToString(field.value)
 }
 
 function EditRecord (props = {}) {
   const { path } = props
   const collection = useCollection()
   const [error, setError] = React.useState(null)
+  const [success, setSuccess] = React.useState(null)
+  const [pending, setPending] = React.useState(false)
   const current = useRecord({ path })
+  const [formState, setFormState] = React.useState({})
+  const [selectedTypeAddress, setSelectedTypeAddress] = React.useState(null)
+  React.useEffect(() => {
+    if (!current) return setFormState({})
+    const state = current.fields().reduce((state, field) => {
+      state[field.name] = valueToString(field.value)
+      return state
+    }, {})
+    setSuccess(null)
+    setError(null)
+    setFormState(state)
+  }, [current, selectedTypeAddress])
+
+  const create = !current
+  let fields, type
+  if (current) {
+    fields = current.fields()
+    type = current.getType()
+    for (const field of type.fields()) {
+      if (!fields.find(f => f.address === field.address)) fields.push(field)
+    }
+  } else if (collection && selectedTypeAddress) {
+    type = collection.schema.getType(selectedTypeAddress)
+    fields = type.fields()
+  }
+
   if (!collection) return null
 
-  const label = current ? current.get('label') : ''
-  const id = current ? current.id : null
-
   return (
-    <form onSubmit={onFormSubmit}>
-      <h2>Collection: <em>{collection.label}</em></h2>
-      label: <input key={id} name='label' defaultValue={label} type='text' />
-      <button type='submit'>save</button>
-      {error && <p><strong>Error:</strong>{error.message}</p>}
+    <form onSubmit={onFormSubmit} className='EditRecord'>
+      {create && <h2>Create record</h2>}
+      {create && <div>Select type: <TypeSelector selected={selectedTypeAddress} onSelect={setSelectedTypeAddress} /></div>}
+      {!create && <h2>Edit record</h2>}
+      {!create && <RecordMeta record={current} />}
+      {fields && (
+        <div>
+          {fields.map((field, i) => (
+            <Row key={i} label={field.title}>
+              <input
+                type='text'
+                value={formState[field.name] || ''}
+                onChange={e => updateFormState(field.name, e.target.value)}
+              />
+            </Row>
+          ))}
+        </div>
+      )}
+      <button type='submit' disabled={pending}>save</button>
+      {error && <Error error={error} />}
+      {success && <em>Created record: {success.shortAddress}</em>}
     </form>
   )
 
+  function updateFormState (field, value) {
+    setFormState(state => ({ ...state, [field]: value }))
+  }
+
   async function onFormSubmit (e) {
-    const data = formDataFromEvent(e)
+    e.preventDefault()
     const record = {
-      type: 'sonar/entity',
-      value: data,
+      type: type.address,
+      value: formState,
       id: current ? current.id : undefined
     }
     try {
+      setPending(true)
       const created = await collection.put(record)
+      setSuccess(created)
+      setCurrent(created)
     } catch (e) {
-      console.error(e)
       setError(e)
+    } finally {
+      setPending(false)
     }
   }
 }
@@ -171,9 +397,15 @@ function CollectionOverview () {
 
 function Error (props) {
   const { error } = props
+  React.useEffect(() => {
+    console.error(error)
+  }, [error])
+  let message
+  if (error && typeof error === 'object') message = error.message
+  else message = error
   return (
     <em className='Error'>
-      <strong>Error:</strong>{error.message}
+      <strong>Error:</strong> {message}
     </em>
   )
 }
@@ -239,7 +471,6 @@ function WorkspaceSettings () {
 
   function onFormSubmit (e) {
     const data = formDataFromEvent(e)
-    console.log('set data', data)
     config.set('endpoint', data.endpoint)
     config.set('accessCode', data.accessCode)
     config.set('collection', data.collection)
@@ -254,3 +485,10 @@ function formDataFromEvent (e) {
   formData.forEach((value, key) => (data[key] = value))
   return data
 }
+
+function valueToString (value) {
+  if (typeof value === 'undefined') return ''
+  if (typeof value === 'string' || typeof value === 'number') return value
+  return JSON.stringify(value)
+}
+

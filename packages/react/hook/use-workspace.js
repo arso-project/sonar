@@ -3,6 +3,7 @@ import React from 'react'
 import { Workspace } from '@arsonar/client'
 
 const workspaces = new Map()
+window.workspaces = workspaces
 
 export default function useWorkspace (opts = {}) {
   const config = useConfig()

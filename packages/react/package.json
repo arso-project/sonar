@@ -5,6 +5,8 @@
   "main": "index.js",
   "scripts": {
     "example": "ui-build -b examples -w",
+    "example-vite": "vite examples",
+    "example-vite-build": "vite build examples",
     "test": "tape test/*.js"
   },
   "dependencies": {
