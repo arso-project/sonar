@@ -5,6 +5,7 @@ const pretty = require('pretty-bytes')
 const mirror = require('mirror-folder')
 const fs = require('fs')
 const { build: estrellaBuild, cliopts, log } = require('estrella')
+const sassPlugin = require('esbuild-plugin-sass')
 
 if (require.main === module) {
   build()
@@ -81,6 +82,7 @@ function build (opts) {
       'process.title': JSON.stringify('browser'),
       'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development')
     },
+    plugins: [sassPlugin()],
     onEnd
   }
 
