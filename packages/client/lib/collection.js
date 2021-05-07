@@ -454,9 +454,11 @@ class Collection extends EventEmitter {
    *  If unset all views will be reindexed.
    */
   async reindex (views) {
+    const params = {}
+    if (views) params.views = views
     return this.fetch('/reindex', {
       method: 'post',
-      params: { views }
+      params
     })
   }
 
