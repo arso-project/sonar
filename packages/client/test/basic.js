@@ -152,7 +152,7 @@ tape.skip('fs with streams', async t => {
   await cleanup()
 })
 
-tape.only('subscribe to record', async t => {
+tape('subscribe to record', async t => {
   const { client, cleanup } = await createOne({ network: false })
   const collection = await client.createCollection('foobar')
   await collection.putType({

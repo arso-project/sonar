@@ -139,7 +139,7 @@ async function listTypes (argv) {
 async function reindex (argv) {
   const client = makeClient(argv)
   const collection = await client.openCollection(argv.collection)
-  let views
+  let views = null
   if (argv.views) views = argv.views.split(',').map(s => s.trim()).filter(f => f)
   await collection.reindex(views)
   if (!views || !views.length) console.log('Reindex for all views started.')

@@ -197,14 +197,16 @@ class Collection extends Nanoresource {
           return ondone()
         }
         self.getBlock(req, getOpts)
-          .then(record => {
-            messages[i] = record
-            ondone()
-          })
-          .catch(err => {
-            if (err) messages[i] = undefined
-            ondone()
-          })
+          .then(
+            record => {
+              messages[i] = record
+              ondone()
+            },
+            err => {
+              if (err) messages[i] = undefined
+              ondone()
+            }
+          )
       })
       function ondone () {
         if (--pending !== 0) return
@@ -365,8 +367,14 @@ class Collection extends Nanoresource {
     if (seq === 0) throw new Error('Invalid request: Seq 0 is the header, not a block')
     if (!key) throw new Error('Invalid request: Missing key argument')
 
-    const feed = this.feed(key)
-    if (!feed) throw new Error('Feed not found')
+    let feed = this.feed(key)
+    if (!feed) {
+      // TODO: This line allows to reference blocks from any hypercore, anywhere - do we want this?
+      // It fixes the case where, especially on a reindex, blocks from feeds are floating in for which
+      // their feed records are not yet indexed...
+      feed = this._workspace.Hypercore(key)
+      // throw new Error('Feed not found')
+    }
 
     const struct = this._struct(key)
     const block = await struct.get(feed, req)
@@ -545,9 +553,13 @@ class Collection extends Nanoresource {
     return this._eventStream.createReadStream(opts)
   }
 
-  reindex (views, cb) {
-    if (!cb) { cb = views; views = null }
-    this._kappa.reset(views, cb)
+  reindex (views = null) {
+    return new Promise((resolve, reject) => {
+      this._kappa.reset(views, err => {
+        if (err) return reject(err)
+        resolve()
+      })
+    })
   }
 
   // Internal methods

@@ -11,7 +11,10 @@ function clearLevelDb (db, cb) {
     write: function (key, enc, next) {
       batch.push({ type: 'del', key })
       if (batch.length >= maxSize) {
-        db.batch(batch, next)
+        db.batch(batch, err => {
+          batch = []
+          next(err)
+        })
       } else next()
     },
     final: function (next) {

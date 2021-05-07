@@ -19,7 +19,7 @@ module.exports = function createRecordView (lvl, db, opts) {
   return {
     map (records, next) {
       mapRecordsIntoOps(db, records, mapToPutOp, (err, ops) => {
-        if (err) { console.error(err) }
+        if (err) return next(err)
         lvl.batch(ops, next)
       })
     },

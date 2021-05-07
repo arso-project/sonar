@@ -375,6 +375,13 @@ class RecordVersion extends Node {
     return allTypes.indexOf(typeAddress) !== -1
   }
 
+  allTypes () {
+    const type = this.getType()
+    if (!type) return false
+    const allTypes = type.allParents()
+    return allTypes
+  }
+
   // Invoked by the Node high-level methods.
   _field (fieldName, single = true) {
     const fieldValues = this._filterFieldValues(fieldName)
@@ -491,6 +498,10 @@ class FieldValue {
   }
 
   get fieldAddress () {
+    return this._field.address
+  }
+
+  get address () {
     return this._field.address
   }
 
