@@ -1,6 +1,6 @@
 {
   "name": "@arsonar/ui-build",
-  "version": "0.0.1",
+  "version": "0.4.0",
   "description": "JS bundler based on esbuild and estrella",
   "main": "build.js",
   "bin": {

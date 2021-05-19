@@ -1,6 +1,6 @@
 {
   "name": "@arsonar/react",
-  "version": "0.0.1",
+  "version": "0.4.0",
   "description": "A arsonar module",
   "main": "index.js",
   "scripts": {
@@ -8,12 +8,12 @@
     "test": "tape test/*.js"
   },
   "dependencies": {
-    "@arsonar/client": "^0.3.0-alpha.7",
+    "@arsonar/client": "^0.4.0",
     "react": "^17.0.1",
     "react-dom": "^17.0.2"
   },
   "devDependencies": {
-    "@arsonar/ui-build": "^0.0.1",
+    "@arsonar/ui-build": "^0.4.0",
     "standard": "^14.3.3",
     "tape": "^5.0"
   },
