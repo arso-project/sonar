@@ -1,6 +1,7 @@
 import React from 'react'
 import ReactDOM from 'react-dom'
 
+// import App from './app.chakra'
 import App from './app'
 
 const el = document.createElement('div')

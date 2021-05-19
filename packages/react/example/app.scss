@@ -2,7 +2,7 @@
   --color-red-hue: 2;
   --color-red: hsl(var(--color-red-hue, 0), 69%, 54%);
   --color-purple-hue: 300;
-  --color-purple: hsl(var(--color-purple-hue, 0), 100%, 29%);
+  --color-purple: hsl(var(--color-purple-hue, 0), 100%, 39%);
   --color-main: var(--color-purple);
 }
 
@@ -19,10 +19,12 @@
 
 @mixin panel {
   border-radius: 5px;
-  background: rgba(255,255,255,0.5);
+  // background: rgba(255,255,255,0.5);
+  background: #fff;
   border: 1px solid rgba(0,0,0,0.2);
   padding: 1rem;
   margin-bottom: 1rem;
+  margin-top: 1rem;
   & > h2:first-child {
     margin-top: 0;
   }
@@ -31,7 +33,7 @@
 body {
   font-family: sans-serif;
   min-height: 100vh;
-  background: #eee;
+  background: #fcfcfc;
   margin: 0;
   padding: 0;
 }
@@ -48,36 +50,22 @@ h1, h2, h3, h4, h5, h6 {
   }
 }
 
-.App > h2 {
-  margin: 1rem;
-}
-
-.App-main {
-  display: flex;
-  padding: 1rem;
-  > div:first-child {
-    width: 70%;
-    margin-right: 1rem;
-  }
-}
-
-.App-main > * {
-  // margin: 1rem;
-  // padding: 1rem;
-  // background-color: #fff;
-}
-
 .Header-Bar {
   background: black;
   height: 2rem;
-  margin: 0 0 1rem 0;
-  padding: 0 1rem;
+  // margin: 0 0 1rem 0;
+  margin: 0;
+  padding: 0;
   color: #eee;
   display: flex;
+  > * {
+    display: block;
+    vertical-align: center;
+    line-height: 2rem;
+  }
 
   > a {
-    display: block;
-    padding: .25rem 1rem;
+    padding: 0 1rem;
     color: #eee;
     text-decoration: none;
     margin-right: 1rem;
@@ -95,16 +83,42 @@ h1, h2, h3, h4, h5, h6 {
     font-weight: bold;
     font-size: 1rem;
     padding: 0;
-    padding: .25rem;
     margin: 0 1rem;
   }
+}
+
+.CollectionPage {
+  display: flex;
+  padding: 1rem;
+  > * > h2 {
+    // border-bottom: 2px solid #aaa;
+    margin: 0 0 1rem 0;
+    padding: 0;
+    color: black;
+    font-weight: bold;
+    font-size: 2rem;
+  }
+  > .CollectionPage-left {
+    width: 80%;
+    margin-right: 1rem;
+  }
+  > .CollectionPage-right {
+    width: 20%;
+  }
+}
+
+.QueryRecords > .ViewRecord {
+  width: calc(50% - 1rem);
+  margin-right: 1rem;
+  overflow: auto;
+  float: left;
 }
 
 .ViewRecord {
   @include panel;
   &.ViewRecord-selected {
     border-color: #7c7;
-    background-color: rgba(200,255,200,0.6);
+    background-color: rgba(200,255,200,0.2);
   }
   > .ViewRecord-meta {
     font-size: .9em;
@@ -125,22 +139,30 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .RecordMeta {
+  // display: none;
   display: flex;
   // margin: -1rem -1rem 1rem -1rem;
   // padding: .25rem 1rem;
   font-size: .9rem;
   // background: rgba(100,100,100,0.1);
   color: #666;
+  > * > * {
+    display: inline-block;
+  }
   em {
     font-style: normal;
     font-weight: 400;
     margin-right: .25rem;
+    color: #999;
   }
   strong {
+    display: inline-block;
     margin-right: .5rem;
-    font-weight: 600;
-    font-family: monospace;
-    color: #999;
+    font-weight: 400;
+    // max-width: 140px;
+    // overflow: hidden;
+    // text-overflow: ellipsis;
+    // font-family: monospace;
   }
 }
 
@@ -157,7 +179,7 @@ h1, h2, h3, h4, h5, h6 {
   }
   > * {
     padding: .25rem 1rem;
-    display: flex;
+    // display: flex;
   }
   a {
     @include smallLink;
@@ -179,6 +201,9 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .RecordVersionSelector {
+  * {
+    display: inline-block;
+  }
   a {
     @include smallLink;
     border-bottom: none;
@@ -260,5 +285,51 @@ h1, h2, h3, h4, h5, h6 {
   .RecordMeta {
     display: block;
     margin-bottom: .5rem;
+  }
+  .Row {
+    margin-top: .5rem;
+  }
+}
+
+.QueryBuilder {
+  margin-bottom: 1rem;
+  select + select {
+    margin-left: 1rem;
+  }
+}
+
+// form styles
+.App {
+  button, input, select {
+    padding: .25rem 1rem;
+    border: 2px solid hsla(var(--color-purple-hue), 50%, 50%, 50%);
+    border-radius: 5px;
+    // background: #fff;
+    background: hsla(var(--color-purple-hue), 50%, 80%, 20%);
+    color: #222;
+    font-weight: bold;
+    box-shadow: 2px 2px 4px inset rgba(0,0,0,0.1);
+    &:hover, &:focus {
+      outline: none;
+    }
+    &:focus {
+      border-color: blue;
+    }
+    &:hover {
+      border-color: #927;
+      background: #f0f0f0;
+      &:focus {
+        background-color: #fff;
+      }
+    }
+  }
+  button {
+    box-shadow: -2px -2px 4px inset rgba(0,0,0,0.1);
+  }
+  input {
+    // box-shadow: 2px 2px 4px inset rgba(0,0,0,0.1);
+  }
+  button, select {
+    cursor: pointer;
   }
 }

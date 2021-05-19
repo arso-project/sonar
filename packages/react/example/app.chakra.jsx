@@ -1,13 +1,18 @@
 import React from 'react'
 import { useCollection, useRecord, useConfig, useQuery } from '..'
-import './app.scss'
+
+// import './app.scss'
+
+import { ChakraProvider, Input, Select, Flex, Box, Button } from '@chakra-ui/react'
 
 export default function App () {
   return (
-    <div className='App'>
-      <Header />
-      <CollectionPage />
-    </div>
+    <ChakraProvider>
+      <div className='App'>
+        <Header />
+        <CollectionPage />
+      </div>
+    </ChakraProvider>
   )
 }
 
@@ -21,20 +26,24 @@ function useToggle (defaultValue) {
 
 function Header () {
   const { collection, pending, error } = useCollection(null, { liveUpdates: true, state: true })
-  const collectionName = collection ? collection.name : '<none>'
+  const collectionName = collection ? collection.name : null
   const [showWorkspace, toggleWorkspace] = useToggle(false)
   const [showCollection, toggleCollection] = useToggle(false)
   return (
     <div className='Header'>
-      <div className='Header-Bar'>
+      <Flex>
         <a href='#' className={showWorkspace ? 'active' : ''} onClick={() => toggleWorkspace()}>
           Workspace settings
         </a>
-        <a href='#' className={showCollection ? 'active' : ''} onClick={() => toggleCollection()}>
-          Collection settings
-        </a>
-        <h3>Collection: {collectionName}</h3>
-      </div>
+        {collection && (
+          <a href='#' className={showCollection ? 'active' : ''} onClick={() => toggleCollection()}>
+            Collection settings
+          </a>
+        )}
+        {pending && <h3>Loading ...</h3>}
+        {error && <h3><Error nostyle error={error} /></h3>}
+        {collectionName && <h3>Collection: {collectionName}</h3>}
+      </Flex>
       {showWorkspace && <WorkspaceSettings />}
       {showCollection && <CollectionOverview />}
     </div>
@@ -42,24 +51,24 @@ function Header () {
 }
 
 function CollectionPage () {
-  const { collection, pending, error } = useCollection(null, { liveUpdates: true, state: true })
+  const { pending, error } = useCollection(null, { liveUpdates: true, state: true })
   const [currentRecord, setCurrentRecord] = React.useState(undefined)
   const [query, setQuery] = React.useState(null)
   if (error) return <Error error={error} />
   if (pending) return <em>Loading collection...</em>
   return (
     <>
-      <div className='App-main'>
-        <div>
+      <Flex>
+        <Box flex={1}>
           <h2>Query</h2>
           <QueryBuilder query={query} setQuery={setQuery} />
           {query && <QueryRecords query={query} onSelect={path => setCurrentRecord(path)} selected={currentRecord} />}
-        </div>
-        <div>
-          <button onClick={e => setCurrentRecord(null)}>Create record</button>
+        </Box>
+        <Box>
+          <Button onClick={e => setCurrentRecord(null)}>Create record</Button>
           <EditRecord path={currentRecord} />
-        </div>
-      </div>
+        </Box>
+      </Flex>
     </>
   )
 }
@@ -74,14 +83,14 @@ function QueryBuilder (props) {
   const queryType = queryTypes.find(queryType => queryType.id === selectedQueryId)
   const QueryTypeBuilder = queryType && queryType.component
   return (
-    <div>
-      <select onChange={e => setSelectedQueryId(e.target.value)} value={selectedQueryId}>
+    <Flex>
+      <Select onChange={e => setSelectedQueryId(e.target.value)} value={selectedQueryId}>
         {queryTypes.map(queryType => (
           <option key={queryType.id} value={queryType.id}>{queryType.name}</option>
         ))}
-      </select>
+      </Select>
       {QueryTypeBuilder && <QueryTypeBuilder query={query} setQuery={setQuery} />}
-    </div>
+    </Flex>
   )
 }
 
@@ -101,17 +110,22 @@ function SearchQueryBuilder (props) {
   let { query, setQuery } = props
   const [inputValue, setInputValue] = React.useState('')
   React.useEffect(() => {
-    console.log('EFFECT', inputValue)
     if (!query || query.id !== 'search') query = { id: 'search', args: '' }
     if (query.args !== inputValue) {
       query.args = inputValue
-      console.log('SET')
       setQuery({ ...query })
     }
   }, [inputValue, query])
+
   return (
-    <input type='text' placeholder='Type to search ...' onChange={onInputChange} value={inputValue} />
+    <Input
+      type='text'
+      placeholder='Type to search ...'
+      onChange={onInputChange}
+      value={inputValue}
+    />
   )
+
   function onInputChange (e) {
     const text = e.target.value
     setInputValue(text)
@@ -127,9 +141,9 @@ function TypeSelector (props) {
   }, [types])
   if (!types) return null
   return (
-    <select onChange={e => onSelect(e.target.value)} value={selected || undefined}>
+    <Select onChange={e => onSelect(e.target.value)} value={selected || undefined}>
       {types.map(type => <option key={type.address} value={type.address}>{type.title} ({type.address})</option>)}
-    </select>
+    </Select>
   )
 }
 
@@ -150,14 +164,18 @@ function QueryRecords (props) {
   const numPages = Math.ceil(query.records.length / perPage)
   return (
     <div className='QueryRecords'>
-      <div>
-        total: {query.records.length},
-        showing: {pagedRecords.length},
-        page:
-        <select onChange={e => setPage(Number(e.target.value))} value={page}>
-          {new Array(numPages).fill(0).map((val, idx) => <option key={idx} value={idx}>{idx + 1}</option>)}
-        </select>
-      </div>
+      <Flex>
+        <Box>
+          total: {query.records.length},
+          showing: {pagedRecords.length},
+          page:
+        </Box>
+        <Box>
+          <Select display='inline' onChange={e => setPage(Number(e.target.value))} value={page}>
+            {new Array(numPages).fill(0).map((val, idx) => <option key={idx} value={idx}>{idx + 1}</option>)}
+          </Select>
+        </Box>
+      </Flex>
       {pagedRecords.map((record, i) => (
         <ViewRecord key={i} path={record.path} onSelect={onSelect} selected={selected} />
       ))}
@@ -174,27 +192,27 @@ function ViewRecord (props = {}) {
   let className = 'ViewRecord'
   if (selected === path) className += ' ViewRecord-selected'
   return (
-    <div className={className}>
+    <Box bg='gray.100' p='1' border='1px' rounded mb='1rem'>
       <div className='ViewRecord-fields'>
         {current.fields().map((field, i) => (
           <Row key={i} label={field.title}><FieldValue field={field} /></Row>
         ))}
       </div>
-      <div className='RecordFooter'>
+      <Box bg='gray.200'>
         <RecordMeta record={current} />
-        <div>
+        <Flex>
           <RecordVersionSelector record={record} selected={version} onSelect={setVersion} />
-          <a href='#' onClick={e => onSelect(record.path)}>Edit</a>
-        </div>
-      </div>
-    </div>
+          <Button onClick={e => onSelect(record.path)}>Edit</Button>
+        </Flex>
+      </Box>
+    </Box>
   )
 }
 
 function RecordMeta (props) {
   const { record } = props
   return (
-    <div className='RecordMeta'>
+    <Flex>
       <div>
         <em>Type: </em>
         <strong>{record.type}</strong>
@@ -207,7 +225,7 @@ function RecordMeta (props) {
         <em>Address: </em>
         <strong>{record.shortAddress}</strong>
       </div>
-    </div>
+    </Flex>
   )
 }
 
@@ -244,10 +262,10 @@ function RecordVersionSelector (props) {
 function Row (props) {
   const { label, children } = props
   return (
-    <div className='Row'>
-      <div className='Row-label'>{label}</div>
-      <div className='Row-content'>{children}</div>
-    </div>
+    <Flex>
+      <Box w='20rem'>{label}</Box>
+      <Box>{children}</Box>
+    </Flex>
   )
 }
 
@@ -259,6 +277,7 @@ function FieldValue (props) {
 function EditRecord (props = {}) {
   const { path } = props
   const collection = useCollection()
+  const [submitState, setSubmitState] = React.useState({})
   const [error, setError] = React.useState(null)
   const [success, setSuccess] = React.useState(null)
   const [pending, setPending] = React.useState(false)
@@ -271,8 +290,7 @@ function EditRecord (props = {}) {
       state[field.name] = valueToString(field.value)
       return state
     }, {})
-    setSuccess(null)
-    setError(null)
+    setSubmitState({})
     setFormState(state)
   }, [current, selectedTypeAddress])
 
@@ -301,7 +319,7 @@ function EditRecord (props = {}) {
         <div>
           {fields.map((field, i) => (
             <Row key={i} label={field.title}>
-              <input
+              <Input
                 type='text'
                 value={formState[field.name] || ''}
                 onChange={e => updateFormState(field.name, e.target.value)}
@@ -310,9 +328,9 @@ function EditRecord (props = {}) {
           ))}
         </div>
       )}
-      <button type='submit' disabled={pending}>save</button>
-      {error && <Error error={error} />}
-      {success && <em>Created record: {success.shortAddress}</em>}
+      <Button type='submit' disabled={submitState.pending}>save</Button>
+      {submitState.error && <Error error={submitState.error} />}
+      {submitState.success && <em>Created record: {submitState.success.shortAddress}</em>}
     </form>
   )
 
@@ -322,20 +340,17 @@ function EditRecord (props = {}) {
 
   async function onFormSubmit (e) {
     e.preventDefault()
+    setSubmitState({ pending: true })
     const record = {
       type: type.address,
       value: formState,
       id: current ? current.id : undefined
     }
     try {
-      setPending(true)
       const created = await collection.put(record)
-      setSuccess(created)
-      setCurrent(created)
-    } catch (e) {
-      setError(e)
-    } finally {
-      setPending(false)
+      setSubmitState({ success: created })
+    } catch (error) {
+      setSubmitState({ error })
     }
   }
 }
@@ -344,6 +359,7 @@ function CollectionOverview () {
   const collection = useCollection()
   const [state, setState] = React.useState({})
   if (!collection) return null
+  const headers = ['Key', 'Alias', 'Type', 'Length', 'Writable']
   return (
     <div className='CollectionOverview'>
       <h2>{collection.name}</h2>
@@ -352,11 +368,7 @@ function CollectionOverview () {
       <table>
         <thead>
           <tr>
-            <th>Key</th>
-            <th>Alias</th>
-            <th>Type</th>
-            <th>Length</th>
-            <th>Writable?</th>
+            {headers.map((header, i) => <th key={i}>{header}</th>)}
           </tr>
         </thead>
         <tbody>
@@ -372,11 +384,9 @@ function CollectionOverview () {
         </tbody>
       </table>
       <form onSubmit={onAddFeedSubmit}>
-        <label htmlFor='keyOrName'>Feed key</label>
-        <input name='key' />
-        <label htmlFor='alias'>Optional alias</label>
-        <input name='alias' />
-        <button type='submit'>Add feed</button>
+        <label htmlFor='keyOrName'>Add feed:</label>
+        <Input name='key' placeholder='Key string ...' />
+        <Button type='submit' disabled={state.pending}>{state.pending ? 'Saving...' : 'Add feed'}</Button>
       </form>
       {state.error && <Error error={state.error} />}
       {state.success && <em>Feed added!</em>}
@@ -385,6 +395,7 @@ function CollectionOverview () {
 
   async function onAddFeedSubmit (e) {
     const { key, alias } = formDataFromEvent(e)
+    setState({ pending: true })
     try {
       await collection.putFeed(key, { alias })
       setState({ success: true })
@@ -396,13 +407,14 @@ function CollectionOverview () {
 }
 
 function Error (props) {
-  const { error } = props
+  const { error, nostyle } = props
   React.useEffect(() => {
     console.error(error)
   }, [error])
   let message
   if (error && typeof error === 'object') message = error.message
   else message = error
+  if (nostyle) return <span>Error: {message}</span>
   return (
     <em className='Error'>
       <strong>Error:</strong> {message}
@@ -451,21 +463,21 @@ function WorkspaceSettings () {
       <h2>Workspace settings</h2>
       <section>
         <label htmlFor='endpoint'>Endpoint</label>
-        <input defaultValue={data.endpoint} name='endpoint' />
+        <Input defaultValue={data.endpoint} name='endpoint' />
       </section>
       <section>
         <label htmlFor='accessCode'>Access code</label>
-        <input defaultValue={data.accessCode} name='accessCode' />
+        <Input defaultValue={data.accessCode} name='accessCode' />
       </section>
       <section>
         <label htmlFor='collection'>Collection</label>
-        <input defaultValue={data.collection} name='collection' placeholer='Key or name' />
+        <Input defaultValue={data.collection} name='collection' placeholer='Key or name' />
       </section>
       <section>
         <label htmlFor='collection'>Create collection?</label>
-        <input type='checkbox' name='collectionCreate' />
+        <Input type='checkbox' name='collectionCreate' />
       </section>
-      <button type='submit'>save</button>
+      <Button type='submit'>save</Button>
     </form>
   )
 
@@ -474,7 +486,7 @@ function WorkspaceSettings () {
     config.set('endpoint', data.endpoint)
     config.set('accessCode', data.accessCode)
     config.set('collection', data.collection)
-    location.reload()
+    window.location.reload()
   }
 }
 
@@ -491,4 +503,3 @@ function valueToString (value) {
   if (typeof value === 'string' || typeof value === 'number') return value
   return JSON.stringify(value)
 }
-

@@ -1,6 +1,9 @@
 import useConfig from './use-config'
-import React from 'react'
-import { Workspace } from '@arsonar/client'
+// import React from 'react'
+// import { Workspace } from '@arsonar/client'
+import Sonar from '@arsonar/client/dist/es'
+console.log('SONAR', Sonar)
+const { Workspace } = Sonar
 
 const workspaces = new Map()
 window.workspaces = workspaces
