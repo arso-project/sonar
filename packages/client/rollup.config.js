@@ -4,11 +4,16 @@ import nodePolyfills from 'rollup-plugin-node-polyfills'
 import json from '@rollup/plugin-json'
 import alias from '@rollup/plugin-alias'
 import replace from 'rollup-plugin-replace'
+import autoExternal from 'rollup-plugin-auto-external'
+// import cjs from "rollup-plugin-cjs-es";
+// import babel from "@rollup/plugin-babel"
+// import esbuild from 'rollup-plugin-esbuild'
 // import visualizer from 'rollup-plugin-visualizer'
-// import autoExternal from 'rollup-plugin-auto-external'
 // import nodeBuiltins from 'rollup-plugin-node-builtins'
 // import analyze from 'rollup-plugin-analyzer'
-// import { terser } from 'rollup-plugin-terser'
+import { terser } from 'rollup-plugin-terser'
+
+const extensions = ['.js', '.ts']
 
 const shared = {
   input: 'index.js',
@@ -32,6 +37,7 @@ const shared = {
     }),
     nodePolyfills(),
     nodeResolve({
+      extensions,
       browser: true,
       preferBuiltins: true
       // mainFields: ['browser']
@@ -50,39 +56,40 @@ export default [
       ...shared.output,
       file: 'dist/es/bundle.js',
       format: 'esm'
-    }
+    },
+    plugins: [
+      ...shared.plugins,
+      terser()
+    ]
   },
+  {
+    ...shared,
+    output: {
+      ...shared.output,
+      file: 'dist/es/index.js',
+      format: 'esm'
+    },
+    plugins: [
+      autoExternal(),
+      ...shared.plugins
+    ]
+  }
   // {
   //   ...shared,
   //   output: {
   //     ...shared.output,
-  //     file: 'dist/es/index.js',
-  //     format: 'esm'
-  //   },
-  //   external: id => {
-  //     // return !id.startsWith('.')
-  //   },
-  //   plugins: [
-  //     // autoExternal(),
-  //     ...shared.plugins
-  //   ]
+  //     file: 'dist/cjs/bundle.js',
+  //     format: 'cjs'
+  //   }
   // },
-  {
-    ...shared,
-    output: {
-      ...shared.output,
-      file: 'dist/cjs/bundle.js',
-      format: 'cjs'
-    }
-  },
-  {
-    ...shared,
-    output: {
-      ...shared.output,
-      file: 'dist/iife/sonar.js',
-      format: 'iife',
-      name: 'SonarClient',
-      intro: 'const global = window;'
-    }
-  }
+  // {
+  //   ...shared,
+  //   output: {
+  //     ...shared.output,
+  //     file: 'dist/iife/sonar.js',
+  //     format: 'iife',
+  //     name: 'SonarClient',
+  //     intro: 'const global = window;'
+  //   }
+  // }
 ]
