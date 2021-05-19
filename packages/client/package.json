@@ -6,6 +6,7 @@
   "moduleDISABLED": "dist/sonar-client.bundle.esm.js",
   "scripts": {
     "build": "rollup --config",
+    "dev": "rollup --config --watch",
     "test": "tape test/*.js",
     "doc": "run-p doc:*",
     "doc:md": "jsdoc2md --files lib/workspace.js lib/collection.js lib/fs.js --param-list-format list --separators --partial doc-gen/scope.hbs --helper doc-gen/helpers.js > api.md",

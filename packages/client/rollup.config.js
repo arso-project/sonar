@@ -13,7 +13,7 @@ import replace from 'rollup-plugin-replace'
 const shared = {
   input: 'index.js',
   output: {
-    intro: 'const global = window;',
+    intro: 'const global = window; const process = { nextTick: cb => new Promise(() => cb()) }',
     sourcemap: true
   },
   plugins: [
@@ -48,28 +48,30 @@ export default [
     ...shared,
     output: {
       ...shared.output,
-      file: 'dist/sonar-client.bundle.esm.js',
+      file: 'dist/es/bundle.js',
       format: 'esm'
     }
   },
+  // {
+  //   ...shared,
+  //   output: {
+  //     ...shared.output,
+  //     file: 'dist/es/index.js',
+  //     format: 'esm'
+  //   },
+  //   external: id => {
+  //     // return !id.startsWith('.')
+  //   },
+  //   plugins: [
+  //     // autoExternal(),
+  //     ...shared.plugins
+  //   ]
+  // },
   {
     ...shared,
     output: {
       ...shared.output,
-      file: 'dist/sonar-client.esm.js',
-      format: 'esm'
-    },
-    external: id => !(id.startsWith('.') || id.indexOf('sonar-client') > -1),
-    plugins: [
-      // autoExternal(),
-      ...shared.plugins
-    ]
-  },
-  {
-    ...shared,
-    output: {
-      ...shared.output,
-      file: 'dist/sonar-client.bundle.cjs.js',
+      file: 'dist/cjs/bundle.js',
       format: 'cjs'
     }
   },
@@ -77,7 +79,7 @@ export default [
     ...shared,
     output: {
       ...shared.output,
-      file: 'dist/sonar-client.bundle.iife.js',
+      file: 'dist/iife/sonar.js',
       format: 'iife',
       name: 'SonarClient',
       intro: 'const global = window;'
