@@ -282,7 +282,8 @@ class Collection extends EventEmitter {
       },
       transform (record, cb) {
         if (!record.id) record.id = uuid()
-        record = self.store.cacheRecord(record)
+        record = self.schema.RecordVersion(record)
+        // record = self.store.cacheRecord(record)
         const json = JSON.stringify(record)
         this.push(json + '\n')
         cb()
