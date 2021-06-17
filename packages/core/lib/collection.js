@@ -289,19 +289,35 @@ class Collection extends Nanoresource {
     const flushAfter = opts.flushAfter || 1000
     let batch = new Batch(this)
     let i = 0
-    const stream = new Writable({
-      async write (record, cb) {
+    const flushStream = async () => {
+      try {
+        await batch.flush()
+        for (const entry of batch.entries) {
+          stream.push(entry)
+        }
+        batch = new Batch(this)
+      } catch (err) {
+        stream.destroy(err)
+      }
+    }
+    var stream = new Transform({
+      async transform (record, cb) {
+        if (!record) {
+          await flushStream()
+          this.push(null)
+          cb()
+          return
+        }
         try {
           await batch._append(record)
           if (++i % flushAfter === 0) {
-            await batch.flush()
-            batch = new Batch(this)
+            await flushStream()
           }
           cb()
         } catch (err) { cb(err) }
       },
       final (cb) {
-        batch.flush().then(cb.bind(null, null)).catch(cb)
+        flushStream().then(() => cb()).catch(cb).finally(() => this.push(null))
       },
       destroy (cb) {
         if (batch) batch._unlock()
