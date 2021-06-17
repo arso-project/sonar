@@ -210,6 +210,7 @@ module.exports = class Workspace extends Nanoresource {
     if (this._collections.has(keyOrName)) {
       return this._collections.get(keyOrName)
     }
+    if (opts.create && this._opening.has(keyOrName)) this._opening.delete(keyOrName)
 
     if (!this._opening.has(keyOrName)) {
       const promise = this._openCollection(keyOrName, opts)
