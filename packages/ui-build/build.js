@@ -6,6 +6,8 @@ const mirror = require('mirror-folder')
 const fs = require('fs')
 const { build: estrellaBuild, cliopts, log } = require('estrella')
 const sassPlugin = require('esbuild-plugin-sass')
+const inlineImportPlugin = require('esbuild-plugin-inline-import')
+const sass = require('sass')
 
 if (require.main === module) {
   build()
@@ -52,6 +54,24 @@ function build (opts) {
     opts.minify = !cliopts.watch
   }
 
+  const sassInlineImport = inlineImportPlugin({
+    filter: /^sass:/,
+    transform: async (contents, args) => {
+      return await new Promise((resolve, reject) => {
+        sass.render(
+          {
+            data: contents,
+            includePaths: [p.dirname(args.path)]
+          },
+          (err, result) => {
+            if (err) return reject(err)
+            resolve(result.css.toString())
+          }
+        )
+      })
+    }
+  })
+
   const estrellaOpts = {
     entry: opts.entry,
     outfile: opts.outfile,
@@ -64,6 +84,7 @@ function build (opts) {
       '.woff': 'file',
       '.woff2': 'file'
     },
+    tsc: false,
     // This banner fixes some modules that were designed for Node.js
     // to run in the browser by providing minimal shims.
     banner: {
@@ -79,10 +100,14 @@ function build (opts) {
       `
     },
     define: {
+      'Buffer': 'ArrayBuffer',
       'process.title': JSON.stringify('browser'),
       'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development')
     },
-    plugins: [sassPlugin()],
+    plugins: [
+      sassInlineImport,
+      sassPlugin()
+    ],
     onEnd
   }
 

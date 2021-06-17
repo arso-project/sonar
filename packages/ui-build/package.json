@@ -7,12 +7,14 @@
     "ui-build": "build.js"
   },
   "dependencies": {
-    "esbuild-plugin-sass": "~0.4.0",
-    "estrella": "^1.4.0",
+    "esbuild-plugin-inline-import": "^1.0.1",
+    "esbuild-plugin-sass": "^0.5.0",
+    "estrella": "^1.4.1",
     "express": "^4.17.1",
     "instant": "^1.11.0",
     "mirror-folder": "^3.1.0",
     "pretty-bytes": "^5.6.0",
+    "sass": "^1.34.0",
     "standard": "^14.3.3"
   },
   "repository": {
