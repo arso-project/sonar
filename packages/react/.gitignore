@@ -32,4 +32,4 @@ lerna-debug.log
 
 # next.js build output
 .next
-
+dist

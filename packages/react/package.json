@@ -8,7 +8,9 @@
     "test": "tape test/*.js"
   },
   "dependencies": {
-    "@arsonar/client": "^0.4.0",
+    "@arsonar/client": "^0.4.0"
+  },
+  "peerDependencies": {
     "react": "^17.0.1",
     "react-dom": "^17.0.2"
   },
