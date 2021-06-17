@@ -102,6 +102,25 @@ tape('get and delete record', async t => {
   t.ok(true, 'cleanup ok')
 })
 
+tape('batch stream', async t => {
+  const { client, cleanup } = await createOne({ network: false })
+  const collection = await client.openCollection('default')
+  const bs = await collection.createBatchStream()
+  bs.write({ type: 'sonar/entity', value: { label: 'foo1' } })
+  bs.write({ type: 'sonar/entity', value: { label: 'foo2' } })
+  bs.write({ type: 'sonar/entity', value: { label: 'foo3' } })
+  bs.end()
+  await collection.sync()
+  const res = await collection.query('records', { type: 'sonar/entity' }, { sync: true })
+  t.deepEqual(res.map(r => r.value.label).sort(), ['foo1', 'foo2', 'foo3'])
+  // const rows = []
+  // for await (const row of bs) {
+  //   rows.push(row)
+  // }
+  // t.deepEqual(rows.map(r => r.value.label), ['foo1', 'foo2', 'foo3'])
+  await cleanup()
+})
+
 tape.skip('fs with strings', async t => {
   const { client, cleanup } = await createOne({ network: false })
   const collection = await client.createCollection('test')

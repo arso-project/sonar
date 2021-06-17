@@ -18,7 +18,7 @@ const extensions = ['.js', '.ts']
 const shared = {
   input: 'index.js',
   output: {
-    intro: 'const global = window; const process = { nextTick: cb => new Promise(() => cb()) }',
+    intro: 'const global = window; const process = { nextTick: cb => new Promise(() => cb && cb()) }',
     sourcemap: true
   },
   plugins: [
@@ -59,7 +59,7 @@ export default [
     },
     plugins: [
       ...shared.plugins,
-      terser()
+      // terser()
     ]
   },
   {
