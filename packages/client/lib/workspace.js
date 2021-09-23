@@ -1,5 +1,6 @@
 const randombytes = require('randombytes')
 const EventSource = require('eventsource')
+const { EventEmitter } = require('events')
 
 const sonarFetch = require('./fetch')
 const Collection = require('./collection')
@@ -16,7 +17,7 @@ function defaultWorkspace () {
   return (process && process.env && process.env.WORKSPACE) || DEFAULT_WORKSPACE
 }
 
-class Workspace {
+class Workspace extends EventEmitter {
   /**
    * The manager for a remote connection to a Sonar workspace.
    *
@@ -28,6 +29,7 @@ class Workspace {
    * @param {string} [opts.name] - The name of this client.
    */
   constructor (opts = {}) {
+    super()
     this._workspace = opts.workspace || defaultWorkspace()
     this.endpoint = opts.endpoint || DEFAULT_ENDPOINT
     if (this.endpoint.endsWith('/')) {
@@ -106,7 +108,8 @@ class Workspace {
       method: 'POST',
       body: opts
     })
-    return this.openCollection(name)
+    const collection = await this.openCollection(name, { reset: true })
+    return collection
   }
 
   // TODO: Move to Collection.update()?
@@ -134,20 +137,30 @@ class Workspace {
    * @param {string} keyOrName - Key or name of the collection to open/return.
    * @return {Promise<Collection>}
    */
-  async openCollection (keyOrName) {
+  async openCollection (keyOrName, opts = {}) {
     if (this._collections.has(keyOrName)) {
       const collection = this._collections.get(keyOrName)
-      if (!collection.opened) await collection.open()
+      if (!collection.opened) await collection.open(opts.reset)
       return collection
     }
 
     const collection = new Collection(this, keyOrName)
+    collection.on('open', () => this.emit('collection-open', collection))
     this._collections.set(keyOrName, collection)
     // This will throw if the collection does not exist.
-    await collection.open()
-    this._collections.set(collection.name, collection)
-    this._collections.set(collection.key, collection)
-    return collection
+    try {
+      await collection.open(opts.reset)
+      this._collections.set(collection.name, collection)
+      this._collections.set(collection.key, collection)
+      return collection
+    } catch (err) {
+      this._collections.delete(keyOrName)
+      throw err
+    }
+  }
+
+  getCollection (keyOrName) {
+    return this._collections.get(keyOrName)
   }
 
   getAuthHeaders (opts = {}) {

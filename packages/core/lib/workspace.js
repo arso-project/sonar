@@ -277,6 +277,7 @@ module.exports = class Workspace extends Nanoresource {
     this.emit('collection', collection)
     await collection.open()
     this._opening.delete(keyOrName)
+    this._opening.delete(collection.name)
     return collection
   }
 
