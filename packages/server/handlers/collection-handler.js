@@ -12,9 +12,7 @@ module.exports = function createCollectionRoutes () {
 
   router.use('/:collection', AH(async (req, res, next) => {
     const { collection: keyOrName } = req.params
-
     if (!keyOrName) return next()
-    // TODO: Implement auth :-)
     const collection = await req.workspace.openCollection(keyOrName)
     req.collection = collection
     next()
@@ -68,6 +66,12 @@ module.exports = function createCollectionRoutes () {
     return { id, type, deleted: true }
   }))
 
+  // router.get('/:collection/:id', AH(async (req, res, next) => {
+  //   const { id } = req.params
+  //   const records = await req.collection.get({ id })
+  //   return records.toJSON()
+  // }))
+
   router.get('/:collection/db/:key/:seq', AH(async (req, res, next) => {
     const { key, seq } = req.params
     const record = await req.collection.getBlock({ key, seq })
@@ -87,6 +91,12 @@ module.exports = function createCollectionRoutes () {
     const args = req.body
     const opts = req.query || {}
     return req.collection.query(name, args, opts)
+  }))
+
+  router.get('/:collection/query/:name', AH(async (req, res, next) => {
+    const name = req.params.name
+    const args = req.query
+    return req.collection.query(name, args)
   }))
 
   router.get('/:collection/schema', AH(async (req, res, next) => {
