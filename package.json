@@ -10,6 +10,7 @@
     "dev": "node sonar start --dev --disable-authentication",
     "example": "node scripts/example.js",
     "rebuild": "run-p build:*",
+    "build:client": "cd packages/client; npm run build",
     "build:apidocs": "cd packages/client; npm run doc:html",
     "build:ui": "cd packages/ui; npm run build",
     "build:tantivy": "cd node_modules/@arso-project/sonar-tantivy; npm run postinstall",
