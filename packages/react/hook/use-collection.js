@@ -5,20 +5,32 @@ import useConfig from './use-config'
 
 export default function useCollection (name = null, opts = {}) {
   const [_updateCounter, setUpdateCounter] = React.useState(0)
-  const workspace = useWorkspace()
+  const workspace = useWorkspace(opts.workspace)
   const config = useConfig()
   if (!name) name = config.get('collection')
+
+  const [openCounter, setOpenCounter] = React.useState(0)
+
   const state = useAsync(async () => {
     if (!workspace) return null
-    const collection = await workspace.openCollection(name)
-    return collection
-  }, [workspace, name])
+    try {
+      const collection = await workspace.openCollection(name)
+      return collection
+    } catch (err) {
+      workspace.on('collection-open', (collection) => {
+        if (collection.name !== name) return
+        setOpenCounter(i => i + 1)
+      })
+      throw err
+    }
+  }, [workspace, name, openCounter])
 
   const collection = state.data
   state.collection = collection
 
   React.useEffect(() => {
-    if (collection && opts.liveUpdates) {
+    if (!collection) return
+    if (opts.liveUpdates) {
       collection.pullLiveUpdates()
     }
   }, [opts.liveUpdates, collection])

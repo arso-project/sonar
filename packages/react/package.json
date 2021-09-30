@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "example": "cd example && yarn dev",
-    "test": "tape test/*.js"
+    "test": "tape test/*.js",
+    "build": "rollup -c"
   },
   "dependencies": {
     "@arsonar/client": "^0.4.0"

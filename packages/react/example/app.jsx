@@ -1,5 +1,5 @@
 import React from 'react'
-import { useCollection, useRecord, useConfig, useQuery } from '..'
+import { useCollection, useRecord, useConfig, useQuery, useWorkspace } from '..'
 import './app.scss'
 
 export default function App () {
@@ -440,12 +440,27 @@ function FeedKey (props) {
 
 function WorkspaceSettings () {
   const config = useConfig()
+  const [createCollectionName, setCreateCollectionName] = React.useState(null)
+  const [error, setError] = React.useState(null)
+  const workspace = useWorkspace()
   const data = {
     endpoint: config.get('endpoint'),
     accessCode: config.get('accessCode'),
     collection: config.get('collection')
   }
   const key = JSON.stringify(data)
+
+  React.useEffect(async () => {
+    if (!createCollectionName) return
+    try {
+      config.set('collection', null)
+      const collection = await workspace.createCollection(createCollectionName)
+      config.set('collection', collection.name)
+    } catch (error) {
+      setError(error)
+    }
+  }, [createCollectionName])
+
   if (!config) return
   return (
     <form key={key} className='WorkspaceSettings' onSubmit={onFormSubmit}>
@@ -463,19 +478,23 @@ function WorkspaceSettings () {
         <input defaultValue={data.collection} name='collection' placeholer='Key or name' />
       </section>
       <section>
-        <label htmlFor='collection'>Create collection?</label>
-        <input type='checkbox' name='collectionCreate' />
+        <label htmlFor='createCollection'>Create collection?</label>
+        <input type='checkbox' name='createCollection' />
       </section>
       <button type='submit'>save</button>
+      {error && <Error error={error} />}
     </form>
   )
 
-  function onFormSubmit (e) {
+  async function onFormSubmit (e) {
     const data = formDataFromEvent(e)
     config.set('endpoint', data.endpoint)
     config.set('accessCode', data.accessCode)
-    config.set('collection', data.collection)
-    window.location.reload()
+    if (data.createCollection) {
+      setCreateCollectionName(data.collection)
+    } else {
+      config.set('collection', data.collection)
+    }
   }
 }
 

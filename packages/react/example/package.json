@@ -5,6 +5,7 @@
   "module": "main.jsx",
   "scripts": {
     "dev": "ui-build -w",
+    "start": "ui-build -w",
     "build": "ui-build"
   },
   "dependencies": {

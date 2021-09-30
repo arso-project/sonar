@@ -13,19 +13,16 @@ export default function useWorkspace (opts = {}) {
     endpoint: config.get('endpoint'),
     workspace: config.get('workspace') || 'default',
     accessCode: config.get('accessCode'),
-    token: config.get('token'),
-    ...opts
+    token: config.get('token')
+    // ...opts
   }
   const key = JSON.stringify(opts)
+  let workspace
   if (!workspaces.has(key)) {
-    workspaces.set(key, new Workspace(opts))
+    workspace = new Workspace(opts)
+    workspaces.set(key, workspace)
+  } else {
+    workspace = workspaces.get(key)
   }
-  return workspaces.get(key)
-
-  // const workspaceRef = React.useRef()
-
-  // if (!workspaceRef.current) {
-  //   workspaceRef.current = new Workspace(opts)
-  // }
-  // return workspaceRef.current
+  return workspace
 }
