@@ -1,5 +1,5 @@
 import React from 'react'
-import { useCollection, useRecord, useConfig, useQuery, useWorkspace } from '..'
+import { useCollection, useRecord, useConfig, useQuery, useWorkspace } from '@arsonar/react'
 import './app.scss'
 
 export default function App () {

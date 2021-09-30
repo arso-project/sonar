@@ -8,6 +8,7 @@
     "test": "tape packages/*/test/*.js",
     "start": "node sonar start",
     "dev": "node sonar start --dev --disable-authentication",
+    "example": "node scripts/example.js",
     "rebuild": "run-p build:*",
     "build:apidocs": "cd packages/client; npm run doc:html",
     "build:ui": "cd packages/ui; npm run build",
@@ -17,7 +18,8 @@
   "workspaces": [
     "*",
     "bots/**",
-    "packages/**"
+    "packages/**",
+    "examples/**"
   ],
   "license": "GPL-3.0",
   "private": true,
@@ -26,5 +28,12 @@
     "standard": "^14.3.3",
     "tape": "^5.0",
     "trace-console-log": "^1.0.0"
+  },
+  "standard": {
+    "env": [
+      "es6",
+      "node",
+      "browser"
+    ]
   }
 }

@@ -11,14 +11,24 @@ import autoExternal from 'rollup-plugin-auto-external'
 // import visualizer from 'rollup-plugin-visualizer'
 // import nodeBuiltins from 'rollup-plugin-node-builtins'
 // import analyze from 'rollup-plugin-analyzer'
-import { terser } from 'rollup-plugin-terser'
+// import { terser } from 'rollup-plugin-terser'
 
 const extensions = ['.js', '.ts']
 
 const shared = {
   input: 'index.js',
   output: {
-    intro: 'const global = window; const process = { nextTick: cb => new Promise(() => cb && cb()) }',
+    intro: `
+      // minimal browser mocks needed for some nodejs modules
+      if (window) {
+        window.global = window
+        window.process = {
+          nextTick: function(cb) {
+            new Promise(() => cb && cb())
+          }
+        }
+      }
+    `,
     sourcemap: true
   },
   plugins: [
@@ -58,7 +68,7 @@ export default [
       format: 'esm'
     },
     plugins: [
-      ...shared.plugins,
+      ...shared.plugins
       // terser()
     ]
   },
