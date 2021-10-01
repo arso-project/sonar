@@ -288,20 +288,32 @@ function FieldValue (props) {
   return valueToString(field.value)
 }
 
+function fieldValueToString (field, value) {
+  if (field.fieldType === 'object') return JSON.stringify(value)
+  else return String(value)
+}
+
+function stringToFieldValue (field, value) {
+  if (field.fieldType === 'object') return JSON.parse(value)
+  if (field.fieldType === 'number') return Number(value)
+  if (field.fieldType === 'boolean') return value.lowercase() === 'true' || value === '1'
+  else return value
+}
+
 function EditRecord (props = {}) {
   const { path } = props
   const collection = useCollection()
   const [submitState, setSubmitState] = React.useState({})
-  const [error, setError] = React.useState(null)
-  const [success, setSuccess] = React.useState(null)
-  const [pending, setPending] = React.useState(false)
+  // const [error, setError] = React.useState(null)
+  // const [success, setSuccess] = React.useState(null)
+  // const [pending, setPending] = React.useState(false)
   const current = useRecord({ path })
   const [formState, setFormState] = React.useState({})
   const [selectedTypeAddress, setSelectedTypeAddress] = React.useState(null)
   React.useEffect(() => {
     if (!current) return setFormState({})
     const state = current.fields().reduce((state, field) => {
-      state[field.name] = valueToString(field.value)
+      state[field.name] = fieldValueToString(field, field.value)
       return state
     }, {})
     setSubmitState({})
@@ -355,9 +367,13 @@ function EditRecord (props = {}) {
   async function onFormSubmit (e) {
     e.preventDefault()
     setSubmitState({ pending: true })
+    const nextValue = fields.reduce((state, field) => {
+      state[field.name] = stringToFieldValue(field, formState[field.name])
+      return state
+    }, {})
     const record = {
       type: type.address,
-      value: formState,
+      value: nextValue,
       id: current ? current.id : undefined
     }
     try {

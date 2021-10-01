@@ -920,7 +920,13 @@ class Collection extends Nanoresource {
   }
 
   _addTypeFromRecord (typeRecord) {
-    this.schema.addType(typeRecord.value)
+    try {
+      this.schema.addType(typeRecord.value)
+    } catch (err) {
+      // TODO: Where should errors that come from bad DB records go?
+      this.log.error(`Failed to load type with ID ${typeRecord.id}into schema: ${err.message}`)
+      this.emit('error', err)
+    }
   }
 
   [inspect] (depth, opts) {
