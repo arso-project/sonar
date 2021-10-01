@@ -201,12 +201,14 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .RecordVersionSelector {
-  * {
+  a {
     display: inline-block;
+    width: 9rem;
   }
   a {
     @include smallLink;
     border-bottom: none;
+    cursor: pointer;
   }
   a.selected {
     color: #24a;

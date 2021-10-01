@@ -223,6 +223,12 @@ class Collection extends EventEmitter {
     return this.query('records', req, opts)
   }
 
+  async getVersion (address) {
+    const [key, seq] = address.split('@')
+    const version = await this.fetch(`/db/${key}/${seq}`)
+    return this.store.cacheRecord(version)
+  }
+
   /**
    * Deletes a record.
    *

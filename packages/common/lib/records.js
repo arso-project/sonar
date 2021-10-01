@@ -5,6 +5,11 @@ const { bindSymbol } = require('./util')
 const Versions = require('./versions')
 const Emitter = require('./emitter')
 
+function fmtAddress (address) {
+  const [key, seq] = address.split('@')
+  return key.substring(0, 5) + '..' + key.substring(30, 32) + '@' + seq
+}
+
 // Base class for Record and Entity
 class Node extends Emitter {
   constructor (schema) {
@@ -299,8 +304,7 @@ class RecordVersion extends Node {
   }
 
   get shortAddress () {
-    return this._record.key.substring(0, 8) + '..' + this._record.key.substring(30, 32) + '@' + this._record.seq
-    // return pretty(this._record.key) + '@' + this._record.seq
+    return fmtAddress(this.address)
   }
 
   get path () {

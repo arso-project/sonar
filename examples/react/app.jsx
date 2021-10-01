@@ -219,33 +219,58 @@ function RecordMeta (props) {
 }
 
 function RecordVersionSelector (props) {
+  const collection = useCollection()
   const { record, selected, onSelect } = props
   const isSelected = val => selected === val ? 'selected' : ''
   const latest = record.versions().length
   return (
     <div className='RecordVersionSelector'>
-      Versions:
+      Loaded:
       &nbsp;{record.allVersions().length}&nbsp;
-      {latest > 1 && <span>({latest} current)&nbsp;</span>}
+      {latest > 1 && <span>({latest} latest)&nbsp;</span>}
       <a
-        href='#'
         onClick={e => onSelect(null)}
         className={isSelected(null)}
       >
         latest
       </a>
-      {record.versions().map(version => (
+      Latest versions:
+      {record.versions().map((version, i) => (
         <a
           key={version.address}
-          href='#'
           onClick={e => { onSelect(version) }}
           className={isSelected(version)}
         >
           {version.shortAddress}
         </a>
       ))}
+      <br />
+      All versions:
+      {record.allVersions().map((version, i) => (
+        <div key={i}>
+          <a
+            key={version.address}
+            onClick={e => { onSelect(version) }}
+            className={isSelected(version)}
+          >
+            {version.shortAddress}
+          </a>
+          <em>prev: </em>
+          {version.links.map((address, i) => (
+            <a onClick={e => onVersionClick(address)} key={i}>
+              {fmtAddress(address)}
+            </a>
+          ))}
+        </div>
+      ))}
     </div>
   )
+
+  function onVersionClick (address) {
+    collection.getVersion(address).catch(err => {
+      console.error('error loading version: ', err)
+    })
+  }
 }
 
 function Row (props) {
@@ -510,4 +535,9 @@ function valueToString (value) {
   if (typeof value === 'undefined') return ''
   if (typeof value === 'string' || typeof value === 'number') return value
   return JSON.stringify(value)
+}
+
+function fmtAddress (address) {
+  const [key, seq] = address.split('@')
+  return key.substring(0, 5) + '..' + key.substring(30, 32) + '@' + seq
 }
