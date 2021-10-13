@@ -1,6 +1,4 @@
-const { NanoresourcePromise: Nanoresource } = require('nanoresource-promise')
 const bodyParser = require('body-parser')
-const onexit = require('async-exit-hook')
 const express = require('express')
 const cors = require('cors')
 const expressWebSocket = require('express-ws')
@@ -10,11 +8,10 @@ const p = require('path')
 const pinoExpress = require('express-pino-logger')
 
 const swaggerUi = require('swagger-ui-express')
-const thunky = require('thunky')
 
 const { storagePath } = require('@arsonar/common/storage.js')
 const { WorkspaceManager } = require('@arsonar/core')
-const apiRouter = require('./routes/api')
+const apiRouter = require('./handlers')
 const Auth = require('./lib/auth')
 
 const DEFAULT_PORT = 9191
@@ -119,8 +116,8 @@ module.exports = function SonarServer (opts = {}) {
   const apiRoutes = apiRouter(api)
 
   // Serve the API at /api/v1
-  app.use('/api', apiRoutes)
   app.use('/api/v1', apiRoutes)
+  app.use('/api', apiRoutes)
 
   // Serve the swagger API docs at /api-docs
   try {

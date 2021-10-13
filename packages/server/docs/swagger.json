@@ -18,9 +18,9 @@
         "responses": {}
       }
     },
-    "/api/create-access-code": {
+    "/api/register": {
       "post": {
-        "summary": "/api/create-access-code",
+        "summary": "/api/register",
         "consumes": [
           "application/json"
         ],
@@ -480,9 +480,9 @@
         "responses": {}
       }
     },
-    "/api/v1/create-access-code": {
+    "/api/v1/register": {
       "post": {
-        "summary": "/api/v1/create-access-code",
+        "summary": "/api/v1/register",
         "consumes": [
           "application/json"
         ],

@@ -30,12 +30,18 @@ class Workspace extends EventEmitter {
    */
   constructor (opts = {}) {
     super()
-    this._workspace = opts.workspace || defaultWorkspace()
-    this.endpoint = opts.endpoint || DEFAULT_ENDPOINT
+    if (opts.url) {
+      this.endpoint = opts.url
+      // TODO: deprecate, ue only URL.
+    } else {
+      const workspace = opts.workspace || defaultWorkspace()
+      const endpoint = opts.endpoint || DEFAULT_ENDPOINT
+      this.endpoint = `${endpoint}/${workspace}`
+    }
     if (this.endpoint.endsWith('/')) {
       this.endpoint = this.endpoint.substring(0, this.endpoint.length - 1)
     }
-    this.endpoint = this.endpoint + '/workspace/' + this._workspace
+
     this._collections = new Map()
     this._id = opts.id || randombytes(16).toString('hex')
     this._token = opts.token
@@ -88,7 +94,7 @@ class Workspace extends EventEmitter {
    * @return {Promise.<object[]>} Promise that resolves to an array of collection info objects.
    */
   async listCollections () {
-    const info = await this.fetch('/info')
+    const info = await this.fetch('/')
     return info.collections
   }
 

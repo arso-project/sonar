@@ -64,7 +64,7 @@ module.exports = class Authenticator extends Nanoresource {
     })
   }
 
-  createAccessCode (opts, cb) {
+  register (opts, cb) {
     const code = accessCode()
     const access = { root: true }
     this._store.update(data => {

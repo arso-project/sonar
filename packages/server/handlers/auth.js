@@ -5,8 +5,8 @@ const { HttpError } = require('../lib/util')
 
 module.exports = function createAuthHandler (auth) {
   return {
-    createAccessCode (req, res, next) {
-      auth.createAccessCode(req.query, (err, code) => {
+    register (req, res, next) {
+      auth.register(req.query, (err, code) => {
         if (err) return next(err)
         res.send(code)
       })

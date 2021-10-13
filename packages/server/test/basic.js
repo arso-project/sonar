@@ -12,7 +12,7 @@ tape('basic', async t => {
       }
     }
     let { endpoint, cleanup } = await createOne(opts)
-    endpoint += '/workspace/default'
+    endpoint += '/default'
 
     const created = await fetchJSON(`${endpoint}/collection`, {
       method: 'POST',

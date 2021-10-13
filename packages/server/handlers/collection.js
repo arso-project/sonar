@@ -10,6 +10,13 @@ const createFsRouter = require('./fs')
 module.exports = function createCollectionRoutes () {
   const router = express.Router()
 
+  router.post('/', AH(async (req, res, next) => {
+    const { name, key, alias } = req.body
+    const opts = { alias, name }
+    const collection = await req.workspace.createCollection(key || name, opts)
+    return collection.status()
+  }))
+
   router.use('/:collection', AH(async (req, res, next) => {
     const { collection: keyOrName } = req.params
     if (!keyOrName) return next()
