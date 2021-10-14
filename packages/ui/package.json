@@ -11,10 +11,9 @@
     "sonar-ui": "bin.js"
   },
   "scripts": {
-    "start": "node bin.js start",
-    "build": "node bin.js build",
-    "dev": "node bin.js dev",
-    "prepublishOnly": "node bin.js build"
+    "dev": "vite",
+    "build": "vite build",
+    "prepublishOnly": "vite build"
   },
   "dependencies": {
     "@arsonar/client": "^0.4.0",
@@ -27,7 +26,8 @@
     "yargs-parser": "^18.1.2"
   },
   "devDependencies": {
-    "@arsonar/client": "^0.3.0-alpha.1",
+    "@arsonar/client": "*",
+    "@arsonar/react": "*",
     "@babel/core": "^7.9.0",
     "@babel/preset-env": "^7.9.5",
     "@babel/preset-react": "^7.9.4",

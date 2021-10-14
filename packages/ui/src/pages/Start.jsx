@@ -1,13 +1,11 @@
 import React from 'react'
-import config from '../lib/config'
-import FileImporter from '../components/FileImporter'
-
 import { Redirect } from 'react-router-dom'
-
 import { Box, Text } from '@chakra-ui/core'
+import { useWorkspace } from '@arsonar/react'
 
 export default function StartPage (props) {
-  if (!config.get('endpoint')) {
+  const { config } = useWorkspace()
+  if (!config.endpoint) {
     return <Redirect to='/config' />
   }
 

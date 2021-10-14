@@ -18,7 +18,6 @@ import {
 } from '@chakra-ui/core'
 
 import { RecordDrawerByID } from '../components/Record'
-import client from '../lib/client'
 
 import {
   FaFileUpload
@@ -26,6 +25,7 @@ import {
 import {
   MdError, MdCheck, MdCheckCircle
 } from 'react-icons/md'
+import { useCollection } from '@arsonar/react'
 
 function FileInput (props) {
   const { onInputChange } = props
@@ -144,6 +144,7 @@ function FileProgress (props) {
 }
 
 export default function FileImporter (props) {
+  const collection = useCollection()
   const [files, setFiles] = useState({})
   const [uploads, setUploads] = useState({})
   const [resources, setResources] = useState({})
@@ -159,6 +160,8 @@ export default function FileImporter (props) {
   useEffect(() => {
     if (final) toast(showImportMessage())
   }, [final])
+
+  if (!collection) return null
 
   return (
     <Box w='100%'>
@@ -235,7 +238,7 @@ export default function FileImporter (props) {
     const results = {}
 
     Object.values(files).forEach(file => {
-      const promise = createResource({
+      const promise = createResource(collection, {
         filename: file.name,
         prefix: 'upload',
         encodingFormat: mime.lookup(file.name),
@@ -285,7 +288,7 @@ export default function FileImporter (props) {
       }, 200)
 
       try {
-        const res = await client.writeResourceFile(resource, fileitem, {
+        const res = await collection.resources.writeFile(resource, fileitem, {
           onUploadProgress (event) {
             const { loaded } = event
             fileTransfered = loaded
@@ -309,8 +312,12 @@ export default function FileImporter (props) {
   }
 }
 
-async function createResource (props, opts) {
+async function createResource (collection, props, opts) {
   const { filename, prefix, contentSize, encodingFormat, label } = props
-  const resource = await client.createResource({ filename, prefix, contentSize, encodingFormat, label }, opts)
-  return resource
+  try {
+    const resource = await collection.resources.create({ filename, prefix, contentSize, encodingFormat, label }, opts)
+    return resource
+  } catch (err) {
+    console.log('ERROR', err)
+  }
 }

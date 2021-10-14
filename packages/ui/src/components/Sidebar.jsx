@@ -7,15 +7,12 @@ import {
   List
 } from '@chakra-ui/core'
 
-import config from '../lib/config'
-import client from '../lib/client'
-import useAsync from '../hooks/use-async'
 import { CollectionName } from '../components/Collection'
 
-const collection = config.get('collection')
+import { useCollection } from '@arsonar/react'
 
 export function SidebarContent (props) {
-  const { data: collection } = useAsync(() => client.focusedCollection())
+  const collection = useCollection()
   return (
     <>
       <List>

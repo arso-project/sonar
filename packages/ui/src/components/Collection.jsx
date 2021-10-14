@@ -1,10 +1,10 @@
 import React from 'react'
-import client from '../lib/client'
-import useAsync from '../hooks/use-async'
+import { useCollection } from '@arsonar/react'
 
 export function CollectionName (props) {
-  const { data: collection, pending, error } = useAsync(() => client.focusedCollection())
+  const { collection, pending, error } = useCollection({ state: true })
   if (pending) return <em>Loading</em>
   if (error) return <em>Error</em>
+  if (!collection) return null
   return <span>{collection.name}</span>
 }

@@ -1,11 +1,8 @@
 import { format, formatRelative } from 'date-fns'
 import JsonTree from 'react-json-tree'
 import { Link } from 'react-router-dom'
-import useCollection from '../hooks/use-collection'
 import React, { useState } from 'react'
 import { MetaItem, MetaItems } from '../components/MetaItem'
-import client from '../lib/client'
-import useRecords from '../hooks/use-record'
 import {
   Box,
   Button,
@@ -25,6 +22,7 @@ import {
   DrawerHeader,
   DrawerOverlay
 } from '@chakra-ui/core'
+import { useCollection, useRecord } from '@arsonar/react'
 
 // import './Record.css'
 
@@ -132,14 +130,14 @@ export function RecordLabelDisplay (props) {
 }
 
 function findLabel (record) {
-  return record.value.title || record.value.name || record.value.filename || record.id
+  return record.getOne('sonar/entity#label') || record.value.title || record.value.name || record.value.filename || record.id
 }
 
 export function RecordJsonDisplay (props) {
   const { record } = props
   return (
     <JsonTree
-      data={record.toJSON()}
+      data={record._latest.toJSON()}
       invertTheme
       hideRoot
       theme='bright'
@@ -159,7 +157,7 @@ export function RecordRawDisplay (props) {
 
 export function RecordFieldDisplay (props) {
   const { record } = props
-  const { collection } = useCollection()
+  const collection = useCollection()
   const type = record.getType()
   if (!collection) return null
 
@@ -175,10 +173,12 @@ export function RecordFieldDisplay (props) {
 
 export function RecordDrawerByID (props) {
   const { isOpen, onOpen, onClose } = useDisclosure()
+  const collection = useCollection()
   const btnRef = React.useRef()
   const { id } = props
-  const data = useRecords(id)
-  const { records, types } = data
+  const record = useRecord({ id })
+  const records = [record]
+  const types = collection.schema.getTypes()
   return (
     <>
       <Button w='14rem' pl='3' leftIcon='view' justifyContent='left' variantColor='teal' size='xs' ref={btnRef} onClick={onOpen}>
@@ -270,7 +270,7 @@ function TextViewer (props) {
 
 function LinkViewer (props) {
   const { value } = props
-  const { collection } = useCollection()
+  const collection = useCollection()
   if (typeof value === 'undefined' || !collection) return null
   const httpLink = collection.fs.resolveURL(String(value))
   return <a href={httpLink}>{httpLink}</a>
@@ -356,9 +356,9 @@ function formatSource (source) {
 }
 
 // TODO: This is hacky and should not be here.
-async function fetchFileUrls (records) {
-  for (const record of records) {
-    record.value.fileUrl = client.resolveURL(record)
-  }
-  return records
-}
+// async function fetchFileUrls (records) {
+//   for (const record of records) {
+//     record.value.fileUrl = client.resolveURL(record)
+//   }
+//   return records
+// }

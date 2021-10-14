@@ -8,7 +8,7 @@ window.workspaces = workspaces
 
 const Context = React.createContext(null)
 
-export function WorkspaceContext (props = {}) {
+export function WorkspaceProvider (props = {}) {
   const [config, setConfig] = useConfig()
 
   const context = React.useMemo(() => {
