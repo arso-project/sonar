@@ -6,7 +6,7 @@ export default function useAsync (asyncFn, args = [], deps) {
   const [state, setState] = useState({
     data: undefined,
     error: undefined,
-    pending: true
+    pending: false
   })
 
   const [counter, setCounter] = useState(0)
@@ -28,6 +28,7 @@ export default function useAsync (asyncFn, args = [], deps) {
   return { ...state, refresh }
 
   function refresh () {
+    if (state.pending) return
     setCounter(counter => counter + 1)
   }
 

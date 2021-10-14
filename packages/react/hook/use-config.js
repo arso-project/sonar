@@ -1,14 +1,23 @@
 import React from 'react'
-import { Config } from '../lib/config'
 
-const config = new Config()
-
-export default function useConfig () {
-  const [updateCounter, setUpdateCounter] = React.useState(0)
+export default function useConfig (key = 'arsonar.config') {
+  const [config, setConfigState] = React.useState({})
   React.useEffect(() => {
-    const onevent = () => setUpdateCounter(i => i + 1)
-    config.on('update', onevent)
-    return () => config.removeListener('update', onevent)
-  }, [config])
-  return config
+    let data = localStorage.getItem(key)
+    if (data) {
+      try {
+        data = JSON.parse(data)
+        setConfigState(data)
+      } catch (err) {}
+    }
+  }, [key])
+
+  function setConfig (nextConfig) {
+    nextConfig = { ...config, ...nextConfig }
+    console.log('set config', nextConfig)
+    localStorage.setItem(key, JSON.stringify(nextConfig))
+    setConfigState(nextConfig)
+  }
+
+  return [config, setConfig]
 }

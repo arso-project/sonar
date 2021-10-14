@@ -1,6 +1,5 @@
 import React from 'react'
-import useCollection from './use-collection'
-import useAsync from './use-async'
+import { useAsync, useCollection } from '..'
 
 export default function useRecord (props = {}) {
   let { path, type, id, update } = props
