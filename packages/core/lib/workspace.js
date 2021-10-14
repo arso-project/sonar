@@ -129,7 +129,7 @@ module.exports = class Workspace extends Nanoresource {
     await this._workspaceInfo.close()
     await this._collectionInfo.close()
     try {
-      this._leveldb.close()
+      await this._leveldb.close()
     } catch (err) {}
     if (this._ownSDK) {
       await this._sdk.close()

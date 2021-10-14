@@ -156,10 +156,10 @@ function runTests (create) {
     const storagePath = workspace._storagePath
 
     await workspace.close()
-    await timeout(100)
+    await timeout(200)
 
     workspace = new Workspace({ storagePath, sdk })
-    await workspace.ready()
+    await workspace.open()
     col = await workspace.createCollection('first')
     await col.ready()
     const key = col.key
@@ -167,7 +167,7 @@ function runTests (create) {
     t.equal(type2.name, 'doc')
     t.deepEqual(type1, type2)
     await workspace.close()
-    await timeout(100)
+    await timeout(200)
 
     workspace = new Workspace({ storagePath, sdk })
     await workspace.ready()

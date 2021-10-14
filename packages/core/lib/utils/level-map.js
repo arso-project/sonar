@@ -151,7 +151,6 @@ module.exports = class LevelMap extends Nanoresource {
 
   flush (cb) {
     cb = maybeCallback(cb)
-    let stack = new Error().stack
     this._lock(release => {
       const doFlush = () => {
         if (!Object.keys(this._queue).length) return release(cb)
@@ -161,7 +160,10 @@ module.exports = class LevelMap extends Nanoresource {
           return { key, value, type }
         })
         this._queue = {}
-        this.db.batch(queue, release.bind(null, cb))
+        this.db.batch(queue, err => {
+          release()
+          cb(err)
+        })
       }
       if (this.opened) doFlush()
       else this.open(() => doFlush())
