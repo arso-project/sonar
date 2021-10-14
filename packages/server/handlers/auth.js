@@ -36,8 +36,18 @@ module.exports = function createAuthHandler (auth) {
 
       const jwtMiddleware = expressJwt({
         secret: secretCallback,
-        algorithms: ['HS256']
+        algorithms: ['HS256'],
+        getToken: getTokenFromRequest
       })
+
+      function getTokenFromRequest (req) {
+        if (req.headers.authorization && req.headers.authorization.split(' ')[0] === 'Bearer') {
+          return req.headers.authorization.split(' ')[1]
+        } else if (req.query && req.query.token) {
+          return req.query.token
+        }
+        return null
+      }
 
       function checkAuthMiddleware (req, res, next) {
         if (!req.user.root) {
