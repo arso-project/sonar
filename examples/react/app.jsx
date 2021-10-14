@@ -1,13 +1,15 @@
 import React from 'react'
-import { useCollection, useRecord, useConfig, useQuery, useWorkspace } from '@arsonar/react'
+import { useCollection, useConfig, useAsync, useRecord, useQuery, useWorkspace, WorkspaceContext } from '@arsonar/react'
 import './app.scss'
 
 export default function App () {
   return (
-    <div className='App'>
-      <Header />
-      <CollectionPage />
-    </div>
+    <WorkspaceContext>
+      <div className='App'>
+        <Header />
+        <CollectionPage />
+      </div>
+    </WorkspaceContext>
   )
 }
 
@@ -20,7 +22,7 @@ function useToggle (defaultValue) {
 }
 
 function Header () {
-  const { collection, pending, error } = useCollection(null, { liveUpdates: true, state: true })
+  const { collection, pending, error } = useCollection({ liveUpdates: true, state: true })
   const collectionName = collection ? collection.name : null
   const [showWorkspace, toggleWorkspace] = useToggle(false)
   const [showCollection, toggleCollection] = useToggle(false)
@@ -46,7 +48,7 @@ function Header () {
 }
 
 function CollectionPage () {
-  const { pending, error } = useCollection(null, { liveUpdates: true, state: true })
+  const { pending, error } = useCollection({ liveUpdates: true, state: true })
   const [currentRecord, setCurrentRecord] = React.useState(undefined)
   const [query, setQuery] = React.useState(null)
   if (error) return <Error error={error} />
@@ -480,48 +482,67 @@ function FeedKey (props) {
 }
 
 function WorkspaceSettings () {
-  const config = useConfig()
-  const [createCollectionName, setCreateCollectionName] = React.useState(null)
+  const { workspace, config, setConfig } = useWorkspace()
+  // const [config, setConfig] = useConfig()
+  // const [createCollectionName, setCreateCollectionName] = React.useState(null)
   const [error, setError] = React.useState(null)
-  const workspace = useWorkspace()
-  const data = {
-    endpoint: config.get('endpoint'),
-    accessCode: config.get('accessCode'),
-    collection: config.get('collection')
-  }
-  const key = JSON.stringify(data)
+  // const workspace = useWorkspace()
+  const [create, setCreate] = React.useState(false)
+  const { data: collections, error: workspaceLoadError, refresh } = useAsync(() => workspace.listCollections(), [workspace])
+  // const data = {
+  //   endpoint: config.get('endpoint'),
+  //   accessCode: config.get('accessCode'),
+  //   collection: config.get('collection')
+  // }
+  const key = JSON.stringify(config)
 
-  React.useEffect(async () => {
-    if (!createCollectionName) return
-    try {
-      config.set('collection', null)
-      const collection = await workspace.createCollection(createCollectionName)
-      config.set('collection', collection.name)
-    } catch (error) {
-      setError(error)
-    }
-  }, [createCollectionName])
+  // React.useEffect(async () => {
+  //   if (!createCollectionName) return
+  //   try {
+  //     config.set('collection', null)
+  //     const collection = await workspace.createCollection(createCollectionName)
+  //     config.set('collection', collection.name)
+  //   } catch (error) {
+  //     setError(error)
+  //   }
+  // }, [createCollectionName])
 
-  if (!config) return
+  if (!config) return null
+  // if (!collections) return null
   return (
     <form key={key} className='WorkspaceSettings' onSubmit={onFormSubmit}>
       <h2>Workspace settings</h2>
       <section>
-        <label htmlFor='endpoint'>Endpoint</label>
-        <input defaultValue={data.endpoint} name='endpoint' />
+        <label htmlFor='url'>Workspace URL</label>
+        <input defaultValue={config.url} name='url' />
       </section>
       <section>
         <label htmlFor='accessCode'>Access code</label>
-        <input defaultValue={data.accessCode} name='accessCode' />
+        <input defaultValue={config.accessCode} name='accessCode' />
       </section>
       <section>
-        <label htmlFor='collection'>Collection</label>
-        <input defaultValue={data.collection} name='collection' placeholer='Key or name' />
+        {workspaceLoadError && <Error error={workspaceLoadError} />}
+        {collections && (
+          <>
+            <label htmlFor='collection'>Collections</label>
+            <select name='collection' defaultValue={config.collection}>
+              {Object.values(collections).map(c => (
+                <option key={c.id} value={c.name}>{c.name}</option>
+              ))}
+            </select>
+          </>
+        )}
       </section>
       <section>
         <label htmlFor='createCollection'>Create collection?</label>
-        <input type='checkbox' name='createCollection' />
+        <input type='checkbox' onChange={e => setCreate(e.target.value)} name='createCollection' />
       </section>
+      {create && (
+        <section>
+          <label htmlFor='createCollectionName'>Collection</label>
+          <input name='createCollectionName' placeholer='Key or name' />
+        </section>
+      )}
       <button type='submit'>save</button>
       {error && <Error error={error} />}
     </form>
@@ -529,13 +550,33 @@ function WorkspaceSettings () {
 
   async function onFormSubmit (e) {
     const data = formDataFromEvent(e)
-    config.set('endpoint', data.endpoint)
-    config.set('accessCode', data.accessCode)
-    if (data.createCollection) {
-      setCreateCollectionName(data.collection)
+    if (!data.createCollection) {
+      const nextConfig = {
+        accessCode: data.accessCode,
+        url: data.url,
+        collection: data.collection
+      }
+      setConfig(nextConfig)
     } else {
-      config.set('collection', data.collection)
+      if (!data.createCollectionName) return
+      try {
+        setConfig({ collection: null })
+        const collection = await workspace.createCollection(data.createCollectionName)
+        // refresh()
+        setConfig({ collection: collection.name })
+      } catch (error) {
+        setError(error)
+      }
     }
+    // console.log('data', data)
+    // return
+    // config.set('endpoint', data.endpoint)
+    // config.set('accessCode', data.accessCode)
+    // if (data.createCollection) {
+    //   setCreateCollectionName(data.createCollectionName)
+    // } else {
+    //   config.set('collection', data.collection)
+    // }
   }
 }
 
