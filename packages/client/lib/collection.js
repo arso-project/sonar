@@ -117,9 +117,6 @@ class Collection extends EventEmitter {
     })
   }
 
-  /**
-   * @deprecated see Collection.putFeed
-   */
   async addFeed (key, info = {}) {
     return this.putFeed(key, info)
   }
@@ -223,6 +220,13 @@ class Collection extends EventEmitter {
     return this.query('records', req, opts)
   }
 
+  /**
+   * Get a specific version of a record.
+   *
+   * @async
+   * @param {string} address - The block address of the record version `feedkey@seq`
+   *    where `feedkey` is the hex-encoded public key of a feed and `seq` is a sequence number (uint).
+   */
   async getVersion (address) {
     const [key, seq] = address.split('@')
     const version = await this.fetch(`/db/${key}/${seq}`)
@@ -334,7 +338,7 @@ class Collection extends EventEmitter {
     if (this._eventStream) return
     this._eventStream = new TeeStream()
 
-    const onerror = err => {
+    const onerror = _err => {
       // TODO: Where should the error go?
       // this.log.error('Error initializing event source: ' + err.message)
       // if (this._eventStream) this._eventStream.destroy(err)

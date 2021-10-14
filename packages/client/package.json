@@ -11,10 +11,11 @@
     "doc": "run-p doc:*",
     "doc:md": "jsdoc2md --files lib/workspace.js lib/collection.js lib/fs.js --param-list-format list --separators --partial doc-gen/scope.hbs --helper doc-gen/helpers.js > api.md",
     "doc:html": "rm -rf apidocs && jsdoc --configure doc-gen/jsdoc.json --verbose .",
-    "doc:tsd": "jsdoc -t ../node_modules/tsd-jsdoc/dist -r .",
+    "doc:tsd": "jsdoc --configure doc-gen/jsdoc-tsd.json --verbose -d . -t ../../node_modules/tsd-jsdoc/dist -r .",
     "prepublishOnly": "npm run build"
   },
-  "author": "",
+  "types": "types.d.ts",
+  "author": "arso contributors",
   "license": "GPL-3.0",
   "dependencies": {
     "@arsonar/common": "*",
@@ -27,7 +28,7 @@
     "parse-dat-url": "^3.0.3",
     "pretty-bytes": "^5.6.0",
     "split2": "^3.2.2",
-    "streamx": "^2.10.0"
+    "streamx": "^2.11.0"
   },
   "devDependencies": {
     "@arsonar/server": "^0.4.0",

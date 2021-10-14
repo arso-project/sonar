@@ -59,6 +59,28 @@ const shared = {
   ]
 }
 
+// In the default bundle, don't bundle dependencies, but bundle streamx
+// because some other bundlers (eg vite) seem to have a problem with it.
+// TODO: Investigate and remove.
+function autoExternalWithoutStreamx (opts) {
+  const plugin = autoExternal(opts)
+  const origOptions = plugin.options
+  plugin.options = function (opts) {
+    const ret = origOptions(opts)
+    const external = ret.external
+    ret.external = function (id) {
+      if (id === 'streamx') return false
+      if (typeof external === 'function') {
+        return external(id)
+      } else {
+        return external.indexOf(id) !== -1
+      }
+    }
+    return ret
+  }
+  return plugin
+}
+
 export default [
   {
     ...shared,
@@ -80,7 +102,7 @@ export default [
       format: 'esm'
     },
     plugins: [
-      autoExternal(),
+      autoExternalWithoutStreamx(),
       ...shared.plugins
     ]
   }

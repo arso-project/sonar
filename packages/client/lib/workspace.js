@@ -19,24 +19,26 @@ function defaultWorkspace () {
 
 class Workspace extends EventEmitter {
   /**
-   * The manager for a remote connection to a Sonar workspace.
+   * A Sonar workspace. Provides methods to open collection under this endpoint.
    *
    * @constructor
    * @param {object} [opts] - Optional options.
-   * @param {string} [opts.endpoint=http://localhost:9191/api] - The API endpoint to talk to.
+   * @param {string} [opts.url=http://localhost:9191/api/v1/default] - The API endpoint to talk to.
    * @param {string} [opts.accessCode] - An access code to login at the endpoint.
    * @param {string} [opts.token] - A JSON web token to authorize to the endpoint.
    * @param {string} [opts.name] - The name of this client.
    */
   constructor (opts = {}) {
     super()
-    if (opts.url) {
-      this.endpoint = opts.url
-      // TODO: deprecate, ue only URL.
-    } else {
+    if (opts.endpoint) {
       const workspace = opts.workspace || defaultWorkspace()
       const endpoint = opts.endpoint || DEFAULT_ENDPOINT
       this.endpoint = `${endpoint}/${workspace}`
+    } else if (opts.url) {
+      this.endpoint = opts.url
+      // TODO: deprecate, ue only URL.
+    } else {
+      this.endpoint = DEFAULT_ENDPOINT
     }
     if (this.endpoint.endsWith('/')) {
       this.endpoint = this.endpoint.substring(0, this.endpoint.length - 1)
@@ -221,9 +223,14 @@ class Workspace extends EventEmitter {
   createEventSource (path, opts = {}) {
     if (!opts.endpoint && this.endpoint) opts.endpoint = this.endpoint
     opts.headers = Object.assign(opts.headers || {}, this.getHeaders(opts))
-    const url = (opts.endpoint || '') + path
-    const eventSource = new EventSource(url, opts)
+    let url = (opts.endpoint || '') + path
+    url = new URL(url)
+    if (this._token || opts.token) {
+      url.searchParams.set('token', this._token || opts.token)
+    }
+    const eventSource = new EventSource(url.toString(), opts)
     eventSource.addEventListener('message', message => {
+      console.log('ONMESSAGE', message)
       try {
         const event = JSON.parse(message.data)
         if (opts.onmessage) opts.onmessage(event)

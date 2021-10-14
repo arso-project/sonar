@@ -34,7 +34,7 @@ The manager for a remote connection to a Sonar workspace.
 **Params**
 
 - *opts* <code>object</code> - Optional options.
-    - *endpoint* <code>string</code> <code> = &quot;http://localhost:9191/api&quot;</code> - The API endpoint to talk to.
+    - *url* <code>string</code> <code> = &quot;http://localhost:9191/api/v1/default&quot;</code> - The API endpoint to talk to.
     - *accessCode* <code>string</code> - An access code to login at the endpoint.
     - *token* <code>string</code> - A JSON web token to authorize to the endpoint.
     - *name* <code>string</code> - The name of this client.
@@ -139,6 +139,7 @@ TODO: Rethink the default responseType cascade.
     * [.query(name, args, [opts])](#Collection+query) ⇒ <code>Promise.&lt;Array.&lt;Record&gt;&gt;</code>
     * [.put(record)](#Collection+put) ⇒ <code>Promise.&lt;object&gt;</code>
     * [.get(req, [opts])](#Collection+get) ⇒ <code>Promise.&lt;Array.&lt;object&gt;&gt;</code>
+    * [.getVersion(address)](#Collection+getVersion)
     * [.del(record)](#Collection+del) ⇒ <code>Promise.&lt;object&gt;</code>
     * [.putType(schema)](#Collection+putType) ⇒ <code>Promise.&lt;object&gt;</code>
     * [.createBatchStream()](#Collection+createBatchStream) ⇒ <code>Writable.&lt;Record&gt;</code>
@@ -269,6 +270,19 @@ Get records by their semantic address (type and id) or by their storage address 
 - req <code>object</code> - The get request. Either `{ type, id }` or `{ key, seq }`.
 - *opts* <code>object</code> - Optional options.
     - *sync* <code>boolean</code> <code> = false</code> - Wait for all pending indexing operations to be finished.
+
+
+* * *
+
+<a name="Collection+getVersion"></a>
+
+### collection.getVersion(address)
+Get a specific version of a record.
+
+**Params**
+
+- address <code>string</code> - The block address of the record version `feedkey@seq`
+   where `feedkey` is the hex-encoded public key of a feed and `seq` is a sequence number (uint).
 
 
 * * *
