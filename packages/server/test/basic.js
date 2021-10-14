@@ -26,8 +26,8 @@ tape('basic', async t => {
     t.equal(collection.rootKey, key, 'get collection: root key correct')
     // console.log('collection', collection)
 
-    const putted = await fetchJSON(`${endpoint}/collection/${key}/db`, {
-      method: 'PUT',
+    const putted = await fetchJSON(`${endpoint}/collection/${key}`, {
+      method: 'POST',
       body: JSON.stringify({ type: 'sonar/entity', value: { label: 'hello, world' } })
     })
     // console.log('put', putted)

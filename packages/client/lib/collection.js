@@ -196,8 +196,8 @@ class Collection extends EventEmitter {
     // in the collection's schema. Throws an error if not.
     // TODO: Add feature to @arsonar/common to validate the record's value against the schema.
     record = this.schema.RecordVersion(record)
-    const resultRecord = await this.fetch('/db', {
-      method: 'PUT',
+    const resultRecord = await this.fetch('/', {
+      method: 'POST',
       body: record
     })
     return this.store.cacheRecord(resultRecord)
@@ -241,9 +241,8 @@ class Collection extends EventEmitter {
    * @return {Promise<object>} - An object with `{ id, type }` properties of the deleted record.
    */
   async del (record) {
-    return this.fetch('/db/' + record.id, {
-      method: 'DELETE',
-      params: { type: record.type }
+    return this.fetch(`/record/${record.type}/${record.id}`, {
+      method: 'DELETE'
     })
   }
 
@@ -279,8 +278,8 @@ class Collection extends EventEmitter {
     const self = this
     const stream = new Transform({
       open (cb) {
-        stream.finished = self.fetch('/db', {
-          method: 'PUT',
+        stream.finished = self.fetch('/', {
+          method: 'POST',
           requestType: 'stream',
           headers: {
             'content-type': 'application/x-ndjson'

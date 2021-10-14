@@ -190,6 +190,40 @@ function runTests (create) {
     t.equal(drives.length, 1)
     await cleanup()
   })
+
+  test('replication with 3 workspaces', async t => {
+    const [w1, w2, cleanup] = await create(2)
+    const c1 = await w1.createCollection('foo')
+    const c2 = await w2.createCollection('foo')
+    const { id } = await c1.put({ type: 'sonar/entity', value: { label: 'foo1' } })
+    await c2.putFeed(c1.localKey)
+    await c1.putFeed(c2.localKey)
+    await timeout(100)
+    await c2.sync()
+    await c2.put({ id, type: 'sonar/entity', value: { label: 'foo1 edit' } })
+    await timeout(100)
+    await c2.sync()
+    await c1.sync()
+    const res1 = await c1.query('records', { type: 'sonar/entity' })
+    t.equal(res1[0].value.label, 'foo1 edit')
+    const res2 = await c2.query('records', { type: 'sonar/entity' })
+    t.equal(res2[0].value.label, 'foo1 edit')
+
+    // close first workspace
+    await c1.close()
+    await w1.close()
+    // create third workspace
+    const [w3, cleanup2] = await create(1)
+    const c3 = await w3.createCollection('foo')
+    await c3.putFeed(c2.localKey)
+    await timeout(100)
+    await c3.sync()
+    const res3 = await c3.query('records', { type: 'sonar/entity' })
+    const oldVersion = await c3.get({ address: res3[0].links[0] })
+    t.equal(oldVersion[0].value.label, 'foo1')
+    await cleanup()
+    await cleanup2()
+  })
 }
 
 async function timeout (ms) {

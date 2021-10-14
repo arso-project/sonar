@@ -37,7 +37,7 @@ module.exports = function createCollectionRoutes () {
     return config
   }))
 
-  router.put('/:collection/db', AH(async (req, res, next) => {
+  router.post('/:collection', AH(async (req, res, next) => {
     let record
     // If called with ?batch=1, accept a stream of newline-delimited JSON objects
     // and put each as a record.
@@ -66,22 +66,41 @@ module.exports = function createCollectionRoutes () {
     return createdRecord.toJSON()
   }))
 
-  router.delete('/:collection/db/:id', AH(async (req, res, next) => {
-    const { id } = req.params
-    const { type } = req.query
+  router.delete('/:collection/record/:typens/:typename/:id', AH(async (req, res, next) => {
+    const { id, typens, typename } = req.params
+    const type = typens + '/' + typename
     await req.collection.del({ id, type })
     return { id, type, deleted: true }
   }))
 
-  // router.get('/:collection/:id', AH(async (req, res, next) => {
-  //   const { id } = req.params
-  //   const records = await req.collection.get({ id })
-  //   return records.toJSON()
-  // }))
+  router.delete('/:collection/entity/:id', AH(async (req, res, next) => {
+    const { id } = req.params
+    await req.collection.del({ id })
+    return { id, deleted: true }
+  }))
 
-  router.get('/:collection/db/:key/:seq', AH(async (req, res, next) => {
+  router.get('/:collection/entity/:id', AH(async (req, res, next) => {
+    const { id } = req.params
+    const records = await req.collection.get({ id })
+    return records.map(r => r.toJSON())
+  }))
+
+  router.get('/:collection/record/:typens/:typename/:id', AH(async (req, res, next) => {
+    const { id, typens, typename } = req.params
+    const type = typens + '/' + typename
+    const records = await req.collection.get({ id, type })
+    return records.map(r => r.toJSON())
+  }))
+
+  router.get('/:collection/version/:key/:seq', AH(async (req, res, next) => {
     const { key, seq } = req.params
     const record = await req.collection.getBlock({ key, seq })
+    return record.toJSON()
+  }))
+
+  router.get('/:collection/version/:lseq', AH(async (req, res, next) => {
+    const { lseq } = req.params
+    const record = await req.collection.getBlock({ lseq })
     return record.toJSON()
   }))
 
