@@ -1,11 +1,12 @@
 import React, { useMemo, useRef, useEffect, useState, forwardRef } from 'react'
-import useQuery from '../hooks/use-query'
-import Moment from 'react-moment'
+// import Moment from 'react-moment'
 import { VariableSizeList, FixedSizeList } from 'react-window'
 import useSize from '../hooks/use-size'
 import { useLocation, Link } from 'react-router-dom'
 
 import { RecordLabelDisplay, RecordLink } from '../components/Record'
+
+import { useQuery } from '@arsonar/react'
 
 import {
   Box,
@@ -90,8 +91,8 @@ function ActivityList (props) {
   if (!records || !records.length) return null
   return (
     <Box my='4'>
-      {records.map(record => (
-        <Row record={record} key={record.id} />
+      {records.map((record, i) => (
+        <Row record={record} key={i} />
       ))}
     </Box>
   )
@@ -99,12 +100,14 @@ function ActivityList (props) {
 
 function Row (props) {
   const { record } = props
+  const date = new Date(record.timestamp)
+  const formatted = date.toLocaleDateString() + ' ' + date.toLocaleTimeString()
+  // TODO: Fix
   return (
-    <Box key={record.lseq} p='2' borderWidth='1px' mb='4'>
-      <Box>
-        <Moment format='LLL'>{record.timestamp}</Moment>
-        <Text as='em' ml='2' fontWeight='bold' color='text2'>#{record.lseq}</Text>
-      </Box>
+    <Box key={record.address} p='2' borderWidth='1px' mb='4'>
+      {formatted}
+      <Text as='em' ml='2' fontWeight='bold' color='text2'>#{record.lseq}</Text>
+      &nbsp;
       <RecordLink record={record} />
     </Box>
   )

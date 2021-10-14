@@ -4,9 +4,6 @@ import NavLink from '../components/NavLink'
 
 import makeGlobalStateHook from '../hooks/make-global-state-hook'
 
-import client from '../lib/client'
-import log from '../lib/log'
-
 import Logger from '../components/Logger'
 import { RecordLabelDisplay } from '../components/Record'
 import { MetaItem, MetaItems } from '../components/MetaItem'
@@ -16,6 +13,8 @@ import {
   Input,
   Heading
 } from '@chakra-ui/core'
+
+import { useCollection } from '@arsonar/react'
 
 export const useGlobalState = makeGlobalStateHook('search')
 
@@ -54,6 +53,7 @@ export function SearchInput (props) {
   const [search, setSearch] = useGlobalState('search', '')
   const [error, setError] = useState(null)
   const [results, setResults] = useGlobalState('results', null)
+  const collection = useCollection()
   return (
     <>
       <Input
@@ -71,7 +71,7 @@ export function SearchInput (props) {
   function onInputChange (e) {
     const search = e.target.value
     setSearch(search)
-    client.search(search)
+    collection.query('search', search)
       .then(results => setResults(results))
       .catch(error => setError(error))
   }

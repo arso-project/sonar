@@ -4,25 +4,27 @@ import { formatDistance } from 'date-fns'
 import { css } from '@emotion/core'
 import { RecordDrawerByID } from '../components/Record'
 
-import client from '../lib/client'
+import { useCollection } from '@arsonar/react'
 
 export default function Filebrowser (props) {
   const [path, setPath] = useState('')
   const [files, setFiles] = useState([])
+  const collection = useCollection()
 
   useEffect(() => {
+    if (!collection) return
     let mounted = true
-    client
-      .readdir(path)
+    collection.fs.readdir(path)
       .then(files => (mounted && setFiles(files)))
     return () => (mounted = false)
-  }, [path])
+  }, [collection, path])
 
   const segments = path.split('/').filter(s => s)
   segments.unshift('/')
 
   return (
-    <div css={sOuter}>
+    // <Box css={sOuter}>
+    <div>
       {segments && (
         <div css={sBreadcrumb}>
           {segments.map((s, i) => (

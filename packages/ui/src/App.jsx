@@ -17,6 +17,8 @@ import createTheme from './theme'
 // This sets default props on some chakra components.
 import './components/chakra'
 
+import { WorkspaceProvider } from '@arsonar/react'
+
 function App (props) {
   return (
     <Wrappers>
@@ -29,14 +31,16 @@ export default hot(App)
 
 function Wrappers (props) {
   return (
-    <ColorModeProvider>
-      <SonarThemeProvider>
-        <CSSReset />
-        <Router>
-          {props.children}
-        </Router>
-      </SonarThemeProvider>
-    </ColorModeProvider>
+    <WorkspaceProvider>
+      <ColorModeProvider>
+        <SonarThemeProvider>
+          <CSSReset />
+          <Router>
+            {props.children}
+          </Router>
+        </SonarThemeProvider>
+      </ColorModeProvider>
+    </WorkspaceProvider>
   )
 }
 

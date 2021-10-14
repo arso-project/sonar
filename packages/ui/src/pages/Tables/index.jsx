@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react'
-import client from '../../lib/client'
 import log from '../../lib/log'
 import { findWidget, RecordLink } from '../../components/Record'
 import makeGlobalStateHook from '../../hooks/make-global-state-hook'
+import { useCollection } from '@arsonar/react'
 
 import Table from './Table'
 import Preview from './Preview'
@@ -18,28 +18,20 @@ import {
   MenuItemOption
 } from '@chakra-ui/core'
 
-async function loadTypes () {
-  const types = await client.getTypes()
-  return Object.values(types)
-}
-
-async function loadRecords ({ type }) {
-  return await client.query('records', { type: type })
-}
-
 const useGlobalState = makeGlobalStateHook('tables')
 
 export default function TablesPage (props) {
   const [records, setRecords] = useGlobalState('records', null)
   const [type, setType] = useGlobalState('type', null)
   const typename = type ? type.address : null
+  const collection = useCollection({ liveUpdates: true })
 
   useEffect(() => {
-    if (!typename) return
-    loadRecords({ type: typename })
+    if (!typename || !collection) return
+    collection.query('records', { type: typename })
       .then(records => setRecords(records))
       .catch(error => log.error(error))
-  }, [typename])
+  }, [collection, typename, collection && collection.length])
 
   const rows = useMemo(() => buildRowsFromRecords(records), [records])
   const columns = useMemo(() => buildColumnsFromType(type), [type])
@@ -48,6 +40,8 @@ export default function TablesPage (props) {
     const { row } = props
     return <Preview record={row} type={type} />
   }, [type])
+
+  if (!collection) return null
 
   return (
     <Flex direction='column' width='100%'>
@@ -174,13 +168,10 @@ function ActionsFormatter (props) {
 }
 
 function TypeSelect (props) {
+  const collection = useCollection()
   const { onType, type, ...other } = props
-  const [types, setTypes] = useState()
-  useEffect(() => {
-    loadTypes()
-      .then(types => setTypes(types))
-      .catch(err => log.error(err) && setTypes(null))
-  }, [])
+  if (!collection) return null
+  const types = collection.schema.getTypes()
 
   if (types === null) return <Loading />
   if (!types) return <div>No types</div>

@@ -241,6 +241,10 @@ class Record extends Node {
   _field (fieldName, single = true) {
     return this._latest._field(fieldName, single)
   }
+
+  toJSON () {
+    return this._latest.toJSON()
+  }
 }
 
 class RecordVersion extends Node {

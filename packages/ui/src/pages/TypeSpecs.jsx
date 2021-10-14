@@ -1,7 +1,5 @@
 import React, { useState, useMemo, useRef, Suspense } from 'react'
 import { MetaItem, MetaItems } from '../components/MetaItem'
-import client from '../lib/client'
-import useAsync from '../hooks/use-async'
 import {
   useDisclosure,
   Box,
@@ -15,17 +13,14 @@ import {
   ModalCloseButton
 } from '@chakra-ui/core'
 
-async function fetchTypeData () {
-  const types = await client.getTypes()
-  return { types }
-}
+import { useCollection } from '@arsonar/react'
 
 function useTypeSpecs () {
-  const { data, error, pending } = useAsync(fetchTypeData)
-  if (error || pending) return console.log(pending, error)
-  const { types } = data
-  return (types)
+  const collection = useCollection()
+  if (!collection) return null
+  return collection.schema.getTypes()
 }
+
 function FieldProps (props) {
   const { fields } = props
   return (

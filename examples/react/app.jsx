@@ -1,15 +1,15 @@
 import React from 'react'
-import { useCollection, useConfig, useAsync, useRecord, useQuery, useWorkspace, WorkspaceContext } from '@arsonar/react'
+import { useCollection, useConfig, useAsync, useRecord, useQuery, useWorkspace, WorkspaceProvider } from '@arsonar/react'
 import './app.scss'
 
 export default function App () {
   return (
-    <WorkspaceContext>
+    <WorkspaceProvider>
       <div className='App'>
         <Header />
         <CollectionPage />
       </div>
-    </WorkspaceContext>
+    </WorkspaceProvider>
   )
 }
 

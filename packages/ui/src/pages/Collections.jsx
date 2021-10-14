@@ -21,30 +21,28 @@ import {
   Icon
 } from '@chakra-ui/core'
 import { formData } from '../lib/form'
-import useAsync from '../hooks/use-async'
 import Logger from '../components/Logger'
 import Loading from '../components/Loading'
 import Key from '../components/Key'
-import config from '../lib/config'
 import FormField from '../components/FormField'
+import { useWorkspace, useAsync } from '@arsonar/react'
 
-import client from '../lib/client'
-
-async function loadInfo () {
-  return client.info()
+function useCollectionList () {
+  const { workspace } = useWorkspace()
+  return useAsync(async () => {
+    return workspace.listCollections()
+  }, [workspace])
 }
 
 export default function CollectionPage (props) {
-  const { data: info, error, reload } = useAsync(loadInfo)
+  const { config, workspace, setConfig } = useWorkspace()
+  const { data: collections, error, refresh } = useCollectionList()
   const [modal, setModal] = useState(null)
 
-  if (!info && !error) return <Loading />
+  if (!collections && !error) return <Loading />
   if (error) return <Logger error={error} />
 
-  console.log('loaded info', info)
-
-  const { collections } = info
-  const selectedCollection = config.get('collection')
+  const selectedCollection = config.collection
 
   return (
     <Flex
@@ -75,15 +73,13 @@ export default function CollectionPage (props) {
 
   function onCreate () {
     setModal(null)
-    reload()
+    refresh()
   }
 
   async function onSelectCollection (key) {
     console.log('select', key)
     try {
-      await client.focusCollection(key)
-      config.set('collection', key)
-      console.log('onSelect', config.get('collection'))
+      setConfig({ collection: key })
     } catch (err) {
       console.error('Error selecting collection', err)
     }
@@ -92,8 +88,8 @@ export default function CollectionPage (props) {
     window.__sonarRerender()
   }
 
-  function onUpdateCollection (key, info) {
-    client.updateCollection(key, info)
+  async function onUpdateCollection (key, info) {
+    await workspace.updateCollection(key, info)
   }
 }
 
@@ -130,6 +126,7 @@ function CollectionFormModal (props) {
 }
 
 function CreateCollection (props) {
+  const { workspace } = useWorkspace()
   const { create, onFinish } = props
   const [pending, setPending] = useState(false)
   const toast = useToast()
@@ -161,7 +158,7 @@ function CreateCollection (props) {
     if (!key || key === '') key = undefined
     setPending(true)
 
-    client.createCollection(name, { key, alias })
+    workspace.createCollection(name, { key, alias })
       .then(res => {
         toast({
           title: 'Collection created',
