@@ -239,11 +239,9 @@ module.exports = function createCollectionRoutes () {
       .filter(record => record.value.type === 'hyperdrive')
       .map(record => record.value)
     if (!drives.length) return res.send([])
-    for (const drive in drives) {
-      try {
-        const info = await collection.drive(drive.key)
-        drive.writable = info.writable
-      } catch (err) {}
+    for (const drive of drives) {
+      const info = await collection.drive(drive.key)
+      drive.writable = info.writable
     }
     res.send(drives)
   }))
