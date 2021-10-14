@@ -10,7 +10,7 @@ exports.handler = function () {
 exports.builder = function (yargs) {
   yargs
     .command({
-      command: 'create-access-code',
+      command: 'register',
       describe: 'create new access code',
       handler: createAccesssCode
     })
@@ -18,6 +18,6 @@ exports.builder = function (yargs) {
 
 async function createAccesssCode (argv) {
   const client = makeClient(argv)
-  const res = await client.fetch('/create-access-code', { method: 'POST' })
+  const res = await client.fetch('/register', { method: 'POST' })
   console.log(res)
 }

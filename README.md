@@ -31,15 +31,10 @@ cd sonar
 yarn
 # (re)build the user interface and docs
 yarn run rebuild
+# when developing on something that uses the ESM version of the 
+# `@arsonar/client` library: watch and rebuild on changes.
+yarn dev:client
 ```
-
-Instead of yarn, lerna works too:
-```sh
-npm install -g lerna
-lerna bootstrap
-```
-Yarn is recommended because it's much faster.
-
 You can start sonar with `./sonar` from the repository root.
 
 If the start fails with errors related to `sonar-tantivy`, try to redownload or rebuild sonar-tantivy (the search engine included in sonar):
@@ -57,15 +52,22 @@ yarn run build:sonar-tantivy
 
 ```
 
-Then, you can:
-* open the web UI on [http://localhost:9191](http://localhost:9191).
-* use the CLI:
-  ```sh
-  ./sonar collection create default
-  ./sonar db get
-  # etc.
-  # the cli has a built-in help that should list the available commands
-  ```
+## Running the examples
+
+This repo includes a few examples. To run them locally, do the following:
+
+```sh
+# build the client library
+yarn build:client
+# start sonar
+./sonar start --disable-authentication --dev
+# run the example from the examples/ folder
+yarn example react
+```
+
+## Using the CLI
+
+Run `./sonar help` for a list of supported commands.
 
 ## Contributing
 
