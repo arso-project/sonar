@@ -9,7 +9,7 @@ const example = argv[0]
 const dir = p.join(__dirname, '../examples', example)
 if (!fs.existsSync(dir)) onerror(`Example \`${example}\` not found`)
 console.log(`Starting ${example}`)
-cp.spawn('yarn', ['dev'], {
+cp.spawn('yarn', ['dev', ...argv.slice(1)], {
   stdio: 'inherit',
   shell: true,
   cwd: dir
