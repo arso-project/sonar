@@ -230,7 +230,6 @@ class Workspace extends EventEmitter {
     }
     const eventSource = new EventSource(url.toString(), opts)
     eventSource.addEventListener('message', message => {
-      console.log('ONMESSAGE', message)
       try {
         const event = JSON.parse(message.data)
         if (opts.onmessage) opts.onmessage(event)

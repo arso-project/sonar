@@ -32,7 +32,10 @@ module.exports = class PromiseCache {
   async getAsync (req, throwOnMissing = true) {
     const key = this._key(req)
     if (this.records.has(key)) return this.records.get(key)
-    if (this.promises.has(key)) return this.promises.get(key)
+    if (this.promises.has(key)) {
+      const record = await this.promises.get(key)
+      return record
+    }
     if (throwOnMissing) throw new Error('Record is missing')
     else return null
   }
@@ -47,14 +50,10 @@ module.exports = class PromiseCache {
     if (!fetchFn && !this._fetch) throw new Error('Missing fetch function')
     if (!fetchFn) fetchFn = this._fetch
     const promise = fetchFn(req)
-    promise.then(
-      record => {
-        if (record) this.set(req, record)
-        return record
-      }
-    )
     this.promises.set(key, promise)
-    return promise
+    const record = await promise
+    if (record) this.set(req, record)
+    return record
   }
 
   _key (req) {

@@ -348,6 +348,11 @@ class Collection extends Nanoresource {
 
   async getBlock (req, opts = {}) {
     if (!this.opened && !this.opening) await this.open()
+    if (req.address) {
+      const [key, seq] = req.address.split('@')
+      req.key = key
+      req.seq = seq
+    }
     // Resolve the request through the indexer. This allows to use
     // either an lseq or key and seq.
     if (!req.key || !req.seq || !req.lseq) {
@@ -358,27 +363,31 @@ class Collection extends Nanoresource {
       })
     }
 
-    const decoded = await this._recordCache.getOrFetch(req, async () => {
-      const data = await this._getBlockFromFeed(req)
-      return data
-    })
-
-    if (opts.upcast === false) {
-      return decoded
-    }
-
     try {
-      const record = new RecordVersion(this.schema, decoded)
-      return record
+      const decoded = await this._recordCache.getOrFetch(req, async () => {
+        const data = await this._getBlockFromFeed(req, opts)
+        return data
+      })
+
+      if (opts.upcast === false) {
+        return decoded
+      }
+
+      try {
+        const record = new RecordVersion(this.schema, decoded)
+        return record
+      } catch (err) {
+        if (opts.wait === false) throw err
+        await this.sync('root')
+        const record = new RecordVersion(this.schema, decoded)
+        return record
+      }
     } catch (err) {
-      if (opts.wait === false) throw err
-      await this.sync('root')
-      const record = new RecordVersion(this.schema, decoded)
-      return record
+      throw err
     }
   }
 
-  async _getBlockFromFeed (req) {
+  async _getBlockFromFeed (req, opts = {}) {
     const { key, seq } = req
     if (seq === 0) throw new Error('Invalid request: Seq 0 is the header, not a block')
     if (!key) throw new Error('Invalid request: Missing key argument')
@@ -388,12 +397,11 @@ class Collection extends Nanoresource {
       // TODO: This line allows to reference blocks from any hypercore, anywhere - do we want this?
       // It fixes the case where, especially on a reindex, blocks from feeds are floating in for which
       // their feed records are not yet indexed...
-      feed = this._workspace.Hypercore(key)
-      // throw new Error('Feed not found')
+      feed = await this._initFeed(key)
     }
 
     const struct = this._struct(key)
-    const block = await struct.get(feed, req)
+    const block = await struct.get(feed, req, opts)
     return block
   }
 
@@ -422,7 +430,7 @@ class Collection extends Nanoresource {
     }
     return maybe(cb, async () => {
       let list
-      if ((req.key && req.seq) || req.lseq) {
+      if ((req.key && req.seq) || req.lseq || req.address) {
         try {
           list = [await this.getBlock(req)]
         } catch (err) {
