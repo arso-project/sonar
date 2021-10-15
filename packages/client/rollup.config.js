@@ -13,6 +13,8 @@ import autoExternal from 'rollup-plugin-auto-external'
 // import analyze from 'rollup-plugin-analyzer'
 // import { terser } from 'rollup-plugin-terser'
 
+const BUNDLED_DEPENDENCIES = ['@arsonar/common', 'streamx', 'parse-dat-url']
+
 const extensions = ['.js', '.ts']
 
 const shared = {
@@ -69,7 +71,7 @@ function autoExternalWithoutStreamx (opts) {
     const ret = origOptions(opts)
     const external = ret.external
     ret.external = function (id) {
-      if (id === 'streamx') return false
+      if (BUNDLED_DEPENDENCIES.indexOf(id) !== -1) return false
       if (typeof external === 'function') {
         return external(id)
       } else {

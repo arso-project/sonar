@@ -26,7 +26,8 @@ module.exports = function SonarServer (opts = {}) {
     },
     server: {
       hostname: opts.hostname || DEFAULT_HOSTNAME,
-      port: opts.port || DEFAULT_PORT
+      port: opts.port || DEFAULT_PORT,
+      dev: {}
     },
     workspace: {
       ...(opts.workspace || {}),
@@ -138,12 +139,16 @@ module.exports = function SonarServer (opts = {}) {
   app.use('/api-docs-client', express.static(clientApiDocsPath))
 
   // Include the static UI at /
-  const uiStaticPath = p.join(
-    p.dirname(require.resolve('@arsonar/ui/package.json')),
-    'build',
-    'dist'
-  )
-  app.use('/', express.static(uiStaticPath))
+  if (!config.server.dev.uiWatch) {
+    const uiStaticPath = p.join(
+      p.dirname(require.resolve('@arsonar/ui/package.json')),
+      'dist'
+    )
+    app.use('/', express.static(uiStaticPath))
+  } else {
+    const uiDevMiddleware = require('@arsonar/ui/express-dev')
+    uiDevMiddleware(app)
+  }
 
   // Error handling
   app.use(function (err, req, res, next) {
