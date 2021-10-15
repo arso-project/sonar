@@ -5,6 +5,8 @@ const { pipeline } = require('streamx')
 const { HttpError } = require('../lib/util')
 const AH = require('../lib/async-handler')
 
+const WAIT_TIMEOUT = 1000
+
 const createFsRouter = require('./fs')
 
 module.exports = function createCollectionRoutes () {
@@ -94,8 +96,18 @@ module.exports = function createCollectionRoutes () {
 
   router.get('/:collection/version/:key/:seq', AH(async (req, res, next) => {
     const { key, seq } = req.params
-    const record = await req.collection.getBlock({ key, seq })
-    return record.toJSON()
+    const timeout = req.query.timeout || WAIT_TIMEOUT
+    try {
+      const record = await req.collection.getBlock({ key, seq }, { timeout })
+      return record.toJSON()
+    } catch (err) {
+      if (err.code === 'ETIMEDOUT') {
+        res.status(404)
+        return { error: 'Block not available from peers' }
+      } else {
+        throw err
+      }
+    }
   }))
 
   router.get('/:collection/version/:lseq', AH(async (req, res, next) => {

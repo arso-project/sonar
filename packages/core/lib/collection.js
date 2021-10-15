@@ -383,6 +383,7 @@ class Collection extends Nanoresource {
         return record
       }
     } catch (err) {
+      this.log.error(`Failed to load: ${JSON.stringify(req)}: ${err.message}`)
       throw err
     }
   }
@@ -436,7 +437,7 @@ class Collection extends Nanoresource {
         } catch (err) {
           list = []
         }
-      } else if (req.type || req.id) {
+      } else if (req.type || req.id || req.path) {
         list = await this.query('records', req)
       } else {
         throw new Error('Invalid request')
