@@ -25,7 +25,7 @@ module.exports = class LegacyClient extends Workspace {
   }
 
   async info () {
-    return this.fetch('/info')
+    return this.fetch('/')
   }
 
   async getTypes () {

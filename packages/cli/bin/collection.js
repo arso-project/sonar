@@ -81,9 +81,10 @@ async function list (argv) {
     return [
       chalk.bold.blueBright(collection.name),
       collection.key.toString('hex'),
-      'Shared: ' + chalk.bold(collection.share ? 'Yes' : 'No'),
-      'Local key: ' + chalk.bold(collection.localKey),
-      'Local drive: ' + chalk.bold(collection.localDrive)
+      'Shared:      ' + chalk.bold(collection.share ? 'Yes' : 'No'),
+      'Local key:   ' + chalk.bold(collection.localKey),
+      'Local drive: ' + chalk.bold(collection.localDrive),
+      'Length:      ' + chalk.bold(collection.length)
     ].join('\n')
   }).join('\n\n')
   console.log(output)
