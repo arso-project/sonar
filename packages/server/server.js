@@ -147,6 +147,7 @@ module.exports = function SonarServer (opts = {}) {
     app.use('/', express.static(uiStaticPath))
   } else {
     const uiDevMiddleware = require('@arsonar/ui/express-dev')
+    api.log.warn('UI development server started. UI will rebuild on changes!')
     uiDevMiddleware(app)
   }
 

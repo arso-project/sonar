@@ -25,17 +25,17 @@ class Collection extends EventEmitter {
    * @param {string} nameOrKey - Name or key of the collection
    * @return {Collection}
    */
-  constructor (client, nameOrKey) {
+  constructor (workspace, nameOrKey) {
     super()
-    this.endpoint = client.endpoint + '/collection/' + nameOrKey
-    this._client = client
+    this.endpoint = workspace.endpoint + '/collection/' + nameOrKey
+    this.workspace = workspace
     this._info = {}
     this._nameOrKey = nameOrKey
     this._eventStreams = new Set()
 
     this.fs = new Fs(this)
     this.resources = new Resources(this)
-    this.log = client.log.child({ collection: this })
+    this.log = workspace.log.child({ collection: this })
     this.setMaxListeners(256)
   }
 
@@ -346,13 +346,13 @@ class Collection extends EventEmitter {
     }
 
     try {
-      if (!this._client.opened) await this._client.open()
+      if (!this.workspace.opened) await this.workspace.open()
     } catch (err) {
       onerror(err)
       return
     }
 
-    this._eventSource = this._client.createEventSource('/events', {
+    this._eventSource = this.workspace.createEventSource('/events', {
       endpoint: this.endpoint,
       onerror,
       onmessage: (eventObject) => {
@@ -474,7 +474,7 @@ class Collection extends EventEmitter {
 
   async fetch (path, opts = {}) {
     if (!opts.endpoint) opts.endpoint = this.endpoint
-    return this._client.fetch(path, opts)
+    return this.workspace.fetch(path, opts)
   }
 }
 

@@ -39,7 +39,11 @@ class Fs {
     }
     // Assume it's a path to a file in the island fs, will fail if not found.
     if (!path.startsWith('/')) path = '/' + path
-    return this.endpoint + path
+    let link = this.endpoint + path
+    if (this.collection.workspace.token) {
+      link += `?token=${this.collection.workspace.token}`
+    }
+    return link
   }
 
   /**
@@ -91,7 +95,11 @@ class Fs {
     return files
 
     function makeLink (file) {
-      return `${self.endpoint}/${self.collection.name}/fs/${alias}/${file.path}`
+      let link = `${self.endpoint}/${alias}/${file.path}`
+      if (self.collection.workspace.token) {
+        link += `?token=${self.collection.workspace.token}`
+      }
+      return link
     }
 
     function getResource (file) {

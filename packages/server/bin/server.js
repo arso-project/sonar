@@ -6,7 +6,7 @@ const chalk = require('chalk')
 const { printLogo } = require('@arsonar/cli/util/logo.js')
 const options = require('./lib/options')
 
-const DEV_DEBUG = '*,-express*,-hypercore-protocol*,-body-parser*,-babel*,-send,-finalhandler'
+const DEV_DEBUG = '*,-express*,-hypercore-protocol*,-body-parser*,-babel*,-send,-finalhandler,-connect:dispatcher,-vite:*,vite:hmr'
 
 exports.command = 'server <command>'
 exports.describe = 'server'

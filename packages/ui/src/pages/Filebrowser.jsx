@@ -3,6 +3,7 @@ import pretty from 'pretty-bytes'
 import { formatDistance } from 'date-fns'
 import { css } from '@emotion/core'
 import { RecordDrawerByID } from '../components/Record'
+import styled from '@emotion/styled'
 
 import { useCollection } from '@arsonar/react'
 
@@ -23,16 +24,15 @@ export default function Filebrowser (props) {
   segments.unshift('/')
 
   return (
-    // <Box css={sOuter}>
-    <div>
+    <Wrapper>
       {segments && (
-        <div css={sBreadcrumb}>
+        <Breadcrumb>
           {segments.map((s, i) => (
             <span key={i} onClick={e => onSegmentClick(i, e)}>{s}</span>
           ))}
-        </div>
+        </Breadcrumb>
       )}
-      <ul css={sList}>
+      <List>
         {segments.length > 1 && (
           <li>
             <span>
@@ -73,8 +73,8 @@ export default function Filebrowser (props) {
           </li>
         ))}
         {!files.length && <li><div><em>Nothing here</em></div></li>}
-      </ul>
-    </div>
+      </List>
+    </Wrapper>
   )
 
   function onFileClick (file, e) {
@@ -91,14 +91,23 @@ export default function Filebrowser (props) {
   }
 }
 
-const sOuter = theme => css`
-  --color-border: ${theme.colors.border1};
-  --color-link: ${theme.colors.main};
-  --color-bg-hover: ${theme.colors.bg2};
+// const sOuter = theme => css`
+//   --color-border: ${theme.colors.border1};
+//   --color-link: ${theme.colors.main};
+//   --color-bg-hover: ${theme.colors.bg2};
+//   font-size: 1.5rem;
+//   width: 100%;
+// `
+
+const Wrapper = styled.div`
+  --color-border: ${props => props.theme.colors.border1};
+  --color-link: ${props => props.theme.colors.main};
+  --color-bg-hover: ${props => props.theme.colors.bg2};
   font-size: 1.5rem;
   width: 100%;
 `
-const sList = css`
+
+const List = styled.ul`
   border: 1px solid var(--color-border);
   border-radius: 2px;
   li {
@@ -132,7 +141,8 @@ const sList = css`
     color: #999
   }
 `
-const sBreadcrumb = css`
+
+const Breadcrumb = styled.div`
   font-weight: bold;
   margin: 0 0 1rem 0;
   > span {

@@ -54,6 +54,10 @@ class Workspace extends EventEmitter {
     this.bots = new Bots(this)
   }
 
+  get token () {
+    return this._token
+  }
+
   /**
    * Closes the client.
    *
