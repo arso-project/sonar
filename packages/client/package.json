@@ -1,6 +1,6 @@
 {
   "name": "@arsonar/client",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "Client for sonar",
   "main": "index.js",
   "module": "dist/es/index.js",
@@ -18,8 +18,7 @@
   "author": "arso contributors",
   "license": "GPL-3.0",
   "dependencies": {
-    "@arsonar/common": "*",
-    "randombytes": "github:arso-project/randombytes",
+    "@arsonar/common": "^0.5.0",
     "base32-encode": "^1.1.1",
     "debug": "^4.1.1",
     "eventsource": "github:Frando/eventsource",
@@ -27,11 +26,12 @@
     "isomorphic-fetch": "^2.2.1",
     "parse-dat-url": "^3.0.3",
     "pretty-bytes": "^5.6.0",
+    "randombytes": "github:arso-project/randombytes",
     "split2": "^3.2.2",
     "streamx": "^2.11.0"
   },
   "devDependencies": {
-    "@arsonar/server": "^0.4.0",
+    "@arsonar/server": "^0.5.0",
     "@hyperswarm/dht": "^3.6.5",
     "@rollup/plugin-alias": "^3.1.1",
     "@rollup/plugin-commonjs": "^17.0.0",

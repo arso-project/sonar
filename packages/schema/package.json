@@ -1,35 +1,16 @@
 {
-  "name": "@arsonar/react",
+  "name": "@arsonar/schema",
   "version": "0.5.0",
   "description": "A arsonar module",
+  "bin": {
+    "sonar-build-types": "bin.js"
+  },
   "main": "index.js",
-  "type": "module",
-  "module": "index.js",
   "scripts": {
-    "example": "cd ../../examples/react && yarn dev",
-    "test": "tape test/*.js",
-    "build": "rollup -c"
+    "build": "node build-types.js ./types types.json"
   },
   "dependencies": {
-    "@arsonar/client": "^0.5.0"
-  },
-  "peerDependencies": {
-    "react": "^17.0.1",
-    "react-dom": "^17.0.2"
-  },
-  "devDependencies": {
-    "standard": "^14.3.3",
-    "tape": "^5.0"
-  },
-  "standard": {
-    "env": [
-      "es6",
-      "node",
-      "browser"
-    ],
-    "ignore": [
-      "build"
-    ]
+    "js-yaml": "^3.14.0"
   },
   "repository": {
     "type": "git",
