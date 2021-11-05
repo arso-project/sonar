@@ -3,15 +3,21 @@ const { createOne } = require('./lib/create')
 
 tape('sync', async t => {
   const { client, cleanup } = await createOne()
+  const collection = await client.createCollection('sync')
   try {
-    await client.putType('foo', { fields: { title: { type: 'string' } } })
-    const { id } = await client.put({
+    await collection.putType({
+      name: 'foo',
+      fields: {
+        title: { type: 'string' }
+      }
+    })
+    const { id } = await collection.put({
       type: 'foo',
       id: 'bar',
       value: { title: 'bar' }
     })
-    await client.sync()
-    const records = await client.get({ id })
+    await collection.sync()
+    const records = await collection.get({ id })
     t.equal(records.length, 1)
     t.equal(records[0].id, 'bar')
   } catch (err) {

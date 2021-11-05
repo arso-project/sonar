@@ -5,13 +5,13 @@ const pretty = require('pretty-hash')
 const inspect = require('inspect-custom-symbol')
 const pump = require('pump')
 const collectStream = require('stream-collector')
-const { Transform, Writable } = require('streamx')
+const { Transform } = require('streamx')
 const { NanoresourcePromise: Nanoresource } = require('nanoresource-promise/emitter')
 const Kappa = require('kappa-core')
 const Indexer = require('kappa-sparse-indexer')
 
 const { RecordVersion, Type, Schema } = require('@arsonar/common')
-const PromiseCache = require('@arsonar/common/lib/cache')
+const BlockCache = require('./block-cache')
 const LevelMap = require('./utils/level-map')
 const EventStream = require('./utils/eventstream')
 const Workspace = require('./workspace')
@@ -77,8 +77,8 @@ class Collection extends Nanoresource {
     this.lock = opts.lock || mutexify()
 
     this._eventStream = new EventStream()
-    this._recordCache = new PromiseCache({
-      key: record => record.key + '@' + record.seq
+    this._blockCache = new BlockCache(this.workspace.corestore, {
+      map: (block, req) => this._decodeBlock(block, req)
     })
 
     // Push some events into event streams
@@ -145,6 +145,10 @@ class Collection extends Nanoresource {
     return this._name || this._opts.name || this.id
   }
 
+  get workspace () {
+    return this._workspace
+  }
+
   ready (cb) {
     cb = maybeCallback(cb)
     if (this.opened) process.nextTick(cb)
@@ -199,7 +203,8 @@ class Collection extends Nanoresource {
         self.getBlock(req, getOpts)
           .then(
             record => {
-              messages[i] = record
+              if (record) messages[i] = record
+              else messages[i] = undefined
               ondone()
             },
             err => {
@@ -346,8 +351,13 @@ class Collection extends Nanoresource {
     return struct
   }
 
-  async getBlock (req, opts = {}) {
-    if (!this.opened && !this.opening) await this.open()
+  _decodeBlock (block, req) {
+    const struct = this._struct(req.key)
+    const decodedBlock = struct.decodeBlock(block, req)
+    return decodedBlock
+  }
+
+  async resolveBlock (req, opts = {}) {
     if (req.address) {
       const [key, seq] = req.address.split('@')
       req.key = key
@@ -362,48 +372,34 @@ class Collection extends Nanoresource {
         })
       })
     }
+    return req
+  }
 
+  async getBlock (req, opts = {}) {
+    if (!this.opened && !this.opening) await this.open()
+    if (opts.wait === undefined) opts.wait = true
+    req = await this.resolveBlock(req)
+
+    const block = await this._blockCache.getBlock(req.key, req.seq)
+    if (!block) return null
+    if (opts.upcast === false) {
+      return block
+    }
+    if (req.lseq) block.lseq = req.lseq
     try {
-      const decoded = await this._recordCache.getOrFetch(req, async () => {
-        const data = await this._getBlockFromFeed(req, opts)
-        return data
-      })
-
-      if (opts.upcast === false) {
-        return decoded
-      }
-
       try {
-        const record = new RecordVersion(this.schema, decoded)
+        const record = new RecordVersion(this.schema, block)
         return record
       } catch (err) {
         if (opts.wait === false) throw err
         await this.sync('root')
-        const record = new RecordVersion(this.schema, decoded)
+        const record = new RecordVersion(this.schema, block)
         return record
       }
     } catch (err) {
       this.log.error(`Failed to load: ${JSON.stringify(req)}: ${err.message}`)
       throw err
     }
-  }
-
-  async _getBlockFromFeed (req, opts = {}) {
-    const { key, seq } = req
-    if (seq === 0) throw new Error('Invalid request: Seq 0 is the header, not a block')
-    if (!key) throw new Error('Invalid request: Missing key argument')
-
-    let feed = this.feed(key)
-    if (!feed) {
-      // TODO: This line allows to reference blocks from any hypercore, anywhere - do we want this?
-      // It fixes the case where, especially on a reindex, blocks from feeds are floating in for which
-      // their feed records are not yet indexed...
-      feed = await this._initFeed(key)
-    }
-
-    const struct = this._struct(key)
-    const block = await struct.get(feed, req, opts)
-    return block
   }
 
   createGetStream (opts) {
@@ -430,12 +426,13 @@ class Collection extends Nanoresource {
       opts = {}
     }
     return maybe(cb, async () => {
-      let list
+      let list = []
       if ((req.key && req.seq) || req.lseq || req.address) {
         try {
-          list = [await this.getBlock(req)]
+          const block = await this.getBlock(req)
+          if (block) list.push(block)
         } catch (err) {
-          list = []
+          // TODO: throw or log?
         }
       } else if (req.type || req.id || req.path) {
         list = await this.query('records', req)

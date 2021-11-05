@@ -1,7 +1,16 @@
 const tape = require('tape')
-const { promisify } = require('util')
+const { createOne, createMany } = require('./lib/create')
 
-const { createMany } = require('./lib/create')
+tape('simple resources test', async t => {
+  const { cleanup, client } = await createOne()
+  const col = await client.createCollection('first')
+  await writeResource(col, 'one', 'foo')
+  await writeResource(col, 'two', 'bar')
+  const res = await readResources(col)
+  t.deepEqual(res.sort(), ['bar', 'foo'])
+  await cleanup()
+})
+
 tape('replicate resources', { timeout: 5000 }, async t => {
   const { cleanup, clients } = await createMany(2)
   const [client1, client2] = clients
@@ -25,6 +34,7 @@ tape('replicate resources', { timeout: 5000 }, async t => {
   // await timeout(500)
 
   let contents1 = await readResources(collection1)
+
   t.deepEqual(contents1.sort(), ['onfirst'], 'collection 1 ok')
   let contents2 = await readResources(collection2)
   t.deepEqual(contents2.sort(), ['onfirst', 'onsecond'], 'collection 2 ok')

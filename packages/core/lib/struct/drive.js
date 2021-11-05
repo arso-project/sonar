@@ -1,39 +1,29 @@
 const { Stat } = require('hyperdrive-schemas')
 const mime = require('mime-types')
 const { Node } = require('hypertrie/lib/messages')
-const crypto = require('crypto')
 const { deriveId } = require('../util')
 
-module.exports = { get }
-// const DRIVE = Symbol('hyperdrive')
+module.exports = { get, decodeBlock }
 
 async function get (feed, req) {
-  const key = feed.key.toString('hex')
   const seq = req.seq
+  const block = await feed.get(seq)
+  return decodeBlock(block, req)
+}
 
-  const value = await feed.get(seq)
+function decodeBlock (block, req) {
+  if (Buffer.isBuffer(req.key)) req.key = req.key.toString('hex')
+  const node = Node.decode(block)
+  const path = node.key
+  const stat = Stat.decode(node.valueBuffer)
 
-  let node, stat, path
-
-  try {
-    node = Node.decode(value)
-    path = node.key
-  } catch (err) {
-    throw err
-  }
-
-  try {
-    stat = Stat.decode(node.valueBuffer)
-  } catch (err) {
-    throw err
-  }
-
+  // Ignore directories.
   if (!stat.isFile()) return null
 
   const pathParts = path.split('/')
   const filename = pathParts.pop() || '/'
 
-  const url = 'hyper://' + key + '/' + path
+  const url = 'hyper://' + req.key + '/' + path
   let id
   if (stat.metadata['sonar.id']) {
     id = stat.metadata['sonar.id'].toString()

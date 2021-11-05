@@ -104,7 +104,7 @@ tape('get and delete record', async t => {
 
 tape('batch stream', async t => {
   const { client, cleanup } = await createOne({ network: false })
-  const collection = await client.openCollection('default')
+  const collection = await client.createCollection('default')
   const bs = await collection.createBatchStream()
   bs.write({ type: 'sonar/entity', value: { label: 'foo1' } })
   bs.write({ type: 'sonar/entity', value: { label: 'foo2' } })

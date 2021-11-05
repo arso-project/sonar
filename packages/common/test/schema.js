@@ -79,22 +79,23 @@ tape('basics', t => {
   const store = new Store({ schema })
   store.cacheRecord(record)
 
-  console.log('\n# Table\n')
-  const rows = [['ID', 'Field', 'Value']]
-  for (const fieldValue of record.fields()) {
-    rows.push([record.id, fieldValue.fieldAddress, fieldValue.value])
-  }
-  console.log(table(rows))
 
-  console.log('\n# Human readable fields\n')
-  for (const fieldValue of record.fields()) {
-    console.log(fieldValue.title, ':', fieldValue.value)
-  }
+  // console.log('\n# Table\n')
+  // const rows = [['ID', 'Field', 'Value']]
+  // for (const fieldValue of record.fields()) {
+  //   rows.push([record.id, fieldValue.fieldAddress, fieldValue.value])
+  // }
+  // console.log(table(rows))
 
-  console.log('\n# Get tag labels (Tags missing)\n')
-  for (const tag of record.gotoMany(store, 'tags')) {
-    console.log('Label: ' + tag.getOne('label'))
-  }
+  // console.log('\n# Human readable fields\n')
+  // for (const fieldValue of record.fields()) {
+  //   console.log(fieldValue.title, ':', fieldValue.value)
+  // }
+
+  // console.log('\n# Get tag labels (Tags missing)\n')
+  // for (const tag of record.gotoMany(store, 'tags')) {
+  //   console.log('Label: ' + tag.getOne('label'))
+  // }
 
   const tag1 = schema.Record({
     id: 'atag1',
@@ -109,23 +110,21 @@ tape('basics', t => {
   store.cacheRecord(tag1)
   store.cacheRecord(tag2)
 
-  console.log('\n# Get tag labels (Tags present)\n')
-  for (const tag of record.gotoMany(store, 'tags')) {
-    console.log('Label: ' + tag.getOne('label'))
-  }
+  // console.log('\n# Get tag labels (Tags present)\n')
+  // for (const tag of record.gotoMany(store, 'tags')) {
+  //   console.log('Label: ' + tag.getOne('label'))
+  // }
 
+  // // console.log('record label', record.field('entity#label').value)
+  // console.log('record label', record.get('entity#label'))
   // console.log('record label', record.field('entity#label').value)
-  console.log('record label', record.get('entity#label'))
-  console.log('record label', record.field('entity#label').value)
 
-  console.log('record labels', record.fields('entity#label').value)
-  console.log('record labels', record.values('label'))
+  // console.log('record labels', record.fields('entity#label').value)
+  // console.log('record labels', record.values('label'))
 
-  console.log('record size', record.get('size'))
-  // console.log('record json', record.toJSON())
-  // console.log('record value', record.value)
-  console.log('record is video', record.hasType('video'))
-  console.log('record is file', record.hasType('file'))
+  // console.log('record size', record.get('size'))
+  // console.log('record is video', record.hasType('video'))
+  // console.log('record is file', record.hasType('file'))
 
   const file = schema.Record({
     id: 'avideo',
@@ -137,19 +136,17 @@ tape('basics', t => {
 
   const entity = schema.Entity([record, file])
 
-  console.log('entity has types', entity.id, entity.getTypes().map(t => t.title))
+  // console.log('entity has types', entity.id, entity.getTypes().map(t => t.title))
 
-  console.log('entity label', entity.get('entity#label'))
-  console.log('entity labels', entity.values('entity#label'))
+  // console.log('entity label', entity.get('entity#label'))
+  // console.log('entity labels', entity.values('entity#label'))
 
-  console.log('entity size', entity.field('file#size').value)
-  console.log('entity filename', entity.field('file#filename').value)
-  console.log('entity duration', entity.get('video#duration'))
+  // console.log('entity size', entity.field('file#size').value)
+  // console.log('entity filename', entity.field('file#filename').value)
+  // console.log('entity duration', entity.get('video#duration'))
 
-  console.log('entity triples', toTriples(entity))
-  // console.log('entity turtle', toTurtle(entity))
-  console.log('entity is video', entity.hasType('sonar/video'))
-  // console.log('type json schema', schema.getType('video').toJSONSchema())
+  // console.log('entity triples', toTriples(entity))
+  // console.log('entity is video', entity.hasType('sonar/video'))
   t.end()
 })
 
@@ -190,7 +187,7 @@ tape('relations', t => {
     id: 'afile',
     type: 'file',
     value: {
-      label: 'foofile',
+      label: 'File A',
       size: '100mb'
     }
   })
@@ -198,7 +195,7 @@ tape('relations', t => {
     id: 'bfile',
     type: 'file',
     value: {
-      label: 'barfile',
+      label: 'File B',
       size: '5gb'
     }
   })
@@ -214,32 +211,27 @@ tape('relations', t => {
   store.cacheRecord(tag)
   store.cacheRecord(file)
   store.cacheRecord(file2)
-  console.log(
-    'tag: target',
-    tag.get('target')
-  )
-  console.log(
-    'tag: target one',
-    tag.gotoOne(store, 'target').get('label')
-  )
-  console.log(
-    'tag: target many',
-    tag.gotoMany(store, 'target').map(e => [e.id, e.get('label')])
-  )
 
+  t.deepEqual(tag.get('target'), ['afile', 'bfile', 'cfile'])
+  t.equal(tag.gotoOne(store, 'target').get('label'), 'File A')
+  const labels = tag.gotoMany(store, 'target').map(e => e.get('label'))
+  t.equal(labels.length, 3)
+  t.equal(labels[0], 'File A')
+  t.equal(labels[1], 'File B')
+  t.equal(labels[2], undefined)
   t.end()
 })
 
-function toTriples (entity) {
-  const triples = []
-  for (const type of entity.getTypes()) {
-    triples.push([entity.id, 'a', type.address])
-  }
-  for (const fv of entity.fields()) {
-    triples.push([entity.id, fv.field.address, fv.value])
-  }
-  return triples
-}
+// function toTriples (entity) {
+//   const triples = []
+//   for (const type of entity.getTypes()) {
+//     triples.push([entity.id, 'a', type.address])
+//   }
+//   for (const fv of entity.fields()) {
+//     triples.push([entity.id, fv.field.address, fv.value])
+//   }
+//   return triples
+// }
 
 // function toTurtle (entity) {
 //   const triples = toTriples(entity)
