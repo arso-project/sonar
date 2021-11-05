@@ -183,7 +183,7 @@ module.exports = function createCollectionRoutes () {
   router.get('/:collection/subscription/:name', AH(async (req, res, next) => {
     const { name } = req.params
     const opts = req.query || {}
-    const sub = req.collections.subscribe(name, opts)
+    const sub = req.collection.subscribe(name, opts)
     const records = await sub.pull()
     return records
   }))
@@ -211,7 +211,7 @@ module.exports = function createCollectionRoutes () {
   router.post('/:collection/subscription/:name/:cursor', AH(async (req, res, next) => {
     const { name, cursor } = req.params
     const opts = req.query || {}
-    const sub = req.collections.subscribe(name, opts)
+    const sub = req.collection.subscribe(name, opts)
     const records = await sub.ack(cursor)
     return records
   }))

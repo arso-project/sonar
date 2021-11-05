@@ -161,7 +161,7 @@ module.exports = function SonarServer (opts = {}) {
       err.statusCode = 404
     }
     res.status(err.statusCode || 500).send(result)
-    debug('request produced error', req.url, err.message)
+    api.log.error({ err, req, message: `Request ${req.url} produced error` })
   })
 
   // Dev middleware.
