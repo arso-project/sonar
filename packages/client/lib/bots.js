@@ -3,10 +3,10 @@ const debug = require('debug')('sonar:bots')
 const SESSION_HEADER = 'X-Sonar-Bot-Session-Id'
 
 class Bots {
-  constructor (client) {
-    this.client = client
+  constructor (workspace) {
+    this.workspace = workspace
     this.bots = new Map()
-    this.log = this.client.log.child({ name: 'bots' })
+    this.log = this.workspace.log.child({ name: 'bots' })
   }
 
   async close () {
@@ -55,14 +55,14 @@ class Bots {
   async _initListener () {
     this._init = true
 
-    // const path = this.client.endpoint + '/bot/events'
+    // const path = this.workspace.endpoint + '/bot/events'
     // const headers = {
-    //   ...this.client.getAuthHeaders(),
+    //   ...this.workspace.getAuthHeaders(),
     //   ...this.getHeaders()
     // }
 
     const path = '/bot/events'
-    this._eventSource = this.client.createEventSource(path, {
+    this._eventSource = this.workspace.createEventSource(path, {
       headers: this.getHeaders(),
       onmessage: this._onmessage.bind(this),
       onerror: err => {
@@ -97,6 +97,7 @@ class Bots {
   }
 
   async _onmessage (message) {
+    console.log('onmessage', message)
     try {
       const { bot: name, op, data, requestId } = message
       const bot = this.bots.get(name)
@@ -104,24 +105,26 @@ class Bots {
       try {
         if (op === 'join') {
           const { collection: collectionKey } = data
-          const collection = await this.client.openCollection(collectionKey)
+          const collection = await this.workspace.openCollection(collectionKey)
           await bot.onjoin(collection, data.config)
           await this.reply({ requestId })
         } else if (op === 'leave') {
           const { collection: collectionKey } = data
-          const collection = await this.client.openCollection(collectionKey)
+          const collection = await this.workspace.openCollection(collectionKey)
           await bot.onleave(collection)
           await this.reply({ requestId })
         } else if (op === 'command') {
           const { command, args, env } = data
           if (env.collection) {
-            env.collection = await this.client.openCollection(env.collection)
+            env.collection = await this.workspace.openCollection(env.collection)
           }
           const result = await bot.oncommand(command, args, env)
           await this.reply({ requestId, result })
         }
       } catch (err) {
-        this.log.error({ message: 'bot onmessage handle error: ' + err.message + ' from ' + JSON.stringify(message), err })
+        console.error(err)
+        // this.log.error({ message: 'bot onmessage handle error: ' + err.message + ' from ' + JSON.stringify(message), err })
+        this.log.error({ message: 'bot onmessage handle error: ' + err.message, err })
         debug(err)
         await this.reply({
           requestId: requestId,
@@ -131,6 +134,7 @@ class Bots {
     } catch (err) {
       // TODO: Where to these errors go?
       this.log.error({ message: 'bot onmessage error', err })
+      console.error(err)
     }
   }
 
@@ -146,7 +150,7 @@ class Bots {
     url = '/bot' + url
     opts.headers = opts.headers || {}
     opts.headers = { ...this.getHeaders(), ...opts.headers }
-    return this.client.fetch(url, opts)
+    return this.workspace.fetch(url, opts)
   }
 
   async register (name, spec, handlers) {
@@ -160,30 +164,30 @@ class Bots {
     if (!this._init) await this._initListener()
     this.bots.set(name, new Bot({
       spec,
-      client: this.client,
+      workspace: this.workspace,
       config,
       handlers
     }))
   }
 
   // async configure (name, config) {
-  //   const config = await this.client.fetch('/bot/configure/' + name, config)
+  //   const config = await this.workspace.fetch('/bot/configure/' + name, config)
   // }
 }
 
 class Bot {
-  constructor ({ spec, config, handlers, client }) {
+  constructor ({ spec, config, handlers, workspace }) {
     this.spec = spec
     this.name = spec.name
-    this.client = client
+    this.workspace = workspace
     this.config = config
     if (typeof handlers === 'function') {
-      handlers = handlers({ spec, config, client })
+      handlers = handlers({ spec, config, workspace })
     }
     this.handlers = handlers
     this.sessions = new Map()
     this.opened = false
-    this.log = this.client.log.child({ name: 'bot:' + this.name })
+    this.log = this.workspace.log.child({ name: 'bot:' + this.name })
   }
 
   async open () {

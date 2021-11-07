@@ -90,9 +90,10 @@ async function join (argv) {
 async function runCommand (argv) {
   const client = createClient(argv)
   let { bot, collection, command, args, workspace } = argv
-  try {
-    args = JSON.parse(args)
-  } catch (err) {}
+  args = args.split(' ')
+  // try {
+  //   args = JSON.parse(args)
+  // } catch (err) {}
 
   const env = {}
   if (!workspace && collection) env.collection = collection

@@ -7,5 +7,8 @@
     "@arsonar/client": "^0.5.0",
     "js-yaml": "^3.14.0",
     "little-process-box": "^0.2.3"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

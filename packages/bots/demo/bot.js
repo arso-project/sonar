@@ -8,7 +8,7 @@ if (require.main === module) {
   run(main)
 }
 
-function main (client) {
+function main (workspace) {
   const name = 'download'
 
   const spec = readYaml(p.join(__dirname, 'bot.yaml'))
@@ -90,7 +90,8 @@ class DownloadSession {
     }
     const resource = await this.collection.resources.create(resourceRecord)
     await this.collection.resources.writeFile(resource, res, {
-      requestType: 'stream'
+      force: true,
+      requestType: 'buffer'
     })
   }
 }

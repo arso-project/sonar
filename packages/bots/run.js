@@ -1,4 +1,4 @@
-const { Client } = require('@arsonar/client')
+const { Workspace } = require('@arsonar/client')
 const fs = require('fs')
 const yaml = require('js-yaml')
 
@@ -16,15 +16,15 @@ function runSync (createBot, opts = {}, cb) {
 }
 
 async function run (createBot, opts) {
-  const client = new Client()
+  const workspace = new Workspace()
   try {
-    await client.open()
-    const bot = createBot(client)
+    await workspace.open()
+    const bot = createBot(workspace)
     const { name, spec, handlers } = bot
-    client.log.info('run bot: ' + name)
-    await client.bots.register(name, spec, handlers)
-    client.log.info('bot registered with server')
+    workspace.log.info('run bot: ' + name)
+    await workspace.bots.register(name, spec, handlers)
+    workspace.log.info('bot registered with server')
   } catch (err) {
-    client.log.error({ err })
+    workspace.log.error({ err })
   }
 }
