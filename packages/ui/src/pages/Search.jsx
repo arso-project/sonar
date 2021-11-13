@@ -12,7 +12,7 @@ import {
   Box,
   Input,
   Heading
-} from '@chakra-ui/core'
+} from '@chakra-ui/react'
 
 import { useCollection } from '@arsonar/react'
 

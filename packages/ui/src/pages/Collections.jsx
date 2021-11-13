@@ -6,7 +6,6 @@ import {
   Link,
   Heading,
   Switch,
-  PseudoBox,
   Button,
   FormLabel,
   Modal,
@@ -19,13 +18,14 @@ import {
   useToast,
   Collapse,
   Icon
-} from '@chakra-ui/core'
+} from '@chakra-ui/react'
 import { formData } from '../lib/form'
 import Logger from '../components/Logger'
 import Loading from '../components/Loading'
 import Key from '../components/Key'
 import FormField from '../components/FormField'
 import { useWorkspace, useAsync } from '@arsonar/react'
+import { FaCaretDown, FaCaretRight } from 'react-icons/fa'
 
 function useCollectionList () {
   const { workspace } = useWorkspace()
@@ -137,7 +137,7 @@ function CreateCollection (props) {
         <Form title='Create collection' onSubmit={onCreate}>
           <FormField name='name' title='Local Name' />
           <FormField name='alias' title='Alias' />
-          <Button type='submit' disabled={pending} variantColor='teal'>Create</Button>
+          <Button type='submit' disabled={pending} colorScheme='teal'>Create</Button>
         </Form>
       )}
       {!create && (
@@ -145,7 +145,7 @@ function CreateCollection (props) {
           <FormField name='name' title='Name' />
           <FormField name='key' title='Key' />
           <FormField name='alias' title='Alias' />
-          <Button type='submit' disaled={pending} variantColor='teal'>Create</Button>
+          <Button type='submit' disaled={pending} colorScheme='teal'>Create</Button>
         </Form>
       )}
     </Box>
@@ -192,7 +192,7 @@ function CollectionList (props) {
   return (
     <Flex direction='column' mb={4}>
       {Object.values(collections).map((collection, i) => (
-        <PseudoBox
+        <Box
           key={i}
           borderBottomWidth='1px'
           display={{ md: 'flex' }}
@@ -225,12 +225,9 @@ function CollectionList (props) {
                   id={collection.key + '-share'}
                   onChange={e => onUpdate(collection.key, { share: !!e.target.checked })}
                 />
-                <Button size='sm' ml='10' variantColor='blue' onClick={e => onToggle(collection.key)}>
+                <Button size='sm' ml='10' colorScheme='blue' onClick={e => onToggle(collection.key)}>
                   Info
-                  <Icon
-                    name={toggled[collection.key] ? 'chevron-down' : 'chevron-right'}
-                    size='24px'
-                  />
+                  {toggled[collection.key] ? <FaCaretDown /> : <FaCaretRight />}
                 </Button>
               </Flex>
             </Flex>
@@ -265,7 +262,7 @@ function CollectionList (props) {
               </Flex>
             </Collapse>
           </Flex>
-        </PseudoBox>
+        </Box>
       ))}
     </Flex>
   )

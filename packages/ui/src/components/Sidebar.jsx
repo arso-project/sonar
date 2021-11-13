@@ -5,7 +5,7 @@ import {
   Box,
   Heading,
   List
-} from '@chakra-ui/core'
+} from '@chakra-ui/react'
 
 import { CollectionName } from '../components/Collection'
 

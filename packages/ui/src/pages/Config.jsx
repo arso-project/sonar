@@ -5,7 +5,7 @@ import { formData } from '../lib/form'
 
 import {
   Button
-} from '@chakra-ui/core'
+} from '@chakra-ui/react'
 
 import { useWorkspace } from '@arsonar/react'
 
@@ -22,7 +22,7 @@ export default function ConfigPage (props) {
       <form onSubmit={onSubmit}>
         <FormField name='url' title='API endpoint' defaultValue={endpoint} />
         <FormField name='accessCode' title='API access code' defaultValue={accessCode} />
-        <Button type='submit' variantColor='teal'>Save</Button>
+        <Button type='submit'>Save</Button>
       </form>
     </div>
   )

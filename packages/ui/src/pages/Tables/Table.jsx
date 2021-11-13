@@ -17,7 +17,6 @@ import FocusLock, { AutoFocusInside } from 'react-focus-lock'
 import {
   useColorMode,
   Badge,
-  PseudoBox,
   Box,
   // FormControl,
   FormLabel,
@@ -50,7 +49,7 @@ import {
   // MenuDivider,
   // MenuOptionGroup,
   // MenuItemOption
-} from '@chakra-ui/core'
+} from '@chakra-ui/react'
 import {
   // FaSortUp,
   // FaSortDown,
@@ -59,7 +58,8 @@ import {
   FaFilter,
   FaWindowClose,
   // FaSort,
-  FaTable
+  FaTable,
+  FaChevronDown
 } from 'react-icons/fa'
 import {
   IoMdEye
@@ -81,7 +81,7 @@ function Cell (props) {
   const hover = { bg: isRowSelected ? 'yellow.200' : 'gray.50' }
   const innerStyle = { flex: 1, overflow: 'hidden', display: 'flex', maxWidth: '100%', whiteSpace: 'nowrap' }
   return (
-    <PseudoBox
+    <Box
       {...other}
       borderRightWidth='1px'
       borderBottomWidth='1px'
@@ -94,7 +94,7 @@ function Cell (props) {
       p='1'
     >
       <div style={innerStyle}>{children}</div>
-    </PseudoBox>
+    </Box>
   )
 }
 
@@ -132,7 +132,7 @@ function ColumnHeader (props) {
         {column.filterValue && <HeaderColumnIcon icon={FaFilter} />}
         <ColumnHeaderMenu column={column} dispatch={dispatch} />
       </Box>
-      <PseudoBox
+      <Box
         position='absolute'
         right='-2px'
         zIndex='400'
@@ -182,7 +182,7 @@ function ColumnHeaderMenu (props) {
 
   return (
     <Menu closeOnSelect={false}>
-      <MenuButton as={IconButton} size='xs' icon='chevron-down' />
+      <MenuButton as={IconButton} size='xs' icon={<FaChevronDown />}/>
       {list}
     </Menu>
   )
@@ -478,7 +478,7 @@ function TableMetaButton (props) {
     >
       {children}
       {badge !== undefined && (
-        <Badge fontSize='sm' ml={2} variantColor={badge ? 'orange' : undefined}>{badge}</Badge>
+        <Badge fontSize='sm' ml={2} colorScheme={badge ? 'orange' : undefined}>{badge}</Badge>
       )}
     </Button>
   )
@@ -679,7 +679,7 @@ function TableColumns (props) {
 //       ref={ref}
 //       size='xs'
 //       variant='ghost'
-//       variantColor={props.active ? 'green' : 'gray'}
+//       colorScheme={props.active ? 'green' : 'gray'}
 //       {...props}
 //     />
 //   )

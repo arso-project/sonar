@@ -2,11 +2,10 @@ import React from 'react'
 import { HashRouter as Router } from 'react-router-dom'
 import { hot } from 'react-hot-loader/root'
 import {
-  ThemeProvider,
-  ColorModeProvider,
+  ChakraProvider,
   Box,
   useColorMode
-} from '@chakra-ui/core'
+} from '@chakra-ui/react'
 
 import Sidebar from './components/Sidebar'
 import Routes from './Routes'
@@ -32,14 +31,12 @@ export default hot(App)
 function Wrappers (props) {
   return (
     <WorkspaceProvider>
-      <ColorModeProvider>
-        <SonarThemeProvider>
-          <CSSReset />
-          <Router>
-            {props.children}
-          </Router>
-        </SonarThemeProvider>
-      </ColorModeProvider>
+      <SonarThemeProvider>
+        <CSSReset />
+        <Router>
+          {props.children}
+        </Router>
+      </SonarThemeProvider>
     </WorkspaceProvider>
   )
 }
@@ -47,7 +44,7 @@ function Wrappers (props) {
 function SonarThemeProvider (props) {
   const { colorMode } = useColorMode()
   const theme = createTheme(colorMode)
-  return <ThemeProvider {...props} theme={theme} />
+  return <ChakraProvider {...props} theme={theme} />
 }
 
 function Page (props) {

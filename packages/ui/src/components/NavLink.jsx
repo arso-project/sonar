@@ -4,12 +4,13 @@ import { useRouteMatch } from 'react-router'
 
 import {
   Link
-} from '@chakra-ui/core'
+} from '@chakra-ui/react'
 
 export default function MenuLink (props) {
+  const { to, exact, ...rest } = props
   const active = useRouteMatch({
     path: props.to,
-    exact: props.exact
+    exact: !!props.exact
   })
 
   return (
@@ -18,7 +19,8 @@ export default function MenuLink (props) {
       aria-current={active ? 'page' : null}
       color={active ? 'pink.500' : undefined}
       display='block'
-      {...props}
+      to={to}
+      {...rest}
     />
   )
 }

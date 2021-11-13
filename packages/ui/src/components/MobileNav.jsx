@@ -5,7 +5,7 @@ import {
   useDisclosure,
   DrawerOverlay,
   DrawerContent
-} from '@chakra-ui/core'
+} from '@chakra-ui/react'
 import React, { useEffect } from 'react'
 import { MdDehaze } from 'react-icons/md'
 import { SidebarContent } from './Sidebar'

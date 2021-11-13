@@ -11,7 +11,7 @@ import {
   ModalFooter,
   ModalBody,
   ModalCloseButton
-} from '@chakra-ui/core'
+} from '@chakra-ui/react'
 
 import { useCollection } from '@arsonar/react'
 

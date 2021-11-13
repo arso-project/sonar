@@ -1,4 +1,4 @@
-import { theme as chakra } from '@chakra-ui/core'
+import { theme as chakra } from '@chakra-ui/react'
 // console.log('chakra', chakra)
 // Let's say you want to add custom colors
 export default function createTheme (colorMode) {

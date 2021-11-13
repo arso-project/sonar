@@ -3,7 +3,7 @@ import Debug from 'debug'
 import {
   Box,
   Heading
-} from '@chakra-ui/core'
+} from '@chakra-ui/react'
 
 import { Record } from '../../components/Record'
 

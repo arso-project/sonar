@@ -6,7 +6,7 @@ import {
   Box,
   useClipboard,
   Badge
-} from '@chakra-ui/core'
+} from '@chakra-ui/react'
 
 function KeyButton (props) {
   const { children, ...other } = props
@@ -63,7 +63,7 @@ export default function Key (props) {
       {showBadge && (
         <Box ml='2'>
           <Badge
-            variantColor={hasCopied ? 'green' : undefined}
+            colorScheme={hasCopied ? 'green' : undefined}
             textTransform='0'
           >
             <Flex direction='row' justify='space-around'>

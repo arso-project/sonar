@@ -1,6 +1,6 @@
 import React, { useRef, useEffect } from 'react'
 
-import { Input, FormControl, FormLabel, FormHelperText } from '@chakra-ui/core'
+import { Input, FormControl, FormLabel, FormHelperText } from '@chakra-ui/react'
 
 export default function TextWidget (props) {
   const { field, register } = props

@@ -1,6 +1,6 @@
 import React from 'react'
 import { Redirect } from 'react-router-dom'
-import { Box, Text } from '@chakra-ui/core'
+import { Box, Text } from '@chakra-ui/react'
 import { useWorkspace } from '@arsonar/react'
 
 export default function StartPage (props) {

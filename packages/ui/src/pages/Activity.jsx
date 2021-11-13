@@ -12,7 +12,7 @@ import {
   Box,
   Heading,
   Text
-} from '@chakra-ui/core'
+} from '@chakra-ui/react'
 
 export default function ActivityPage (props) {
   const { data, error, pending } = useQuery('history', { reverse: true })

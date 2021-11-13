@@ -1,5 +1,5 @@
 import { css, Global } from '@emotion/core'
-import { CSSReset as ChakraCSSReset } from '@chakra-ui/core'
+import { CSSReset as ChakraCSSReset } from '@chakra-ui/react'
 import React, { Fragment } from 'react'
 
 export default function CSSReset (props) {

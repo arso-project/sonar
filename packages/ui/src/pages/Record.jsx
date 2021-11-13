@@ -4,7 +4,7 @@ import { useParams } from 'react-router-dom'
 import {
   Box,
   Flex
-} from '@chakra-ui/core'
+} from '@chakra-ui/react'
 
 import { RecordGroup } from '../components/Record'
 import { SearchResultList } from './Search'

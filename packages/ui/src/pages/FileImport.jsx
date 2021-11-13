@@ -1,7 +1,7 @@
 import React from 'react'
 import FileImporter from '../components/FileImporter'
 
-import { Box } from '@chakra-ui/core'
+import { Box } from '@chakra-ui/react'
 
 export default function FileImportPage (props) {
   return (

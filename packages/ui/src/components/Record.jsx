@@ -3,6 +3,7 @@ import JsonTree from 'react-json-tree'
 import { Link } from 'react-router-dom'
 import React, { useState } from 'react'
 import { MetaItem, MetaItems } from '../components/MetaItem'
+import { FaCaretDown } from 'react-icons/fa'
 import {
   Box,
   Button,
@@ -21,7 +22,7 @@ import {
   DrawerFooter,
   DrawerHeader,
   DrawerOverlay
-} from '@chakra-ui/core'
+} from '@chakra-ui/react'
 import { useCollection, useRecord } from '@arsonar/react'
 
 // import './Record.css'
@@ -87,7 +88,7 @@ function DisplayMenu (props) {
   const active = displays.find(d => d.id === value)
   return (
     <Menu>
-      <MenuButton as={Button} rightIcon='chevron-down'>
+      <MenuButton as={Button} rightIcon={<FaCaretDown />}>
         {active.name}
       </MenuButton>
       <MenuList>
@@ -182,7 +183,7 @@ export function RecordDrawerByID (props) {
   const types = collection.schema.getTypes()
   return (
     <>
-      <Button w='14rem' pl='3' leftIcon='view' justifyContent='left' variantColor='teal' size='xs' ref={btnRef} onClick={onOpen}>
+      <Button w='14rem' pl='3' leftIcon='view' justifyContent='left' colorScheme='teal' size='xs' ref={btnRef} onClick={onOpen}>
         {id}
       </Button>
       <Drawer

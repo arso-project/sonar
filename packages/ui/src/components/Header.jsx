@@ -1,6 +1,6 @@
 import React, { Fragment } from 'react'
 import { FaRegListAlt } from 'react-icons/fa'
-import { MdHelpOutline as HelpIcon } from 'react-icons/md'
+import { MdHelp as HelpIcon } from 'react-icons/md'
 import {
   ThemeProvider,
   ColorModeProvider,
@@ -20,7 +20,7 @@ import {
   // Text,
   useColorMode,
   useDisclosure
-} from '@chakra-ui/core'
+} from '@chakra-ui/react'
 import MobileNav from './MobileNav'
 import LogModal from './LogModal'
 
@@ -106,10 +106,7 @@ const HeaderButton = React.forwardRef((props, ref) => {
 function HelpMenu (props) {
   return (
     <Menu>
-      <MenuButton
-        as={HeaderButton}
-        leftIcon={HelpIcon}
-      >
+      <MenuButton as={HeaderButton} leftIcon={<HelpIcon />}>
         Docs
       </MenuButton>
       <MenuList>

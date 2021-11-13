@@ -15,7 +15,7 @@ import {
   Flex,
   Badge,
   Spinner
-} from '@chakra-ui/core'
+} from '@chakra-ui/react'
 
 import { RecordDrawerByID } from '../components/Record'
 
@@ -33,9 +33,8 @@ function FileInput (props) {
   return (
     <FormControl my={4}>
       <Button
-        leftIcon={FaFileUpload}
+        leftIcon={<FaFileUpload />}
         onClick={e => hiddenInput.click()}
-        variantColor='green'
       >
         Select files
       </Button>
@@ -129,11 +128,11 @@ function FileProgress (props) {
       <Progress flex='1' value={total > 0 && (transfered / total) * 100} hasStripe />
       {detail && <Text fontSize='sm' as='em'>{detail}</Text>}
       <Box display={{ md: 'flex' }} mt='2'>
-        <Badge variant='outline' variantColor='green' mr={{ md: 2 }}>
+        <Badge variant='outline' mr={{ md: 2 }}>
           {pretty(transfered)} / {pretty(total)}
         </Badge>
         {showSteps && (
-          <Badge variant='outline' variantColor='yellow'>
+          <Badge variant='outline'>
             {step} of {totalSteps}
           </Badge>
         )}
@@ -172,12 +171,12 @@ export default function FileImporter (props) {
       )}
       <Flex>
         {hasFiles && (
-          <Button my={2} mr='2' variantColor='green' isDisabled={buttonDisabled} onClick={onCreateResources} isLoading={isLoading}>
+          <Button my={2} mr='2' isDisabled={buttonDisabled} onClick={onCreateResources} isLoading={isLoading}>
             Create resources
           </Button>
         )}
         {hasResources && (
-          <Button my={2} mr='2' variantColor='green' isDisabled={buttonDisabled} onClick={onImportFiles} isLoading={isLoading}>
+          <Button my={2} mr='2' isDisabled={buttonDisabled} onClick={onImportFiles} isLoading={isLoading}>
             Import files
           </Button>
         )}

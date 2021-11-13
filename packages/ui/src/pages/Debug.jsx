@@ -1,8 +1,8 @@
 import React, { useReducer } from 'react'
 import {
-  Box, Flex, Badge, Text, Icon, Image, PseudoBox,
+  Box, Flex, Badge, Text, Icon, Image,
   FormControl, FormLabel, Input, FormHelperText
-} from '@chakra-ui/core'
+} from '@chakra-ui/react'
 // import css from '@emotion/css'
 
 const initialState = { play: 'stop' }
@@ -66,8 +66,8 @@ function PButton (props) {
   other.bg = active ? 'green.400' : 'red.400'
   other._hover = { boxShadow: '0 0 10px 2px rgba(255, 50, 200, 0.7)' }
   return (
-    <PseudoBox as='button' w={size} h={size} mr='10px' {...other}>
+    <Box as='button' w={size} h={size} mr='10px' {...other}>
       {children}
-    </PseudoBox>
+    </Box>
   )
 }

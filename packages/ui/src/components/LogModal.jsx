@@ -12,7 +12,7 @@ import {
   List,
   ListItem,
   Text
-} from '@chakra-ui/core'
+} from '@chakra-ui/react'
 import useLog from '../hooks/use-log'
 import { format } from 'date-fns'
 
@@ -29,7 +29,7 @@ export default function LogModal (props) {
         </ModalBody>
 
         <ModalFooter>
-          <Button variantColor='blue' mr={3} onClick={onClose}>
+          <Button colorScheme='blue' mr={3} onClick={onClose}>
               Close
           </Button>
         </ModalFooter>

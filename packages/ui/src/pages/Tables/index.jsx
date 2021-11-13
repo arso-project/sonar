@@ -3,6 +3,7 @@ import log from '../../lib/log'
 import { findWidget, RecordLink } from '../../components/Record'
 import makeGlobalStateHook from '../../hooks/make-global-state-hook'
 import { useCollection } from '@arsonar/react'
+import { FaChevronDown } from 'react-icons/fa'
 
 import Table from './Table'
 import Preview from './Preview'
@@ -16,7 +17,7 @@ import {
   MenuList,
   MenuOptionGroup,
   MenuItemOption
-} from '@chakra-ui/core'
+} from '@chakra-ui/react'
 
 const useGlobalState = makeGlobalStateHook('tables')
 
@@ -200,7 +201,7 @@ function TypeMenu (props) {
   const title = value ? items.find(el => el.key === value).value : 'Select type'
   return (
     <Menu>
-      <MenuButton as={Button} size='sm' rightIcon='chevron-down'>
+      <MenuButton as={Button} size='sm' rightIcon={<FaChevronDown />}>
         {title}
       </MenuButton>
       <MenuList>
