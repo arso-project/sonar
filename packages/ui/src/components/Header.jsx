@@ -1,5 +1,5 @@
 import React, { Fragment } from 'react'
-import { FaRegListAlt } from 'react-icons/fa'
+import { FaRegListAlt, FaMoon, FaSun } from 'react-icons/fa'
 import { MdHelp as HelpIcon } from 'react-icons/md'
 import {
   ThemeProvider,
@@ -67,7 +67,7 @@ export default function Header (props) {
           fontSize='md'
           height='2rem'
           onClick={toggleColorMode}
-          icon={colorMode === 'light' ? 'moon' : 'sun'}
+          icon={colorMode === 'light' ? <FaMoon /> : <FaSun />}
         />
         <MobileNav />
       </Flex>
@@ -129,7 +129,7 @@ function LogButton (props) {
       <HeaderIconButton
         aria-label='Show log'
         onClick={onOpen}
-        icon={FaRegListAlt}
+        icon={<FaRegListAlt />}
         {...props}
       />
       <LogModal isOpen={isOpen} onClose={onClose} />
