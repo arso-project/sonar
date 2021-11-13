@@ -205,7 +205,7 @@ function TypeMenu (props) {
         {title}
       </MenuButton>
       <MenuList>
-        <MenuOptionGroup type='radio' onChange={onChange} value={value}>
+        <MenuOptionGroup type='radio' onChange={onChange} defaultValue={value}>
           {items.map(item => (
             <MenuItemOption key={item.key} value={item.key}>{item.value}</MenuItemOption>
           ))}

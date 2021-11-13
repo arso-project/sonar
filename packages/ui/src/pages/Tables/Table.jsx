@@ -438,16 +438,16 @@ function TableMeta (props) {
   const showPreview = uiState.pane.preview
   return (
     <Flex my={2}>
-      <SimplePopover {...shared} header='Columns' badge={visible} icon={FaTable} name='cols'>
+      <SimplePopover {...shared} header='Columns' badge={visible} icon={<FaTable />} name='cols'>
         <TableColumns columns={columns} />
       </SimplePopover>
-      <SimplePopover {...shared} header='Filter' badge={filters} icon={FaFilter} name='filter'>
+      <SimplePopover {...shared} header='Filter' badge={filters} icon={<FaFilter />} name='filter'>
         <TableFilter columns={columns} addfilters={uiState.addfilters} dispatch={dispatch} />
       </SimplePopover>
-      <SimplePopover {...shared} header='Sort' badge={sorts} icon={FaSortAlphaDown} name='sort'>
+      <SimplePopover {...shared} header='Sort' badge={sorts} icon={<FaSortAlphaDown />} name='sort'>
         <TableSort columns={columns} />
       </SimplePopover>
-      <TableMetaButton ml={4} onClick={onTogglePreview} icon={IoMdEye} isOpen={showPreview}>
+      <TableMetaButton ml={4} onClick={onTogglePreview} icon={<IoMdEye />} isOpen={showPreview}>
         {showPreview && 'Preview on select'}
         {!showPreview && 'No preview'}
       </TableMetaButton>
