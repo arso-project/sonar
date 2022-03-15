@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import pretty from 'pretty-bytes'
 import { formatDistance } from 'date-fns'
-import { css } from '@emotion/core'
 import { RecordDrawerByID } from '../components/Record'
 import styled from '@emotion/styled'
 
