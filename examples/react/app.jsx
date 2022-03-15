@@ -1,5 +1,12 @@
 import React from 'react'
-import { useCollection, useConfig, useAsync, useRecord, useQuery, useWorkspace, WorkspaceProvider } from '@arsonar/react'
+import {
+  useCollection,
+  useAsync,
+  useRecord,
+  useQuery,
+  useWorkspace,
+  WorkspaceProvider
+} from '@arsonar/react'
 import './app.scss'
 
 export default function App () {
@@ -11,14 +18,6 @@ export default function App () {
       </div>
     </WorkspaceProvider>
   )
-}
-
-function useToggle (defaultValue) {
-  const [state, setState] = React.useState(defaultValue)
-  function toggle () {
-    setState(state => !state)
-  }
-  return [state, toggle, setState]
 }
 
 function Header () {
@@ -58,7 +57,13 @@ function CollectionPage () {
       <div className='CollectionPage-left'>
         <h2>Query</h2>
         <QueryBuilder query={query} setQuery={setQuery} />
-        {query && <QueryRecords query={query} onSelect={path => setCurrentRecord(path)} selected={currentRecord} />}
+        {query && (
+          <QueryRecords
+            query={query}
+            onSelect={path => setCurrentRecord(path)}
+            selected={currentRecord}
+          />
+        )}
       </div>
       <div className='CollectionPage-right'>
         <button onClick={e => setCurrentRecord(null)}>Create record</button>
@@ -71,17 +76,24 @@ function CollectionPage () {
 function QueryBuilder (props) {
   const { query, setQuery } = props
   const [selectedQueryId, setSelectedQueryId] = React.useState('records')
+
   const queryTypes = [
     { id: 'records', name: 'Records by type', component: RecordsQueryBuilder },
     { id: 'search', name: 'Search', component: SearchQueryBuilder }
   ]
   const queryType = queryTypes.find(queryType => queryType.id === selectedQueryId)
   const QueryTypeBuilder = queryType && queryType.component
+
   return (
     <div className='QueryBuilder'>
-      <select onChange={e => setSelectedQueryId(e.target.value)} value={selectedQueryId}>
+      <select
+        onChange={e => setSelectedQueryId(e.target.value)}
+        value={selectedQueryId}
+      >
         {queryTypes.map(queryType => (
-          <option key={queryType.id} value={queryType.id}>{queryType.name}</option>
+          <option key={queryType.id} value={queryType.id}>
+            {queryType.name}
+          </option>
         ))}
       </select>
       {QueryTypeBuilder && <QueryTypeBuilder query={query} setQuery={setQuery} />}
@@ -137,7 +149,11 @@ function TypeSelector (props) {
   if (!types) return null
   return (
     <select onChange={e => onSelect(e.target.value)} value={selected || undefined}>
-      {types.map(type => <option key={type.address} value={type.address}>{type.title} ({type.address})</option>)}
+      {types.map(type => (
+        <option key={type.address} value={type.address}>
+          {type.title} ({type.address})
+        </option>
+      ))}
     </select>
   )
 }
@@ -164,7 +180,9 @@ function QueryRecords (props) {
         showing: {pagedRecords.length},
         page:
         <select onChange={e => setPage(Number(e.target.value))} value={page}>
-          {new Array(numPages).fill(0).map((val, idx) => <option key={idx} value={idx}>{idx + 1}</option>)}
+          {new Array(numPages).fill(0).map((val, idx) => (
+            <option key={idx} value={idx}>{idx + 1}</option>
+          ))}
         </select>
       </div>
       {pagedRecords.map((record, i) => (
@@ -306,9 +324,6 @@ function EditRecord (props = {}) {
   const { path } = props
   const collection = useCollection()
   const [submitState, setSubmitState] = React.useState({})
-  // const [error, setError] = React.useState(null)
-  // const [success, setSuccess] = React.useState(null)
-  // const [pending, setPending] = React.useState(false)
   const current = useRecord({ path })
   const [formState, setFormState] = React.useState({})
   const [selectedTypeAddress, setSelectedTypeAddress] = React.useState(null)
@@ -438,6 +453,78 @@ function CollectionOverview () {
   }
 }
 
+function WorkspaceSettings () {
+  const { workspace, config, setConfig } = useWorkspace()
+  const [error, setError] = React.useState(null)
+  const [create, setCreate] = React.useState(false)
+
+  const { data: collections, error: workspaceLoadError } = useAsync(async () => {
+    return await workspace.listCollections()
+  }, [workspace])
+  const key = JSON.stringify(config)
+
+  if (!config) return null
+  return (
+    <form key={key} className='WorkspaceSettings' onSubmit={onFormSubmit}>
+      <h2>Workspace settings</h2>
+      <section>
+        <label htmlFor='url'>Workspace URL</label>
+        <input defaultValue={config.url} name='url' />
+      </section>
+      <section>
+        <label htmlFor='accessCode'>Access code</label>
+        <input defaultValue={config.accessCode} name='accessCode' />
+      </section>
+      <section>
+        {workspaceLoadError && <Error error={workspaceLoadError} />}
+        {collections && (
+          <>
+            <label htmlFor='collection'>Collections</label>
+            <select name='collection' defaultValue={config.collection}>
+              {Object.values(collections).map(c => (
+                <option key={c.id} value={c.name}>{c.name}</option>
+              ))}
+            </select>
+          </>
+        )}
+      </section>
+      <section>
+        <label htmlFor='createCollection'>Create collection?</label>
+        <input type='checkbox' onChange={e => setCreate(e.target.value)} name='createCollection' />
+      </section>
+      {create && (
+        <section>
+          <label htmlFor='createCollectionName'>Collection</label>
+          <input name='createCollectionName' placeholer='Key or name' />
+        </section>
+      )}
+      <button type='submit'>save</button>
+      {error && <Error error={error} />}
+    </form>
+  )
+
+  async function onFormSubmit (e) {
+    const data = formDataFromEvent(e)
+    if (data.createCollection) {
+      if (!data.createCollectionName) return
+      try {
+        setConfig({ collection: null })
+        const collection = await workspace.createCollection(data.createCollectionName)
+        setConfig({ collection: collection.name })
+      } catch (error) {
+        setError(error)
+      }
+    } else {
+      const nextConfig = {
+        accessCode: data.accessCode,
+        url: data.url,
+        collection: data.collection
+      }
+      setConfig(nextConfig)
+    }
+  }
+}
+
 function Error (props) {
   const { error, nostyle } = props
   React.useEffect(() => {
@@ -481,104 +568,17 @@ function FeedKey (props) {
   }
 }
 
-function WorkspaceSettings () {
-  const { workspace, config, setConfig } = useWorkspace()
-  // const [config, setConfig] = useConfig()
-  // const [createCollectionName, setCreateCollectionName] = React.useState(null)
-  const [error, setError] = React.useState(null)
-  // const workspace = useWorkspace()
-  const [create, setCreate] = React.useState(false)
-  const { data: collections, error: workspaceLoadError, refresh } = useAsync(() => workspace.listCollections(), [workspace])
-  // const data = {
-  //   endpoint: config.get('endpoint'),
-  //   accessCode: config.get('accessCode'),
-  //   collection: config.get('collection')
-  // }
-  const key = JSON.stringify(config)
+/// Hooks
 
-  // React.useEffect(async () => {
-  //   if (!createCollectionName) return
-  //   try {
-  //     config.set('collection', null)
-  //     const collection = await workspace.createCollection(createCollectionName)
-  //     config.set('collection', collection.name)
-  //   } catch (error) {
-  //     setError(error)
-  //   }
-  // }, [createCollectionName])
-
-  if (!config) return null
-  // if (!collections) return null
-  return (
-    <form key={key} className='WorkspaceSettings' onSubmit={onFormSubmit}>
-      <h2>Workspace settings</h2>
-      <section>
-        <label htmlFor='url'>Workspace URL</label>
-        <input defaultValue={config.url} name='url' />
-      </section>
-      <section>
-        <label htmlFor='accessCode'>Access code</label>
-        <input defaultValue={config.accessCode} name='accessCode' />
-      </section>
-      <section>
-        {workspaceLoadError && <Error error={workspaceLoadError} />}
-        {collections && (
-          <>
-            <label htmlFor='collection'>Collections</label>
-            <select name='collection' defaultValue={config.collection}>
-              {Object.values(collections).map(c => (
-                <option key={c.id} value={c.name}>{c.name}</option>
-              ))}
-            </select>
-          </>
-        )}
-      </section>
-      <section>
-        <label htmlFor='createCollection'>Create collection?</label>
-        <input type='checkbox' onChange={e => setCreate(e.target.value)} name='createCollection' />
-      </section>
-      {create && (
-        <section>
-          <label htmlFor='createCollectionName'>Collection</label>
-          <input name='createCollectionName' placeholer='Key or name' />
-        </section>
-      )}
-      <button type='submit'>save</button>
-      {error && <Error error={error} />}
-    </form>
-  )
-
-  async function onFormSubmit (e) {
-    const data = formDataFromEvent(e)
-    if (!data.createCollection) {
-      const nextConfig = {
-        accessCode: data.accessCode,
-        url: data.url,
-        collection: data.collection
-      }
-      setConfig(nextConfig)
-    } else {
-      if (!data.createCollectionName) return
-      try {
-        setConfig({ collection: null })
-        const collection = await workspace.createCollection(data.createCollectionName)
-        // refresh()
-        setConfig({ collection: collection.name })
-      } catch (error) {
-        setError(error)
-      }
-    }
-    // console.log('data', data)
-    // return
-    // config.set('endpoint', data.endpoint)
-    // config.set('accessCode', data.accessCode)
-    // if (data.createCollection) {
-    //   setCreateCollectionName(data.createCollectionName)
-    // } else {
-    //   config.set('collection', data.collection)
-    // }
+function useToggle (defaultValue) {
+  const [state, setState] = React.useState(defaultValue)
+  function toggle () {
+    setState(state => !state)
   }
+  return [state, toggle, setState]
 }
+
+/// Utils
 
 function formDataFromEvent (e) {
   e.preventDefault()

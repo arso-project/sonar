@@ -1,15 +1,18 @@
 import React from 'react'
 import useConfig from './use-config'
 import { Workspace } from '@arsonar/client'
-// const { Workspace } = Sonar
 
-const workspaces = new Map()
-window.workspaces = workspaces
+export const workspaces = new Map()
+
+if (typeof window !== 'undefined') {
+  window.arsonarWorkspaces = workspaces
+}
 
 const Context = React.createContext(null)
 
 export function WorkspaceProvider (props = {}) {
-  const [config, setConfig] = useConfig()
+  if (props.appId) props.name = props.appId
+  const [config, setConfig] = useConfig(props.appId, props.config)
 
   const context = React.useMemo(() => {
     return {
@@ -32,38 +35,10 @@ export function useWorkspace () {
 }
 
 function workspaceFromConfig (config) {
-  // const opts = {
-  //   url: config.endpoint,
-  //   workspace: config.workspace || name || 'default',
-  //   accessCode: config.accessCode,
-  //   token: config.token
-  // }
-  const key = JSON.stringify(config)
-  let workspace
+  const base = config.url || config.endpoint + config.workspace
+  const key = JSON.stringify([base, config.token || config.accessCode])
   if (!workspaces.has(key)) {
-    workspace = new Workspace(config)
-    workspaces.set(key, workspace)
-  } else {
-    workspace = workspaces.get(key)
+    workspaces.set(key, new Workspace(config))
   }
-  return workspace
+  return workspaces.get(key)
 }
-
-// export default function useWorkspace (name = null) {
-//   const config = useConfig()
-//   const opts = {
-//     endpoint: config.endpoint,
-//     workspace: config.workspace || name || 'default',
-//     accessCode: config.accessCode,
-//     token: config.token
-//   }
-//   const key = JSON.stringify(opts)
-//   let workspace
-//   if (!workspaces.has(key)) {
-//     workspace = new Workspace(opts)
-//     workspaces.set(key, workspace)
-//   } else {
-//     workspace = workspaces.get(key)
-//   }
-//   return workspace
-// }

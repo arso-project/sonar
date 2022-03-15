@@ -229,6 +229,10 @@ class Record extends Node {
     this._latest.links = links
   }
 
+  update (nextValue) {
+    this._latest.update(nextValue)
+  }
+
   getType () {
     return this._latest.getType()
   }
