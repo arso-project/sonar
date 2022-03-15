@@ -1,4 +1,4 @@
-import { css, Global } from '@emotion/core'
+import { css, Global } from '@emotion/react'
 import { CSSReset as ChakraCSSReset } from '@chakra-ui/react'
 import React, { Fragment } from 'react'
 
