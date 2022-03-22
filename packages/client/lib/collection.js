@@ -6,7 +6,6 @@ const { EventEmitter } = require('events')
 
 const { Schema, Store } = require('@arsonar/common')
 const Fs = require('./fs')
-const Resources = require('./resources')
 
 function uuid () {
   return base32Encode(randomBytes(16), 'Crockford').toLowerCase()
@@ -34,7 +33,6 @@ class Collection extends EventEmitter {
     this._eventStreams = new Set()
 
     this.fs = new Fs(this)
-    this.resources = new Resources(this)
     this.log = workspace.log.child({ collection: this })
     this.setMaxListeners(256)
   }
