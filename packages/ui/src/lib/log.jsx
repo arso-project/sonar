@@ -30,7 +30,8 @@ export class LogStore {
       info: 'blue',
       debug: 'gray'
     }
-    console.log('%c%s: %c%s %o',
+    console.log(
+      '%c%s: %c%s %o',
       `color: ${colors[level] || 'black'}; font-weight: bold;`,
       msg.level,
       'color: black; font-weight: bold;',

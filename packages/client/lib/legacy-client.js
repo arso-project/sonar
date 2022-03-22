@@ -14,7 +14,8 @@ module.exports = class LegacyClient extends Workspace {
   }
 
   async focusedCollection () {
-    if (!this._focus && this._defaultCollection) this.focusCollection(this._defaultCollection)
+    if (!this._focus && this._defaultCollection)
+      this.focusCollection(this._defaultCollection)
     this._focusedCollection = await this._focus
     return this._focus
   }

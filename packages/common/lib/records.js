@@ -417,7 +417,11 @@ class RecordVersion extends Node {
       field._build(false)
       if (this._record.value[field.name] !== undefined) {
         // const fieldValue = new FieldValue(field, this._record.value[field.name])
-        const fieldValue = new FieldValue(field, this._record.value[field.name], this)
+        const fieldValue = new FieldValue(
+          field,
+          this._record.value[field.name],
+          this
+        )
         this._fieldValues.push(fieldValue)
       }
     }
@@ -476,10 +480,18 @@ class RecordVersion extends Node {
     const h = str => stylize(str, 'special')
     const s = str => stylize(str)
     const links = this.links ? this.links.length : 0
-    const value = this.deleted ? '<deleted>' : JSON.stringify(this.value).substring(0, 320)
-    const meta = s('feed ') + h(pretty(this.key)) + s('@') + this.seq +
-      s(' lseq ') + (this.lseq || '--') +
-      s(' links ') + links
+    const value = this.deleted
+      ? '<deleted>'
+      : JSON.stringify(this.value).substring(0, 320)
+    const meta =
+      s('feed ') +
+      h(pretty(this.key)) +
+      s('@') +
+      this.seq +
+      s(' lseq ') +
+      (this.lseq || '--') +
+      s(' links ') +
+      links
     return `RecordVersion(
 ${ind}  ${s('type')} ${this.type} ${s('id')} ${this.id}
 ${ind}  ${s('value')} ${value}
@@ -548,10 +560,14 @@ class FieldValue {
 
 class MissingFieldValue extends FieldValue {
   constructor (field = {}) {
-    field = Object.assign({
-      title: '(missing field)',
-      name: '_missing'
-    }, field, { missing: true })
+    field = Object.assign(
+      {
+        title: '(missing field)',
+        name: '_missing'
+      },
+      field,
+      { missing: true }
+    )
     super(field, undefined)
   }
 }
@@ -597,9 +613,7 @@ class Entity extends Node {
   }
 
   getTypes () {
-    return Array.from(new Set(
-      Array.from(this._records).map(r => r.getType())
-    ))
+    return Array.from(new Set(Array.from(this._records).map(r => r.getType())))
   }
 
   // Invoked by the Node high-level methods.

@@ -35,7 +35,10 @@ tape('events', async t => {
     eventStream.on('data', event => {
       events.push(event)
     })
-    await collection.putType({ name: 'foo', fields: { title: { type: 'string' } } })
+    await collection.putType({
+      name: 'foo',
+      fields: { title: { type: 'string' } }
+    })
     // console.log('type created')
     await collection.put({ type: 'foo', value: { title: 'hello world' } })
     // console.log('record created')
@@ -43,7 +46,10 @@ tape('events', async t => {
     // Check that at least one schema-update and update event was received.
     const eventTypes = events.map(e => e.event)
     t.ok(eventTypes.indexOf('update') !== -1, 'update event received')
-    t.ok(eventTypes.indexOf('schema-update') !== -1, 'schema update update event received')
+    t.ok(
+      eventTypes.indexOf('schema-update') !== -1,
+      'schema update update event received'
+    )
   } catch (e) {
     console.log(e)
     throw e

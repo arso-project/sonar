@@ -62,11 +62,7 @@ test('querybuilder: phrase search', async t => {
   const { client, cleanup } = await prepare(t)
   const query = new SearchQueryBuilder('doc')
   query.phrase('title', ['hello', 'moon'])
-  const results = await client.query(
-    'search',
-    query,
-    { waitForSync: true }
-  )
+  const results = await client.query('search', query, { waitForSync: true })
   t.equal(results.length, 1, 'should return one result')
   t.equal(results[0].value.title, 'hello moon', 'phrase search worked')
   await cleanup()
@@ -77,12 +73,16 @@ test('toshi query', async t => {
   const results = await client.search({
     query: {
       bool: {
-        must: [{
-          term: { title: 'hello' }
-        }],
-        must_not: [{
-          term: { title: 'moon' }
-        }]
+        must: [
+          {
+            term: { title: 'hello' }
+          }
+        ],
+        must_not: [
+          {
+            term: { title: 'moon' }
+          }
+        ]
       }
     },
     limit: 10

@@ -22,9 +22,9 @@ async function createMany (n, opts = {}) {
   //   opts.bootstrap = DHT.bootstrap
   // }
 
-  const instances = await Promise.all(ports.map(
-    port => createOne({ ...opts, port })
-  ))
+  const instances = await Promise.all(
+    ports.map(port => createOne({ ...opts, port }))
+  )
 
   for (let i = 0; i < n; i++) {
     const { server, endpoint, cleanup } = instances[i]
@@ -62,7 +62,7 @@ async function createOne (opts = {}) {
 
   const server = createServer(opts)
   await new Promise((resolve, reject) => {
-    server.start(err => err ? reject(err) : resolve())
+    server.start(err => (err ? reject(err) : resolve()))
   })
 
   const endpoint = `http://localhost:${opts.port}/api`
@@ -73,7 +73,7 @@ async function createOne (opts = {}) {
     // await abortAfter(CLEANUP_TIMEOUT, 'Cleanup timeout', async () => {
     // })
     await new Promise((resolve, reject) => {
-      server.close(err => err ? reject(err) : resolve())
+      server.close(err => (err ? reject(err) : resolve()))
     })
     if (cleanupStorage) await cleanupStorage()
   }

@@ -1,11 +1,7 @@
 import React from 'react'
 import { HashRouter as Router } from 'react-router-dom'
 import { hot } from 'react-hot-loader/root'
-import {
-  ChakraProvider,
-  Box,
-  useColorMode
-} from '@chakra-ui/react'
+import { ChakraProvider, Box, useColorMode } from '@chakra-ui/react'
 
 import Sidebar from './components/Sidebar'
 import Routes from './Routes'
@@ -33,9 +29,7 @@ function Wrappers (props) {
     <WorkspaceProvider>
       <SonarThemeProvider>
         <CSSReset />
-        <Router>
-          {props.children}
-        </Router>
+        <Router>{props.children}</Router>
       </SonarThemeProvider>
     </WorkspaceProvider>
   )
@@ -60,8 +54,21 @@ function Layout (props) {
   return (
     <Box>
       <Header height='2rem' />
-      <Sidebar mt='2rem' display={['none', null, 'block']} maxWidth='12rem' width='full' />
-      <Box as='main' id='sonar-main' ml={[0, null, '12rem']} mt='2rem' minHeight='calc(100vh - 2rem)' display='flex' p={4}>
+      <Sidebar
+        mt='2rem'
+        display={['none', null, 'block']}
+        maxWidth='12rem'
+        width='full'
+      />
+      <Box
+        as='main'
+        id='sonar-main'
+        ml={[0, null, '12rem']}
+        mt='2rem'
+        minHeight='calc(100vh - 2rem)'
+        display='flex'
+        p={4}
+      >
         {children}
       </Box>
     </Box>

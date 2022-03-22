@@ -4,7 +4,6 @@ on: [push, pull_request]
 
 jobs:
   test:
-
     runs-on: ${{ matrix.os }}
 
     strategy:
@@ -17,16 +16,15 @@ jobs:
         node-version: [12.x, 14.x]
 
     steps:
-    - uses: actions/checkout@v2
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v1
-      with:
-        node-version: ${{ matrix.node-version }}
-    - run: yarn install
-    - run: yarn test
-      env:
-        # DEBUG: "*,-express*,-hypercore-protocol*,-body-parser*,-babel*,-send,-time"
-        RUST_LOG: "debug"
-        RUST_BACKTRACE: 1
-        CI: true
-
+      - uses: actions/checkout@v2
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.node-version }}
+      - run: yarn install
+      - run: yarn test
+        env:
+          # DEBUG: "*,-express*,-hypercore-protocol*,-body-parser*,-babel*,-send,-time"
+          RUST_LOG: 'debug'
+          RUST_BACKTRACE: 1
+          CI: true

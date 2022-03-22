@@ -1,4 +1,13 @@
-import React, { Fragment, useRef, useEffect, useMemo, forwardRef, useCallback, useState, useReducer } from 'react'
+import React, {
+  Fragment,
+  useRef,
+  useEffect,
+  useMemo,
+  forwardRef,
+  useCallback,
+  useState,
+  useReducer
+} from 'react'
 // import Debug from 'debug'
 import {
   useTable,
@@ -61,25 +70,27 @@ import {
   FaTable,
   FaChevronDown
 } from 'react-icons/fa'
-import {
-  IoMdEye
-} from 'react-icons/io'
+import { IoMdEye } from 'react-icons/io'
 
 // const debug = Debug('sonar:table')
 const TBORDER = 'gray.300'
 
 export default function TableWrapper (props) {
   const { columns, rows: data, ...other } = props
-  return (
-    <Table data={data} columns={columns} {...other} />
-  )
+  return <Table data={data} columns={columns} {...other} />
 }
 
 function Cell (props) {
   const { children, isRowSelected, ...other } = props
   const bg = isRowSelected ? 'yellow.100' : undefined
   const hover = { bg: isRowSelected ? 'yellow.200' : 'gray.50' }
-  const innerStyle = { flex: 1, overflow: 'hidden', display: 'flex', maxWidth: '100%', whiteSpace: 'nowrap' }
+  const innerStyle = {
+    flex: 1,
+    overflow: 'hidden',
+    display: 'flex',
+    maxWidth: '100%',
+    whiteSpace: 'nowrap'
+  }
   return (
     <Box
       {...other}
@@ -114,7 +125,10 @@ function ColumnHeader (props) {
   }
 
   return (
-    <div {...headerProps} style={{ ...headerProps.style, position: 'absolute' }}>
+    <div
+      {...headerProps}
+      style={{ ...headerProps.style, position: 'absolute' }}
+    >
       <Box
         display='flex'
         overflow='hidden'
@@ -127,7 +141,9 @@ function ColumnHeader (props) {
         zIndex='200'
         bg={bg[colorMode]}
       >
-        <Box flex='1' mr={2}>{column.render('Header')}</Box>
+        <Box flex='1' mr={2}>
+          {column.render('Header')}
+        </Box>
         {column.isSorted && <HeaderColumnIcon icon={sortIcon} />}
         {column.filterValue && <HeaderColumnIcon icon={FaFilter} />}
         <ColumnHeaderMenu column={column} dispatch={dispatch} />
@@ -160,29 +176,37 @@ function ColumnHeaderMenu (props) {
   const list = (
     <MenuList>
       {canSort && (
-        <HeaderMenuItem icon={FaSortAlphaDown} active={asc} onClick={() => toggleSortBy(false)}>
-            Sort ascending
+        <HeaderMenuItem
+          icon={FaSortAlphaDown}
+          active={asc}
+          onClick={() => toggleSortBy(false)}
+        >
+          Sort ascending
         </HeaderMenuItem>
       )}
       {canSort && (
-        <HeaderMenuItem icon={FaSortAlphaUp} active={desc} onClick={() => toggleSortBy(true)}>
-            Sort descending
+        <HeaderMenuItem
+          icon={FaSortAlphaUp}
+          active={desc}
+          onClick={() => toggleSortBy(true)}
+        >
+          Sort descending
         </HeaderMenuItem>
       )}
       {canFilter && (
         <HeaderMenuItem icon={FaFilter} onClick={onFilterClick}>
-            Filter
+          Filter
         </HeaderMenuItem>
       )}
       <HeaderMenuItem icon={FaWindowClose} onClick={() => toggleHidden()}>
-          Hide column
+        Hide column
       </HeaderMenuItem>
     </MenuList>
   )
 
   return (
     <Menu closeOnSelect={false}>
-      <MenuButton as={IconButton} size='xs' icon={<FaChevronDown />}/>
+      <MenuButton as={IconButton} size='xs' icon={<FaChevronDown />} />
       {list}
     </Menu>
   )
@@ -197,7 +221,12 @@ function HeaderMenuItem (props) {
   // const color = active ? 'green.600' : undefined
   const fontWeight = active ? 'bold' : undefined
   return (
-    <MenuItem onClick={e => onClick && onClick()} fontWeight={fontWeight} transition={false} {...other}>
+    <MenuItem
+      onClick={e => onClick && onClick()}
+      fontWeight={fontWeight}
+      transition={false}
+      {...other}
+    >
       <Box as={icon} mr='1' />
       {children}
     </MenuItem>
@@ -206,7 +235,10 @@ function HeaderMenuItem (props) {
 
 // Define a default UI for filtering
 const DefaultColumnFilter = forwardRef((props, ref) => {
-  const { column: { filterValue, preFilteredRows, setFilter }, ...other } = props
+  const {
+    column: { filterValue, preFilteredRows, setFilter },
+    ...other
+  } = props
   const [value, setValue] = useState(filterValue)
   const debouncedValue = useDebounce(value, 150)
   useEffect(() => setFilter(debouncedValue), [debouncedValue])
@@ -233,10 +265,13 @@ function Table (props) {
     // onSelect
   } = props
 
-  const defaultColumn = React.useMemo(() => ({
-    width: 150,
-    Filter: DefaultColumnFilter
-  }), [])
+  const defaultColumn = React.useMemo(
+    () => ({
+      width: 150,
+      Filter: DefaultColumnFilter
+    }),
+    []
+  )
 
   const table = useTable(
     {
@@ -269,36 +304,62 @@ function Table (props) {
   const cellHeight = 32
   const headerHeight = 32
 
-  const [uiState, dispatchUi] = useReducer(uiReducer, { addfilters: [], pane: { preview: true } })
+  const [uiState, dispatchUi] = useReducer(uiReducer, {
+    addfilters: [],
+    pane: { preview: true }
+  })
 
   const isResizingColumn = internalTableState.columnResizing.isResizingColumn
 
-  const innerElementType = useMemo(() => forwardRef(function InnerWindowElement (props, ref) {
-    const { style, children, ...other } = props
+  const innerElementType = useMemo(
+    () =>
+      forwardRef(function InnerWindowElement (props, ref) {
+        const { style, children, ...other } = props
 
-    const header = useMemo(() => (
-      <div style={{ top: 0, position: 'sticky', height: headerHeight + 'px', backgroundColor: 'inherit', zIndex: 1000 }}>
-        {flatHeaders.map(column => (
-          <ColumnHeader key={column.id} column={column} dispatch={dispatchUi} />
-        ))}
-      </div>
-    ), [flatHeaders])
+        const header = useMemo(
+          () => (
+            <div
+              style={{
+                top: 0,
+                position: 'sticky',
+                height: headerHeight + 'px',
+                backgroundColor: 'inherit',
+                zIndex: 1000
+              }}
+            >
+              {flatHeaders.map(column => (
+                <ColumnHeader
+                  key={column.id}
+                  column={column}
+                  dispatch={dispatchUi}
+                />
+              ))}
+            </div>
+          ),
+          [flatHeaders]
+        )
 
-    // debug('render inner')
+        // debug('render inner')
 
-    return (
-      <>
-        {header}
-        <div
-          {...other}
-          ref={ref}
-          style={{ ...style, position: 'relative', width: totalColumnsWidth + 'px' }}
-        >
-          {children}
-        </div>
-      </>
-    )
-  }), [flatHeaders, selectedFlatRows, rows])
+        return (
+          <>
+            {header}
+            <div
+              {...other}
+              ref={ref}
+              style={{
+                ...style,
+                position: 'relative',
+                width: totalColumnsWidth + 'px'
+              }}
+            >
+              {children}
+            </div>
+          </>
+        )
+      }),
+    [flatHeaders, selectedFlatRows, rows]
+  )
 
   const renderedPreview = useMemo(() => {
     if (!uiState.pane.preview) return null
@@ -313,32 +374,42 @@ function Table (props) {
 
   // TODO: previewActive should likely be part of uiState
   const tableMeta = useMemo(() => {
-    return <TableMeta columns={allColumns} uiState={uiState} dispatch={dispatchUi} previewActive={!!renderedPreview} />
+    return (
+      <TableMeta
+        columns={allColumns}
+        uiState={uiState}
+        dispatch={dispatchUi}
+        previewActive={!!renderedPreview}
+      />
+    )
   }, [allColumns, uiState, table.rows, table.flatHeaders, !!renderedPreview])
 
   // debug('render table: rows %o, cols %o, selected %o', data.length, selectedFlatRows.length)
 
-  const RenderCell = useCallback(function RenderCell (props) {
-    const { columnIndex, rowIndex, style } = props
-    const row = rows[rowIndex]
-    prepareRow(row)
+  const RenderCell = useCallback(
+    function RenderCell (props) {
+      const { columnIndex, rowIndex, style } = props
+      const row = rows[rowIndex]
+      prepareRow(row)
 
-    let onRowClick
-    if (selectMode) {
-      onRowClick = function onRowClick (e) {
-        // debug('!select', row.id, 'to', !row.isSelected)
-        if (selectMode === 'single') table.toggleAllRowsSelected(false)
-        row.toggleRowSelected()
+      let onRowClick
+      if (selectMode) {
+        onRowClick = function onRowClick (e) {
+          // debug('!select', row.id, 'to', !row.isSelected)
+          if (selectMode === 'single') table.toggleAllRowsSelected(false)
+          row.toggleRowSelected()
+        }
       }
-    }
-    const cell = row.cells[columnIndex]
-    if (!cell) return null
-    return (
-      <Cell style={style} onClick={onRowClick} isRowSelected={row.isSelected}>
-        {cell.render('Cell')}
-      </Cell>
-    )
-  }, [prepareRow, rows, isResizingColumn, selectMode])
+      const cell = row.cells[columnIndex]
+      if (!cell) return null
+      return (
+        <Cell style={style} onClick={onRowClick} isRowSelected={row.isSelected}>
+          {cell.render('Cell')}
+        </Cell>
+      )
+    },
+    [prepareRow, rows, isResizingColumn, selectMode]
+  )
 
   useEffect(() => {
     if (isResizingColumn) return
@@ -367,7 +438,7 @@ function Table (props) {
 }
 
 function uiReducer (state, action) {
-  const x = (nextState) => ({ ...state, ...nextState })
+  const x = nextState => ({ ...state, ...nextState })
   switch (action.type) {
     case 'filter.add':
       const addfilters = state.addfilters
@@ -393,13 +464,15 @@ const AutoSizeList = forwardRef((props, ref) => {
   const containerStyle = { position: 'relative', flex: '1' }
   return (
     <div ref={containerRef} style={containerStyle}>
-      <div style={{ overflow: 'visible', position: 'absolute', height: 0, width: 0 }}>
-        <VariableSizeGrid
-          ref={ref}
-          width={width}
-          height={height}
-          {...props}
-        />
+      <div
+        style={{
+          overflow: 'visible',
+          position: 'absolute',
+          height: 0,
+          width: 0
+        }}
+      >
+        <VariableSizeGrid ref={ref} width={width} height={height} {...props} />
       </div>
     </div>
   )
@@ -411,7 +484,13 @@ function FlexContainer (props) {
   const [width, height] = useSize(containerRef)
   return (
     <Box ref={containerRef} position='relative' flex='1'>
-      <Flex position='absolute' height={height} width={width} overflow='auto' {...props}>
+      <Flex
+        position='absolute'
+        height={height}
+        width={width}
+        overflow='auto'
+        {...props}
+      >
         {children}
       </Flex>
     </Box>
@@ -420,7 +499,9 @@ function FlexContainer (props) {
 
 function TableMeta (props) {
   const { columns, uiState, dispatch } = props
-  const visible = columns.map(c => c.getToggleHiddenProps()).filter(x => x.checked).length
+  const visible = columns
+    .map(c => c.getToggleHiddenProps())
+    .filter(x => x.checked).length
   const filters = columns.filter(c => c.filterValue !== undefined).length
   const sorts = columns.filter(c => c.isSorted).length
   // debug('render meta: uistate %o', uiState)
@@ -438,16 +519,43 @@ function TableMeta (props) {
   const showPreview = uiState.pane.preview
   return (
     <Flex my={2}>
-      <SimplePopover {...shared} header='Columns' badge={visible} icon={<FaTable />} name='cols'>
+      <SimplePopover
+        {...shared}
+        header='Columns'
+        badge={visible}
+        icon={<FaTable />}
+        name='cols'
+      >
         <TableColumns columns={columns} />
       </SimplePopover>
-      <SimplePopover {...shared} header='Filter' badge={filters} icon={<FaFilter />} name='filter'>
-        <TableFilter columns={columns} addfilters={uiState.addfilters} dispatch={dispatch} />
+      <SimplePopover
+        {...shared}
+        header='Filter'
+        badge={filters}
+        icon={<FaFilter />}
+        name='filter'
+      >
+        <TableFilter
+          columns={columns}
+          addfilters={uiState.addfilters}
+          dispatch={dispatch}
+        />
       </SimplePopover>
-      <SimplePopover {...shared} header='Sort' badge={sorts} icon={<FaSortAlphaDown />} name='sort'>
+      <SimplePopover
+        {...shared}
+        header='Sort'
+        badge={sorts}
+        icon={<FaSortAlphaDown />}
+        name='sort'
+      >
         <TableSort columns={columns} />
       </SimplePopover>
-      <TableMetaButton ml={4} onClick={onTogglePreview} icon={<IoMdEye />} isOpen={showPreview}>
+      <TableMetaButton
+        ml={4}
+        onClick={onTogglePreview}
+        icon={<IoMdEye />}
+        isOpen={showPreview}
+      >
         {showPreview && 'Preview on select'}
         {!showPreview && 'No preview'}
       </TableMetaButton>
@@ -478,7 +586,9 @@ function TableMetaButton (props) {
     >
       {children}
       {badge !== undefined && (
-        <Badge fontSize='sm' ml={2} colorScheme={badge ? 'orange' : undefined}>{badge}</Badge>
+        <Badge fontSize='sm' ml={2} colorScheme={badge ? 'orange' : undefined}>
+          {badge}
+        </Badge>
       )}
     </Button>
   )
@@ -504,7 +614,12 @@ function SimplePopover (props) {
 
   return (
     <>
-      <TableMetaButton icon={icon} isOpen={isOpen} onClick={triggerOnClick} badge={badge}>
+      <TableMetaButton
+        icon={icon}
+        isOpen={isOpen}
+        onClick={triggerOnClick}
+        badge={badge}
+      >
         {header}
       </TableMetaButton>
       <Popover {...popoverProps}>
@@ -516,9 +631,7 @@ function SimplePopover (props) {
           <PopoverCloseButton />
           <PopoverBody>
             <FocusLock returnFocus persistentFocus={false}>
-              <Box>
-                {children}
-              </Box>
+              <Box>{children}</Box>
             </FocusLock>
           </PopoverBody>
         </PopoverContent>
@@ -540,19 +653,22 @@ function TableFilter (props) {
       if (!autofocus) autofocus = c.id
     })
 
-  const canFilters = columns.filter(c => c.filterValue === undefined && c.canFilter && filters.indexOf(c) === -1)
+  const canFilters = columns.filter(
+    c => c.filterValue === undefined && c.canFilter && filters.indexOf(c) === -1
+  )
   let list
   if (!filters.length) {
-    list = (
-      <Text>No filters defined.</Text>
-    )
+    list = <Text>No filters defined.</Text>
   } else {
     list = filters.map(column => {
       let form = column.render('Filter')
-      if (autofocus === column.id) form = <AutoFocusInside>{form}</AutoFocusInside>
+      if (autofocus === column.id)
+        form = <AutoFocusInside>{form}</AutoFocusInside>
       return (
         <Flex key={column.id} mb={2} align='center'>
-          <FormLabel width='20rem' fontWeight='bold'>{column.render('Header')}</FormLabel>
+          <FormLabel width='20rem' fontWeight='bold'>
+            {column.render('Header')}
+          </FormLabel>
           <Box flex={1}>{form}</Box>
         </Flex>
       )
@@ -562,8 +678,15 @@ function TableFilter (props) {
     <Box>
       {list}
       <Box>
-        <Select placeholder='Select a field to filter on' onChange={e => addFilter(e.target.value)}>
-          {canFilters.map(c => <option key={c.id} value={c.id}>{c.render('Header')}</option>)}
+        <Select
+          placeholder='Select a field to filter on'
+          onChange={e => addFilter(e.target.value)}
+        >
+          {canFilters.map(c => (
+            <option key={c.id} value={c.id}>
+              {c.render('Header')}
+            </option>
+          ))}
         </Select>
       </Box>
     </Box>
@@ -585,7 +708,9 @@ function TableSort (props) {
       {!sorted.length && 'No sorts active.'}
       {sorted.map(c => (
         <Flex key={c.id}>
-          <Box w='20rem' flexGrow='0' p='2' fontWeight='bold'>{c.render('Header')}</Box>
+          <Box w='20rem' flexGrow='0' p='2' fontWeight='bold'>
+            {c.render('Header')}
+          </Box>
           <Box p='2'>{c.isSortedDesc ? 'desc' : 'asc'}</Box>
           <Button onClick={e => c.clearSortBy()}>Remove</Button>
         </Flex>
@@ -601,7 +726,12 @@ function TableColumns (props) {
       {columns.map(column => {
         const { checked, onChange } = column.getToggleHiddenProps()
         return (
-          <Checkbox key={column.id} onChange={onChange} isChecked={checked} mr={4}>
+          <Checkbox
+            key={column.id}
+            onChange={onChange}
+            isChecked={checked}
+            mr={4}
+          >
             {column.render('Header')}
           </Checkbox>
         )

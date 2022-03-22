@@ -65,7 +65,9 @@ async function createN (createSDK, n, opts = {}) {
       cleanupSDK()
       await Promise.all(dirs.map(dir => rimraf(dir)))
       await new Promise(resolve => setTimeout(resolve, 200))
-    } catch (err) { console.error('Closing error', err) }
+    } catch (err) {
+      console.error('Closing error', err)
+    }
   }
 }
 
@@ -195,7 +197,10 @@ function runTests (create) {
     const [w1, w2, cleanup] = await create(2)
     const c1 = await w1.createCollection('foo')
     const c2 = await w2.createCollection('foo')
-    const { id } = await c1.put({ type: 'sonar/entity', value: { label: 'foo1' } })
+    const { id } = await c1.put({
+      type: 'sonar/entity',
+      value: { label: 'foo1' }
+    })
     await c2.putFeed(c1.localKey)
     await c1.putFeed(c2.localKey)
     await timeout(100)
@@ -253,13 +258,12 @@ function applyStacktrace () {
     try {
       let maybePromise = origCb(t, ...args)
       if (maybePromise && maybePromise.then) {
-        return maybePromise
-          .catch(async err => {
-            console.error('Original error', err)
-            throw err
-            // t.fail(err)
-            // t.end()
-          })
+        return maybePromise.catch(async err => {
+          console.error('Original error', err)
+          throw err
+          // t.fail(err)
+          // t.end()
+        })
       }
     } catch (err) {
       t.fail(err)

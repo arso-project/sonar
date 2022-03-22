@@ -10,7 +10,11 @@ module.exports = function createCommandStreamHandler (collections) {
     router.close()
   })
   const collectionCommands = createCollectionCommands(collections)
-  router.service('collection', collectionCommands.commands, collectionCommands.opts)
+  router.service(
+    'collection',
+    collectionCommands.commands,
+    collectionCommands.opts
+  )
   router.on('error', log)
   return function createCommandStream (ws, _req) {
     const stream = websocketStream(ws, {

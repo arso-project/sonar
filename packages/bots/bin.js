@@ -53,7 +53,10 @@ const command = {
 
 if (require.main === module) {
   command.builder(yargs)
-  yargs.demandCommand().help().parse()
+  yargs
+    .demandCommand()
+    .help()
+    .parse()
 } else {
   module.exports = command
 }
@@ -97,7 +100,10 @@ async function runCommand (argv) {
 
   const env = {}
   if (!workspace && collection) env.collection = collection
-  else if (!workspace) throw new Error('Either --workspace for workspace scope or a --collection is required')
+  else if (!workspace)
+    throw new Error(
+      'Either --workspace for workspace scope or a --collection is required'
+    )
 
   // const res = await client.bots.command(bot, collection, command, args)
   const res = await client.bots.command(bot, command, args, env)
@@ -145,9 +151,7 @@ async function runtimeStart (argv) {
     commands: [
       {
         name: 'start',
-        args: [
-          { name: 'bot', type: 'string', title: 'Bot to run' }
-        ]
+        args: [{ name: 'bot', type: 'string', title: 'Bot to run' }]
       },
       {
         name: 'status',
@@ -182,12 +186,18 @@ async function runtimeStart (argv) {
       // TODO: Validate against whitelist
       const service = await runtime.startBot(spec.name, entry)
       const logs = service.createLogStream()
-      const logLines = logs.pipe(new Transform({
-        transform (chunk, next) {
-          chunk.toString().split('\n').filter(x => x).forEach(line => this.push(line))
-          next()
-        }
-      }))
+      const logLines = logs.pipe(
+        new Transform({
+          transform (chunk, next) {
+            chunk
+              .toString()
+              .split('\n')
+              .filter(x => x)
+              .forEach(line => this.push(line))
+            next()
+          }
+        })
+      )
       const log = client.log.child({ name: 'bot:' + spec.name + ':stderr' })
       logLines.on('data', data => log.debug(data))
       return true

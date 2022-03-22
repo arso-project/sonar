@@ -77,16 +77,18 @@ async function info (argv) {
 async function list (argv) {
   const client = makeClient(argv)
   const info = await client.info()
-  const output = Object.values(info.collections).map(collection => {
-    return [
-      chalk.bold.blueBright(collection.name),
-      collection.key.toString('hex'),
-      'Shared:      ' + chalk.bold(collection.share ? 'Yes' : 'No'),
-      'Local key:   ' + chalk.bold(collection.localKey),
-      'Local drive: ' + chalk.bold(collection.localDrive),
-      'Length:      ' + chalk.bold(collection.length)
-    ].join('\n')
-  }).join('\n\n')
+  const output = Object.values(info.collections)
+    .map(collection => {
+      return [
+        chalk.bold.blueBright(collection.name),
+        collection.key.toString('hex'),
+        'Shared:      ' + chalk.bold(collection.share ? 'Yes' : 'No'),
+        'Local key:   ' + chalk.bold(collection.localKey),
+        'Local drive: ' + chalk.bold(collection.localDrive),
+        'Length:      ' + chalk.bold(collection.length)
+      ].join('\n')
+    })
+    .join('\n\n')
   console.log(output)
 }
 

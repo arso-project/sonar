@@ -37,6 +37,10 @@ module.exports = class Versions extends Emitter {
       }
       this._current.add(version)
     }
-    console.log('put version', version, this.all().map(v => v.value))
+    console.log(
+      'put version',
+      version,
+      this.all().map(v => v.value)
+    )
   }
 }

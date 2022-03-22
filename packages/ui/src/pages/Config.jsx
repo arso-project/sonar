@@ -3,9 +3,7 @@ import React from 'react'
 import { useParams } from 'react-router-dom'
 import { formData } from '../lib/form'
 
-import {
-  Button
-} from '@chakra-ui/react'
+import { Button } from '@chakra-ui/react'
 
 import { useWorkspace } from '@arsonar/react'
 
@@ -21,7 +19,11 @@ export default function ConfigPage (props) {
     <div className='sonar-config'>
       <form onSubmit={onSubmit}>
         <FormField name='url' title='API endpoint' defaultValue={endpoint} />
-        <FormField name='accessCode' title='API access code' defaultValue={accessCode} />
+        <FormField
+          name='accessCode'
+          title='API access code'
+          defaultValue={accessCode}
+        />
         <Button type='submit'>Save</Button>
       </form>
     </div>

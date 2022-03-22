@@ -25,7 +25,10 @@ module.exports = {
         if (opts.map) data = opts.map(data)
         this.push(data)
       } catch (err) {
-        this.emit('error', new Error('Could not parse row ' + row.slice(0, 50) + '...'))
+        this.emit(
+          'error',
+          new Error('Could not parse row ' + row.slice(0, 50) + '...')
+        )
       }
     }
   }

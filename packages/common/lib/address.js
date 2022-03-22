@@ -5,7 +5,7 @@ function parseAddress (address) {
   // Allow an object with address property
   if (typeof address === 'object' && typeof address.address === 'string') {
     address = address.address
-  // Allow an object with { namespace, type, field, version } properties
+    // Allow an object with { namespace, type, field, version } properties
   } else if (typeof address === 'object') {
     return parseAddress(encodeAddress(address))
   }
@@ -44,7 +44,9 @@ function encodeAddress (parts) {
 }
 
 function validSegment (segment) {
-  return !hasChar(segment, '/') && !hasChar(segment, '#') && !hasChar(segment, '@')
+  return (
+    !hasChar(segment, '/') && !hasChar(segment, '#') && !hasChar(segment, '@')
+  )
 }
 
 function hasChar (str, char) {

@@ -27,7 +27,8 @@ class State {
   watch (key, fn) {
     if (!this._watchers[key]) this._watchers[key] = []
     this._watchers[key].push(fn)
-    return () => (this._watchers[key] = this._watchers[key].filter(x => x !== fn))
+    return () =>
+      (this._watchers[key] = this._watchers[key].filter(x => x !== fn))
   }
 }
 

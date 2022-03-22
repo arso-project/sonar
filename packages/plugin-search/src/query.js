@@ -38,7 +38,13 @@ function executeQuery (indexManager, query, indexName) {
 
       results.forEach(result => stream.push(result))
       stream.push(null)
-      debug('query with %d results (time %s, index %s, query %o)', results.length, time(), index.name, query)
+      debug(
+        'query with %d results (time %s, index %s, query %o)',
+        results.length,
+        time(),
+        index.name,
+        query
+      )
     } catch (err) {
       console.error('err', err)
       stream.destroy(err)

@@ -16,7 +16,10 @@ tape('replicate resources', { timeout: 5000 }, async t => {
   const [client1, client2] = clients
 
   const collection1 = await client1.createCollection('first')
-  const collection2 = await client2.createCollection('second', { key: collection1.key, alias: 'second' })
+  const collection2 = await client2.createCollection('second', {
+    key: collection1.key,
+    alias: 'second'
+  })
 
   t.equal(collection1.info.key, collection1.info.localKey)
   t.equal(collection2.info.key, collection1.info.key)
@@ -56,9 +59,11 @@ async function readResources (collection) {
     { type: 'sonar/resource' },
     { sync: true }
   )
-  const contents = await Promise.all(records.map(r => {
-    return collection.resources.readFile(r).then(c => c.toString())
-  }))
+  const contents = await Promise.all(
+    records.map(r => {
+      return collection.resources.readFile(r).then(c => c.toString())
+    })
+  )
   return contents
 }
 

@@ -50,7 +50,7 @@ export default function Header (props) {
           my={1}
           textTransform='uppercase'
         >
-        Sonar
+          Sonar
         </Heading>
 
         <Flex flex='1' />
@@ -84,23 +84,11 @@ const headerButtonProps = {
 }
 
 const HeaderIconButton = React.forwardRef((props, ref) => {
-  return (
-    <IconButton
-      {...headerButtonProps}
-      ref={ref}
-      {...props}
-    />
-  )
+  return <IconButton {...headerButtonProps} ref={ref} {...props} />
 })
 
 const HeaderButton = React.forwardRef((props, ref) => {
-  return (
-    <Button
-      {...headerButtonProps}
-      ref={ref}
-      {...props}
-    />
-  )
+  return <Button {...headerButtonProps} ref={ref} {...props} />
 })
 
 function HelpMenu (props) {

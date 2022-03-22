@@ -21,11 +21,13 @@ async function onCollectionOpen (collection) {
   collection.drive = getDrive
 
   // Create a live stream for future drives being added to the collection.
-  collection.createQueryStream(
-    'records',
-    { type: 'sonar/feed' },
-    { live: true, old: false }
-  ).on('data', onFeedRecord)
+  collection
+    .createQueryStream(
+      'records',
+      { type: 'sonar/feed' },
+      { live: true, old: false }
+    )
+    .on('data', onFeedRecord)
 
   // Query for hyperdrive feeds in the corrent collection.
   const rs = collection.createQueryStream('records', { type: 'sonar/feed' })

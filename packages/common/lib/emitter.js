@@ -8,7 +8,7 @@ module.exports = class SimpleEmitter {
   subscribe (fn, triggerNow = false) {
     this[kSubs].add(fn)
     if (triggerNow) fn(this)
-    return () => (this[kSubs].delete(fn))
+    return () => this[kSubs].delete(fn)
   }
 
   emit () {

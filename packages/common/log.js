@@ -45,7 +45,11 @@ function createPrettifier () {
 }
 
 function prettify (obj) {
-  const trace = !!process.env.ERROR_TRACE || process.env.LOG === 'debug' || process.env.LOG === 'trace' || false
+  const trace =
+    !!process.env.ERROR_TRACE ||
+    process.env.LOG === 'debug' ||
+    process.env.LOG === 'trace' ||
+    false
   const opts = {
     trace,
     date: true,
@@ -92,7 +96,9 @@ function formatTrace (error) {
   if (!error.stack) return ''
   let out = '\n'
   out += JSON.parse(JSON.stringify(error.stack))
-    .split('\n').slice(1).join('\n')
+    .split('\n')
+    .slice(1)
+    .join('\n')
   return out
 }
 
@@ -106,7 +112,12 @@ function formatRecord (record) {
 }
 
 function collectionLabel (collection) {
-  return collection._keyOrName || collection.name || (collection.key && prettyHash(collection.key)) || '<unknown>'
+  return (
+    collection._keyOrName ||
+    collection.name ||
+    (collection.key && prettyHash(collection.key)) ||
+    '<unknown>'
+  )
 }
 
 function formatLevel (obj) {

@@ -4,7 +4,9 @@ const Client = require('../..')
 module.exports = { createOne, createMany }
 
 async function createOne (opts = {}) {
-  const { server, endpoint, cleanup: cleanupServer } = await Server.createOne(opts)
+  const { server, endpoint, cleanup: cleanupServer } = await Server.createOne(
+    opts
+  )
   const clientOpts = opts.clientOpts || {}
   const client = new Client({ endpoint, ...clientOpts })
   return { server, cleanup, endpoint, client }

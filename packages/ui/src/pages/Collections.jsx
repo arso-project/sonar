@@ -45,19 +45,26 @@ export default function CollectionPage (props) {
   const selectedCollection = config.collection
 
   return (
-    <Flex
-      flex='1'
-      direction='column'
-    >
+    <Flex flex='1' direction='column'>
       <Heading color='teal.400'>Collections</Heading>
       <Flex py='4'>
-        <Button mr='4' onClick={() => setModal('create')}>Create new collection</Button>
-        <Button onClick={() => setModal('add')}>Open existing collection</Button>
+        <Button mr='4' onClick={() => setModal('create')}>
+          Create new collection
+        </Button>
+        <Button onClick={() => setModal('add')}>
+          Open existing collection
+        </Button>
       </Flex>
-      <CollectionFormModal isOpen={modal === 'create'} onClose={e => setModal(null)}>
+      <CollectionFormModal
+        isOpen={modal === 'create'}
+        onClose={e => setModal(null)}
+      >
         <CreateCollection create onFinish={onCreate} />
       </CollectionFormModal>
-      <CollectionFormModal isOpen={modal === 'add'} onClose={e => setModal(null)}>
+      <CollectionFormModal
+        isOpen={modal === 'add'}
+        onClose={e => setModal(null)}
+      >
         <CreateCollection onFinish={onCreate} />
       </CollectionFormModal>
       {collections && (
@@ -94,9 +101,7 @@ export default function CollectionPage (props) {
 }
 
 function FormHeading (props) {
-  return (
-    <Heading fontSize='md' color='teal.400' {...props} />
-  )
+  return <Heading fontSize='md' color='teal.400' {...props} />
 }
 
 function Form (props) {
@@ -117,9 +122,7 @@ function CollectionFormModal (props) {
       <ModalContent>
         <ModalHeader>{title}</ModalHeader>
         <ModalCloseButton />
-        <ModalBody>
-          {children}
-        </ModalBody>
+        <ModalBody>{children}</ModalBody>
       </ModalContent>
     </Modal>
   )
@@ -137,7 +140,9 @@ function CreateCollection (props) {
         <Form title='Create collection' onSubmit={onCreate}>
           <FormField name='name' title='Local Name' />
           <FormField name='alias' title='Alias' />
-          <Button type='submit' disabled={pending} colorScheme='teal'>Create</Button>
+          <Button type='submit' disabled={pending} colorScheme='teal'>
+            Create
+          </Button>
         </Form>
       )}
       {!create && (
@@ -145,7 +150,9 @@ function CreateCollection (props) {
           <FormField name='name' title='Name' />
           <FormField name='key' title='Key' />
           <FormField name='alias' title='Alias' />
-          <Button type='submit' disaled={pending} colorScheme='teal'>Create</Button>
+          <Button type='submit' disaled={pending} colorScheme='teal'>
+            Create
+          </Button>
         </Form>
       )}
     </Box>
@@ -158,7 +165,8 @@ function CreateCollection (props) {
     if (!key || key === '') key = undefined
     setPending(true)
 
-    workspace.createCollection(name, { key, alias })
+    workspace
+      .createCollection(name, { key, alias })
       .then(res => {
         toast({
           title: 'Collection created',
@@ -200,10 +208,7 @@ function CollectionList (props) {
           p={1}
           bg={collection.key === selected ? selectedBg[colorMode] : undefined}
         >
-          <Flex
-            flex='1'
-            direction='column'
-          >
+          <Flex flex='1' direction='column'>
             <Flex direction='row' justify='space-between'>
               <Link
                 fontSize='md'
@@ -223,9 +228,16 @@ function CollectionList (props) {
                   size='sm'
                   defaultIsChecked={collection.share}
                   id={collection.key + '-share'}
-                  onChange={e => onUpdate(collection.key, { share: !!e.target.checked })}
+                  onChange={e =>
+                    onUpdate(collection.key, { share: !!e.target.checked })
+                  }
                 />
-                <Button size='sm' ml='10' colorScheme='blue' onClick={e => onToggle(collection.key)}>
+                <Button
+                  size='sm'
+                  ml='10'
+                  colorScheme='blue'
+                  onClick={e => onToggle(collection.key)}
+                >
                   Info
                   {toggled[collection.key] ? <FaCaretDown /> : <FaCaretRight />}
                 </Button>
@@ -234,26 +246,50 @@ function CollectionList (props) {
             <Collapse isOpen={toggled[collection.key]}>
               <Flex direction='column' py='2'>
                 <Flex direction='row' justify='flex-start'>
-                  <Box flexShrink='0' width={['auto', '12rem']} color='teal.400'>Key:</Box>
+                  <Box
+                    flexShrink='0'
+                    width={['auto', '12rem']}
+                    color='teal.400'
+                  >
+                    Key:
+                  </Box>
                   <Box style={{ overflowWrap: 'anywhere' }}>
                     <Key k={collection.key} mr='4' />
                   </Box>
                 </Flex>
                 <Flex direction='row' justify='flex-start'>
-                  <Box flexShrink='0' width={['auto', '12rem']} color='teal.400'>Local key:</Box>
+                  <Box
+                    flexShrink='0'
+                    width={['auto', '12rem']}
+                    color='teal.400'
+                  >
+                    Local key:
+                  </Box>
                   <Box style={{ overflowWrap: 'anywhere' }}>
                     <Key k={collection.localKey} mr='4' />
                   </Box>
                 </Flex>
                 <Flex direction='row' justify='flex-start'>
-                  <Box flexShrink='0' width={['auto', '12rem']} color='teal.400'>Local drive:</Box>
+                  <Box
+                    flexShrink='0'
+                    width={['auto', '12rem']}
+                    color='teal.400'
+                  >
+                    Local drive:
+                  </Box>
                   <Box style={{ overflowWrap: 'anywhere' }}>
                     <Key k={collection.localDrive} mr='4' />
                   </Box>
                 </Flex>
                 {collection.network.shared && (
                   <Flex direction='row' justify='flex-start'>
-                    <Box flexShrink='0' width={['auto', '12rem']} color='teal.400'>Peers:</Box>
+                    <Box
+                      flexShrink='0'
+                      width={['auto', '12rem']}
+                      color='teal.400'
+                    >
+                      Peers:
+                    </Box>
                     <Box style={{ overflowWrap: 'anywhere' }}>
                       {collection.network.peers}
                     </Box>

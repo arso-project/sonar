@@ -29,7 +29,9 @@ class MapSet {
 
   highest (key) {
     if (!this._map.has(key)) return null
-    return Array.from(this._map.get(key)).sort().pop()
+    return Array.from(this._map.get(key))
+      .sort()
+      .pop()
   }
 }
 

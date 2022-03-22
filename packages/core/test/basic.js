@@ -15,8 +15,14 @@ tape('open close', async t => {
 tape('put and get 1', async t => {
   const { cleanup, workspace } = await createOne()
   const collection = await workspace.createCollection('default')
-  await collection.putType({ name: 'doc', fields: { title: { type: 'string' } } })
-  const record = await collection.put({ type: 'doc', value: { title: 'hello' } })
+  await collection.putType({
+    name: 'doc',
+    fields: { title: { type: 'string' } }
+  })
+  const record = await collection.put({
+    type: 'doc',
+    value: { title: 'hello' }
+  })
   t.equal(record.value.title, 'hello')
   const id = record.id
   const records = await collection.query('records', { id }, { sync: true })
@@ -28,9 +34,14 @@ tape('put and get 1', async t => {
 tape('batch and query', async t => {
   const { cleanup, workspace } = await createOne()
   const collection = await workspace.createCollection('first')
-  const records = [{ title: 'Hello world', body: 'so rough' },
-    { title: 'Hello moon', body: 'so dark' }]
-  await collection.putType({ name: 'doc', fields: { title: { type: 'string', body: { type: 'String' } } } })
+  const records = [
+    { title: 'Hello world', body: 'so rough' },
+    { title: 'Hello moon', body: 'so dark' }
+  ]
+  await collection.putType({
+    name: 'doc',
+    fields: { title: { type: 'string', body: { type: 'String' } } }
+  })
   const batch = records.map(value => ({ op: 'put', type: 'doc', value }))
   await collection.batch(batch)
   await collection.sync()

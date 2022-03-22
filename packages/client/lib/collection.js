@@ -278,15 +278,17 @@ class Collection extends EventEmitter {
     const self = this
     const stream = new Transform({
       open (cb) {
-        stream.finished = self.fetch('/', {
-          method: 'POST',
-          requestType: 'stream',
-          headers: {
-            'content-type': 'application/x-ndjson'
-          },
-          params: { batch: true },
-          body: this
-        }).catch(err => stream.destroy(err))
+        stream.finished = self
+          .fetch('/', {
+            method: 'POST',
+            requestType: 'stream',
+            headers: {
+              'content-type': 'application/x-ndjson'
+            },
+            params: { batch: true },
+            body: this
+          })
+          .catch(err => stream.destroy(err))
         cb()
       },
       transform (record, cb) {
@@ -355,7 +357,7 @@ class Collection extends EventEmitter {
     this._eventSource = this.workspace.createEventSource('/events', {
       endpoint: this.endpoint,
       onerror,
-      onmessage: (eventObject) => {
+      onmessage: eventObject => {
         this.log.trace('event: ' + eventObject.event)
         this._eventStream.write(eventObject)
         this.emit(eventObject.event, eventObject.data)

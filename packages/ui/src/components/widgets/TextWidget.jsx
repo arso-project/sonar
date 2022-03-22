@@ -11,11 +11,16 @@ export default function TextWidget (props) {
   return (
     <FormControl>
       <FormLabel htmlFor={field.name}>{field.name}</FormLabel>
-      <Input ref={ref} id={field.name} aria-describedby={field.name + '-helper-text'} />
+      <Input
+        ref={ref}
+        id={field.name}
+        aria-describedby={field.name + '-helper-text'}
+      />
       <FormHelperText id={field.name + '-helper-text'}>
         {field.address}
       </FormHelperText>
-    </FormControl>)
+    </FormControl>
+  )
 }
 
 function useRegisterWidget (props, onSubmit) {

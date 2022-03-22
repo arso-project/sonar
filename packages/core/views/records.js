@@ -1,10 +1,7 @@
 const through = require('through2')
 const { Readable } = require('streamx')
 const keyEncoding = require('charwise')
-const {
-  mapRecordsIntoOps,
-  clearLevelDb
-} = require('./helpers')
+const { mapRecordsIntoOps, clearLevelDb } = require('./helpers')
 const Live = require('@frando/level-live')
 // const debug = require('debug')('db')
 // const collect = require('stream-collector')

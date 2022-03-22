@@ -2,12 +2,12 @@
 
 How to make a release and publish on npm:
 
-1) Run all tests from the repo root:
+1. Run all tests from the repo root:
    `npm run test`
-2) Run all tests again
-3) Delete all `package-lock.json` files: (see [^1])
+2. Run all tests again
+3. Delete all `package-lock.json` files: (see [^1])
    `rm sonar-*/package-lock.json`
-4) Use lerna publish:
+4. Use lerna publish:
    `lerna publish major|minor|patch`
 
 That should be it!

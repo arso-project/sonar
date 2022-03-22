@@ -81,7 +81,9 @@ class DownloadSession {
     const [url] = args
     const res = await fetch(url)
     const contentType = res.headers.get('content-type')
-    const hash = createHash('sha256').update(url, 'utf8').digest('hex')
+    const hash = createHash('sha256')
+      .update(url, 'utf8')
+      .digest('hex')
     console.log(hash)
     // const filename = url.replace("://", "_").replace(".", "_").replace("/", "_")
     const resourceRecord = {

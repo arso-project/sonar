@@ -49,7 +49,8 @@ class Field {
   allVariants () {
     const addresses = [this.address]
     addresses.push(...this._children)
-    if (this._parent) addresses.push(this[SC].getField(this._parent).allVariants())
+    if (this._parent)
+      addresses.push(this[SC].getField(this._parent).allVariants())
     return addresses
   }
 
@@ -73,7 +74,9 @@ class Field {
     const parent = this[SC].getField(this._spec.refines)
 
     if (strict && !parent) {
-      throw new Error(`Missing parent field ${this._spec.refines} while resolving ${this.address}`)
+      throw new Error(
+        `Missing parent field ${this._spec.refines} while resolving ${this.address}`
+      )
     } else if (!parent) return
 
     parent._build()

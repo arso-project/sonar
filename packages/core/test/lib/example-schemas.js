@@ -50,12 +50,7 @@ module.exports = function getExampleSchemas () {
       type: 'object',
       title: 'Comment',
       description: 'A text post about some resource.',
-      required: [
-        'type',
-        'topic',
-        'body',
-        'createdAt'
-      ],
+      required: ['type', 'topic', 'body', 'createdAt'],
       properties: {
         type: {
           type: 'string',
@@ -87,7 +82,8 @@ module.exports = function getExampleSchemas () {
           description: "The time of this post's last edit"
         }
       }
-    }]
+    }
+  ]
 
   return types
 }

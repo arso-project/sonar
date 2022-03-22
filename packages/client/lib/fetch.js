@@ -3,29 +3,30 @@ const debug = require('debug')('sonar:fetch')
 const isBuffer = require('is-buffer')
 
 /**
-  * Fetch a resource.
-  *
-  * This is a wrapper around the fetch web API. It should be API compatible to fetch,
-  * with the following changes:
-  *
-  * @async
-  * @param {string} [opts.endpoint=''] Endpoint URL (will be prefixed to URL)
-  * @param {string} [opts.requestType='json'] Request encoding and content type.
-  *   Supported values are 'json' and 'binary'
-  * @param {string} [opts.responseType='text'] Response encoding. If the response
-  *    has a JSON content type, will always be set to 'json'.
-  *    Supported values are 'text', 'binary' and 'stream'.
-  * @param {object} [opts.params] Query string parameters (will be encoded correctly).
-  *
-  * @return {Promise<object>} If the response has a JSON content type header, the
-  *    decoded JSON will be returned. if opts.responseType is 'binary' or 'text',
-  *    the response will be returned as a buffer or text.
-  *
-  * TODO: Rethink the default responseType cascade.
-  */
+ * Fetch a resource.
+ *
+ * This is a wrapper around the fetch web API. It should be API compatible to fetch,
+ * with the following changes:
+ *
+ * @async
+ * @param {string} [opts.endpoint=''] Endpoint URL (will be prefixed to URL)
+ * @param {string} [opts.requestType='json'] Request encoding and content type.
+ *   Supported values are 'json' and 'binary'
+ * @param {string} [opts.responseType='text'] Response encoding. If the response
+ *    has a JSON content type, will always be set to 'json'.
+ *    Supported values are 'text', 'binary' and 'stream'.
+ * @param {object} [opts.params] Query string parameters (will be encoded correctly).
+ *
+ * @return {Promise<object>} If the response has a JSON content type header, the
+ *    decoded JSON will be returned. if opts.responseType is 'binary' or 'text',
+ *    the response will be returned as a buffer or text.
+ *
+ * TODO: Rethink the default responseType cascade.
+ */
 module.exports = async function makeFetch (url, opts) {
   if (!url.match(/^https?:\/\//)) {
-    if (url.indexOf('://') !== -1) throw new Error('Only http: and https: protocols are supported.')
+    if (url.indexOf('://') !== -1)
+      throw new Error('Only http: and https: protocols are supported.')
     if (!url.startsWith('/')) url = '/' + url
     if (opts.endpoint) url = opts.endpoint + url
   }
@@ -52,7 +53,7 @@ module.exports = async function makeFetch (url, opts) {
     opts.headers['content-type'] = 'application/octet-stream'
   }
 
-  const log = opts.log === false ? () => {} : (opts.log || debug)
+  const log = opts.log === false ? () => {} : opts.log || debug
 
   try {
     debug('fetch', url, opts)

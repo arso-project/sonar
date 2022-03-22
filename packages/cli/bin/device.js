@@ -8,12 +8,11 @@ exports.handler = function () {
   yargs.showHelp()
 }
 exports.builder = function (yargs) {
-  yargs
-    .command({
-      command: 'register',
-      describe: 'create new access code',
-      handler: createAccesssCode
-    })
+  yargs.command({
+    command: 'register',
+    describe: 'create new access code',
+    handler: createAccesssCode
+  })
 }
 
 async function createAccesssCode (argv) {

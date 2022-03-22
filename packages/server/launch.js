@@ -4,7 +4,7 @@ const options = require('./bin/lib/options')
 const args = require('yargs').options(options).argv
 
 const server = new Server(args)
-server.start((err) => {
+server.start(err => {
   if (err) {
     console.error(err)
     server.api.log.error(err)

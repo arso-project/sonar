@@ -14,14 +14,14 @@
   color: #48d;
   text-decoration: none;
   border-bottom: 1px dashed #48d;
-  margin-right: .5rem;
+  margin-right: 0.5rem;
 }
 
 @mixin panel {
   border-radius: 5px;
   // background: rgba(255,255,255,0.5);
   background: #fff;
-  border: 1px solid rgba(0,0,0,0.2);
+  border: 1px solid rgba(0, 0, 0, 0.2);
   padding: 1rem;
   margin-bottom: 1rem;
   margin-top: 1rem;
@@ -38,7 +38,12 @@ body {
   padding: 0;
 }
 
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
   color: #444;
   margin-top: 0;
 }
@@ -70,11 +75,11 @@ h1, h2, h3, h4, h5, h6 {
     text-decoration: none;
     margin-right: 1rem;
     &.active {
-      background-color: rgba(255,100,120,0.2);
-      color: rgb(255,100,102);
+      background-color: rgba(255, 100, 120, 0.2);
+      color: rgb(255, 100, 102);
     }
     &:hover {
-      background-color: rgba(255,255,255,0.2);
+      background-color: rgba(255, 255, 255, 0.2);
     }
   }
 
@@ -118,18 +123,18 @@ h1, h2, h3, h4, h5, h6 {
   @include panel;
   &.ViewRecord-selected {
     border-color: #7c7;
-    background-color: rgba(200,255,200,0.2);
+    background-color: rgba(200, 255, 200, 0.2);
   }
   > .ViewRecord-meta {
-    font-size: .9em;
+    font-size: 0.9em;
     color: #666;
     display: flex;
     flex-wrap: wrap;
-    > .Row  {
-      margin: 0 .5rem .5rem 0;
+    > .Row {
+      margin: 0 0.5rem 0.5rem 0;
       padding: 5px;
       border: 1px solid #ccc;
-      background: rgba(255,255,255,0.5);
+      background: rgba(255, 255, 255, 0.5);
       border-radius: 7px;
       > .Row-label {
         width: auto;
@@ -143,7 +148,7 @@ h1, h2, h3, h4, h5, h6 {
   display: flex;
   // margin: -1rem -1rem 1rem -1rem;
   // padding: .25rem 1rem;
-  font-size: .9rem;
+  font-size: 0.9rem;
   // background: rgba(100,100,100,0.1);
   color: #666;
   > * > * {
@@ -152,12 +157,12 @@ h1, h2, h3, h4, h5, h6 {
   em {
     font-style: normal;
     font-weight: 400;
-    margin-right: .25rem;
+    margin-right: 0.25rem;
     color: #999;
   }
   strong {
     display: inline-block;
-    margin-right: .5rem;
+    margin-right: 0.5rem;
     font-weight: 400;
     // max-width: 140px;
     // overflow: hidden;
@@ -168,17 +173,17 @@ h1, h2, h3, h4, h5, h6 {
 
 .RecordFooter {
   margin: 1rem -1rem -1rem -1rem;
-  font-size: .9rem;
-  background: rgba(100,100,100,0.1);
+  font-size: 0.9rem;
+  background: rgba(100, 100, 100, 0.1);
   color: #666;
   border-top: 1px solid #ddd;
   > .RecordMeta {
-    padding-bottom: .25rem;
-    margin-bottom: .25rem;
+    padding-bottom: 0.25rem;
+    margin-bottom: 0.25rem;
     border-bottom: 1px solid #ddd;
   }
   > * {
-    padding: .25rem 1rem;
+    padding: 0.25rem 1rem;
     // display: flex;
   }
   a {
@@ -192,7 +197,7 @@ h1, h2, h3, h4, h5, h6 {
     flex-basis: 8rem;
     color: #999;
     font-weight: bold;
-    font-size: .9rem;
+    font-size: 0.9rem;
   }
   > .Row-content {
     flex: 1;
@@ -244,7 +249,7 @@ h1, h2, h3, h4, h5, h6 {
 
 .FeedKey > em {
   display: block;
-  padding: .25rem;
+  padding: 0.25rem;
   position: absolute;
   top: 100%;
   left: 100%;
@@ -257,10 +262,9 @@ h1, h2, h3, h4, h5, h6 {
   text-align: center;
 }
 
-
 .WorkspaceSettings > section {
   display: flex;
-  padding: .25rem 0;
+  padding: 0.25rem 0;
 }
 .WorkspaceSettings > section > label {
   display: block;
@@ -271,7 +275,7 @@ h1, h2, h3, h4, h5, h6 {
   --color-error: var(--color-red, red);
   border: 1px solid var(--color-error, red);
   border-radius: 5px;
-  background: rgba(255,220,220,0.5);
+  background: rgba(255, 220, 220, 0.5);
   padding: 1rem;
   display: block;
   font-style: normal;
@@ -280,14 +284,14 @@ h1, h2, h3, h4, h5, h6 {
 .EditRecord {
   @include panel;
   > h2 {
-    margin: .5rem 0;
+    margin: 0.5rem 0;
   }
   .RecordMeta {
     display: block;
-    margin-bottom: .5rem;
+    margin-bottom: 0.5rem;
   }
   .Row {
-    margin-top: .5rem;
+    margin-top: 0.5rem;
   }
 }
 
@@ -300,17 +304,20 @@ h1, h2, h3, h4, h5, h6 {
 
 // form styles
 .App {
-  button, input, select {
-    padding: .25rem 1rem;
+  button,
+  input,
+  select {
+    padding: 0.25rem 1rem;
     border: 2px solid hsla(var(--color-purple-hue), 50%, 50%, 50%);
     border-radius: 5px;
     // background: #fff;
     background: hsla(var(--color-purple-hue), 50%, 80%, 20%);
     color: #222;
     font-weight: bold;
-    box-shadow: 2px 2px 4px inset rgba(0,0,0,0.1);
+    box-shadow: 2px 2px 4px inset rgba(0, 0, 0, 0.1);
     max-width: 100%;
-    &:hover, &:focus {
+    &:hover,
+    &:focus {
       outline: none;
     }
     &:focus {
@@ -325,12 +332,13 @@ h1, h2, h3, h4, h5, h6 {
     }
   }
   button {
-    box-shadow: -2px -2px 4px inset rgba(0,0,0,0.1);
+    box-shadow: -2px -2px 4px inset rgba(0, 0, 0, 0.1);
   }
   input {
     // box-shadow: 2px 2px 4px inset rgba(0,0,0,0.1);
   }
-  button, select {
+  button,
+  select {
     cursor: pointer;
   }
 }

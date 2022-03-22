@@ -8,10 +8,7 @@ const Bots = require('./bots')
 
 const { Logger } = require('@arsonar/common')
 
-const {
-  DEFAULT_ENDPOINT,
-  DEFAULT_WORKSPACE
-} = require('./constants')
+const { DEFAULT_ENDPOINT, DEFAULT_WORKSPACE } = require('./constants')
 
 function defaultWorkspace () {
   return (process && process.env && process.env.WORKSPACE) || DEFAULT_WORKSPACE
@@ -87,7 +84,11 @@ class Workspace extends EventEmitter {
   // TODO: Support re-logins
   async _login () {
     if (this._accessCode && !this._token) {
-      const res = await this.fetch('/login', { params: { code: this._accessCode }, method: 'POST', opening: true })
+      const res = await this.fetch('/login', {
+        params: { code: this._accessCode },
+        method: 'POST',
+        opening: true
+      })
       const token = res.token
       this._token = token
     }

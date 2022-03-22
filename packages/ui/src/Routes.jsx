@@ -17,19 +17,43 @@ import TypePage from './pages/TypeSpecs'
 export default function Pageroutes () {
   return (
     <Switch>
-      <Route exact path='/'><Start /></Route>
-      <Route path='/collections'><Collections /></Route>
-      <Route path='/config'><Config /></Route>
-      <Route path='/login/:accessCode'><Config /></Route>
+      <Route exact path='/'>
+        <Start />
+      </Route>
+      <Route path='/collections'>
+        <Collections />
+      </Route>
+      <Route path='/config'>
+        <Config />
+      </Route>
+      <Route path='/login/:accessCode'>
+        <Config />
+      </Route>
 
-      <Route path='/activity'><Activity /></Route>
-      <Route path='/search'><Search /></Route>
-      <Route path='/fileimport'><FileImportPage /></Route>
-      <Route path='/types'><TypePage /></Route>
-      <Route path='/filebrowser'><Filebrowser /></Route>
-      <Route path='/record/:id'><RecordPage /></Route>
-      <Route path='/tables'><TablesPage /></Route>
-      <Route path='/debug'><DebugPage /></Route>
+      <Route path='/activity'>
+        <Activity />
+      </Route>
+      <Route path='/search'>
+        <Search />
+      </Route>
+      <Route path='/fileimport'>
+        <FileImportPage />
+      </Route>
+      <Route path='/types'>
+        <TypePage />
+      </Route>
+      <Route path='/filebrowser'>
+        <Filebrowser />
+      </Route>
+      <Route path='/record/:id'>
+        <RecordPage />
+      </Route>
+      <Route path='/tables'>
+        <TablesPage />
+      </Route>
+      <Route path='/debug'>
+        <DebugPage />
+      </Route>
     </Switch>
   )
 }

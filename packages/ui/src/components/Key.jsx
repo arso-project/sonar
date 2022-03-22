@@ -1,12 +1,5 @@
 import React, { useState } from 'react'
-import {
-  Button,
-  Flex,
-  Icon,
-  Box,
-  useClipboard,
-  Badge
-} from '@chakra-ui/react'
+import { Button, Flex, Icon, Box, useClipboard, Badge } from '@chakra-ui/react'
 
 function KeyButton (props) {
   const { children, ...other } = props
@@ -18,15 +11,12 @@ function KeyButton (props) {
       pb='1'
       my='1'
       height='1.5rem'
-
       cursor='copy'
       rightIcon='copy'
       fontFamily='mono'
       fontWeight='semibold'
       lineHeight='none'
-
       rounded='2px'
-
       bg='bg2'
       borderColor='#ccd0d5'
       color='text1'
@@ -75,9 +65,7 @@ export default function Key (props) {
                   <Box>Copied</Box>
                 </Flex>
               )}
-              {!hasCopied && showCopy && (
-                <Box>Click to copy</Box>
-              )}
+              {!hasCopied && showCopy && <Box>Click to copy</Box>}
             </Flex>
           </Badge>
         </Box>

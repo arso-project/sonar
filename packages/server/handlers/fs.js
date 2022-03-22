@@ -11,10 +11,13 @@ module.exports = function hyperdriveMiddleware () {
   const router = express.Router()
 
   router.use('/:drive', function (req, res, next) {
-    req.collection.drive(req.params.drive).then(drive => {
-      req.drive = drive
-      next()
-    }).catch(err => next(err))
+    req.collection
+      .drive(req.params.drive)
+      .then(drive => {
+        req.drive = drive
+        next()
+      })
+      .catch(err => next(err))
   })
   router.get('/:drive/*', onget)
   router.put('/:drive/*', onput)
@@ -27,7 +30,7 @@ function onget (req, res, next) {
   const path = req.params['0'] || '/'
   if (req.headers['content-type'] === 'application/json') {
     ongetjson(req.drive, path, req, res, next)
-  // Otherwise, serve files.
+    // Otherwise, serve files.
   } else {
     ongetfile(req.drive, path, req, res, next)
   }
@@ -109,16 +112,20 @@ function onput (req, res, next) {
   }
 
   if (!path) return next(new StatusError('path is required', 404))
-  if (!drive.writable) return next(new StatusError('drive is not writable', 403))
+  if (!drive.writable)
+    return next(new StatusError('drive is not writable', 403))
 
   debug('put', path)
   mkdirp(drive, p.dirname(path), err => {
     if (err && err.code !== 'EEXIST') return next(err)
     const ws = drive.createWriteStream(path, opts)
-    req.pipe(transform()).pipe(ws).on('finish', () => {
-      res.statusCode = 200
-      res.send('ok')
-    })
+    req
+      .pipe(transform())
+      .pipe(ws)
+      .on('finish', () => {
+        res.statusCode = 200
+        res.send('ok')
+      })
   })
 
   function transform () {

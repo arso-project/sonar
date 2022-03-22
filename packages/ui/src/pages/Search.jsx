@@ -8,11 +8,7 @@ import Logger from '../components/Logger'
 import { RecordLabelDisplay } from '../components/Record'
 import { MetaItem, MetaItems } from '../components/MetaItem'
 
-import {
-  Box,
-  Input,
-  Heading
-} from '@chakra-ui/react'
+import { Box, Input, Heading } from '@chakra-ui/react'
 
 import { useCollection } from '@arsonar/react'
 
@@ -28,13 +24,14 @@ export function SearchResultList (props) {
   return (
     <Box fontSize='sm'>
       <SearchInput size='sm' />
-      {results && results.map((record, i) => (
-        <Box key={i} borderBottomWidth='1px' p={1} my={1}>
-          <NavLink to={recordPath(record.id)}>
-            <RecordLabelDisplay record={record} />
-          </NavLink>
-        </Box>
-      ))}
+      {results &&
+        results.map((record, i) => (
+          <Box key={i} borderBottomWidth='1px' p={1} my={1}>
+            <NavLink to={recordPath(record.id)}>
+              <RecordLabelDisplay record={record} />
+            </NavLink>
+          </Box>
+        ))}
     </Box>
   )
 }
@@ -71,7 +68,8 @@ export function SearchInput (props) {
   function onInputChange (e) {
     const search = e.target.value
     setSearch(search)
-    collection.query('search', search)
+    collection
+      .query('search', search)
       .then(results => setResults(results))
       .catch(error => setError(error))
   }
@@ -94,7 +92,9 @@ function SearchResult (props) {
   const { value, id, type, key } = props.row
   return (
     <Box mb='4'>
-      <Heading fontSize='md' color='pink.500'>{entityLink()}</Heading>
+      <Heading fontSize='md' color='pink.500'>
+        {entityLink()}
+      </Heading>
       <MetaItems>
         <MetaItem name='ID' value={id} />
         <MetaItem name='Schema' value={formatType(type)} />
@@ -120,7 +120,10 @@ function recordPath (id) {
 // TODO: This is likely too hacky. Propably we'll want
 // a full component with a tooltip for details.
 function formatType (typeName) {
-  return typeName.split('/').slice(1).join('/')
+  return typeName
+    .split('/')
+    .slice(1)
+    .join('/')
 }
 
 function formatSource (source) {
