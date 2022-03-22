@@ -36,7 +36,7 @@ module.exports = function apiRoutes (api) {
 
   // 404 handler
   router.all('/*', (req, res) => {
-    res.status(404).send({ error: 'Not found' })
+    res.status(404).json({ error: 'Not found' })
   })
 
   return router
@@ -46,6 +46,7 @@ module.exports = function apiRoutes (api) {
     const workspaceName = req.params.workspace
     const workspace = await api.workspaces.getWorkspace(workspaceName)
     req.workspace = workspace
+    req.workspaceName = workspaceName
     next()
   }
 }

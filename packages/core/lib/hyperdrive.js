@@ -1,12 +1,6 @@
 const hyperdrive = require('hyperdrive')
 
-module.exports = function registerHyperdrive (workspace) {
-  workspace.on('collection-opening', (collection, onOpen) => {
-    onOpen(onCollectionOpen(collection))
-  })
-}
-
-async function onCollectionOpen (collection) {
+module.exports = async function makeGetDriveFunction (collection) {
   const drives = new Map()
   const map = new Map()
   const namespace = collection.id + ':sonar-hyperdrive'
@@ -16,9 +10,6 @@ async function onCollectionOpen (collection) {
   collection.on('status', status => {
     if (map.has('~me')) status.localDrive = map.get('~me')
   })
-
-  // TODO: Move into collection.api
-  collection.drive = getDrive
 
   // Create a live stream for future drives being added to the collection.
   collection

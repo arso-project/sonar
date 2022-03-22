@@ -71,6 +71,9 @@ module.exports = async function makeFetch (url, opts) {
 
     log(`ok ${res.status} fetch ${url}`)
 
+    if (opts.responseType === 'raw') {
+      return res
+    }
     if (opts.responseType === 'stream') {
       return res.body
     }

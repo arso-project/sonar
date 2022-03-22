@@ -98,6 +98,11 @@ function cleanStat (stat, opts = {}) {
   }
 }
 
+
+function createHyperdriveUrl (key, path) {
+  return `hyper://${key}/${path}`
+}
+
 function onput (req, res, next) {
   const drive = req.drive
   const path = req.params['0']
