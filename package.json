@@ -17,7 +17,9 @@
     "build:apidocs": "cd packages/client; npm run doc:html",
     "build:ui": "cd packages/ui; npm run build",
     "build:tantivy": "cd node_modules/@arso-project/sonar-tantivy; npm run postinstall",
-    "make-links": "./script/dev-link.sh"
+    "make-links": "./script/dev-link.sh",
+    "format": "prettier-standard",
+    "precommit": "prettier-standard --staged"
   },
   "workspaces": [
     "*",
