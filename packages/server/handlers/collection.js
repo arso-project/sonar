@@ -142,7 +142,10 @@ module.exports = function createCollectionRoutes () {
   router.get(
     '/:collection/version/:lseq',
     AH(async (req, res, next) => {
-      const { lseq } = req.params
+      if (!req.params.match(/\d+/)) {
+        throw new HttpError(400, 'Invalid lseq')
+      }
+      const lseq = Number(req.params.lseq)
       const record = await req.collection.getBlock({ lseq })
       return record.toJSON()
     })

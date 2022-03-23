@@ -1,5 +1,5 @@
 const mime = require('mime-types')
-const { pipeline, Readable } = require('streamx')
+const { pipeline, Readable, Transform } = require('streamx')
 const { uuid } = require('./util')
 const parseUrl = require('parse-dat-url')
 const parseRange = require('range-parser')
@@ -10,6 +10,7 @@ class EmptyStream extends Readable {
     this.push(null)
   }
 }
+
 module.exports = class Files {
   constructor (collection) {
     this.collection = collection
@@ -17,13 +18,20 @@ module.exports = class Files {
 
   async _writeFile (id, stream) {
     const drive = await this.collection.drive('~me')
-    const writeStream = drive.createWriteStream(id)
-    // TODO: Throw correct error.
+    // The following pipes the request into a hyperdrive write stream.
+    // It waits for the first chunk to arrive, and errors if the stream
+    // closes before any data arrived.
     await new Promise((resolve, reject) => {
-      stream
-        .pipe(writeStream)
-        .once('error', reject)
-        .once('finish', resolve)
+      let didWrite = false
+      stream.once('data', chunk => {
+        didWrite = true
+        const writeStream = drive.createWriteStream(id)
+        writeStream.write(chunk)
+        stream.pipe(writeStream).once('error', reject).once('finish', resolve)
+      })
+      stream.once('end', () => {
+        if (!didWrite) reject(new Error('Stream was empty'))
+      })
     })
 
     const stat = await new Promise((resolve, reject) => {

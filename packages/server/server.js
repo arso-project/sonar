@@ -167,7 +167,8 @@ module.exports = function SonarServer (opts = {}) {
     if (!err.statusCode && err.code === 'ENOENT') {
       err.statusCode = 404
     }
-    res.status(err.statusCode || 500).send(result)
+    res.status(err.statusCode || 500)
+    res.send(result)
     api.log.error({ err, req, message: `Request ${req.url} produced error` })
   })
 
