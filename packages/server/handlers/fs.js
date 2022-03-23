@@ -98,7 +98,6 @@ function cleanStat (stat, opts = {}) {
   }
 }
 
-
 function createHyperdriveUrl (key, path) {
   return `hyper://${key}/${path}`
 }

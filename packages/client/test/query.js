@@ -5,12 +5,15 @@ const { createOne } = require('./lib/create')
 
 async function prepare (t) {
   const { client, cleanup } = await createOne()
-  await client.createCollection('default')
+  const collection = await client.createCollection('default')
   try {
-    await client.putType('doc', { fields: { title: { type: 'string' } } })
-    await client.put({ type: 'doc', value: { title: 'hello world' } })
-    await client.put({ type: 'doc', value: { title: 'hello moon' } })
-    await client.sync()
+    await collection.putType({
+      name: 'doc',
+      fields: { title: { type: 'string' } }
+    })
+    await collection.put({ type: 'doc', value: { title: 'hello world' } })
+    await collection.put({ type: 'doc', value: { title: 'hello moon' } })
+    await collection.sync()
   } catch (e) {
     console.error(e)
     t.fail(e)
@@ -18,17 +21,17 @@ async function prepare (t) {
     throw e
   }
 
-  return { client, cleanup }
+  return { client, cleanup, collection }
 }
 
 test('basic query', async t => {
   try {
-    const { client, cleanup } = await prepare(t)
-    let results = await client.search('hello')
+    const { collection, cleanup } = await prepare(t)
+    let results = await collection.query('search', 'hello')
     t.equal(results.length, 2, 'hello search')
-    results = await client.search('world')
+    results = await collection.query('search', 'world')
     t.equal(results.length, 1, 'world search')
-    results = await client.search('moon')
+    results = await collection.query('search', 'moon')
     t.equal(results.length, 1, 'moon search')
     await cleanup()
   } catch (e) {
@@ -37,14 +40,14 @@ test('basic query', async t => {
 })
 
 test('querybuilder: simple bool search', async t => {
-  const { client, cleanup } = await prepare(t)
+  const { collection, cleanup } = await prepare(t)
   const query = new SearchQueryBuilder('doc')
   query
     .bool('must', [query.term('title', 'hello')])
     .bool('must_not', [query.term('title', 'moon')])
     .limit(10)
 
-  const results = await client.query('search', query, { waitForSync: true })
+  const results = await collection.query('search', query, { waitForSync: true })
   t.equal(results.length, 1, 'should return one result')
   t.equal(results[0].value.title, 'hello world', 'toshi query worked')
   await cleanup()
@@ -59,18 +62,18 @@ test('querybuilder: simple bool search', async t => {
 // TODO: Test fuzzy query
 // TODO: Test phrase query
 test('querybuilder: phrase search', async t => {
-  const { client, cleanup } = await prepare(t)
+  const { collection, cleanup } = await prepare(t)
   const query = new SearchQueryBuilder('doc')
   query.phrase('title', ['hello', 'moon'])
-  const results = await client.query('search', query, { waitForSync: true })
+  const results = await collection.query('search', query, { waitForSync: true })
   t.equal(results.length, 1, 'should return one result')
   t.equal(results[0].value.title, 'hello moon', 'phrase search worked')
   await cleanup()
 })
 
 test('toshi query', async t => {
-  const { client, cleanup } = await prepare(t)
-  const results = await client.search({
+  const { collection, cleanup } = await prepare(t)
+  const results = await collection.query('search', {
     query: {
       bool: {
         must: [

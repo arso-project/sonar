@@ -60,7 +60,6 @@ async function readResources (collection) {
     { sync: true }
   )
   const contents = await Promise.all(
-
     records.map(record => {
       return collection.fs
         .readFile(record.id, { responseType: 'buffer' })
