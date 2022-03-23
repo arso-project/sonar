@@ -56,20 +56,22 @@ tape('replicate resources', { timeout: 5000 }, async t => {
 async function readResources (collection) {
   const records = await collection.query(
     'records',
-    { type: 'sonar/resource' },
+    { type: 'sonar/file' },
     { sync: true }
   )
   const contents = await Promise.all(
-    records.map(r => {
-      return collection.resources.readFile(r).then(c => c.toString())
+
+    records.map(record => {
+      return collection.fs
+        .readFile(record.id, { responseType: 'buffer' })
+        .then(c => c.toString())
     })
   )
   return contents
 }
 
 async function writeResource (collection, filename, content) {
-  const url = '~me/' + filename
-  await collection.fs.writeFile(url, content)
+  await collection.fs.createFile(content, { filename })
   // const resource = await collection.resources.create({ filename })
   // await collection.resources.writeFile(resource, content)
   // return resource

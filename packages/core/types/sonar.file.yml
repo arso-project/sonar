@@ -1,7 +1,6 @@
-# TODO: Remove once there's a way to remove schemas
-name: resource
+name: file
 namespace: sonar
-title: Resource (deprecated)
+title: File
 fields:
   filename:
     type: string

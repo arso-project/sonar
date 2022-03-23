@@ -1,4 +1,5 @@
 const SseStream = require('ssestream').default
+const hyperdriveHttp = require('hyperdrive-http')
 const express = require('express')
 const split2 = require('split2')
 const { pipeline } = require('streamx')
@@ -32,8 +33,6 @@ module.exports = function createCollectionRoutes () {
       next()
     })
   )
-
-  router.use('/:collection/fs', createFsRouter())
 
   router.get(
     '/:collection',
@@ -333,6 +332,49 @@ module.exports = function createCollectionRoutes () {
         drive.writable = info.writable
       }
       res.send(drives)
+    })
+  )
+
+  router.post(
+    '/:collection/file',
+    AH(async function (req, res, next) {
+      let metadata = {}
+      if (req.params.metadata) {
+        try {
+          metadata = JSON.parse(req.params.metadata)
+          if (typeof metadata !== 'object' || Array.isArray(metadata)) {
+            throw new Error('Metadata has to be a JSON object')
+          }
+        } catch (err) {
+          throw new HttpError(400, 'Failed to parse metadata parameter')
+        }
+      }
+      const fileRecord = await req.collection.files.createFile(req, metadata)
+      res.send(fileRecord)
+    })
+  )
+
+  router.get(
+    '/:collection/file/:id',
+    AH(async function (req, res, next) {
+      if (req.query.meta) {
+        const record = await req.collection.files.getRecord(req.params.id)
+        return res.json(record)
+      }
+      const {
+        headers,
+        stream,
+        statusCode
+      } = await req.collection.files.readFileWithHeaders(req.params.id, req)
+      for (const [name, value] of Object.entries(headers)) {
+        res.setHeader(name, value)
+      }
+      res.status(statusCode)
+
+      pipeline(stream, res, err => {
+        if (err) next(err)
+        else res.end()
+      })
     })
   )
 

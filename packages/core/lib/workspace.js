@@ -27,9 +27,6 @@ const {
   uuid
 } = require('./util')
 
-// Import for views - move into module.
-const registerHyperdrive = require('./fs')
-
 function defaultWorkspaceStoragePath () {
   return p.join(defaultStoragePath(), 'workspace', '_default')
 }
@@ -51,7 +48,6 @@ module.exports = class Workspace extends Nanoresource {
       for (const plugin of defaultPlugins) {
         this.registerPlugin(plugin)
       }
-      this.registerPlugin(registerHyperdrive)
     }
 
     if (opts.plugins) {

@@ -25,6 +25,8 @@ const createRecordsView = require('../views/records')
 const createIndexView = require('../views/indexes')
 const createHistoryView = require('../views/history')
 const CORE_TYPE_SPECS = require('./types.json')
+const Files = require('./file')
+const makeGetDriveFunction = require('./hyperdrive')
 
 const driveStruct = require('./struct/drive')
 const recordsStruct = require('./struct/records')
@@ -64,6 +66,8 @@ class Collection extends Nanoresource {
         this.emit('schema-update', schema)
       }
     })
+
+    this.files = new Files(this)
 
     this._feeds = new Map()
 
@@ -773,6 +777,10 @@ class Collection extends Nanoresource {
     const [openPromises, addOpenPromise] = promiseFactory()
     this.emit('opening', addOpenPromise)
     await Promise.all(openPromises)
+
+    // Init hyperdrives.
+    const { onClose, getDrive } = await makeGetDriveFunction(this)
+    this.drive = getDrive
 
     // Emit open event
     this.log.debug(`Collection open: ${pretty(this.key)}`)
