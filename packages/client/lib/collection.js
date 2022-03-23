@@ -5,7 +5,7 @@ const { Readable, Writable, Transform } = require('streamx')
 const { EventEmitter } = require('events')
 
 const { Schema, Store } = require('@arsonar/common')
-const Fs = require('./fs')
+const Files = require('./files')
 
 function uuid () {
   return base32Encode(randomBytes(16), 'Crockford').toLowerCase()
@@ -26,15 +26,18 @@ class Collection extends EventEmitter {
    */
   constructor (workspace, nameOrKey) {
     super()
+    /** @member {string} - API endpoint URL for this collection */
     this.endpoint = workspace.endpoint + '/collection/' + nameOrKey
+    /** @member {Workspace} */
     this.workspace = workspace
+    /** @member {Files} - File API for this collection */
+    this.files = new Files(this)
+
+    this.log = workspace.log.child({ collection: this })
+    this.setMaxListeners(256)
     this._info = {}
     this._nameOrKey = nameOrKey
     this._eventStreams = new Set()
-
-    this.fs = new Fs(this)
-    this.log = workspace.log.child({ collection: this })
-    this.setMaxListeners(256)
   }
 
   get name () {
@@ -75,11 +78,14 @@ class Collection extends EventEmitter {
   }
 
   async _open () {
-    this._info = await this.fetch('/')
-
+    const [info, fetchedSchema] = await Promise.all([
+      this.fetch('/'),
+      this.fetch('/schema')
+    ])
+    this._info = info
+    /** @member {Schema} - The schema for all types in this collection */
     this.schema = new Schema({ defaultNamespace: this.id })
-    const typeSpecs = await this.fetch('/schema')
-    for (const typeSpec of Object.values(typeSpecs)) {
+    for (const typeSpec of Object.values(fetchedSchema)) {
       this.schema.addType(typeSpec)
     }
     this.store = new Store({ schema: this.schema })

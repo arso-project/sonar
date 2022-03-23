@@ -1,17 +1,17 @@
 const tape = require('tape')
 const { createOne, createMany } = require('./lib/create')
 
-tape('simple resources test', async t => {
+tape('simple files test', async t => {
   const { cleanup, client } = await createOne()
   const col = await client.createCollection('first')
-  await writeResource(col, 'one', 'foo')
-  await writeResource(col, 'two', 'bar')
-  const res = await readResources(col)
+  await writeFile(col, 'one', 'foo')
+  await writeFile(col, 'two', 'bar')
+  const res = await readFiles(col)
   t.deepEqual(res.sort(), ['bar', 'foo'])
   await cleanup()
 })
 
-tape('replicate resources', { timeout: 5000 }, async t => {
+tape('replicate files', { timeout: 5000 }, async t => {
   const { cleanup, clients } = await createMany(2)
   const [client1, client2] = clients
 
@@ -25,35 +25,35 @@ tape('replicate resources', { timeout: 5000 }, async t => {
   t.equal(collection2.info.key, collection1.info.key)
   t.notEqual(collection2.info.key, collection2.info.localKey)
 
-  await writeResource(collection1, 'one', 'onfirst')
+  await writeFile(collection1, 'one', 'onfirst')
 
   // TODO: This refetches the schema. We should automate this.
   await collection2.open()
 
-  await writeResource(collection2, 'two', 'onsecond')
-  // t.equal(resource1.key, collection1.info.localKey, 'key of resource1 ok')
-  // t.equal(resource2.key, collection2.info.localKey, 'key of resourc2 ok')
+  await writeFile(collection2, 'two', 'onsecond')
+  // t.equal(file1.key, collection1.info.localKey, 'key of file1 ok')
+  // t.equal(file2.key, collection2.info.localKey, 'key of resourc2 ok')
 
   // await timeout(500)
 
-  let contents1 = await readResources(collection1)
+  let contents1 = await readFiles(collection1)
 
   t.deepEqual(contents1.sort(), ['onfirst'], 'collection 1 ok')
-  let contents2 = await readResources(collection2)
+  let contents2 = await readFiles(collection2)
   t.deepEqual(contents2.sort(), ['onfirst', 'onsecond'], 'collection 2 ok')
 
   await collection1.addFeed(collection2.info.localKey, { alias: 'seconda' })
   await collection1.sync()
 
-  contents1 = await readResources(collection1)
+  contents1 = await readFiles(collection1)
   t.deepEqual(contents1.sort(), ['onfirst', 'onsecond'], 'collection 1 ok')
-  contents2 = await readResources(collection2)
+  contents2 = await readFiles(collection2)
   t.deepEqual(contents2.sort(), ['onfirst', 'onsecond'], 'collection 2 ok')
 
   await cleanup()
 })
 
-async function readResources (collection) {
+async function readFiles (collection) {
   const records = await collection.query(
     'records',
     { type: 'sonar/file' },
@@ -61,7 +61,7 @@ async function readResources (collection) {
   )
   const contents = await Promise.all(
     records.map(record => {
-      return collection.fs
+      return collection.files
         .readFile(record.id, { responseType: 'buffer' })
         .then(c => c.toString())
     })
@@ -69,11 +69,8 @@ async function readResources (collection) {
   return contents
 }
 
-async function writeResource (collection, filename, content) {
-  await collection.fs.createFile(content, { filename })
-  // const resource = await collection.resources.create({ filename })
-  // await collection.resources.writeFile(resource, content)
-  // return resource
+async function writeFile (collection, filename, content) {
+  await collection.files.createFile(content, { filename })
 }
 
 function timeout (ms) {

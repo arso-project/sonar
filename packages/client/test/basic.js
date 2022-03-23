@@ -139,28 +139,28 @@ tape('batch stream', async t => {
   await cleanup()
 })
 
-tape.skip('fs with strings', async t => {
+tape('files with strings', async t => {
   const { client, cleanup } = await createOne({ network: false })
   const collection = await client.createCollection('test')
 
   // with string
-  await collection.fs.writeFile('/test/hello', 'world')
-  const result = await collection.fs.readFile('/test/hello')
-  t.ok(Buffer.isBuffer(result), 'res is buffer')
-  t.equal(result.toString(), 'world', 'string matches')
+  const record = await collection.files.createFile('file1content')
+  const result = await collection.files.readFile(record.id, { responseType: 'text' })
+  t.equal(result, 'file1content', 'string matches')
   await cleanup()
   t.ok(true, 'cleanup ok')
 })
 
-tape.skip('fs with buffers', async t => {
+tape('files with buffers', async t => {
   const { client, cleanup } = await createOne({ network: false })
   const collection = await client.createCollection('test')
 
   // with buffer
   // const buf = Buffer.from(randomBytes(16))
   const buf = Buffer.from('hello')
-  await collection.fs.writeFile('/test/bin', buf)
-  const result = await collection.fs.readFile('/test/bin')
+  const record = await collection.files.createFile(buf)
+  const result = await collection.files.readFile(record.id, { responseType: 'buffer' })
+  console.log({ record, result })
   t.ok(Buffer.isBuffer(result), 'res is buffer')
   t.equal(buf.toString('hex'), result.toString('hex'), 'buffer matches')
 
@@ -168,9 +168,7 @@ tape.skip('fs with buffers', async t => {
   t.ok(true, 'cleanup ok')
 })
 
-// TODO: This test breaks CI.
-// It causes the process to hang in the end.
-tape.skip('fs with streams', async t => {
+tape('files with streams', async t => {
   const { client, cleanup } = await createOne({ network: false })
   const collection = await client.createCollection('test')
 
@@ -181,8 +179,8 @@ tape.skip('fs with streams', async t => {
     rs.push('bar')
     rs.push(null)
   }, 50)
-  await collection.fs.writeFile('/test/stream', rs)
-  const result = await collection.fs.createReadStream('/test/stream')
+  const record = await collection.files.createFile(rs)
+  const result = await collection.files.readFile(record.id)
   const chunks = await collect(result)
   t.equal(Buffer.concat(chunks).toString(), 'foobar', 'result matches')
 
