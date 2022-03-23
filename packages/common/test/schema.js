@@ -79,7 +79,6 @@ tape('basics', t => {
   const store = new Store({ schema })
   store.cacheRecord(record)
 
-
   // console.log('\n# Table\n')
   // const rows = [['ID', 'Field', 'Value']]
   // for (const fieldValue of record.fields()) {

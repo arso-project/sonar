@@ -26,17 +26,17 @@ function FieldProps (props) {
   return (
     <div>
       <h3>Fields</h3>
-      {fields && fields.map((field, i) => {
-        return (
-          <MetaItems key={i}>
-            <MetaItem name='Name:' value={field.name} />
-            <MetaItem name='Address:' value={field.address} />
-            <MetaItem name='FieldType:' value={field.fieldType} />
-            <MetaItem name='defaultWidget:' value={field.defaultWidget} />
-          </MetaItems>
-        )
-      }
-      )}
+      {fields &&
+        fields.map((field, i) => {
+          return (
+            <MetaItems key={i}>
+              <MetaItem name='Name:' value={field.name} />
+              <MetaItem name='Address:' value={field.address} />
+              <MetaItem name='FieldType:' value={field.fieldType} />
+              <MetaItem name='defaultWidget:' value={field.defaultWidget} />
+            </MetaItems>
+          )
+        })}
     </div>
   )
 }
@@ -47,24 +47,24 @@ export default function TypePage (props) {
   return (
     <div>
       <h2>Typespecs</h2>
-      {types && types.map((type, i) => {
-        console.log(type)
-        return (
-          <Box key={i} m={2} p={4} borderWidth='1px' rounded='lg'>
-            <h2>{type.title}</h2>
-            <MetaItems>
-              <MetaItem stacked name='Namespace' value={type.namespace} />
-              <MetaItem stacked name='Name' value={type.title} />
-              <MetaItem stacked name='Version' value={type.version} />
-              <MetaItem stacked name='Address' value={type.address} />
-            </MetaItems>
-            <FieldProps fields={type.fields()} />
-            <RecordEditor type={type} />
-          </Box>
-        )
-      })}
+      {types &&
+        types.map((type, i) => {
+          console.log(type)
+          return (
+            <Box key={i} m={2} p={4} borderWidth='1px' rounded='lg'>
+              <h2>{type.title}</h2>
+              <MetaItems>
+                <MetaItem stacked name='Namespace' value={type.namespace} />
+                <MetaItem stacked name='Name' value={type.title} />
+                <MetaItem stacked name='Version' value={type.version} />
+                <MetaItem stacked name='Address' value={type.address} />
+              </MetaItems>
+              <FieldProps fields={type.fields()} />
+              <RecordEditor type={type} />
+            </Box>
+          )
+        })}
     </div>
-
   )
 }
 function RecordEditor (props) {
@@ -108,10 +108,13 @@ function RecordForm (props) {
   const submitCallbacks = useRef({})
   return (
     <form onSubmit={onFormSubmit}>
-      {fields && fields.map((field, i) => (
-        <FieldWidget key={i} field={field} register={register} />
-      ))}
-      <Button variantcolor='blue' mr={3} type='submit'>Submit</Button>
+      {fields &&
+        fields.map((field, i) => (
+          <FieldWidget key={i} field={field} register={register} />
+        ))}
+      <Button variantcolor='blue' mr={3} type='submit'>
+        Submit
+      </Button>
     </form>
   )
 

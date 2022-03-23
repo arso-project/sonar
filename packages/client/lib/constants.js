@@ -8,4 +8,3 @@ exports.HYPERDRIVE_SCHEME = 'hyper:'
 exports.DEFAULT_ENDPOINT = 'http://localhost:9191/api/v1/default'
 // @deprecated
 exports.DEFAULT_WORKSPACE = 'default'
-

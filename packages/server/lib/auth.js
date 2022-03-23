@@ -19,29 +19,34 @@ module.exports = class Authenticator extends Nanoresource {
       this._store.open(err => {
         if (err) return reject(err)
         if (!this._store.get().secret) {
-          this._store.update(config => {
-            config.secret = crypto.randomBytes(32).toString('hex')
-            config.tokens = {
-              root: generateRootToken(config.secret)
+          this._store.update(
+            config => {
+              config.secret = crypto.randomBytes(32).toString('hex')
+              config.tokens = {
+                root: generateRootToken(config.secret)
+              }
+              const rootAccessCode = generateRootAccessCode()
+              config.accessCodes = {
+                [rootAccessCode.code]: rootAccessCode.access
+              }
+              config.rootAccessCode = rootAccessCode.code
+              return config
+            },
+            err => {
+              err ? reject(err) : resolve()
             }
-            const rootAccessCode = generateRootAccessCode()
-            config.accessCodes = {
-              [rootAccessCode.code]: rootAccessCode.access
-            }
-            config.rootAccessCode = rootAccessCode.code
-            return config
-          }, err => {
-            err ? reject(err) : resolve()
-          })
+          )
         } else resolve()
       })
     })
   }
 
   getSecret (cb) {
-    this.open().then(() => {
-      cb(null, this._secret)
-    }).catch(cb)
+    this.open()
+      .then(() => {
+        cb(null, this._secret)
+      })
+      .catch(cb)
   }
 
   getRootToken () {
@@ -60,21 +65,24 @@ module.exports = class Authenticator extends Nanoresource {
 
   async _close () {
     return new Promise((resolve, reject) => {
-      this._store.close(err => err ? reject(err) : resolve())
+      this._store.close(err => (err ? reject(err) : resolve()))
     })
   }
 
   register (opts, cb) {
     const code = accessCode()
     const access = { root: true }
-    this._store.update(data => {
-      data.accessCodes = data.accessCodes || {}
-      data.accessCodes[code] = access
-      return data
-    }, err => {
-      if (err) return cb(err)
-      cb(null, code)
-    })
+    this._store.update(
+      data => {
+        data.accessCodes = data.accessCodes || {}
+        data.accessCodes[code] = access
+        return data
+      },
+      err => {
+        if (err) return cb(err)
+        cb(null, code)
+      }
+    )
   }
 
   login (accessCode, cb) {

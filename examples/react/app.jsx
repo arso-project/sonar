@@ -21,23 +21,38 @@ export default function App () {
 }
 
 function Header () {
-  const { collection, pending, error } = useCollection({ liveUpdates: true, state: true })
+  const { collection, pending, error } = useCollection({
+    liveUpdates: true,
+    state: true
+  })
   const collectionName = collection ? collection.name : null
   const [showWorkspace, toggleWorkspace] = useToggle(false)
   const [showCollection, toggleCollection] = useToggle(false)
   return (
     <div className='Header'>
       <div className='Header-Bar'>
-        <a href='#' className={showWorkspace ? 'active' : ''} onClick={() => toggleWorkspace()}>
+        <a
+          href='#'
+          className={showWorkspace ? 'active' : ''}
+          onClick={() => toggleWorkspace()}
+        >
           Workspace settings
         </a>
         {collection && (
-          <a href='#' className={showCollection ? 'active' : ''} onClick={() => toggleCollection()}>
+          <a
+            href='#'
+            className={showCollection ? 'active' : ''}
+            onClick={() => toggleCollection()}
+          >
             Collection settings
           </a>
         )}
         {pending && <h3>Loading ...</h3>}
-        {error && <h3><Error nostyle error={error} /></h3>}
+        {error && (
+          <h3>
+            <Error nostyle error={error} />
+          </h3>
+        )}
         {collectionName && <h3>Collection: {collectionName}</h3>}
       </div>
       {showWorkspace && <WorkspaceSettings />}
@@ -81,7 +96,9 @@ function QueryBuilder (props) {
     { id: 'records', name: 'Records by type', component: RecordsQueryBuilder },
     { id: 'search', name: 'Search', component: SearchQueryBuilder }
   ]
-  const queryType = queryTypes.find(queryType => queryType.id === selectedQueryId)
+  const queryType = queryTypes.find(
+    queryType => queryType.id === selectedQueryId
+  )
   const QueryTypeBuilder = queryType && queryType.component
 
   return (
@@ -96,7 +113,9 @@ function QueryBuilder (props) {
           </option>
         ))}
       </select>
-      {QueryTypeBuilder && <QueryTypeBuilder query={query} setQuery={setQuery} />}
+      {QueryTypeBuilder && (
+        <QueryTypeBuilder query={query} setQuery={setQuery} />
+      )}
     </div>
   )
 }
@@ -105,9 +124,7 @@ function RecordsQueryBuilder (props) {
   let { query, setQuery } = props
   if (!query || query.id !== 'records') query = { id: 'records', args: {} }
   const selectedType = query.args.type || null
-  return (
-    <TypeSelector selected={selectedType} onSelect={onTypeSelect} />
-  )
+  return <TypeSelector selected={selectedType} onSelect={onTypeSelect} />
   function onTypeSelect (type) {
     setQuery({ id: 'records', args: { type } })
   }
@@ -142,13 +159,19 @@ function SearchQueryBuilder (props) {
 function TypeSelector (props) {
   const { selected, onSelect } = props
   const collection = useCollection()
-  const types = React.useMemo(() => collection && collection.schema.getTypes(), [collection])
+  const types = React.useMemo(
+    () => collection && collection.schema.getTypes(),
+    [collection]
+  )
   React.useEffect(() => {
     if (!selected && types && types.length) onSelect(types[0].address)
   }, [types])
   if (!types) return null
   return (
-    <select onChange={e => onSelect(e.target.value)} value={selected || undefined}>
+    <select
+      onChange={e => onSelect(e.target.value)}
+      value={selected || undefined}
+    >
       {types.map(type => (
         <option key={type.address} value={type.address}>
           {type.title} ({type.address})
@@ -176,17 +199,22 @@ function QueryRecords (props) {
   return (
     <div className='QueryRecords'>
       <div>
-        total: {query.records.length},
-        showing: {pagedRecords.length},
-        page:
+        total: {query.records.length}, showing: {pagedRecords.length}, page:
         <select onChange={e => setPage(Number(e.target.value))} value={page}>
           {new Array(numPages).fill(0).map((val, idx) => (
-            <option key={idx} value={idx}>{idx + 1}</option>
+            <option key={idx} value={idx}>
+              {idx + 1}
+            </option>
           ))}
         </select>
       </div>
       {pagedRecords.map((record, i) => (
-        <ViewRecord key={i} path={record.path} onSelect={onSelect} selected={selected} />
+        <ViewRecord
+          key={i}
+          path={record.path}
+          onSelect={onSelect}
+          selected={selected}
+        />
       ))}
     </div>
   )
@@ -204,14 +232,22 @@ function ViewRecord (props = {}) {
     <div className={className}>
       <div className='ViewRecord-fields'>
         {current.fields().map((field, i) => (
-          <Row key={i} label={field.title}><FieldValue field={field} /></Row>
+          <Row key={i} label={field.title}>
+            <FieldValue field={field} />
+          </Row>
         ))}
       </div>
       <div className='RecordFooter'>
         <RecordMeta record={current} />
         <div>
-          <RecordVersionSelector record={record} selected={version} onSelect={setVersion} />
-          <a href='#' onClick={e => onSelect(record.path)}>Edit</a>
+          <RecordVersionSelector
+            record={record}
+            selected={version}
+            onSelect={setVersion}
+          />
+          <a href='#' onClick={e => onSelect(record.path)}>
+            Edit
+          </a>
         </div>
       </div>
     </div>
@@ -241,24 +277,22 @@ function RecordMeta (props) {
 function RecordVersionSelector (props) {
   const collection = useCollection()
   const { record, selected, onSelect } = props
-  const isSelected = val => selected === val ? 'selected' : ''
+  const isSelected = val => (selected === val ? 'selected' : '')
   const latest = record.versions().length
   return (
     <div className='RecordVersionSelector'>
-      Loaded:
-      &nbsp;{record.allVersions().length}&nbsp;
+      Loaded: &nbsp;{record.allVersions().length}&nbsp;
       {latest > 1 && <span>({latest} latest)&nbsp;</span>}
-      <a
-        onClick={e => onSelect(null)}
-        className={isSelected(null)}
-      >
+      <a onClick={e => onSelect(null)} className={isSelected(null)}>
         latest
       </a>
       Latest versions:
       {record.versions().map((version, i) => (
         <a
           key={version.address}
-          onClick={e => { onSelect(version) }}
+          onClick={e => {
+            onSelect(version)
+          }}
           className={isSelected(version)}
         >
           {version.shortAddress}
@@ -270,7 +304,9 @@ function RecordVersionSelector (props) {
         <div key={i}>
           <a
             key={version.address}
-            onClick={e => { onSelect(version) }}
+            onClick={e => {
+              onSelect(version)
+            }}
             className={isSelected(version)}
           >
             {version.shortAddress}
@@ -316,7 +352,8 @@ function fieldValueToString (field, value) {
 function stringToFieldValue (field, value) {
   if (field.fieldType === 'object') return JSON.parse(value)
   if (field.fieldType === 'number') return Number(value)
-  if (field.fieldType === 'boolean') return value.lowercase() === 'true' || value === '1'
+  if (field.fieldType === 'boolean')
+    return value.lowercase() === 'true' || value === '1'
   else return value
 }
 
@@ -355,7 +392,15 @@ function EditRecord (props = {}) {
   return (
     <form onSubmit={onFormSubmit} className='EditRecord'>
       {create && <h2>Create record</h2>}
-      {create && <div>Select type: <TypeSelector selected={selectedTypeAddress} onSelect={setSelectedTypeAddress} /></div>}
+      {create && (
+        <div>
+          Select type:{' '}
+          <TypeSelector
+            selected={selectedTypeAddress}
+            onSelect={setSelectedTypeAddress}
+          />
+        </div>
+      )}
       {!create && <h2>Edit record</h2>}
       {!create && <RecordMeta record={current} />}
       {fields && (
@@ -371,9 +416,13 @@ function EditRecord (props = {}) {
           ))}
         </div>
       )}
-      <button type='submit' disabled={submitState.pending}>save</button>
+      <button type='submit' disabled={submitState.pending}>
+        save
+      </button>
       {submitState.error && <Error error={submitState.error} />}
-      {submitState.success && <em>Created record: {submitState.success.shortAddress}</em>}
+      {submitState.success && (
+        <em>Created record: {submitState.success.shortAddress}</em>
+      )}
     </form>
   )
 
@@ -415,13 +464,17 @@ function CollectionOverview () {
       <table>
         <thead>
           <tr>
-            {headers.map((header, i) => <th key={i}>{header}</th>)}
+            {headers.map((header, i) => (
+              <th key={i}>{header}</th>
+            ))}
           </tr>
         </thead>
         <tbody>
           {collection.info.feeds.map(feed => (
             <tr key={feed.key}>
-              <td><FeedKey keyString={feed.key} /></td>
+              <td>
+                <FeedKey keyString={feed.key} />
+              </td>
               <td>{feed.alias}</td>
               <td>{feed.type}</td>
               <td>{feed.length}</td>
@@ -433,7 +486,9 @@ function CollectionOverview () {
       <form onSubmit={onAddFeedSubmit}>
         <label htmlFor='keyOrName'>Add feed:</label>
         <input name='key' placeholder='Key string ...' />
-        <button type='submit' disabled={state.pending}>{state.pending ? 'Saving...' : 'Add feed'}</button>
+        <button type='submit' disabled={state.pending}>
+          {state.pending ? 'Saving...' : 'Add feed'}
+        </button>
       </form>
       {state.error && <Error error={state.error} />}
       {state.success && <em>Feed added!</em>}
@@ -458,7 +513,10 @@ function WorkspaceSettings () {
   const [error, setError] = React.useState(null)
   const [create, setCreate] = React.useState(false)
 
-  const { data: collections, error: workspaceLoadError } = useAsync(async () => {
+  const {
+    data: collections,
+    error: workspaceLoadError
+  } = useAsync(async () => {
     return await workspace.listCollections()
   }, [workspace])
   const key = JSON.stringify(config)
@@ -482,7 +540,9 @@ function WorkspaceSettings () {
             <label htmlFor='collection'>Collections</label>
             <select name='collection' defaultValue={config.collection}>
               {Object.values(collections).map(c => (
-                <option key={c.id} value={c.name}>{c.name}</option>
+                <option key={c.id} value={c.name}>
+                  {c.name}
+                </option>
               ))}
             </select>
           </>
@@ -490,7 +550,11 @@ function WorkspaceSettings () {
       </section>
       <section>
         <label htmlFor='createCollection'>Create collection?</label>
-        <input type='checkbox' onChange={e => setCreate(e.target.value)} name='createCollection' />
+        <input
+          type='checkbox'
+          onChange={e => setCreate(e.target.value)}
+          name='createCollection'
+        />
       </section>
       {create && (
         <section>
@@ -509,7 +573,9 @@ function WorkspaceSettings () {
       if (!data.createCollectionName) return
       try {
         setConfig({ collection: null })
-        const collection = await workspace.createCollection(data.createCollectionName)
+        const collection = await workspace.createCollection(
+          data.createCollectionName
+        )
         setConfig({ collection: collection.name })
       } catch (error) {
         setError(error)
@@ -551,18 +617,20 @@ function FeedKey (props) {
     }
   }, [state])
 
-  const shortKey = keyString.substring(0, 8) + '..' + keyString.substring(30, 32)
+  const shortKey =
+    keyString.substring(0, 8) + '..' + keyString.substring(30, 32)
   const className = `FeedKey ${state ? `FeedKey-${state}` : ''}`
   return (
     <span className={className}>
       <code onClick={onClick}>{shortKey}</code>
-      {(state === 'copied') && <em>Copied key to clipboard!</em>}
-      {(state === 'error') && <em>Could not copy key to clipboard</em>}
+      {state === 'copied' && <em>Copied key to clipboard!</em>}
+      {state === 'error' && <em>Could not copy key to clipboard</em>}
     </span>
   )
 
   function onClick (e) {
-    navigator.clipboard.writeText(keyString)
+    navigator.clipboard
+      .writeText(keyString)
       .then(() => setState('copied'))
       .catch(() => setState('error'))
   }

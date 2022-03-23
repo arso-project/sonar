@@ -9,11 +9,7 @@ export function CollectionContext (props = {}) {
     return { collection }
   }, [collection])
 
-  return (
-    <Context.Provider value={context}>
-      {props.childern}
-    </Context.Provider>
-  )
+  return <Context.Provider value={context}>{props.childern}</Context.Provider>
 }
 
 /**
@@ -22,7 +18,8 @@ export function CollectionContext (props = {}) {
 export function useCollection (props = {}) {
   const { workspace, defaultCollection } = useWorkspace()
   const currentContext = React.useContext(Context)
-  const collectionName = props.collection || currentContext.collection || defaultCollection
+  const collectionName =
+    props.collection || currentContext.collection || defaultCollection
   return useCollectionInner(workspace, collectionName, props)
 }
 
@@ -36,7 +33,7 @@ export function useCollectionInner (workspace, collectionName, opts = {}) {
       const collection = await workspace.openCollection(collectionName)
       return collection
     } catch (err) {
-      workspace.on('collection-open', (collection) => {
+      workspace.on('collection-open', collection => {
         if (collection.name !== collectionName) return
         setOpenCounter(i => i + 1)
       })

@@ -1,11 +1,7 @@
 import React, { Fragment } from 'react'
 import NavLink from '../components/NavLink'
 
-import {
-  Box,
-  Heading,
-  List
-} from '@chakra-ui/react'
+import { Box, Heading, List } from '@chakra-ui/react'
 
 import { CollectionName } from '../components/Collection'
 
@@ -16,12 +12,12 @@ export function SidebarContent (props) {
   return (
     <>
       <List>
-        <NavLink exact to='/'>Start</NavLink>
+        <NavLink exact to='/'>
+          Start
+        </NavLink>
         <NavLink to='/config'>Config</NavLink>
         <NavLink to='/collections'>Collections</NavLink>
-        {collection && (
-          <CollectionMenu />
-        )}
+        {collection && <CollectionMenu />}
       </List>
     </>
   )
@@ -30,7 +26,9 @@ export function SidebarContent (props) {
 function CollectionMenu (props) {
   return (
     <>
-      <MenuHeading><CollectionName /></MenuHeading>
+      <MenuHeading>
+        <CollectionName />
+      </MenuHeading>
       <NavLink to='/activity'>Activity</NavLink>
       <NavLink to='/search'>Search</NavLink>
       <NavLink to='/fileimport'>Import files</NavLink>
@@ -55,11 +53,7 @@ function MenuHeading (props) {
 export default function Sidebar (props) {
   return (
     <SideNavContainer {...props}>
-      <Box
-        position='relative'
-        overflowY='auto'
-        p={4}
-      >
+      <Box position='relative' overflowY='auto' p={4}>
         <SidebarContent />
       </Box>
     </SideNavContainer>

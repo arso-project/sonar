@@ -29,7 +29,8 @@ export default function TablesPage (props) {
 
   useEffect(() => {
     if (!typename || !collection) return
-    collection.query('records', { type: typename })
+    collection
+      .query('records', { type: typename })
       .then(records => setRecords(records))
       .catch(error => log.error(error))
   }, [collection, typename, collection && collection.length])
@@ -37,10 +38,13 @@ export default function TablesPage (props) {
   const rows = useMemo(() => buildRowsFromRecords(records), [records])
   const columns = useMemo(() => buildColumnsFromType(type), [type])
 
-  const PreviewWrapper = useCallback(function PreviewWrapper (props) {
-    const { row } = props
-    return <Preview record={row} type={type} />
-  }, [type])
+  const PreviewWrapper = useCallback(
+    function PreviewWrapper (props) {
+      const { row } = props
+      return <Preview record={row} type={type} />
+    },
+    [type]
+  )
 
   if (!collection) return null
 
@@ -48,11 +52,7 @@ export default function TablesPage (props) {
     <Flex direction='column' width='100%'>
       <TypeSelect onType={setType} type={type} flex={0} />
       {columns && rows && (
-        <Table
-          columns={columns}
-          rows={rows}
-          Preview={PreviewWrapper}
-        />
+        <Table columns={columns} rows={rows} Preview={PreviewWrapper} />
       )}
     </Flex>
   )
@@ -65,19 +65,20 @@ function buildRowsFromRecords (records) {
 
 function buildColumnsFromType (type) {
   if (!type) return null
-  const allColumns = [...defaultColumns(), ...typeColumns(type)]
-    .map(column => {
-      if (!column.Cell) column.Cell = createCellFormatter(column)
-      if (!column.Header) column.Header = createHeaderFormatter(column)
-      return column
-    })
+  const allColumns = [...defaultColumns(), ...typeColumns(type)].map(column => {
+    if (!column.Cell) column.Cell = createCellFormatter(column)
+    if (!column.Header) column.Header = createHeaderFormatter(column)
+    return column
+  })
   return allColumns
 }
 
 function createCellFormatter (column) {
   const { Widget, type } = column
   return function CellFormatter (props) {
-    const { cell: { value, row } } = props
+    const {
+      cell: { value, row }
+    } = props
     const record = row.original
     // TODO: Rethink if we wanna do row.original = record.
     if (Widget) return <Widget value={value} fieldType={type} record={record} />
@@ -154,18 +155,14 @@ function IdLink (props) {
   // const { value, fieldType, record } = props
   // TODO: Rethink if the way we get hold of a "record" here is sound enough.
   const { record } = props
-  return (
-    <RecordLink record={record}>{record.id}</RecordLink>
-  )
+  return <RecordLink record={record}>{record.id}</RecordLink>
 }
 
 function ActionsFormatter (props) {
   // const { value, fieldType, record } = props
   // TODO: Rethink if the way we get hold of a "record" here is sound enough.
   const { record } = props
-  return (
-    <RecordLink record={record}>Open</RecordLink>
-  )
+  return <RecordLink record={record}>Open</RecordLink>
 }
 
 function TypeSelect (props) {
@@ -178,7 +175,10 @@ function TypeSelect (props) {
   if (!types) return <div>No types</div>
   const selected = type ? type.name : false
 
-  const menuItems = types.map(type => ({ key: type.name, value: typeName(type) }))
+  const menuItems = types.map(type => ({
+    key: type.name,
+    value: typeName(type)
+  }))
 
   return (
     <Box {...other}>
@@ -207,7 +207,9 @@ function TypeMenu (props) {
       <MenuList>
         <MenuOptionGroup type='radio' onChange={onChange} defaultValue={value}>
           {items.map(item => (
-            <MenuItemOption key={item.key} value={item.key}>{item.value}</MenuItemOption>
+            <MenuItemOption key={item.key} value={item.key}>
+              {item.value}
+            </MenuItemOption>
           ))}
         </MenuOptionGroup>
       </MenuList>

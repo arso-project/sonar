@@ -25,5 +25,5 @@ This opens a dev server on `http://localhost:55555`. It needs a running [sonar-s
 
 ## Building
 
-* `npm run build` - build js and html into `dist`
-* `npm run build:static` - build the ui into a single HTML file under `dist/index.html`
+- `npm run build` - build js and html into `dist`
+- `npm run build:static` - build the ui into a single HTML file under `dist/index.html`

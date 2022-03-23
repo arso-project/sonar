@@ -15,14 +15,17 @@ module.exports = async function addDevServer (app, opts = {}) {
     const url = req.originalUrl
 
     try {
-    // 1. Read index.html
+      // 1. Read index.html
       let template = fs.readFileSync(
         p.resolve(__dirname, 'index.html'),
         'utf-8'
       )
 
       template = await vite.transformIndexHtml(url, template)
-      res.status(200).set({ 'Content-Type': 'text/html' }).end(template)
+      res
+        .status(200)
+        .set({ 'Content-Type': 'text/html' })
+        .end(template)
     } catch (e) {
       vite.ssrFixStacktrace(e)
       console.error(e)

@@ -24,11 +24,7 @@ export default function FormField (props) {
       {title && <FormLabel htmlFor={name}>{title}</FormLabel>}
       {input}
       {error && <FormErrorMessage>{error}</FormErrorMessage>}
-      {help && (
-        <FormHelperText id={helpid}>
-          {help}
-        </FormHelperText>
-      )}
+      {help && <FormHelperText id={helpid}>{help}</FormHelperText>}
     </FormControl>
   )
 }

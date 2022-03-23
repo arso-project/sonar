@@ -19,12 +19,8 @@ import {
 
 import { RecordDrawerByID } from '../components/Record'
 
-import {
-  FaFileUpload
-} from 'react-icons/fa'
-import {
-  MdError, MdCheck, MdCheckCircle
-} from 'react-icons/md'
+import { FaFileUpload } from 'react-icons/fa'
+import { MdError, MdCheck, MdCheckCircle } from 'react-icons/md'
 import { useCollection } from '@arsonar/react'
 
 function FileInput (props) {
@@ -32,10 +28,7 @@ function FileInput (props) {
   let hiddenInput
   return (
     <FormControl my={4}>
-      <Button
-        leftIcon={<FaFileUpload />}
-        onClick={e => hiddenInput.click()}
-      >
+      <Button leftIcon={<FaFileUpload />} onClick={e => hiddenInput.click()}>
         Select files
       </Button>
       <input
@@ -90,17 +83,28 @@ function FileListItem (props) {
 
   return (
     <ListItem display='flex' alignItems='start'>
-      <Box mt={1} mr={2}>{findIcon()}</Box>
+      <Box mt={1} mr={2}>
+        {findIcon()}
+      </Box>
       <Box display={{ md: 'flex' }} flex='1'>
-        <Box flex='1' mr={{ md: 3 }}>{name}</Box>
+        <Box flex='1' mr={{ md: 3 }}>
+          {name}
+        </Box>
         {resource && (
           <Box>
-            {resource.id &&
-              <RecordDrawerByID id={resource.id} />}
-            {resource.error &&
-              <Tooltip hasArrow label={resource.error} placement='top' bg='orange.400'>
-                <Badge color='orange.400'>{resource.error.match(keyRegex) || 'Error'}</Badge>
-              </Tooltip>}
+            {resource.id && <RecordDrawerByID id={resource.id} />}
+            {resource.error && (
+              <Tooltip
+                hasArrow
+                label={resource.error}
+                placement='top'
+                bg='orange.400'
+              >
+                <Badge color='orange.400'>
+                  {resource.error.match(keyRegex) || 'Error'}
+                </Badge>
+              </Tooltip>
+            )}
           </Box>
         )}
       </Box>
@@ -109,11 +113,30 @@ function FileListItem (props) {
 }
 
 function ImportProgress (props) {
-  const { total = 0, transfered = 0, fileTotal = 0, fileTransfered = 0, name, step = 0, totalSteps = 0 } = props.progress
+  const {
+    total = 0,
+    transfered = 0,
+    fileTotal = 0,
+    fileTransfered = 0,
+    name,
+    step = 0,
+    totalSteps = 0
+  } = props.progress
   return (
     <Box>
-      <FileProgress label='Total' total={total} transfered={transfered} step={step} totalSteps={totalSteps} />
-      <FileProgress label='Current' total={fileTotal} transfered={fileTransfered} detail={name} />
+      <FileProgress
+        label='Total'
+        total={total}
+        transfered={transfered}
+        step={step}
+        totalSteps={totalSteps}
+      />
+      <FileProgress
+        label='Current'
+        total={fileTotal}
+        transfered={fileTransfered}
+        detail={name}
+      />
     </Box>
   )
 }
@@ -123,10 +146,26 @@ function FileProgress (props) {
   const showSteps = step > 0
   return (
     <Box mb='2' p='2' borderWidth='1px'>
-      <Heading w='12em' mb='1' fontWeight='semibold' color='text1' fontSize='sm'>{label}</Heading>
+      <Heading
+        w='12em'
+        mb='1'
+        fontWeight='semibold'
+        color='text1'
+        fontSize='sm'
+      >
+        {label}
+      </Heading>
 
-      <Progress flex='1' value={total > 0 && (transfered / total) * 100} hasStripe />
-      {detail && <Text fontSize='sm' as='em'>{detail}</Text>}
+      <Progress
+        flex='1'
+        value={total > 0 && (transfered / total) * 100}
+        hasStripe
+      />
+      {detail && (
+        <Text fontSize='sm' as='em'>
+          {detail}
+        </Text>
+      )}
       <Box display={{ md: 'flex' }} mt='2'>
         <Badge variant='outline' mr={{ md: 2 }}>
           {pretty(transfered)} / {pretty(total)}
@@ -137,7 +176,6 @@ function FileProgress (props) {
           </Badge>
         )}
       </Box>
-
     </Box>
   )
 }
@@ -171,18 +209,30 @@ export default function FileImporter (props) {
       )}
       <Flex>
         {hasFiles && (
-          <Button my={2} mr='2' isDisabled={buttonDisabled} onClick={onCreateResources} isLoading={isLoading}>
+          <Button
+            my={2}
+            mr='2'
+            isDisabled={buttonDisabled}
+            onClick={onCreateResources}
+            isLoading={isLoading}
+          >
             Create resources
           </Button>
         )}
         {hasResources && (
-          <Button my={2} mr='2' isDisabled={buttonDisabled} onClick={onImportFiles} isLoading={isLoading}>
+          <Button
+            my={2}
+            mr='2'
+            isDisabled={buttonDisabled}
+            onClick={onImportFiles}
+            isLoading={isLoading}
+          >
             Import files
           </Button>
         )}
         {showClearButton && (
           <Button m={2} variant='ghost' onClick={onClear} isLoading={isLoading}>
-          Clear
+            Clear
           </Button>
         )}
       </Flex>
@@ -243,16 +293,15 @@ export default function FileImporter (props) {
         encodingFormat: mime.lookup(file.name),
         contentSize: file.fileitem.size,
         label: file.name
-      })
-        .then(
-          resource => (results[file.name] = resource),
-          error => (results[file.name] = { error: error.message })
-        )
+      }).then(
+        resource => (results[file.name] = resource),
+        error => (results[file.name] = { error: error.message })
+      )
       promises.push(promise)
     })
     try {
       await Promise.all(promises)
-    } catch (err) { }
+    } catch (err) {}
     setResources(results)
     setIsLoading(false)
   }
@@ -283,7 +332,15 @@ export default function FileImporter (props) {
       setUploads(state => ({ ...state, [name]: { isUploading: true } }))
 
       const updater = setInterval(() => {
-        setProgress({ transfered, fileTransfered, total, fileTotal: size, name, totalSteps, step })
+        setProgress({
+          transfered,
+          fileTransfered,
+          total,
+          fileTotal: size,
+          name,
+          totalSteps,
+          step
+        })
       }, 200)
 
       try {
@@ -292,15 +349,25 @@ export default function FileImporter (props) {
             const { loaded } = event
             fileTransfered = loaded
           }
-
         })
         console.log('import done', file.name, res)
       } catch (err) {
         console.log('import failed', file.name, err)
       }
       transfered = transfered + fileTransfered
-      setUploads(state => ({ ...state, [name]: { isUploading: false, uploaded: true } }))
-      setProgress({ transfered, fileTransfered, total, fileTotal: size, name, totalSteps, step })
+      setUploads(state => ({
+        ...state,
+        [name]: { isUploading: false, uploaded: true }
+      }))
+      setProgress({
+        transfered,
+        fileTransfered,
+        total,
+        fileTotal: size,
+        name,
+        totalSteps,
+        step
+      })
       step = step + 1
 
       clearInterval(updater)
@@ -314,7 +381,10 @@ export default function FileImporter (props) {
 async function createResource (collection, props, opts) {
   const { filename, prefix, contentSize, encodingFormat, label } = props
   try {
-    const resource = await collection.resources.create({ filename, prefix, contentSize, encodingFormat, label }, opts)
+    const resource = await collection.resources.create(
+      { filename, prefix, contentSize, encodingFormat, label },
+      opts
+    )
     return resource
   } catch (err) {
     console.log('ERROR', err)

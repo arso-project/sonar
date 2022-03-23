@@ -73,9 +73,10 @@ class QuadstoreMatchQueryStream extends Readable {
   }
 
   _open (cb) {
-    this.store.getStream(this.query)
+    this.store
+      .getStream(this.query)
       .catch(err => cb(err))
-      .then((result) => {
+      .then(result => {
         const { iterator } = result
         // this is an uncommon stream/iterator that has no pipe method
         // and also is not a native AsyncIterator.
@@ -122,9 +123,7 @@ function typeFromPredicate (quad) {
 }
 
 function recordsToQuads (df, collection, records) {
-  return records
-    .map(record => recordToQuads(df, collection, record))
-    .flat()
+  return records.map(record => recordToQuads(df, collection, record)).flat()
 }
 
 function recordToQuads (df, collection, record) {
@@ -135,12 +134,14 @@ function recordToQuads (df, collection, record) {
   })
   for (const fieldValue of relationValues) {
     for (const value of fieldValue.values()) {
-      quads.push(df.quad(
-        df.namedNode(record.id),
-        df.namedNode(fieldValue.fieldAddress),
-        df.namedNode(value),
-        graph
-      ))
+      quads.push(
+        df.quad(
+          df.namedNode(record.id),
+          df.namedNode(fieldValue.fieldAddress),
+          df.namedNode(value),
+          graph
+        )
+      )
     }
   }
   return quads

@@ -48,7 +48,7 @@ export default function useConfig (key = DEFAULT_KEY, defaultValue = {}) {
   const [data, setData] = React.useState(() => load(key, defaultValue))
 
   React.useEffect(() => {
-    return onchange((data) => {
+    return onchange(data => {
       setData(data)
     })
   }, [key])

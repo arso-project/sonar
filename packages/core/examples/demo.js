@@ -36,7 +36,11 @@ async function main (storagePath, key) {
   })
   await collection.sync()
 
-  const qs = collection.createQueryStream('records', { type: 'doc' }, { live: true })
+  const qs = collection.createQueryStream(
+    'records',
+    { type: 'doc' },
+    { live: true }
+  )
   qs.on('data', record => console.log('query', record))
   await new Promise(resolve => qs.once('end', resolve))
 

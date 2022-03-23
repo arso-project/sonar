@@ -15,8 +15,10 @@ export default function useAsync (asyncFn, args = [], deps) {
     let mounted = true
     if (!state.pending) updateState({ pending: true })
 
-    const onSuccess = data => mounted && updateState({ data, pending: false, error: null })
-    const onError = error => mounted && updateState({ error, pending: false, data: null })
+    const onSuccess = data =>
+      mounted && updateState({ data, pending: false, error: null })
+    const onError = error =>
+      mounted && updateState({ error, pending: false, data: null })
 
     const promise = asyncFn(...args)
     promise.then(onSuccess)

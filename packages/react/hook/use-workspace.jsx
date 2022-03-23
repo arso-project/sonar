@@ -23,11 +23,7 @@ export function WorkspaceProvider (props = {}) {
     }
   }, [config])
 
-  return (
-    <Context.Provider value={context}>
-      {props.children}
-    </Context.Provider>
-  )
+  return <Context.Provider value={context}>{props.children}</Context.Provider>
 }
 
 export function useWorkspace () {

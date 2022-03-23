@@ -49,8 +49,7 @@ class Bots {
     return res
   }
 
-  async getCommands () {
-  }
+  async getCommands () {}
 
   async _initListener () {
     this._init = true
@@ -124,7 +123,10 @@ class Bots {
       } catch (err) {
         console.error(err)
         // this.log.error({ message: 'bot onmessage handle error: ' + err.message + ' from ' + JSON.stringify(message), err })
-        this.log.error({ message: 'bot onmessage handle error: ' + err.message, err })
+        this.log.error({
+          message: 'bot onmessage handle error: ' + err.message,
+          err
+        })
         debug(err)
         await this.reply({
           requestId: requestId,
@@ -162,12 +164,15 @@ class Bots {
     })
     this._sessionId = sessionId
     if (!this._init) await this._initListener()
-    this.bots.set(name, new Bot({
-      spec,
-      workspace: this.workspace,
-      config,
-      handlers
-    }))
+    this.bots.set(
+      name,
+      new Bot({
+        spec,
+        workspace: this.workspace,
+        config,
+        handlers
+      })
+    )
   }
 
   // async configure (name, config) {
@@ -244,7 +249,10 @@ class Bot {
       return await this.handlers.oncommand(command, args)
     }
 
-    this.log.debug({ message: 'collection command: ' + command, collection: env.collection })
+    this.log.debug({
+      message: 'collection command: ' + command,
+      collection: env.collection
+    })
     const session = this.sessions.get(env.collection.key)
     if (!session) throw new Error('Bot did not join collection')
     if (!session.oncommand) throw new Error('Bot cannot handle commands')

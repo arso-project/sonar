@@ -29,10 +29,12 @@ import { useCollection, useRecord } from '@arsonar/react'
 
 export function findWidget (field) {
   const { fieldType: type, format, address } = field
-  if (type === 'string' && address === 'sonar/resource@0#contentUrl') return LinkViewer
+  if (type === 'string' && address === 'sonar/resource@0#contentUrl')
+    return LinkViewer
   if (type === 'string' && format === 'date-time') return DateViewer
   if (type === 'string' && format === 'uri') return LinkViewer
-  if (type === 'string' || type === 'integer' || type === 'number') return TextViewer
+  if (type === 'string' || type === 'integer' || type === 'number')
+    return TextViewer
   if (type === 'relation') return RelationViewer
   if (type === 'boolean') return BooleanViewer
   if (type === 'array') return ArrayViewer
@@ -54,18 +56,12 @@ export function RecordLink (props) {
   let { record, id, children } = props
   if (record) {
     id = record.id
-    children = children || (
-      <RecordLabelDisplay record={record} />
-    )
+    children = children || <RecordLabelDisplay record={record} />
   } else if (id) {
     children = children || id
   } else return null
 
-  return (
-    <Link to={recordPath(id)}>
-      {children}
-    </Link>
-  )
+  return <Link to={recordPath(id)}>{children}</Link>
   function recordPath (id) {
     return '/record/' + id
   }
@@ -94,7 +90,9 @@ function DisplayMenu (props) {
       <MenuList>
         <MenuOptionGroup type='radio' onChange={onChange} value={value}>
           {displays.map(display => (
-            <MenuItemOption key={display.id} value={display.id}>{display.name}</MenuItemOption>
+            <MenuItemOption key={display.id} value={display.id}>
+              {display.name}
+            </MenuItemOption>
           ))}
         </MenuOptionGroup>
       </MenuList>
@@ -111,11 +109,17 @@ export function Record (props) {
 
   return (
     <Box className='sonar-record' mb='4' flex={1}>
-      <Heading size='md' mt='2' mb='2'>{record.getType().title}</Heading>
+      <Heading size='md' mt='2' mb='2'>
+        {record.getType().title}
+      </Heading>
       <Box display={['block', 'flex']}>
         <RecordMeta record={record} type={type} />
         <Box flex={1} />
-        <DisplayMenu displays={displays} onChange={setDisplay} value={display.id} />
+        <DisplayMenu
+          displays={displays}
+          onChange={setDisplay}
+          value={display.id}
+        />
       </Box>
       <Display record={record} type={type} />
     </Box>
@@ -125,13 +129,17 @@ export function Record (props) {
 export function RecordLabelDisplay (props) {
   const { record } = props
   const label = findLabel(record)
-  return (
-    <span>{label}</span>
-  )
+  return <span>{label}</span>
 }
 
 function findLabel (record) {
-  return record.getOne('sonar/entity#label') || record.value.title || record.value.name || record.value.filename || record.id
+  return (
+    record.getOne('sonar/entity#label') ||
+    record.value.title ||
+    record.value.name ||
+    record.value.filename ||
+    record.id
+  )
 }
 
 export function RecordJsonDisplay (props) {
@@ -183,7 +191,16 @@ export function RecordDrawerByID (props) {
   const types = collection.schema.getTypes()
   return (
     <>
-      <Button w='14rem' pl='3' leftIcon='view' justifyContent='left' colorScheme='teal' size='xs' ref={btnRef} onClick={onOpen}>
+      <Button
+        w='14rem'
+        pl='3'
+        leftIcon='view'
+        justifyContent='left'
+        colorScheme='teal'
+        size='xs'
+        ref={btnRef}
+        onClick={onOpen}
+      >
         {id}
       </Button>
       <Drawer
@@ -202,7 +219,7 @@ export function RecordDrawerByID (props) {
           </DrawerBody>
           <DrawerFooter>
             <Button variant='outline' mr={3} onClick={onClose}>
-            Cancel
+              Cancel
             </Button>
           </DrawerFooter>
         </DrawerContent>
@@ -213,14 +230,7 @@ export function RecordDrawerByID (props) {
 
 function ObjectViewer (props) {
   const { value, fieldType } = props
-  return (
-    <JsonTree
-      data={value}
-      invertTheme
-      hideRoot
-      theme='bright'
-    />
-  )
+  return <JsonTree data={value} invertTheme hideRoot theme='bright' />
   // const { value, fieldType } = props
   // if (!value) return 'no object'
   // return (
@@ -240,7 +250,9 @@ function FieldViewer (props) {
   const Viewer = findWidget(fieldValue.field)
   return (
     <Box display={['block', 'flex']} borderBottomWidth='1px' py='2'>
-      <Box flexShrink='0' width={['auto', '12rem']} color='teal.400'>{fieldValue.title}</Box>
+      <Box flexShrink='0' width={['auto', '12rem']} color='teal.400'>
+        {fieldValue.title}
+      </Box>
       <Box flex='1' style={{ overflowWrap: 'anywhere' }}>
         <Viewer value={fieldValue.value} field={fieldValue.field} />
       </Box>
@@ -251,7 +263,10 @@ function FieldViewer (props) {
 function ArrayViewer (props) {
   const { value, field } = props
   if (!value) return <InvalidValueError value={value} field={field} />
-  if (!Array.isArray(value)) return <InvalidValueError value={value} field={field} message='Not an array' />
+  if (!Array.isArray(value))
+    return (
+      <InvalidValueError value={value} field={field} message='Not an array' />
+    )
   const Viewer = findWidget(field)
   return (
     <List>
@@ -283,9 +298,7 @@ function RelationViewer (props) {
   if (typeof value === 'undefined') return null
   // if (!Array.isArray(value)) value = []
   const id = value
-  return (
-    <RecordLink id={id} />
-  )
+  return <RecordLink id={id} />
 }
 
 function BooleanViewer (props) {
@@ -299,9 +312,7 @@ function DateViewer (props) {
   const date = new Date(value)
   if (!date) return <InvalidValueError />
   const formatted = format(date, 'dd.MM.yyyy HH:mm')
-  return (
-    <span className='sonar-viewer-date'>{formatted}</span>
-  )
+  return <span className='sonar-viewer-date'>{formatted}</span>
 }
 
 function RecordMeta (props) {
@@ -322,23 +333,18 @@ function NoTypeError (props) {
   const { id, type, message } = record
   return (
     <div>
-      Missing type for record <strong>{id}</strong> (type <code>{type}</code>): {message}.
+      Missing type for record <strong>{id}</strong> (type <code>{type}</code>):{' '}
+      {message}.
     </div>
   )
 }
 
 function InvalidValueError (props) {
-  return (
-    <div>
-      Invalid value.
-    </div>
-  )
+  return <div>Invalid value.</div>
 }
 
 function MissingRecordError (props) {
-  return (
-    <div>No record</div>
-  )
+  return <div>No record</div>
 }
 
 function formatDate (ts) {
@@ -350,7 +356,10 @@ function formatDate (ts) {
 // TODO: This is likely too hacky. Propably we'll want
 // a full component with a tooltip for details.
 function formatType (typeName) {
-  return typeName.split('/').slice(1).join('/')
+  return typeName
+    .split('/')
+    .slice(1)
+    .join('/')
 }
 
 function formatSource (source) {

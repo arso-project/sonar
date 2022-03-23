@@ -10,19 +10,19 @@ var encodings = require('protocol-buffers-encodings')
 var varint = encodings.varint
 var skip = encodings.skip
 
-var Header = exports.Header = {
+var Header = (exports.Header = {
   buffer: true,
   encodingLength: null,
   encode: null,
   decode: null
-}
+})
 
-var Record = exports.Record = {
+var Record = (exports.Record = {
   buffer: true,
   encodingLength: null,
   encode: null,
   decode: null
-}
+})
 
 defineHeader()
 defineRecord()
@@ -34,7 +34,7 @@ function defineHeader () {
 
   function encodingLength (obj) {
     var length = 0
-    if (!defined(obj.type)) throw new Error("type is required")
+    if (!defined(obj.type)) throw new Error('type is required')
     var len = encodings.string.encodingLength(obj.type)
     length += 1 + len
     if (defined(obj.metadata)) {
@@ -48,7 +48,7 @@ function defineHeader () {
     if (!offset) offset = 0
     if (!buf) buf = Buffer.allocUnsafe(encodingLength(obj))
     var oldOffset = offset
-    if (!defined(obj.type)) throw new Error("type is required")
+    if (!defined(obj.type)) throw new Error('type is required')
     buf[offset++] = 10
     encodings.string.encode(obj.type, buf, offset)
     offset += encodings.string.encode.bytes
@@ -64,16 +64,17 @@ function defineHeader () {
   function decode (buf, offset, end) {
     if (!offset) offset = 0
     if (!end) end = buf.length
-    if (!(end <= buf.length && offset <= buf.length)) throw new Error("Decoded message is not valid")
+    if (!(end <= buf.length && offset <= buf.length))
+      throw new Error('Decoded message is not valid')
     var oldOffset = offset
     var obj = {
-      type: "",
+      type: '',
       metadata: null
     }
     var found0 = false
     while (true) {
       if (end <= offset) {
-        if (!found0) throw new Error("Decoded message is not valid")
+        if (!found0) throw new Error('Decoded message is not valid')
         decode.bytes = offset - oldOffset
         return obj
       }
@@ -82,16 +83,16 @@ function defineHeader () {
       var tag = prefix >> 3
       switch (tag) {
         case 1:
-        obj.type = encodings.string.decode(buf, offset)
-        offset += encodings.string.decode.bytes
-        found0 = true
-        break
+          obj.type = encodings.string.decode(buf, offset)
+          offset += encodings.string.decode.bytes
+          found0 = true
+          break
         case 2:
-        obj.metadata = encodings.bytes.decode(buf, offset)
-        offset += encodings.bytes.decode.bytes
-        break
+          obj.metadata = encodings.bytes.decode(buf, offset)
+          offset += encodings.bytes.decode.bytes
+          break
         default:
-        offset = skip(prefix & 7, buf, offset)
+          offset = skip(prefix & 7, buf, offset)
       }
     }
   }
@@ -109,14 +110,14 @@ function defineRecord () {
 
   function encodingLength (obj) {
     var length = 0
-    if (!defined(obj.id)) throw new Error("id is required")
+    if (!defined(obj.id)) throw new Error('id is required')
     var len = encodings.string.encodingLength(obj.id)
     length += 1 + len
     if (defined(obj.op)) {
       var len = encodings.enum.encodingLength(obj.op)
       length += 1 + len
     }
-    if (!defined(obj.type)) throw new Error("type is required")
+    if (!defined(obj.type)) throw new Error('type is required')
     var len = encodings.string.encodingLength(obj.type)
     length += 1 + len
     if (defined(obj.value)) {
@@ -149,7 +150,7 @@ function defineRecord () {
     if (!offset) offset = 0
     if (!buf) buf = Buffer.allocUnsafe(encodingLength(obj))
     var oldOffset = offset
-    if (!defined(obj.id)) throw new Error("id is required")
+    if (!defined(obj.id)) throw new Error('id is required')
     buf[offset++] = 10
     encodings.string.encode(obj.id, buf, offset)
     offset += encodings.string.encode.bytes
@@ -158,7 +159,7 @@ function defineRecord () {
       encodings.enum.encode(obj.op, buf, offset)
       offset += encodings.enum.encode.bytes
     }
-    if (!defined(obj.type)) throw new Error("type is required")
+    if (!defined(obj.type)) throw new Error('type is required')
     buf[offset++] = 26
     encodings.string.encode(obj.type, buf, offset)
     offset += encodings.string.encode.bytes
@@ -197,23 +198,24 @@ function defineRecord () {
   function decode (buf, offset, end) {
     if (!offset) offset = 0
     if (!end) end = buf.length
-    if (!(end <= buf.length && offset <= buf.length)) throw new Error("Decoded message is not valid")
+    if (!(end <= buf.length && offset <= buf.length))
+      throw new Error('Decoded message is not valid')
     var oldOffset = offset
     var obj = {
-      id: "",
+      id: '',
       op: 0,
-      type: "",
+      type: '',
       value: null,
       timestamp: 0,
       links: [],
-      typeVersion: "",
+      typeVersion: '',
       deleted: false
     }
     var found0 = false
     var found2 = false
     while (true) {
       if (end <= offset) {
-        if (!found0 || !found2) throw new Error("Decoded message is not valid")
+        if (!found0 || !found2) throw new Error('Decoded message is not valid')
         decode.bytes = offset - oldOffset
         return obj
       }
@@ -222,46 +224,50 @@ function defineRecord () {
       var tag = prefix >> 3
       switch (tag) {
         case 1:
-        obj.id = encodings.string.decode(buf, offset)
-        offset += encodings.string.decode.bytes
-        found0 = true
-        break
+          obj.id = encodings.string.decode(buf, offset)
+          offset += encodings.string.decode.bytes
+          found0 = true
+          break
         case 2:
-        obj.op = encodings.enum.decode(buf, offset)
-        offset += encodings.enum.decode.bytes
-        break
+          obj.op = encodings.enum.decode(buf, offset)
+          offset += encodings.enum.decode.bytes
+          break
         case 3:
-        obj.type = encodings.string.decode(buf, offset)
-        offset += encodings.string.decode.bytes
-        found2 = true
-        break
+          obj.type = encodings.string.decode(buf, offset)
+          offset += encodings.string.decode.bytes
+          found2 = true
+          break
         case 4:
-        obj.value = encodings.bytes.decode(buf, offset)
-        offset += encodings.bytes.decode.bytes
-        break
+          obj.value = encodings.bytes.decode(buf, offset)
+          offset += encodings.bytes.decode.bytes
+          break
         case 5:
-        obj.timestamp = encodings.varint.decode(buf, offset)
-        offset += encodings.varint.decode.bytes
-        break
+          obj.timestamp = encodings.varint.decode(buf, offset)
+          offset += encodings.varint.decode.bytes
+          break
         case 6:
-        obj.links.push(encodings.string.decode(buf, offset))
-        offset += encodings.string.decode.bytes
-        break
+          obj.links.push(encodings.string.decode(buf, offset))
+          offset += encodings.string.decode.bytes
+          break
         case 7:
-        obj.typeVersion = encodings.string.decode(buf, offset)
-        offset += encodings.string.decode.bytes
-        break
+          obj.typeVersion = encodings.string.decode(buf, offset)
+          offset += encodings.string.decode.bytes
+          break
         case 8:
-        obj.deleted = encodings.bool.decode(buf, offset)
-        offset += encodings.bool.decode.bytes
-        break
+          obj.deleted = encodings.bool.decode(buf, offset)
+          offset += encodings.bool.decode.bytes
+          break
         default:
-        offset = skip(prefix & 7, buf, offset)
+          offset = skip(prefix & 7, buf, offset)
       }
     }
   }
 }
 
 function defined (val) {
-  return val !== null && val !== undefined && (typeof val !== 'number' || !isNaN(val))
+  return (
+    val !== null &&
+    val !== undefined &&
+    (typeof val !== 'number' || !isNaN(val))
+  )
 }

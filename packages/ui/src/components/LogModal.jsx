@@ -30,7 +30,7 @@ export default function LogModal (props) {
 
         <ModalFooter>
           <Button colorScheme='blue' mr={3} onClick={onClose}>
-              Close
+            Close
           </Button>
         </ModalFooter>
       </ModalContent>
@@ -62,10 +62,10 @@ function LogMessage (props) {
       <Text w='10em' fontSize='xs'>
         {format(msg.timestamp, 'Pp')}
       </Text>
-      <Text w='4em' color={colors[msg.level]}>{msg.level}</Text>
-      <Text flex='1'>
-        {msg.msg}
+      <Text w='4em' color={colors[msg.level]}>
+        {msg.level}
       </Text>
+      <Text flex='1'>{msg.msg}</Text>
     </ListItem>
   )
 }

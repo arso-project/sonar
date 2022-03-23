@@ -1,0 +1,6 @@
+**/dist
+**/apidocs
+**/build
+**/doc-gen
+packages/ui/vite.config.js
+packages/client/rollup.config.js

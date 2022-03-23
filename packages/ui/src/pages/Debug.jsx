@@ -1,7 +1,15 @@
 import React, { useReducer } from 'react'
 import {
-  Box, Flex, Badge, Text, Icon, Image,
-  FormControl, FormLabel, Input, FormHelperText
+  Box,
+  Flex,
+  Badge,
+  Text,
+  Icon,
+  Image,
+  FormControl,
+  FormLabel,
+  Input,
+  FormHelperText
 } from '@chakra-ui/react'
 // import css from '@emotion/css'
 
@@ -44,17 +52,45 @@ export default function Player () {
   }
   const size = '10px'
   return (
-    <Flex direction='column' bg='black' w='100%' textAlign='center' contentAlign='center' style={style}>
+    <Flex
+      direction='column'
+      bg='black'
+      w='100%'
+      textAlign='center'
+      contentAlign='center'
+      style={style}
+    >
       <Flex flex={1}>
-        <Text fontSize='xl' color='green.400' p='10px'>{state.play}</Text>
+        <Text fontSize='xl' color='green.400' p='10px'>
+          {state.play}
+        </Text>
       </Flex>
       <Flex flexBasis='100px' m={size}>
-        <PButton onClick={e => dispatch('play')} active={state.play === 'play'}>Play</PButton>
-        <PButton onClick={e => dispatch('pause')} active={state.play === 'pause'}>Pause</PButton>
-        <PButton onClick={e => dispatch('playpause')} active={state.play === 'play'}>Playpause</PButton>
-        <PButton onClick={e => dispatch('stop')} active={state.play === 'stop'}>Stop</PButton>
+        <PButton onClick={e => dispatch('play')} active={state.play === 'play'}>
+          Play
+        </PButton>
+        <PButton
+          onClick={e => dispatch('pause')}
+          active={state.play === 'pause'}
+        >
+          Pause
+        </PButton>
+        <PButton
+          onClick={e => dispatch('playpause')}
+          active={state.play === 'play'}
+        >
+          Playpause
+        </PButton>
+        <PButton onClick={e => dispatch('stop')} active={state.play === 'stop'}>
+          Stop
+        </PButton>
         <Box flex={1} />
-        <PButton onClick={e => dispatch('fullscreen')} active={state.fullscreen}>Fullscreen</PButton>
+        <PButton
+          onClick={e => dispatch('fullscreen')}
+          active={state.fullscreen}
+        >
+          Fullscreen
+        </PButton>
       </Flex>
     </Flex>
   )

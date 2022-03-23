@@ -1,9 +1,6 @@
 import React from 'react'
 import Debug from 'debug'
-import {
-  Box,
-  Heading
-} from '@chakra-ui/react'
+import { Box, Heading } from '@chakra-ui/react'
 
 import { Record } from '../../components/Record'
 

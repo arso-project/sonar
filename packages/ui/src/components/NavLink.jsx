@@ -2,9 +2,7 @@ import React, { Fragment } from 'react'
 import { Link as RouterLink } from 'react-router-dom'
 import { useRouteMatch } from 'react-router'
 
-import {
-  Link
-} from '@chakra-ui/react'
+import { Link } from '@chakra-ui/react'
 
 export default function MenuLink (props) {
   const { to, exact, ...rest } = props

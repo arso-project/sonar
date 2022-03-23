@@ -11,6 +11,7 @@ The client talks to [`@arsonar/server`](../server/README.md) over HTTP.
 ```javascript
 const { Workspace } = require('@arsonar/client')
 ```
+
 or
 
 ```javascript
@@ -36,4 +37,3 @@ console.log(records)
 ### API
 
 See [api.md](api.md) for the API docs.
-

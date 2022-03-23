@@ -1,4 +1,8 @@
-const { SCHEMA_RESOURCE, HYPERDRIVE_SCHEME, METADATA_ID } = require('./constants')
+const {
+  SCHEMA_RESOURCE,
+  HYPERDRIVE_SCHEME,
+  METADATA_ID
+} = require('./constants')
 
 module.exports = class Resources {
   constructor (collection) {
@@ -57,11 +61,17 @@ module.exports = class Resources {
     if (existing) {
       id = existing.metadata[METADATA_ID]
       if (!id) {
-        if (!opts.force) throw new Error('file exists and has no resource attached. set fore to overwrite.')
+        if (!opts.force)
+          throw new Error(
+            'file exists and has no resource attached. set fore to overwrite.'
+          )
       } else {
         // TODO: Preserve fields from an old resource?
         // const oldResource = await this.get({ id: existing.metadata[METADATA_ID] })
-        if (!opts.update) throw new Error(`file exists, with resource ${id}. set update to overwrite.`)
+        if (!opts.update)
+          throw new Error(
+            `file exists, with resource ${id}. set update to overwrite.`
+          )
       }
     }
 

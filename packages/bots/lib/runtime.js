@@ -1,4 +1,6 @@
-const { NanoresourcePromise: Nanoresource } = require('nanoresource-promise/emitter')
+const {
+  NanoresourcePromise: Nanoresource
+} = require('nanoresource-promise/emitter')
 const { Supervisor } = require('little-process-box')
 const { Transform } = require('streamx')
 
@@ -22,7 +24,7 @@ module.exports = class Runtime extends Nanoresource {
 
   async _close () {
     await new Promise((resolve, reject) => {
-      this.supervisor.stop(err => err ? reject(err) : resolve())
+      this.supervisor.stop(err => (err ? reject(err) : resolve()))
     })
   }
 

@@ -38,7 +38,9 @@ module.exports = class BlockCache {
   async _getBlock (id, key, seq, getOpts = {}) {
     const feed = this.corestore.get({ key })
     const rawBlock = await new Promise((resolve, reject) => {
-      feed.get(seq, getOpts, (err, block) => err ? reject(err) : resolve(block))
+      feed.get(seq, getOpts, (err, block) =>
+        err ? reject(err) : resolve(block)
+      )
     })
     const mappedBlock = this.map(rawBlock, { key: key.toString('hex'), seq })
     return mappedBlock

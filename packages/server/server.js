@@ -97,21 +97,27 @@ module.exports = function SonarServer (opts = {}) {
   expressWebSocket(app)
 
   // Add body parsers.
-  app.use(bodyParser.urlencoded({
-    limit: '10MB',
-    extended: true
-  }))
-  app.use(bodyParser.json({
-    limit: '10MB',
-    // Currently, the _search route accepts json encoded strings.
-    // Remove once that changes.
-    strict: false
-  }))
+  app.use(
+    bodyParser.urlencoded({
+      limit: '10MB',
+      extended: true
+    })
+  )
+  app.use(
+    bodyParser.json({
+      limit: '10MB',
+      // Currently, the _search route accepts json encoded strings.
+      // Remove once that changes.
+      strict: false
+    })
+  )
 
   // CORS headers
-  app.use(cors({
-    origin: '*'
-  }))
+  app.use(
+    cors({
+      origin: '*'
+    })
+  )
 
   // Main API
   const apiRoutes = apiRouter(api)
@@ -123,12 +129,13 @@ module.exports = function SonarServer (opts = {}) {
   // Serve the swagger API docs at /api-docs
   try {
     const apiDocs = require('./docs/swagger.json')
-    app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(
-      apiDocs,
-      {
+    app.use(
+      '/api-docs',
+      swaggerUi.serve,
+      swaggerUi.setup(apiDocs, {
         customCss: '.swagger-ui .topbar { display: none }'
-      }
-    ))
+      })
+    )
   } catch (e) {}
 
   // Include the client api docs at /api-docs-client
@@ -178,12 +185,18 @@ module.exports = function SonarServer (opts = {}) {
     app.port = config.server.port
     app.hostname = config.server.hostname
     await new Promise((resolve, reject) => {
-      const server = app.listen(config.server.port, config.server.hostname, err => {
-        if (err) return reject(err)
-        api.log.debug(`HTTP server listening on http://${app.hostname}:${app.port}`)
-        app.opened = true
-        resolve()
-      })
+      const server = app.listen(
+        config.server.port,
+        config.server.hostname,
+        err => {
+          if (err) return reject(err)
+          api.log.debug(
+            `HTTP server listening on http://${app.hostname}:${app.port}`
+          )
+          app.opened = true
+          resolve()
+        }
+      )
       // Mount the shutdown handler onto the server.
       app.server = shutdown(server)
     })

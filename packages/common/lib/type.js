@@ -97,8 +97,9 @@ class Type {
   // TODO: Do the resolution only once, not on each call?
   // TODO: Or: Use an lazy iterator.
   fields () {
-    const fields = Array.from(this._fields)
-      .map(address => this[SC].getField(address))
+    const fields = Array.from(this._fields).map(address =>
+      this[SC].getField(address)
+    )
 
     const parentType = this.parentType()
     if (parentType) {

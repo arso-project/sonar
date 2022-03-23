@@ -8,11 +8,7 @@ import { RecordLabelDisplay, RecordLink } from '../components/Record'
 
 import { useQuery } from '@arsonar/react'
 
-import {
-  Box,
-  Heading,
-  Text
-} from '@chakra-ui/react'
+import { Box, Heading, Text } from '@chakra-ui/react'
 
 export default function ActivityPage (props) {
   const { data, error, pending } = useQuery('history', { reverse: true })
@@ -33,12 +29,19 @@ function PagedActivityList (props) {
   const pagedRecords = useMemo(() => {
     if (!records) return null
     const start = (page - 1) * pageSize
-    const end = (page) * pageSize
+    const end = page * pageSize
     return records.slice(start, end)
   }, [records, page])
   if (!records) return null
 
-  const pager = <Pager basepath='/activity' page={page} count={records.length} pageSize={pageSize} />
+  const pager = (
+    <Pager
+      basepath='/activity'
+      page={page}
+      count={records.length}
+      pageSize={pageSize}
+    />
+  )
   return (
     <>
       {pager}
@@ -57,9 +60,7 @@ function Pager (props) {
   }
   return (
     <Box>
-      {page > 1 && (
-        <Link to={pagelink(page - 1)}>Previous</Link>
-      )}
+      {page > 1 && <Link to={pagelink(page - 1)}>Previous</Link>}
       {pages.map(cur => {
         const active = cur === page
         const fontWeight = active ? 'bold' : 'normal'
@@ -71,9 +72,7 @@ function Pager (props) {
           </Link>
         )
       })}
-      {((page + 1) <= pagecount) && (
-        <Link to={pagelink(page + 1)}>Next</Link>
-      )}
+      {page + 1 <= pagecount && <Link to={pagelink(page + 1)}>Next</Link>}
     </Box>
   )
 
@@ -106,7 +105,9 @@ function Row (props) {
   return (
     <Box key={record.address} p='2' borderWidth='1px' mb='4'>
       {formatted}
-      <Text as='em' ml='2' fontWeight='bold' color='text2'>#{record.lseq}</Text>
+      <Text as='em' ml='2' fontWeight='bold' color='text2'>
+        #{record.lseq}
+      </Text>
       &nbsp;
       <RecordLink record={record} />
     </Box>

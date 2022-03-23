@@ -33,7 +33,7 @@ class Fs {
     if (path.startsWith(HYPERDRIVE_SCHEME)) {
       const url = parseUrl(path)
       path = url.host + url.path
-    // Support no other absolute URLs for now.
+      // Support no other absolute URLs for now.
     } else if (path.indexOf('://') !== -1) {
       throw new Error('Invalid path: Only hyper:// URLs or paths are supported')
     }

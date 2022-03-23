@@ -49,7 +49,7 @@ const shared = {
     }),
     commonjs(),
     nodePolyfills({}),
-    nodeGlobals(),
+    nodeGlobals()
     // nodeGlobals(),
     // nodeBuiltins(),
     // analyze(),
@@ -83,10 +83,7 @@ export default [
       file: 'dist/es/index.js',
       format: 'esm'
     },
-    plugins: [
-      autoExternal(),
-      ...shared.plugins
-    ]
+    plugins: [autoExternal(), ...shared.plugins]
   }
   // {
   //   ...shared,

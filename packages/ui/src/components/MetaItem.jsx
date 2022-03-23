@@ -1,14 +1,8 @@
 import React from 'react'
-import {
-  Flex,
-  Stack,
-  Text
-} from '@chakra-ui/react'
+import { Flex, Stack, Text } from '@chakra-ui/react'
 
 export function MetaItems (props) {
-  return (
-    <Flex {...props} />
-  )
+  return <Flex {...props} />
 }
 
 export function MetaItem (props) {

@@ -14,8 +14,7 @@ export default function Filebrowser (props) {
   useEffect(() => {
     if (!collection) return
     let mounted = true
-    collection.fs.readdir(path)
-      .then(files => (mounted && setFiles(files)))
+    collection.fs.readdir(path).then(files => mounted && setFiles(files))
     return () => (mounted = false)
   }, [collection, path])
 
@@ -27,7 +26,9 @@ export default function Filebrowser (props) {
       {segments && (
         <Breadcrumb>
           {segments.map((s, i) => (
-            <span key={i} onClick={e => onSegmentClick(i, e)}>{s}</span>
+            <span key={i} onClick={e => onSegmentClick(i, e)}>
+              {s}
+            </span>
           ))}
         </Breadcrumb>
       )}
@@ -35,10 +36,7 @@ export default function Filebrowser (props) {
         {segments.length > 1 && (
           <li>
             <span>
-              <a
-                onClick={e => onSegmentClick(segments.length - 2, e)}
-                href='/'
-              >
+              <a onClick={e => onSegmentClick(segments.length - 2, e)} href='/'>
                 .. [up]
               </a>
             </span>
@@ -56,22 +54,24 @@ export default function Filebrowser (props) {
                 {file.name}
               </a>
             </span>
-            <span>
-              {file.directory ? '–' : pretty(file.size)}
-            </span>
+            <span>{file.directory ? '–' : pretty(file.size)}</span>
             {file.resource && (
               <span>
                 <RecordDrawerByID id={file.resource} />
               </span>
             )}
             {file.mtime && false && (
-              <span>
-                {formatDistance(Date.now(), file.mtime)} ago
-              </span>
+              <span>{formatDistance(Date.now(), file.mtime)} ago</span>
             )}
           </li>
         ))}
-        {!files.length && <li><div><em>Nothing here</em></div></li>}
+        {!files.length && (
+          <li>
+            <div>
+              <em>Nothing here</em>
+            </div>
+          </li>
+        )}
       </List>
     </Wrapper>
   )
@@ -85,7 +85,10 @@ export default function Filebrowser (props) {
 
   function onSegmentClick (i, e) {
     e.preventDefault()
-    const newPath = segments.slice(0, i + 1).join('/').substring(1)
+    const newPath = segments
+      .slice(0, i + 1)
+      .join('/')
+      .substring(1)
     setPath(newPath)
   }
 }
@@ -137,7 +140,7 @@ const List = styled.ul`
 
   em {
     font-style: italic;
-    color: #999
+    color: #999;
   }
 `
 
@@ -147,8 +150,8 @@ const Breadcrumb = styled.div`
   > span {
     cursor: pointer;
     color: var(--color-primary);
-    margin: 0 .5rem 0 0;
-    padding: .25rem;
+    margin: 0 0.5rem 0 0;
+    padding: 0.25rem;
     position: relative;
     &:after {
       content: '/';
@@ -156,7 +159,7 @@ const Breadcrumb = styled.div`
       /* padding: 0 .5rem; */
       display: inline-block;
       position: relative;
-      left: .5rem;
+      left: 0.5rem;
     }
     &:first-of-type,
     &:last-of-type {

@@ -3,11 +3,7 @@ import { theme as chakra } from '@chakra-ui/react'
 // Let's say you want to add custom colors
 export default function createTheme (colorMode) {
   const light = colorMode === 'light'
-  const lums = [
-    light ? 900 : 50,
-    light ? 700 : 300,
-    light ? 500 : 500
-  ]
+  const lums = [light ? 900 : 50, light ? 700 : 300, light ? 500 : 500]
 
   const theme = {
     ...chakra,

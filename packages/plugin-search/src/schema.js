@@ -46,7 +46,7 @@ function addSchemaProperty (schema, property) {
   if (!schema.properties) schema.properties = {}
 
   schema.properties[title] = rest
-//  return schema
+  //  return schema
 }
 
 function mergeSchemas (schemas) {

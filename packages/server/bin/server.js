@@ -6,7 +6,8 @@ const chalk = require('chalk')
 const { printLogo } = require('@arsonar/cli/util/logo.js')
 const options = require('./lib/options')
 
-const DEV_DEBUG = '*,-express*,-hypercore-protocol*,-body-parser*,-babel*,-send,-finalhandler,-connect:dispatcher,-vite:*,vite:hmr'
+const DEV_DEBUG =
+  '*,-express*,-hypercore-protocol*,-body-parser*,-babel*,-send,-finalhandler,-connect:dispatcher,-vite:*,vite:hmr'
 
 exports.command = 'server <command>'
 exports.describe = 'server'
@@ -33,13 +34,22 @@ function startServer (argv) {
   if (supportsColor.hasBasic) printLogo()
 
   if (argv.dev) {
-    debug('starting server in developer\'s mode')
+    debug("starting server in developer's mode")
     process.env.DEBUG = process.env.DEBUG || DEV_DEBUG
     process.env.NODE_ENV = process.env.NODE_ENV || 'development'
   }
 
   const path = p.join(__dirname, '..', 'launch.js')
-  const args = [path, ...copyArgs(argv, ['port', 'hostname', 'storage', 'dev', 'disable-authentication'])]
+  const args = [
+    path,
+    ...copyArgs(argv, [
+      'port',
+      'hostname',
+      'storage',
+      'dev',
+      'disable-authentication'
+    ])
+  ]
 
   const nodeExe = process.execPath
 
@@ -81,10 +91,9 @@ function copyArgs (from, keys) {
   }
   return args
   function argkey (key) {
-    return '--' + key.replace(
-      /[\w]([A-Z])/g,
-      m => m[0] + '-' + m[1]
-    ).toLowerCase()
+    return (
+      '--' + key.replace(/[\w]([A-Z])/g, m => m[0] + '-' + m[1]).toLowerCase()
+    )
   }
 }
 

@@ -10,11 +10,13 @@ Made by [arso](https://arso.xyz) contributors
 ## Install
 
 ```
+
 ```
 
 ## Usage
 
 ```
+
 ```
 
 ## Issues
