@@ -1,11 +1,11 @@
 // A re-export of the Sonar client, while loading the default access token from the file system if sonar-server is installed.
 
-const Client = require('.')
+const { Workspace } = require('.')
 const { storagePath } = require('@arsonar/common/storage')
 const p = require('path')
 const fs = require('fs')
 
-class NodeClient extends Client {
+class NodeWorkspace extends Workspace {
   constructor (opts = {}) {
     if (!opts.token) {
       // TODO: Put filenames in constants.js in sonar-common
@@ -21,5 +21,4 @@ class NodeClient extends Client {
     super(opts)
   }
 }
-module.exports = NodeClient
-module.exports.Client = NodeClient
+module.exports.Workspace = Workspace
