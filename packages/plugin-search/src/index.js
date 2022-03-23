@@ -25,7 +25,8 @@ function searchView (level, _scope, opts) {
     // close: (cb) => manager.closeIndex(cb),
     api: {
       info (args, cb) {
-        manager.getInfo()
+        manager
+          .getInfo()
           .then(info => cb(null, info))
           .catch(err => cb(err))
       },
@@ -145,7 +146,9 @@ function objectToString (obj) {
     return ''
   } else if (typeof obj === 'object') {
     if (obj.value) return objectToString(obj.value)
-    return Object.values(obj).map(objectToString).join(' ')
+    return Object.values(obj)
+      .map(objectToString)
+      .join(' ')
   }
   return ''
 }

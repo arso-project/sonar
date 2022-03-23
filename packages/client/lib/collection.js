@@ -6,7 +6,6 @@ const { EventEmitter } = require('events')
 
 const { Schema, Store } = require('@arsonar/common')
 const Fs = require('./fs')
-const Resources = require('./resources')
 
 function uuid () {
   return base32Encode(randomBytes(16), 'Crockford').toLowerCase()
@@ -25,17 +24,16 @@ class Collection extends EventEmitter {
    * @param {string} nameOrKey - Name or key of the collection
    * @return {Collection}
    */
-  constructor (client, nameOrKey) {
+  constructor (workspace, nameOrKey) {
     super()
-    this.endpoint = client.endpoint + '/collection/' + nameOrKey
-    this._client = client
+    this.endpoint = workspace.endpoint + '/collection/' + nameOrKey
+    this.workspace = workspace
     this._info = {}
     this._nameOrKey = nameOrKey
     this._eventStreams = new Set()
 
     this.fs = new Fs(this)
-    this.resources = new Resources(this)
-    this.log = client.log.child({ collection: this })
+    this.log = workspace.log.child({ collection: this })
     this.setMaxListeners(256)
   }
 
@@ -117,9 +115,6 @@ class Collection extends EventEmitter {
     })
   }
 
-  /**
-   * @deprecated see Collection.putFeed
-   */
   async addFeed (key, info = {}) {
     return this.putFeed(key, info)
   }
@@ -199,8 +194,8 @@ class Collection extends EventEmitter {
     // in the collection's schema. Throws an error if not.
     // TODO: Add feature to @arsonar/common to validate the record's value against the schema.
     record = this.schema.RecordVersion(record)
-    const resultRecord = await this.fetch('/db', {
-      method: 'PUT',
+    const resultRecord = await this.fetch('/', {
+      method: 'POST',
       body: record
     })
     return this.store.cacheRecord(resultRecord)
@@ -224,6 +219,19 @@ class Collection extends EventEmitter {
   }
 
   /**
+   * Get a specific version of a record.
+   *
+   * @async
+   * @param {string} address - The block address of the record version `feedkey@seq`
+   *    where `feedkey` is the hex-encoded public key of a feed and `seq` is a sequence number (uint).
+   */
+  async getVersion (address) {
+    const [key, seq] = address.split('@')
+    const version = await this.fetch(`/db/${key}/${seq}`)
+    return this.store.cacheRecord(version)
+  }
+
+  /**
    * Deletes a record.
    *
    * @async
@@ -231,9 +239,8 @@ class Collection extends EventEmitter {
    * @return {Promise<object>} - An object with `{ id, type }` properties of the deleted record.
    */
   async del (record) {
-    return this.fetch('/db/' + record.id, {
-      method: 'DELETE',
-      params: { type: record.type }
+    return this.fetch(`/record/${record.type}/${record.id}`, {
+      method: 'DELETE'
     })
   }
 
@@ -269,15 +276,17 @@ class Collection extends EventEmitter {
     const self = this
     const stream = new Transform({
       open (cb) {
-        stream.finished = self.fetch('/db', {
-          method: 'PUT',
-          requestType: 'stream',
-          headers: {
-            'content-type': 'application/x-ndjson'
-          },
-          params: { batch: true },
-          body: this
-        }).catch(err => stream.destroy(err))
+        stream.finished = self
+          .fetch('/', {
+            method: 'POST',
+            requestType: 'stream',
+            headers: {
+              'content-type': 'application/x-ndjson'
+            },
+            params: { batch: true },
+            body: this
+          })
+          .catch(err => stream.destroy(err))
         cb()
       },
       transform (record, cb) {
@@ -328,7 +337,7 @@ class Collection extends EventEmitter {
     if (this._eventStream) return
     this._eventStream = new TeeStream()
 
-    const onerror = err => {
+    const onerror = _err => {
       // TODO: Where should the error go?
       // this.log.error('Error initializing event source: ' + err.message)
       // if (this._eventStream) this._eventStream.destroy(err)
@@ -337,16 +346,16 @@ class Collection extends EventEmitter {
     }
 
     try {
-      if (!this._client.opened) await this._client.open()
+      if (!this.workspace.opened) await this.workspace.open()
     } catch (err) {
       onerror(err)
       return
     }
 
-    this._eventSource = this._client.createEventSource('/events', {
+    this._eventSource = this.workspace.createEventSource('/events', {
       endpoint: this.endpoint,
       onerror,
-      onmessage: (eventObject) => {
+      onmessage: eventObject => {
         this.log.trace('event: ' + eventObject.event)
         this._eventStream.write(eventObject)
         this.emit(eventObject.event, eventObject.data)
@@ -465,7 +474,7 @@ class Collection extends EventEmitter {
 
   async fetch (path, opts = {}) {
     if (!opts.endpoint) opts.endpoint = this.endpoint
-    return this._client.fetch(path, opts)
+    return this.workspace.fetch(path, opts)
   }
 }
 

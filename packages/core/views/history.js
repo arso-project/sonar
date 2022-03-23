@@ -22,11 +22,13 @@ module.exports = function recordView (level, db) {
       query (_kappa, opts, _db) {
         if (!opts.from) opts.from = '0'
         if (!opts.to) opts.to = 'z'
-        return level.createReadStream(opts).pipe(through.obj(function (row, _enc, next) {
-          const lseq = row.key.split('/')[1]
-          this.push({ lseq })
-          next()
-        }))
+        return level.createReadStream(opts).pipe(
+          through.obj(function (row, _enc, next) {
+            const lseq = row.key.split('/')[1]
+            this.push({ lseq })
+            next()
+          })
+        )
       }
     }
   }

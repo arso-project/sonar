@@ -22,7 +22,6 @@ sonar start
 
 > Note: At the moment [yarn 1](https://classic.yarnpkg.com/) is recommended, please [install it according to the instructions](https://classic.yarnpkg.com/en/docs/install#debian-stable).
 
-
 ```sh
 # clone the sonar repository
 git clone https://github.com/arso-project/sonar.git
@@ -31,14 +30,10 @@ cd sonar
 yarn
 # (re)build the user interface and docs
 yarn run rebuild
+# when developing on something that uses the ESM version of the
+# `@arsonar/client` library: watch and rebuild on changes.
+yarn dev:client
 ```
-
-Instead of yarn, lerna works too:
-```sh
-npm install -g lerna
-lerna bootstrap
-```
-Yarn is recommended because it's much faster.
 
 You can start sonar with `./sonar` from the repository root.
 
@@ -63,19 +58,26 @@ yarn run build:client
 
 ```
 
-Then, you can:
-* open the web UI on [http://localhost:9191](http://localhost:9191).
-* use the CLI:
-  ```sh
-  ./sonar collection create default
-  ./sonar db get
-  # etc.
-  # the cli has a built-in help that should list the available commands
-  ```
+## Running the examples
+
+This repo includes a few examples. To run them locally, do the following:
+
+```sh
+# build the client library
+yarn build:client
+# start sonar
+./sonar start --disable-authentication --dev
+# run the example from the examples/ folder
+yarn example react
+```
+
+## Using the CLI
+
+Run `./sonar help` for a list of supported commands.
 
 ## Contributing
 
-Sonar is a young open source project and all kinds of contributions are welcome. We're in the process of writing up more documentation and overviews of how things work and come together (in a [book](https://github.com/arso-project/sonar-book)). 
+Sonar is a young open source project and all kinds of contributions are welcome. We're in the process of writing up more documentation and overviews of how things work and come together (in a [book](https://github.com/arso-project/sonar-book)).
 
 If in doubt, talk to us! For example on IRC in #dat on freenode (or in the browser through [gitter](https://gitter.im/datproject/discussions).
 
@@ -83,14 +85,14 @@ More on this project on [arso.xyz](https://arso.xyz).
 
 ## Repo layout
 
-The repo is structured as a monorepo of different packages (that are interdependent at several points). 
+The repo is structured as a monorepo of different packages (that are interdependent at several points).
 
-* **[core](packages/core/README.md)** it the core module. It manages *collections*, which are our notion of "a group of feeds*. Each collection has a [kappa-record-db](https://github.com/arso-project/kappa-record-db) that's plugged into a search index through [tantivy](https://github.com/arso-project/packages/tantivy). Each collection has also a list of associated [hyperdrives](https://github.com/mafintosh/hyperdrive).
+- **[core](packages/core/README.md)** it the core module. It manages _collections_, which are our notion of "a group of feeds\*. Each collection has a [kappa-record-db](https://github.com/arso-project/kappa-record-db) that's plugged into a search index through [tantivy](https://github.com/arso-project/packages/tantivy). Each collection has also a list of associated [hyperdrives](https://github.com/mafintosh/hyperdrive).
 
-* **[server](packages/server/README.md)** provides a REST style HTTP api that's used both by the CLI and the UI to access and manage the data in packages/core.
+- **[server](packages/server/README.md)** provides a REST style HTTP api that's used both by the CLI and the UI to access and manage the data in packages/core.
 
-* **[client](packages/client/README.md)** is a Javascript client library. It's used by both the CLI and the UI. It speaks to packages/server over HTTP.
+- **[client](packages/client/README.md)** is a Javascript client library. It's used by both the CLI and the UI. It speaks to packages/server over HTTP.
 
-* **[ui](packages/ui/README.md)** is a single-page application to browse data in Sonar.
+- **[ui](packages/ui/README.md)** is a single-page application to browse data in Sonar.
 
-* **[cli](packages/cli/README.md)** is a command-line application. It can manage collections, put and get into the database, upload and download files, and make search queries.
+- **[cli](packages/cli/README.md)** is a command-line application. It can manage collections, put and get into the database, upload and download files, and make search queries.

@@ -1,7 +1,9 @@
 const kDiff = Symbol('batch-diff')
 
 module.exports = {
-  batchToDiff, isLinked, loadAllLinks
+  batchToDiff,
+  isLinked,
+  loadAllLinks
 }
 
 async function batchToDiff (col, batch) {
@@ -16,14 +18,16 @@ async function createDiff (col, batch) {
   const right = new Set()
 
   // Find out which records are linked currently so that they can be ignored, and collect links from all records in here
-  await Promise.all(batch.map(async record => {
-    for (const link of record.links) {
-      links.add(link)
-    }
-    const recordIsLinked = await isLinked(col, record)
-    if (recordIsLinked) return
-    records.add(record)
-  }))
+  await Promise.all(
+    batch.map(async record => {
+      for (const link of record.links) {
+        links.add(link)
+      }
+      const recordIsLinked = await isLinked(col, record)
+      if (recordIsLinked) return
+      records.add(record)
+    })
+  )
 
   // Check where this record goes
   for (const record of records) {
@@ -49,10 +53,12 @@ async function createDiff (col, batch) {
 
 async function loadAllLinks (col, links) {
   links = Array.from(links)
-  const records = await Promise.all(links.map(link => {
-    const [key, seq] = link.split('@')
-    return col.loadRecord({ key, seq }).catch(() => {})
-  }))
+  const records = await Promise.all(
+    links.map(link => {
+      const [key, seq] = link.split('@')
+      return col.loadRecord({ key, seq }).catch(() => {})
+    })
+  )
   return records.filter(r => r).flat()
 }
 

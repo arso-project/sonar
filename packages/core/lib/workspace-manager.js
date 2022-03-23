@@ -1,4 +1,6 @@
-const { NanoresourcePromise: Nanoresource } = require('nanoresource-promise/emitter')
+const {
+  NanoresourcePromise: Nanoresource
+} = require('nanoresource-promise/emitter')
 const { promisify } = require('util')
 const mkdirp = promisify(require('mkdirp-classic'))
 const DatSDK = require('hyper-sdk')

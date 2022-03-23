@@ -40,7 +40,9 @@ module.exports = class Schema {
     const parts = parseAddress(address)
     if (!parts.namespace) parts.namespace = this._defaultNamespace
     if (parts.version === undefined) {
-      parts.version = this._typeVersions.highest(parts.namespace + '/' + parts.type)
+      parts.version = this._typeVersions.highest(
+        parts.namespace + '/' + parts.type
+      )
     }
     return parts
   }
@@ -82,11 +84,17 @@ module.exports = class Schema {
   // }
 
   getType (address) {
-    return this._types.get(address) || this._types.get(this.resolveTypeAddress(address))
+    return (
+      this._types.get(address) ||
+      this._types.get(this.resolveTypeAddress(address))
+    )
   }
 
   hasType (address) {
-    return this._types.has(address) || this._types.has(this.resolveTypeAddress(address))
+    return (
+      this._types.has(address) ||
+      this._types.has(this.resolveTypeAddress(address))
+    )
   }
 
   getTypes () {
@@ -95,7 +103,8 @@ module.exports = class Schema {
 
   // This is called by the Type constructor.
   _addFieldForType (type, spec) {
-    if (!(type instanceof Type)) throw new Error('Cannot add field: invalid type argument')
+    if (!(type instanceof Type))
+      throw new Error('Cannot add field: invalid type argument')
     if (!spec.name) throw new Error('Cannot add field: name is missing')
 
     const address = type.address + '#' + spec.name
@@ -112,14 +121,20 @@ module.exports = class Schema {
 
   hasField (address) {
     try {
-      return this._fields.has(address) || this._fields.has(this.resolveFieldAddress(address))
+      return (
+        this._fields.has(address) ||
+        this._fields.has(this.resolveFieldAddress(address))
+      )
     } catch (err) {
       return false
     }
   }
 
   getField (address) {
-    return this._fields.get(address) || this._fields.get(this.resolveFieldAddress(address))
+    return (
+      this._fields.get(address) ||
+      this._fields.get(this.resolveFieldAddress(address))
+    )
   }
 
   build (strict = true) {

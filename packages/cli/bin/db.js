@@ -69,7 +69,8 @@ exports.builder = function (yargs) {
     })
     .command({
       command: 'reindex [views]',
-      describe: 'force reindex of all views. optionally set a comma-seperated list of views to reindex',
+      describe:
+        'force reindex of all views. optionally set a comma-seperated list of views to reindex',
       handler: reindex
     })
     .help()
@@ -140,7 +141,11 @@ async function reindex (argv) {
   const client = makeClient(argv)
   const collection = await client.openCollection(argv.collection)
   let views = null
-  if (argv.views) views = argv.views.split(',').map(s => s.trim()).filter(f => f)
+  if (argv.views)
+    views = argv.views
+      .split(',')
+      .map(s => s.trim())
+      .filter(f => f)
   await collection.reindex(views)
   if (!views || !views.length) console.log('Reindex for all views started.')
   else console.log('Reindex started for views: ' + views.join(', '))

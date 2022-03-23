@@ -1,0 +1,12 @@
+{
+    "source": {
+        "include": ["index.js"],
+        "excludePattern": "(node_modules/|apidocs|build|dist|doc-gen)"
+    },
+    "plugins": [
+         "../../node_modules/tsd-jsdoc/dist/plugin"
+    ],
+    "opts": {
+        "template": "../../node_modules/tsd-jsdoc/dist"
+    }
+}

@@ -1,39 +1,46 @@
 const randombytes = require('randombytes')
 const EventSource = require('eventsource')
+const { EventEmitter } = require('events')
 
 const sonarFetch = require('./fetch')
 const Collection = require('./collection')
 const Bots = require('./bots')
 
-const Logger = require('@arsonar/common/log')
+const { Logger } = require('@arsonar/common')
 
-const {
-  DEFAULT_ENDPOINT,
-  DEFAULT_WORKSPACE
-} = require('./constants')
+const { DEFAULT_ENDPOINT, DEFAULT_WORKSPACE } = require('./constants')
 
 function defaultWorkspace () {
   return (process && process.env && process.env.WORKSPACE) || DEFAULT_WORKSPACE
 }
 
-class Workspace {
+class Workspace extends EventEmitter {
   /**
-   * The manager for a remote connection to a Sonar workspace.
+   * A Sonar workspace. Provides methods to open collection under this endpoint.
    *
    * @constructor
    * @param {object} [opts] - Optional options.
-   * @param {string} [opts.endpoint=http://localhost:9191/api] - The API endpoint to talk to.
+   * @param {string} [opts.url=http://localhost:9191/api/v1/default] - The API endpoint to talk to.
    * @param {string} [opts.accessCode] - An access code to login at the endpoint.
    * @param {string} [opts.token] - A JSON web token to authorize to the endpoint.
    * @param {string} [opts.name] - The name of this client.
    */
   constructor (opts = {}) {
-    this._workspace = opts.workspace || defaultWorkspace()
-    this.endpoint = opts.endpoint || DEFAULT_ENDPOINT
+    super()
+    if (opts.endpoint) {
+      const workspace = opts.workspace || defaultWorkspace()
+      const endpoint = opts.endpoint || DEFAULT_ENDPOINT
+      this.endpoint = `${endpoint}/${workspace}`
+    } else if (opts.url) {
+      this.endpoint = opts.url
+      // TODO: deprecate, ue only URL.
+    } else {
+      this.endpoint = DEFAULT_ENDPOINT
+    }
     if (this.endpoint.endsWith('/')) {
       this.endpoint = this.endpoint.substring(0, this.endpoint.length - 1)
     }
-    this.endpoint = this.endpoint + '/workspace/' + this._workspace
+
     this._collections = new Map()
     this._id = opts.id || randombytes(16).toString('hex')
     this._token = opts.token
@@ -42,6 +49,10 @@ class Workspace {
 
     this.log = opts.log || new Logger()
     this.bots = new Bots(this)
+  }
+
+  get token () {
+    return this._token
   }
 
   /**
@@ -73,7 +84,11 @@ class Workspace {
   // TODO: Support re-logins
   async _login () {
     if (this._accessCode && !this._token) {
-      const res = await this.fetch('/login', { params: { code: this._accessCode }, method: 'POST', opening: true })
+      const res = await this.fetch('/login', {
+        params: { code: this._accessCode },
+        method: 'POST',
+        opening: true
+      })
       const token = res.token
       this._token = token
     }
@@ -86,7 +101,7 @@ class Workspace {
    * @return {Promise.<object[]>} Promise that resolves to an array of collection info objects.
    */
   async listCollections () {
-    const info = await this.fetch('/info')
+    const info = await this.fetch('/')
     return info.collections
   }
 
@@ -106,7 +121,8 @@ class Workspace {
       method: 'POST',
       body: opts
     })
-    return this.openCollection(name)
+    const collection = await this.openCollection(name, { reset: true })
+    return collection
   }
 
   // TODO: Move to Collection.update()?
@@ -134,20 +150,30 @@ class Workspace {
    * @param {string} keyOrName - Key or name of the collection to open/return.
    * @return {Promise<Collection>}
    */
-  async openCollection (keyOrName) {
+  async openCollection (keyOrName, opts = {}) {
     if (this._collections.has(keyOrName)) {
       const collection = this._collections.get(keyOrName)
-      if (!collection.opened) await collection.open()
+      if (!collection.opened) await collection.open(opts.reset)
       return collection
     }
 
     const collection = new Collection(this, keyOrName)
+    collection.on('open', () => this.emit('collection-open', collection))
     this._collections.set(keyOrName, collection)
     // This will throw if the collection does not exist.
-    await collection.open()
-    this._collections.set(collection.name, collection)
-    this._collections.set(collection.key, collection)
-    return collection
+    try {
+      await collection.open(opts.reset)
+      this._collections.set(collection.name, collection)
+      this._collections.set(collection.key, collection)
+      return collection
+    } catch (err) {
+      this._collections.delete(keyOrName)
+      throw err
+    }
+  }
+
+  getCollection (keyOrName) {
+    return this._collections.get(keyOrName)
   }
 
   getAuthHeaders (opts = {}) {
@@ -202,8 +228,12 @@ class Workspace {
   createEventSource (path, opts = {}) {
     if (!opts.endpoint && this.endpoint) opts.endpoint = this.endpoint
     opts.headers = Object.assign(opts.headers || {}, this.getHeaders(opts))
-    const url = (opts.endpoint || '') + path
-    const eventSource = new EventSource(url, opts)
+    let url = (opts.endpoint || '') + path
+    url = new URL(url)
+    if (this._token || opts.token) {
+      url.searchParams.set('token', this._token || opts.token)
+    }
+    const eventSource = new EventSource(url.toString(), opts)
     eventSource.addEventListener('message', message => {
       try {
         const event = JSON.parse(message.data)

@@ -1,6 +1,4 @@
-const { NanoresourcePromise: Nanoresource } = require('nanoresource-promise')
 const bodyParser = require('body-parser')
-const onexit = require('async-exit-hook')
 const express = require('express')
 const cors = require('cors')
 const expressWebSocket = require('express-ws')
@@ -10,11 +8,10 @@ const p = require('path')
 const pinoExpress = require('express-pino-logger')
 
 const swaggerUi = require('swagger-ui-express')
-const thunky = require('thunky')
 
 const { storagePath } = require('@arsonar/common/storage.js')
 const { WorkspaceManager } = require('@arsonar/core')
-const apiRouter = require('./routes/api')
+const apiRouter = require('./handlers')
 const Auth = require('./lib/auth')
 
 const DEFAULT_PORT = 9191
@@ -29,7 +26,8 @@ module.exports = function SonarServer (opts = {}) {
     },
     server: {
       hostname: opts.hostname || DEFAULT_HOSTNAME,
-      port: opts.port || DEFAULT_PORT
+      port: opts.port || DEFAULT_PORT,
+      dev: {}
     },
     workspace: {
       ...(opts.workspace || {}),
@@ -99,38 +97,45 @@ module.exports = function SonarServer (opts = {}) {
   expressWebSocket(app)
 
   // Add body parsers.
-  app.use(bodyParser.urlencoded({
-    limit: '10MB',
-    extended: true
-  }))
-  app.use(bodyParser.json({
-    limit: '10MB',
-    // Currently, the _search route accepts json encoded strings.
-    // Remove once that changes.
-    strict: false
-  }))
+  app.use(
+    bodyParser.urlencoded({
+      limit: '10MB',
+      extended: true
+    })
+  )
+  app.use(
+    bodyParser.json({
+      limit: '10MB',
+      // Currently, the _search route accepts json encoded strings.
+      // Remove once that changes.
+      strict: false
+    })
+  )
 
   // CORS headers
-  app.use(cors({
-    origin: '*'
-  }))
+  app.use(
+    cors({
+      origin: '*'
+    })
+  )
 
   // Main API
   const apiRoutes = apiRouter(api)
 
   // Serve the API at /api/v1
-  app.use('/api', apiRoutes)
   app.use('/api/v1', apiRoutes)
+  app.use('/api', apiRoutes)
 
   // Serve the swagger API docs at /api-docs
   try {
     const apiDocs = require('./docs/swagger.json')
-    app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(
-      apiDocs,
-      {
+    app.use(
+      '/api-docs',
+      swaggerUi.serve,
+      swaggerUi.setup(apiDocs, {
         customCss: '.swagger-ui .topbar { display: none }'
-      }
-    ))
+      })
+    )
   } catch (e) {}
 
   // Include the client api docs at /api-docs-client
@@ -141,12 +146,17 @@ module.exports = function SonarServer (opts = {}) {
   app.use('/api-docs-client', express.static(clientApiDocsPath))
 
   // Include the static UI at /
-  const uiStaticPath = p.join(
-    p.dirname(require.resolve('@arsonar/ui/package.json')),
-    'build',
-    'dist'
-  )
-  app.use('/', express.static(uiStaticPath))
+  if (!config.server.dev.uiWatch) {
+    const uiStaticPath = p.join(
+      p.dirname(require.resolve('@arsonar/ui/package.json')),
+      'dist'
+    )
+    app.use('/', express.static(uiStaticPath))
+  } else {
+    const uiDevMiddleware = require('@arsonar/ui/express-dev')
+    api.log.warn('UI development server started. UI will rebuild on changes!')
+    uiDevMiddleware(app)
+  }
 
   // Error handling
   app.use(function (err, req, res, next) {
@@ -154,8 +164,11 @@ module.exports = function SonarServer (opts = {}) {
       error: err.message
     }
     res.err = err
+    if (!err.statusCode && err.code === 'ENOENT') {
+      err.statusCode = 404
+    }
     res.status(err.statusCode || 500).send(result)
-    debug('request produced error', err, err.stack)
+    api.log.error({ err, req, message: `Request ${req.url} produced error` })
   })
 
   // Dev middleware.
@@ -172,12 +185,18 @@ module.exports = function SonarServer (opts = {}) {
     app.port = config.server.port
     app.hostname = config.server.hostname
     await new Promise((resolve, reject) => {
-      const server = app.listen(config.server.port, config.server.hostname, err => {
-        if (err) return reject(err)
-        api.log.debug(`HTTP server listening on http://${app.hostname}:${app.port}`)
-        app.opened = true
-        resolve()
-      })
+      const server = app.listen(
+        config.server.port,
+        config.server.hostname,
+        err => {
+          if (err) return reject(err)
+          api.log.debug(
+            `HTTP server listening on http://${app.hostname}:${app.port}`
+          )
+          app.opened = true
+          resolve()
+        }
+      )
       // Mount the shutdown handler onto the server.
       app.server = shutdown(server)
     })

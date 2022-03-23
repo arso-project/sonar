@@ -5,13 +5,15 @@ const pretty = require('pretty-hash')
 const inspect = require('inspect-custom-symbol')
 const pump = require('pump')
 const collectStream = require('stream-collector')
-const { Transform, Writable } = require('streamx')
-const { NanoresourcePromise: Nanoresource } = require('nanoresource-promise/emitter')
+const { Transform } = require('streamx')
+const {
+  NanoresourcePromise: Nanoresource
+} = require('nanoresource-promise/emitter')
 const Kappa = require('kappa-core')
 const Indexer = require('kappa-sparse-indexer')
 
 const { RecordVersion, Type, Schema } = require('@arsonar/common')
-const PromiseCache = require('@arsonar/common/lib/cache')
+const BlockCache = require('./block-cache')
 const LevelMap = require('./utils/level-map')
 const EventStream = require('./utils/eventstream')
 const Workspace = require('./workspace')
@@ -23,6 +25,8 @@ const createRecordsView = require('../views/records')
 const createIndexView = require('../views/indexes')
 const createHistoryView = require('../views/history')
 const CORE_TYPE_SPECS = require('./types.json')
+const Files = require('./file')
+const makeGetDriveFunction = require('./hyperdrive')
 
 const driveStruct = require('./struct/drive')
 const recordsStruct = require('./struct/records')
@@ -56,12 +60,14 @@ class Collection extends Nanoresource {
     })
 
     this.schema = new Schema({
-      onchange: (schema) => {
+      onchange: schema => {
         if (!this._localState) return
         this._localState.set('schema', schema.toJSON())
         this.emit('schema-update', schema)
       }
     })
+
+    this.files = new Files(this)
 
     this._feeds = new Map()
 
@@ -72,13 +78,13 @@ class Collection extends Nanoresource {
 
     this._kappa = new Kappa()
     this._queryHandlers = new Map()
-    this._onerror = (err) => err && this.emit('error', err)
+    this._onerror = err => err && this.emit('error', err)
     this._subscriptions = new Map()
     this.lock = opts.lock || mutexify()
 
     this._eventStream = new EventStream()
-    this._recordCache = new PromiseCache({
-      key: record => record.key + '@' + record.seq
+    this._blockCache = new BlockCache(this.workspace.corestore, {
+      map: (block, req) => this._decodeBlock(block, req)
     })
 
     // Push some events into event streams
@@ -90,7 +96,7 @@ class Collection extends Nanoresource {
   }
 
   _forwardEvent (event, map) {
-    if (!map) map = (data) => data
+    if (!map) map = data => data
     this.on(event, (...args) => this._pushEvent(event, map(...args)))
   }
 
@@ -145,6 +151,10 @@ class Collection extends Nanoresource {
     return this._name || this._opts.name || this.id
   }
 
+  get workspace () {
+    return this._workspace
+  }
+
   ready (cb) {
     cb = maybeCallback(cb)
     if (this.opened) process.nextTick(cb)
@@ -196,17 +206,17 @@ class Collection extends Nanoresource {
           messages[i] = undefined
           return ondone()
         }
-        self.getBlock(req, getOpts)
-          .then(
-            record => {
-              messages[i] = record
-              ondone()
-            },
-            err => {
-              if (err) messages[i] = undefined
-              ondone()
-            }
-          )
+        self.getBlock(req, getOpts).then(
+          record => {
+            if (record) messages[i] = record
+            else messages[i] = undefined
+            ondone()
+          },
+          err => {
+            if (err) messages[i] = undefined
+            ondone()
+          }
+        )
       })
       function ondone () {
         if (--pending !== 0) return
@@ -215,7 +225,12 @@ class Collection extends Nanoresource {
       }
     }
 
-    const flow = this._kappa.use(name, this._indexer.createSource(sourceOpts), view, opts)
+    const flow = this._kappa.use(
+      name,
+      this._indexer.createSource(sourceOpts),
+      view,
+      opts
+    )
     if (flow.view.query) {
       this.registerQuery(name, flow.view.query)
     } else if (view.query) {
@@ -314,15 +329,19 @@ class Collection extends Nanoresource {
             await flushStream()
           }
           cb()
-        } catch (err) { cb(err) }
+        } catch (err) {
+          cb(err)
+        }
       },
       final (cb) {
-        flushStream().then(() => cb()).catch(cb).finally(() => this.push(null))
+        flushStream()
+          .then(() => cb())
+          .catch(cb)
+          .finally(() => this.push(null))
       },
       destroy (cb) {
         if (batch) batch._unlock()
       }
-
     })
     return stream
   }
@@ -346,8 +365,18 @@ class Collection extends Nanoresource {
     return struct
   }
 
-  async getBlock (req, opts = {}) {
-    if (!this.opened && !this.opening) await this.open()
+  _decodeBlock (block, req) {
+    const struct = this._struct(req.key)
+    const decodedBlock = struct.decodeBlock(block, req)
+    return decodedBlock
+  }
+
+  async resolveBlock (req, opts = {}) {
+    if (req.address) {
+      const [key, seq] = req.address.split('@')
+      req.key = key
+      req.seq = seq
+    }
     // Resolve the request through the indexer. This allows to use
     // either an lseq or key and seq.
     if (!req.key || !req.seq || !req.lseq) {
@@ -357,51 +386,42 @@ class Collection extends Nanoresource {
         })
       })
     }
-
-    const decoded = await this._recordCache.getOrFetch(req, async () => {
-      const data = await this._getBlockFromFeed(req)
-      return data
-    })
-
-    if (opts.upcast === false) {
-      return decoded
-    }
-
-    try {
-      const record = new RecordVersion(this.schema, decoded)
-      return record
-    } catch (err) {
-      if (opts.wait === false) throw err
-      await this.sync('root')
-      const record = new RecordVersion(this.schema, decoded)
-      return record
-    }
+    return req
   }
 
-  async _getBlockFromFeed (req) {
-    const { key, seq } = req
-    if (seq === 0) throw new Error('Invalid request: Seq 0 is the header, not a block')
-    if (!key) throw new Error('Invalid request: Missing key argument')
+  async getBlock (req, opts = {}) {
+    if (!this.opened && !this.opening) await this.open()
+    if (opts.wait === undefined) opts.wait = true
+    req = await this.resolveBlock(req)
 
-    let feed = this.feed(key)
-    if (!feed) {
-      // TODO: This line allows to reference blocks from any hypercore, anywhere - do we want this?
-      // It fixes the case where, especially on a reindex, blocks from feeds are floating in for which
-      // their feed records are not yet indexed...
-      feed = this._workspace.Hypercore(key)
-      // throw new Error('Feed not found')
+    const block = await this._blockCache.getBlock(req.key, req.seq)
+    if (!block) return null
+    if (opts.upcast === false) {
+      return block
     }
-
-    const struct = this._struct(key)
-    const block = await struct.get(feed, req)
-    return block
+    if (req.lseq) block.lseq = req.lseq
+    try {
+      try {
+        const record = new RecordVersion(this.schema, block)
+        return record
+      } catch (err) {
+        if (opts.wait === false) throw err
+        await this.sync('root')
+        const record = new RecordVersion(this.schema, block)
+        return record
+      }
+    } catch (err) {
+      this.log.error(`Failed to load: ${JSON.stringify(req)}: ${err.message}`)
+      throw err
+    }
   }
 
   createGetStream (opts) {
     const self = this
     return new Transform({
       transform (req, cb) {
-        self.get(req, opts)
+        self
+          .get(req, opts)
           .catch(() => {
             // Ignore missing records.
             // TODO: Check if this is what we want.
@@ -421,14 +441,15 @@ class Collection extends Nanoresource {
       opts = {}
     }
     return maybe(cb, async () => {
-      let list
-      if ((req.key && req.seq) || req.lseq) {
+      let list = []
+      if ((req.key && req.seq) || req.lseq || req.address) {
         try {
-          list = [await this.getBlock(req)]
+          const block = await this.getBlock(req)
+          if (block) list.push(block)
         } catch (err) {
-          list = []
+          // TODO: throw or log?
         }
-      } else if (req.type || req.id) {
+      } else if (req.type || req.id || req.path) {
         list = await this.query('records', req)
       } else {
         throw new Error('Invalid request')
@@ -445,7 +466,10 @@ class Collection extends Nanoresource {
 
   // TODO: Remove. Replaced with get.
   getRecord (args, opts = {}, cb) {
-    if (typeof opts === 'function') { cb = opts; opts = {} }
+    if (typeof opts === 'function') {
+      cb = opts
+      opts = {}
+    }
     opts.single = true
     return this.get(args, opts, cb)
   }
@@ -522,7 +546,9 @@ class Collection extends Nanoresource {
   async update () {
     // Check all feeds for updates
     try {
-      const updates = this.feeds().map(feed => feed.update({ ifAvailable: true, wait: false }))
+      const updates = this.feeds().map(feed =>
+        feed.update({ ifAvailable: true, wait: false })
+      )
       await Promise.all(updates)
     } catch (err) {}
 
@@ -599,7 +625,9 @@ class Collection extends Nanoresource {
         record = new RecordVersion(this.schema, record)
         if (record.hasType(TYPE_FEED)) {
           const opts = { origin: record.key }
-          this._initFeed(record.value.key, record.value, opts).catch(this._onerror)
+          this._initFeed(record.value.key, record.value, opts).catch(
+            this._onerror
+          )
         }
         if (record.hasType(TYPE_TYPE)) {
           this._addTypeFromRecord(record)
@@ -608,28 +636,21 @@ class Collection extends Nanoresource {
     }
     this.use('root', { map: rootViewMap }, rootViewOpts)
 
-    this.use('kv', createKvView(
-      this._leveldb('view.kv')
-    ))
+    this.use('kv', createKvView(this._leveldb('view.kv')))
 
-    this.use('records', createRecordsView(
-      this._leveldb('view.records'),
-      this,
-      {
+    this.use(
+      'records',
+      createRecordsView(this._leveldb('view.records'), this, {
         schema: this.schema
-      }
-    ))
-    this.use('index', createIndexView(
-      this._leveldb('view.index'),
-      this,
-      {
+      })
+    )
+    this.use(
+      'index',
+      createIndexView(this._leveldb('view.index'), this, {
         schema: this.schema
-      }
-    ))
-    this.use('history', createHistoryView(
-      this._leveldb('view.history'),
-      this
-    ))
+      })
+    )
+    this.use('history', createHistoryView(this._leveldb('view.history'), this))
 
     // this.use('debug', async function (records) {
     //   console.log('MAP', records)
@@ -649,7 +670,10 @@ class Collection extends Nanoresource {
     // hyper-sdk (through dat-encoding) considers every string that
     // contains a 32-byte hex string a key, so we have to add a
     // non-hex character somewhere.
-    const id = this.key.slice(0, 16).toString('hex') + '-' + this.key.slice(16).toString('hex')
+    const id =
+      this.key.slice(0, 16).toString('hex') +
+      '-' +
+      this.key.slice(16).toString('hex')
     return `sonar-collection-${id}-${name}`
   }
 
@@ -669,7 +693,9 @@ class Collection extends Nanoresource {
     // our local resources are not yet initialized
     // ====
     const rootInfo = { type: FEED_TYPE_ROOT }
-    this._rootFeed = await this._initFeed(this._keyOrName, rootInfo, { index: false })
+    this._rootFeed = await this._initFeed(this._keyOrName, rootInfo, {
+      index: false
+    })
     this._id = deriveId(this._rootFeed.discoveryKey)
 
     if (this._keyOrName !== this._rootFeed.key.toString('hex')) {
@@ -688,10 +714,7 @@ class Collection extends Nanoresource {
     }
     this._localState = new LevelMap(leveldbs.state)
     this._feedInfo = this._localState.prefix('feeds')
-    await Promise.all([
-      this._localState.open(),
-      this._feedInfo.open()
-    ])
+    await Promise.all([this._localState.open(), this._feedInfo.open()])
 
     // Save root feed info
     // Normally this happens in _initFeed() automatically, but for the
@@ -747,15 +770,17 @@ class Collection extends Nanoresource {
 
     // Load feeds and add them to the kappa.
     await Promise.all(
-      this._feedInfo
-        .values()
-        .map(info => this._initFeed(info.key, info))
+      this._feedInfo.values().map(info => this._initFeed(info.key, info))
     )
 
     // Give plugins a chance to open
     const [openPromises, addOpenPromise] = promiseFactory()
     this.emit('opening', addOpenPromise)
     await Promise.all(openPromises)
+
+    // Init hyperdrives.
+    const { onClose, getDrive } = await makeGetDriveFunction(this)
+    this.drive = getDrive
 
     // Emit open event
     this.log.debug(`Collection open: ${pretty(this.key)}`)
@@ -796,14 +821,14 @@ class Collection extends Nanoresource {
     if (this.opening) await this.open()
     // Wait until all batches are complete
     await this.lock()
-    await new Promise((resolve) => {
+    await new Promise(resolve => {
       // Ignore closing errors for now.
       this._kappa.on('error', () => {})
       this._kappa.close(resolve)
     })
     // wait a tick
     await new Promise(resolve => process.nextTick(resolve))
-    await new Promise((resolve) => {
+    await new Promise(resolve => {
       this._indexer.close(resolve)
     })
     this.emit('close')
@@ -820,8 +845,8 @@ class Collection extends Nanoresource {
     if (this._feeds.has(hkey)) return this._feeds.get(hkey)
 
     // Forward some events
-    feed.on('download', (seq) => {
-    // Forward some events
+    feed.on('download', seq => {
+      // Forward some events
       this.emit('feed-update', feed, 'download', seq)
     })
     feed.on('append', () => {
@@ -830,7 +855,7 @@ class Collection extends Nanoresource {
     feed.on('remote-update', () => {
       this.emit('remote-update', feed)
     })
-    feed.on('peer-open', (peer) => {
+    feed.on('peer-open', peer => {
       this.emit('peer-open', feed, peer)
     })
 
@@ -862,14 +887,19 @@ class Collection extends Nanoresource {
 
     // Look for the feed in the swarm if added by myself
     if (!opts.origin || opts.origin === this.localKey.toString('hex')) {
-      const networkPromise = this._workspace.network.configure(feed.discoveryKey, {
-        announce: true,
-        lookup: true
-      })
+      const networkPromise = this._workspace.network.configure(
+        feed.discoveryKey,
+        {
+          announce: true,
+          lookup: true
+        }
+      )
     }
 
     this.emit('feed', feed, info)
-    this.log.debug(`init feed [${info.type}] ${pretty(feed.key)} @ ${feed.length}`)
+    this.log.debug(
+      `init feed [${info.type}] ${pretty(feed.key)} @ ${feed.length}`
+    )
 
     return feed
   }
@@ -899,9 +929,12 @@ class Collection extends Nanoresource {
       await onheader(buf)
     } catch (err) {
       // Try to load the header with waiting, but return now
-      feed.get(0, { wait: true }).then(buf => {
-        onheader(buf).catch(this._onerror)
-      }).catch(noop)
+      feed
+        .get(0, { wait: true })
+        .then(buf => {
+          onheader(buf).catch(this._onerror)
+        })
+        .catch(noop)
     }
   }
 
@@ -914,13 +947,23 @@ class Collection extends Nanoresource {
 
     // Append header if writable and empty
     // TODO: Support subtypes
-    await feed.append(Header.encode({
-      type: info.type
-    }))
+    await feed.append(
+      Header.encode({
+        type: info.type
+      })
+    )
   }
 
   _addTypeFromRecord (typeRecord) {
-    this.schema.addType(typeRecord.value)
+    try {
+      this.schema.addType(typeRecord.value)
+    } catch (err) {
+      // TODO: Where should errors that come from bad DB records go?
+      this.log.error(
+        `Failed to load type with ID ${typeRecord.id}into schema: ${err.message}`
+      )
+      this.emit('error', err)
+    }
   }
 
   [inspect] (depth, opts) {
@@ -929,26 +972,46 @@ class Collection extends Nanoresource {
     const h = str => stylize(str, 'special')
     const s = str => stylize(str)
     const n = str => stylize(str, 'number')
-    const fmtkey = key => key ? key.toString('hex') : ''
+    const fmtkey = key => (key ? key.toString('hex') : '')
 
-    const feeds = this.feeds().map(feed => {
-      const info = this.feedInfo(feed.key)
-      const meta = feed.writable ? '*' : '/' + n(feed.downloaded())
-      let str = h(pretty(feed.key)) + s('@') + n(feed.length) + meta
-      if (info.name) str += ' ' + info.name
-      if (info.type) str += s(` (${info.type})`)
-      return str
-    }).join(', ')
+    const feeds = this.feeds()
+      .map(feed => {
+        const info = this.feedInfo(feed.key)
+        const meta = feed.writable ? '*' : '/' + n(feed.downloaded())
+        let str = h(pretty(feed.key)) + s('@') + n(feed.length) + meta
+        if (info.name) str += ' ' + info.name
+        if (info.type) str += s(` (${info.type})`)
+        return str
+      })
+      .join(', ')
 
-    return 'Collection(\n' +
-          indent + '  opened   : ' + stylize(this.opened, 'boolean') + '\n' +
-          indent + '  key      : ' + h(fmtkey(this.key)) + '\n' +
-          indent + '  localKey : ' + h(fmtkey(this.localKey)) + '\n' +
-          // indent + '  discoveryKey: ' + s(fmtkey(this.discoveryKey)) + '\n' +
-          indent + '  id       : ' + s(this._id) + '\n' +
-          // indent + '  name     : ' + s(this._name) + '\n' +
-          indent + '  feeds    : ' + feeds + '\n' +
-          indent + ')'
+    return (
+      'Collection(\n' +
+      indent +
+      '  opened   : ' +
+      stylize(this.opened, 'boolean') +
+      '\n' +
+      indent +
+      '  key      : ' +
+      h(fmtkey(this.key)) +
+      '\n' +
+      indent +
+      '  localKey : ' +
+      h(fmtkey(this.localKey)) +
+      '\n' +
+      // indent + '  discoveryKey: ' + s(fmtkey(this.discoveryKey)) + '\n' +
+      indent +
+      '  id       : ' +
+      s(this._id) +
+      '\n' +
+      // indent + '  name     : ' + s(this._name) + '\n' +
+      indent +
+      '  feeds    : ' +
+      feeds +
+      '\n' +
+      indent +
+      ')'
+    )
   }
 }
 
@@ -1020,18 +1083,22 @@ class Batch {
     }
 
     // Encode and append the records for each feed
-    const promises = Array.from(buckets.entries()).map(async ([key, records]) => {
-      const feed = this.collection.feed(key)
-      if (!feed) throw new Error('Feed not found: ' + key)
-      if (!feed.writable) throw new Error('Feed not writable: ' + key)
-      let seq = feed.length - 1
-      const blocks = records.map(record => RecordEncoder.encode(record.toJSON()))
-      await feed.append(blocks)
-      for (const record of records) {
-        record._record.seq = ++seq
+    const promises = Array.from(buckets.entries()).map(
+      async ([key, records]) => {
+        const feed = this.collection.feed(key)
+        if (!feed) throw new Error('Feed not found: ' + key)
+        if (!feed.writable) throw new Error('Feed not writable: ' + key)
+        let seq = feed.length - 1
+        const blocks = records.map(record =>
+          RecordEncoder.encode(record.toJSON())
+        )
+        await feed.append(blocks)
+        for (const record of records) {
+          record._record.seq = ++seq
+        }
+        return records
       }
-      return records
-    })
+    )
 
     try {
       await Promise.all(promises)
@@ -1100,7 +1167,7 @@ class Subscription {
 
   async ack (cursor) {
     return new Promise((resolve, reject) => {
-      this.sub.setCursor(cursor, err => err ? reject(err) : resolve())
+      this.sub.setCursor(cursor, err => (err ? reject(err) : resolve()))
     })
   }
 
@@ -1218,7 +1285,10 @@ function promiseFactory () {
 
 function maybe (cb, asyncFn) {
   if (!cb) return asyncFn()
-  else asyncFn().then(res => cb(null, res)).catch(cb)
+  else
+    asyncFn()
+      .then(res => cb(null, res))
+      .catch(cb)
 }
 
 module.exports = Collection

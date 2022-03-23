@@ -1,9 +1,8 @@
 const RecordEncoder = require('../record-encoder')
 
-module.exports = { get }
+module.exports = { decodeBlock }
 
-async function get (feed, req) {
-  const block = await feed.get(req.seq)
+function decodeBlock (block, req) {
   const decoded = RecordEncoder.decode(block, req)
   return decoded
 }

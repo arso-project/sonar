@@ -4,7 +4,7 @@ const options = require('./bin/lib/options')
 const args = require('yargs').options(options).argv
 
 const server = new Server(args)
-server.start((err) => {
+server.start(err => {
   if (err) {
     console.error(err)
     server.api.log.error(err)
@@ -13,6 +13,7 @@ server.start((err) => {
   const address = `http://${server.hostname}:${server.port}`
   server.api.log.info(`API is listening on ${address}`)
   const code = server.api.auth.getRootAccessCode()
+  server.api.log.info(`Root access code: ${code}`)
   // TODO: Support both accessCodes and tokens in initial URL to pass to browser clients.
   server.api.log.info(`UI login link: ${address}#/login/${code}`)
   if (server.api.config.dev) {

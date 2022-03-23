@@ -16,8 +16,15 @@ tape('minimal open and put', async t => {
       }
     }
   })
-  const putted = await collection.put({ type: 'doc', value: { title: 'hello world' } })
-  const queried = await collection.query('records', { id: putted.id }, { waitForSync: true })
+  const putted = await collection.put({
+    type: 'doc',
+    value: { title: 'hello world' }
+  })
+  const queried = await collection.query(
+    'records',
+    { id: putted.id },
+    { waitForSync: true }
+  )
   t.equal(queried.length, 1)
   t.equal(queried[0].id, putted.id, 'id matches')
   await cleanup()
@@ -57,7 +64,11 @@ tape('db basic put and query', async t => {
   })
   // const id = res.id
   // await collection.sync()
-  const results = await collection.query('records', { id: res.id }, { waitForSync: true })
+  const results = await collection.query(
+    'records',
+    { id: res.id },
+    { waitForSync: true }
+  )
   t.equal(results.length, 2)
   // t.equal(results[0].id, id)
   // t.equal(results[0].value.title, 'hello world')
@@ -84,7 +95,10 @@ tape('db basic put and query', async t => {
 tape('get and delete record', async t => {
   const { client, cleanup } = await createOne({ network: false })
   const collection = await client.createCollection('myCollection')
-  await collection.putType({ name: 'foo', fields: { title: { type: 'string' } } })
+  await collection.putType({
+    name: 'foo',
+    fields: { title: { type: 'string' } }
+  })
   const nuRecord = {
     type: 'foo',
     id: 'bar',
@@ -104,14 +118,18 @@ tape('get and delete record', async t => {
 
 tape('batch stream', async t => {
   const { client, cleanup } = await createOne({ network: false })
-  const collection = await client.openCollection('default')
+  const collection = await client.createCollection('default')
   const bs = await collection.createBatchStream()
   bs.write({ type: 'sonar/entity', value: { label: 'foo1' } })
   bs.write({ type: 'sonar/entity', value: { label: 'foo2' } })
   bs.write({ type: 'sonar/entity', value: { label: 'foo3' } })
   bs.end()
   await collection.sync()
-  const res = await collection.query('records', { type: 'sonar/entity' }, { sync: true })
+  const res = await collection.query(
+    'records',
+    { type: 'sonar/entity' },
+    { sync: true }
+  )
   t.deepEqual(res.map(r => r.value.label).sort(), ['foo1', 'foo2', 'foo3'])
   // const rows = []
   // for await (const row of bs) {
@@ -188,7 +206,7 @@ tape('subscribe to record', async t => {
   })
 
   let didNotify = false
-  const notifyPromise = new Promise((resolve) => {
+  const notifyPromise = new Promise(resolve => {
     putted.subscribe(record => {
       if (didNotify) t.fail('subscribe emitted more than once')
       t.equal(record.get('title'), 'hello moon', 'subscribe called correctly')

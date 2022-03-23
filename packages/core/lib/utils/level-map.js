@@ -17,7 +17,11 @@ module.exports = class LevelMap extends Nanoresource {
     this._condition = opts.condition
     this._lock = opts.lock || mutex()
     this._prefix = opts.prefix || '_'
-    this._onerror = opts.onerror || (err => { throw err })
+    this._onerror =
+      opts.onerror ||
+      (err => {
+        throw err
+      })
   }
 
   prefix (prefix, opts = {}) {
@@ -151,17 +155,21 @@ module.exports = class LevelMap extends Nanoresource {
 
   flush (cb) {
     cb = maybeCallback(cb)
-    let stack = new Error().stack
     this._lock(release => {
       const doFlush = () => {
         if (!Object.keys(this._queue).length) return release(cb)
-        const queue = Object.entries(this._queue).map(([key, { value, type }]) => {
-          if (this._prefix) key = this._prefix + SEPERATOR + key
-          if (value) value = this._valueEncoding.encode(value)
-          return { key, value, type }
-        })
+        const queue = Object.entries(this._queue).map(
+          ([key, { value, type }]) => {
+            if (this._prefix) key = this._prefix + SEPERATOR + key
+            if (value) value = this._valueEncoding.encode(value)
+            return { key, value, type }
+          }
+        )
         this._queue = {}
-        this.db.batch(queue, release.bind(null, cb))
+        this.db.batch(queue, err => {
+          release()
+          cb(err)
+        })
       }
       if (this.opened) doFlush()
       else this.open(() => doFlush())

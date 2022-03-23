@@ -12,7 +12,7 @@ tape('basic', async t => {
       }
     }
     let { endpoint, cleanup } = await createOne(opts)
-    endpoint += '/workspace/default'
+    endpoint += '/default'
 
     const created = await fetchJSON(`${endpoint}/collection`, {
       method: 'POST',
@@ -26,16 +26,22 @@ tape('basic', async t => {
     t.equal(collection.rootKey, key, 'get collection: root key correct')
     // console.log('collection', collection)
 
-    const putted = await fetchJSON(`${endpoint}/collection/${key}/db`, {
-      method: 'PUT',
-      body: JSON.stringify({ type: 'sonar/entity', value: { label: 'hello, world' } })
+    const putted = await fetchJSON(`${endpoint}/collection/${key}`, {
+      method: 'POST',
+      body: JSON.stringify({
+        type: 'sonar/entity',
+        value: { label: 'hello, world' }
+      })
     })
     // console.log('put', putted)
 
-    const queried = await fetchJSON(`${endpoint}/collection/${key}/query/records?sync=1`, {
-      method: 'POST',
-      body: JSON.stringify({ id: putted.id })
-    })
+    const queried = await fetchJSON(
+      `${endpoint}/collection/${key}/query/records?sync=1`,
+      {
+        method: 'POST',
+        body: JSON.stringify({ id: putted.id })
+      }
+    )
     // console.log('query', queried)
     t.ok(Array.isArray(queried), 'query result is array')
     t.equal(queried.length, 1, 'query length 1')

@@ -1,937 +1,1848 @@
 {
+  "openapi": "3.0.0",
   "info": {
     "title": "Sonar Server HTTP API",
-    "version": "0.1.0",
     "license": {
       "name": "GPL-3.0"
     },
-    "description": "[Specification JSON](/api-spec)"
+    "description": "Specification JSONs: [v2](/api-spec/v2), [v3](/api-spec/v3).",
+    "version": "0.1.0"
   },
   "paths": {
-    "/api/login": {
-      "post": {
-        "summary": "/api/login",
-        "consumes": [
-          "application/json"
-        ],
-        "parameters": [],
-        "responses": {}
-      }
-    },
-    "/api/create-access-code": {
-      "post": {
-        "summary": "/api/create-access-code",
-        "consumes": [
-          "application/json"
-        ],
-        "parameters": [],
-        "responses": {}
-      }
-    },
-    "/api/info": {
+    "/api/v1/{workspace}": {
       "get": {
-        "summary": "/api/info",
-        "consumes": [
-          "application/json"
+        "summary": "/api/v1/{workspace}",
+        "parameters": [
+          {
+            "name": "workspace",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
         ],
-        "parameters": [],
-        "responses": {}
+        "responses": {},
+        "tags": []
       }
     },
-    "/api/commands/.websocket": {
-      "get": {
-        "summary": "/api/commands/.websocket",
-        "consumes": [
-          "application/json"
-        ],
-        "parameters": [],
-        "responses": {}
-      }
-    },
-    "/api/collection": {
+    "/api/v1/{workspace}/login": {
       "post": {
-        "summary": "/api/collection",
-        "consumes": [
-          "application/json"
+        "summary": "/api/v1/{workspace}/login",
+        "parameters": [
+          {
+            "name": "workspace",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
         ],
-        "parameters": [],
-        "responses": {}
+        "responses": {},
+        "tags": []
       }
     },
-    "/api/collection/{collection}": {
+    "/api/v1/{workspace}/register": {
+      "post": {
+        "summary": "/api/v1/{workspace}/register",
+        "parameters": [
+          {
+            "name": "workspace",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {},
+        "tags": []
+      }
+    },
+    "/api/v1/{workspace}/bot/join": {
+      "post": {
+        "summary": "/api/v1/{workspace}/bot/join",
+        "parameters": [
+          {
+            "name": "workspace",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {},
+        "tags": []
+      }
+    },
+    "/api/v1/{workspace}/bot/leave": {
+      "post": {
+        "summary": "/api/v1/{workspace}/bot/leave",
+        "parameters": [
+          {
+            "name": "workspace",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {},
+        "tags": []
+      }
+    },
+    "/api/v1/{workspace}/bot/command": {
+      "post": {
+        "summary": "/api/v1/{workspace}/bot/command",
+        "parameters": [
+          {
+            "name": "workspace",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {},
+        "tags": []
+      }
+    },
+    "/api/v1/{workspace}/bot/info": {
+      "get": {
+        "summary": "/api/v1/{workspace}/bot/info",
+        "parameters": [
+          {
+            "name": "workspace",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {},
+        "tags": []
+      }
+    },
+    "/api/v1/{workspace}/bot/status": {
+      "get": {
+        "summary": "/api/v1/{workspace}/bot/status",
+        "parameters": [
+          {
+            "name": "workspace",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {},
+        "tags": []
+      }
+    },
+    "/api/v1/{workspace}/bot/status/{bot}/{requestId}": {
+      "get": {
+        "summary": "/api/v1/{workspace}/bot/status/{bot}/{requestId}",
+        "parameters": [
+          {
+            "name": "workspace",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "bot",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "requestId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {},
+        "tags": []
+      }
+    },
+    "/api/v1/{workspace}/bot/configure/{name}": {
+      "post": {
+        "summary": "/api/v1/{workspace}/bot/configure/{name}",
+        "parameters": [
+          {
+            "name": "workspace",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {},
+        "tags": []
+      }
+    },
+    "/api/v1/{workspace}/bot/register": {
+      "post": {
+        "summary": "/api/v1/{workspace}/bot/register",
+        "parameters": [
+          {
+            "name": "workspace",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {},
+        "tags": []
+      }
+    },
+    "/api/v1/{workspace}/bot/reply": {
+      "post": {
+        "summary": "/api/v1/{workspace}/bot/reply",
+        "parameters": [
+          {
+            "name": "workspace",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {},
+        "tags": []
+      }
+    },
+    "/api/v1/{workspace}/bot/events": {
+      "get": {
+        "summary": "/api/v1/{workspace}/bot/events",
+        "parameters": [
+          {
+            "name": "workspace",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {},
+        "tags": []
+      }
+    },
+    "/api/v1/{workspace}/collection": {
+      "post": {
+        "summary": "/api/v1/{workspace}/collection",
+        "parameters": [
+          {
+            "name": "workspace",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {},
+        "tags": ["collection"]
+      }
+    },
+    "/api/v1/{workspace}/collection/{collection}/fs/{drive}/*": {
+      "get": {
+        "summary": "/api/v1/{workspace}/collection/{collection}/fs/{drive}/*",
+        "parameters": [
+          {
+            "name": "workspace",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "collection",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "drive",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {},
+        "tags": ["collection"]
+      },
+      "put": {
+        "summary": "/api/v1/{workspace}/collection/{collection}/fs/{drive}/*",
+        "parameters": [
+          {
+            "name": "workspace",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "collection",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "drive",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {},
+        "tags": ["collection"]
+      }
+    },
+    "/api/v1/{workspace}/collection/{collection}/fs/{drive}": {
+      "get": {
+        "summary": "/api/v1/{workspace}/collection/{collection}/fs/{drive}",
+        "parameters": [
+          {
+            "name": "workspace",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "collection",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "drive",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {},
+        "tags": ["collection"]
+      }
+    },
+    "/api/v1/{workspace}/collection/{collection}": {
+      "get": {
+        "summary": "/api/v1/{workspace}/collection/{collection}",
+        "parameters": [
+          {
+            "name": "workspace",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "collection",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {},
+        "tags": ["collection"]
+      },
       "patch": {
-        "summary": "/api/collection/{collection}",
-        "consumes": [
-          "application/json"
-        ],
+        "summary": "/api/v1/{workspace}/collection/{collection}",
         "parameters": [
           {
-            "name": "collection",
+            "name": "workspace",
             "in": "path",
-            "required": true
-          }
-        ],
-        "responses": {}
-      },
-      "get": {
-        "summary": "/api/collection/{collection}",
-        "consumes": [
-          "application/json"
-        ],
-        "parameters": [
-          {
-            "name": "collection",
-            "in": "path",
-            "required": true
-          }
-        ],
-        "responses": {}
-      }
-    },
-    "/api/collection/{collection}/fs/{drive}/*": {
-      "get": {
-        "summary": "/api/collection/{collection}/fs/{drive}/*",
-        "consumes": [
-          "application/json"
-        ],
-        "parameters": [
-          {
-            "name": "collection",
-            "in": "path",
-            "required": true
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
           },
           {
-            "name": "drive",
+            "name": "collection",
             "in": "path",
-            "required": true
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
           }
         ],
-        "responses": {}
-      },
+        "responses": {},
+        "tags": ["collection"]
+      }
+    },
+    "/api/v1/{workspace}/collection/{collection}/db": {
       "put": {
-        "summary": "/api/collection/{collection}/fs/{drive}/*",
-        "consumes": [
-          "application/json"
-        ],
+        "summary": "/api/v1/{workspace}/collection/{collection}/db",
         "parameters": [
           {
-            "name": "collection",
+            "name": "workspace",
             "in": "path",
-            "required": true
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
           },
           {
-            "name": "drive",
-            "in": "path",
-            "required": true
-          }
-        ],
-        "responses": {}
-      }
-    },
-    "/api/collection/{collection}/fs/{drive}": {
-      "get": {
-        "summary": "/api/collection/{collection}/fs/{drive}",
-        "consumes": [
-          "application/json"
-        ],
-        "parameters": [
-          {
             "name": "collection",
             "in": "path",
-            "required": true
-          },
-          {
-            "name": "drive",
-            "in": "path",
-            "required": true
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
           }
         ],
-        "responses": {}
+        "responses": {},
+        "tags": ["collection"]
       }
     },
-    "/api/collection/{collection}/db": {
-      "put": {
-        "summary": "/api/collection/{collection}/db",
-        "consumes": [
-          "application/json"
-        ],
-        "parameters": [
-          {
-            "name": "collection",
-            "in": "path",
-            "required": true
-          }
-        ],
-        "responses": {}
-      }
-    },
-    "/api/collection/{collection}/db/{id}": {
-      "put": {
-        "summary": "/api/collection/{collection}/db/{id}",
-        "consumes": [
-          "application/json"
-        ],
-        "parameters": [
-          {
-            "name": "collection",
-            "in": "path",
-            "required": true
-          },
-          {
-            "name": "id",
-            "in": "path",
-            "required": true
-          }
-        ],
-        "responses": {}
-      },
+    "/api/v1/{workspace}/collection/{collection}/db/{id}": {
       "delete": {
-        "summary": "/api/collection/{collection}/db/{id}",
-        "consumes": [
-          "application/json"
-        ],
+        "summary": "/api/v1/{workspace}/collection/{collection}/db/{id}",
         "parameters": [
+          {
+            "name": "workspace",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
           {
             "name": "collection",
             "in": "path",
-            "required": true
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
           },
           {
             "name": "id",
             "in": "path",
-            "required": true
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
           }
         ],
-        "responses": {}
+        "responses": {},
+        "tags": ["collection"]
       }
     },
-    "/api/collection/{collection}/db/{key}/{seq}": {
+    "/api/v1/{workspace}/collection/{collection}/db/{key}/{seq}": {
       "get": {
-        "summary": "/api/collection/{collection}/db/{key}/{seq}",
-        "consumes": [
-          "application/json"
-        ],
+        "summary": "/api/v1/{workspace}/collection/{collection}/db/{key}/{seq}",
         "parameters": [
+          {
+            "name": "workspace",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
           {
             "name": "collection",
             "in": "path",
-            "required": true
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
           },
           {
             "name": "key",
             "in": "path",
-            "required": true
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
           },
           {
             "name": "seq",
             "in": "path",
-            "required": true
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
           }
         ],
-        "responses": {}
+        "responses": {},
+        "tags": ["collection"]
       }
     },
-    "/api/collection/{collection}/sync": {
+    "/api/v1/{workspace}/collection/{collection}/sync": {
       "get": {
-        "summary": "/api/collection/{collection}/sync",
-        "consumes": [
-          "application/json"
-        ],
+        "summary": "/api/v1/{workspace}/collection/{collection}/sync",
         "parameters": [
+          {
+            "name": "workspace",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
           {
             "name": "collection",
             "in": "path",
-            "required": true
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
           }
         ],
-        "responses": {}
+        "responses": {},
+        "tags": ["collection"]
       }
     },
-    "/api/collection/{collection}/query/{name}": {
+    "/api/v1/{workspace}/collection/{collection}/query/{name}": {
       "post": {
-        "summary": "/api/collection/{collection}/query/{name}",
-        "consumes": [
-          "application/json"
-        ],
+        "summary": "/api/v1/{workspace}/collection/{collection}/query/{name}",
         "parameters": [
+          {
+            "name": "workspace",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
           {
             "name": "collection",
             "in": "path",
-            "required": true
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
           },
           {
             "name": "name",
             "in": "path",
-            "required": true
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
           }
         ],
-        "responses": {}
-      }
-    },
-    "/api/collection/{collection}/schema": {
+        "responses": {},
+        "tags": ["collection"]
+      },
       "get": {
-        "summary": "/api/collection/{collection}/schema",
-        "consumes": [
-          "application/json"
-        ],
+        "summary": "/api/v1/{workspace}/collection/{collection}/query/{name}",
         "parameters": [
+          {
+            "name": "workspace",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
           {
             "name": "collection",
             "in": "path",
-            "required": true
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
           }
         ],
-        "responses": {}
+        "responses": {},
+        "tags": ["collection"]
+      }
+    },
+    "/api/v1/{workspace}/collection/{collection}/schema": {
+      "get": {
+        "summary": "/api/v1/{workspace}/collection/{collection}/schema",
+        "parameters": [
+          {
+            "name": "workspace",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "collection",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {},
+        "tags": ["collection"]
       },
       "post": {
-        "summary": "/api/collection/{collection}/schema",
-        "consumes": [
-          "application/json"
-        ],
+        "summary": "/api/v1/{workspace}/collection/{collection}/schema",
         "parameters": [
+          {
+            "name": "workspace",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
           {
             "name": "collection",
             "in": "path",
-            "required": true
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
           }
         ],
-        "responses": {}
+        "responses": {},
+        "tags": ["collection"]
       }
     },
-    "/api/collection/{collection}/feed/{key}": {
+    "/api/v1/{workspace}/collection/{collection}/feed/{key}": {
       "put": {
-        "summary": "/api/collection/{collection}/feed/{key}",
-        "consumes": [
-          "application/json"
-        ],
+        "summary": "/api/v1/{workspace}/collection/{collection}/feed/{key}",
         "parameters": [
+          {
+            "name": "workspace",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
           {
             "name": "collection",
             "in": "path",
-            "required": true
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
           },
           {
             "name": "key",
             "in": "path",
-            "required": true
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
           }
         ],
-        "responses": {}
+        "responses": {},
+        "tags": ["collection"]
       }
     },
-    "/api/collection/{collection}/debug": {
+    "/api/v1/{workspace}/collection/{collection}/debug": {
       "get": {
-        "summary": "/api/collection/{collection}/debug",
-        "consumes": [
-          "application/json"
-        ],
+        "summary": "/api/v1/{workspace}/collection/{collection}/debug",
         "parameters": [
+          {
+            "name": "workspace",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
           {
             "name": "collection",
             "in": "path",
-            "required": true
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
           }
         ],
-        "responses": {}
+        "responses": {},
+        "tags": ["collection"]
       }
     },
-    "/api/collection/{collection}/subscription/{name}": {
+    "/api/v1/{workspace}/collection/{collection}/subscription/{name}": {
       "put": {
-        "summary": "/api/collection/{collection}/subscription/{name}",
-        "consumes": [
-          "application/json"
-        ],
+        "summary": "/api/v1/{workspace}/collection/{collection}/subscription/{name}",
         "parameters": [
+          {
+            "name": "workspace",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
           {
             "name": "collection",
             "in": "path",
-            "required": true
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
           },
           {
             "name": "name",
             "in": "path",
-            "required": true
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
           }
         ],
-        "responses": {}
+        "responses": {},
+        "tags": ["collection"]
       },
       "get": {
-        "summary": "/api/collection/{collection}/subscription/{name}",
-        "consumes": [
-          "application/json"
-        ],
+        "summary": "/api/v1/{workspace}/collection/{collection}/subscription/{name}",
         "parameters": [
+          {
+            "name": "workspace",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
           {
             "name": "collection",
             "in": "path",
-            "required": true
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
           },
           {
             "name": "name",
             "in": "path",
-            "required": true
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
           }
         ],
-        "responses": {}
+        "responses": {},
+        "tags": ["collection"]
       }
     },
-    "/api/collection/{collection}/subscription/{name}/sse": {
+    "/api/v1/{workspace}/collection/{collection}/subscription/{name}/sse": {
       "get": {
-        "summary": "/api/collection/{collection}/subscription/{name}/sse",
-        "consumes": [
-          "application/json"
-        ],
+        "summary": "/api/v1/{workspace}/collection/{collection}/subscription/{name}/sse",
         "parameters": [
+          {
+            "name": "workspace",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
           {
             "name": "collection",
             "in": "path",
-            "required": true
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
           },
           {
             "name": "name",
             "in": "path",
-            "required": true
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
           }
         ],
-        "responses": {}
+        "responses": {},
+        "tags": ["collection"]
       }
     },
-    "/api/collection/{collection}/subscription/{name}/{cursor}": {
+    "/api/v1/{workspace}/collection/{collection}/subscription/{name}/{cursor}": {
       "post": {
-        "summary": "/api/collection/{collection}/subscription/{name}/{cursor}",
-        "consumes": [
-          "application/json"
-        ],
+        "summary": "/api/v1/{workspace}/collection/{collection}/subscription/{name}/{cursor}",
         "parameters": [
+          {
+            "name": "workspace",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
           {
             "name": "collection",
             "in": "path",
-            "required": true
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
           },
           {
             "name": "name",
             "in": "path",
-            "required": true
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
           },
           {
             "name": "cursor",
             "in": "path",
-            "required": true
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
           }
         ],
-        "responses": {}
+        "responses": {},
+        "tags": ["collection"]
       }
     },
-    "/api/collection/{collection}/events": {
+    "/api/v1/{workspace}/collection/{collection}/events": {
       "get": {
-        "summary": "/api/collection/{collection}/events",
-        "consumes": [
-          "application/json"
-        ],
+        "summary": "/api/v1/{workspace}/collection/{collection}/events",
         "parameters": [
+          {
+            "name": "workspace",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
           {
             "name": "collection",
             "in": "path",
-            "required": true
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
           }
         ],
-        "responses": {}
+        "responses": {},
+        "tags": ["collection"]
       }
     },
-    "/api/collection/{collection}/reindex": {
+    "/api/v1/{workspace}/collection/{collection}/reindex": {
       "post": {
-        "summary": "/api/collection/{collection}/reindex",
-        "consumes": [
-          "application/json"
-        ],
+        "summary": "/api/v1/{workspace}/collection/{collection}/reindex",
         "parameters": [
+          {
+            "name": "workspace",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
           {
             "name": "collection",
             "in": "path",
-            "required": true
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
           }
         ],
-        "responses": {}
+        "responses": {},
+        "tags": ["collection"]
       }
     },
-    "/api/collection/{collection}/fs-info": {
+    "/api/v1/{workspace}/collection/{collection}/fs-info": {
       "get": {
-        "summary": "/api/collection/{collection}/fs-info",
-        "consumes": [
-          "application/json"
-        ],
+        "summary": "/api/v1/{workspace}/collection/{collection}/fs-info",
         "parameters": [
+          {
+            "name": "workspace",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
           {
             "name": "collection",
             "in": "path",
-            "required": true
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
           }
         ],
-        "responses": {}
+        "responses": {},
+        "tags": ["collection"]
       }
     },
-    "/api/v1/login": {
-      "post": {
-        "summary": "/api/v1/login",
-        "consumes": [
-          "application/json"
-        ],
-        "parameters": [],
-        "responses": {}
-      }
-    },
-    "/api/v1/create-access-code": {
-      "post": {
-        "summary": "/api/v1/create-access-code",
-        "consumes": [
-          "application/json"
-        ],
-        "parameters": [],
-        "responses": {}
-      }
-    },
-    "/api/v1/info": {
+    "/api/v1/*": {},
+    "/api/{workspace}": {
       "get": {
-        "summary": "/api/v1/info",
-        "consumes": [
-          "application/json"
+        "summary": "/api/{workspace}",
+        "parameters": [
+          {
+            "name": "workspace",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
         ],
-        "parameters": [],
-        "responses": {}
+        "responses": {},
+        "tags": []
       }
     },
-    "/api/v1/commands/.websocket": {
-      "get": {
-        "summary": "/api/v1/commands/.websocket",
-        "consumes": [
-          "application/json"
-        ],
-        "parameters": [],
-        "responses": {}
-      }
-    },
-    "/api/v1/collection": {
+    "/api/{workspace}/login": {
       "post": {
-        "summary": "/api/v1/collection",
-        "consumes": [
-          "application/json"
+        "summary": "/api/{workspace}/login",
+        "parameters": [
+          {
+            "name": "workspace",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
         ],
-        "parameters": [],
-        "responses": {}
+        "responses": {},
+        "tags": []
       }
     },
-    "/api/v1/collection/{collection}": {
+    "/api/{workspace}/register": {
+      "post": {
+        "summary": "/api/{workspace}/register",
+        "parameters": [
+          {
+            "name": "workspace",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {},
+        "tags": []
+      }
+    },
+    "/api/{workspace}/bot/join": {
+      "post": {
+        "summary": "/api/{workspace}/bot/join",
+        "parameters": [
+          {
+            "name": "workspace",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {},
+        "tags": []
+      }
+    },
+    "/api/{workspace}/bot/leave": {
+      "post": {
+        "summary": "/api/{workspace}/bot/leave",
+        "parameters": [
+          {
+            "name": "workspace",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {},
+        "tags": []
+      }
+    },
+    "/api/{workspace}/bot/command": {
+      "post": {
+        "summary": "/api/{workspace}/bot/command",
+        "parameters": [
+          {
+            "name": "workspace",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {},
+        "tags": []
+      }
+    },
+    "/api/{workspace}/bot/info": {
+      "get": {
+        "summary": "/api/{workspace}/bot/info",
+        "parameters": [
+          {
+            "name": "workspace",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {},
+        "tags": []
+      }
+    },
+    "/api/{workspace}/bot/status": {
+      "get": {
+        "summary": "/api/{workspace}/bot/status",
+        "parameters": [
+          {
+            "name": "workspace",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {},
+        "tags": []
+      }
+    },
+    "/api/{workspace}/bot/status/{bot}/{requestId}": {
+      "get": {
+        "summary": "/api/{workspace}/bot/status/{bot}/{requestId}",
+        "parameters": [
+          {
+            "name": "workspace",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "bot",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "requestId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {},
+        "tags": []
+      }
+    },
+    "/api/{workspace}/bot/configure/{name}": {
+      "post": {
+        "summary": "/api/{workspace}/bot/configure/{name}",
+        "parameters": [
+          {
+            "name": "workspace",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {},
+        "tags": []
+      }
+    },
+    "/api/{workspace}/bot/register": {
+      "post": {
+        "summary": "/api/{workspace}/bot/register",
+        "parameters": [
+          {
+            "name": "workspace",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {},
+        "tags": []
+      }
+    },
+    "/api/{workspace}/bot/reply": {
+      "post": {
+        "summary": "/api/{workspace}/bot/reply",
+        "parameters": [
+          {
+            "name": "workspace",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {},
+        "tags": []
+      }
+    },
+    "/api/{workspace}/bot/events": {
+      "get": {
+        "summary": "/api/{workspace}/bot/events",
+        "parameters": [
+          {
+            "name": "workspace",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {},
+        "tags": []
+      }
+    },
+    "/api/{workspace}/collection": {
+      "post": {
+        "summary": "/api/{workspace}/collection",
+        "parameters": [
+          {
+            "name": "workspace",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {},
+        "tags": ["collection"]
+      }
+    },
+    "/api/{workspace}/collection/{collection}/fs/{drive}/*": {
+      "get": {
+        "summary": "/api/{workspace}/collection/{collection}/fs/{drive}/*",
+        "parameters": [
+          {
+            "name": "workspace",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "collection",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "drive",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {},
+        "tags": ["collection"]
+      },
+      "put": {
+        "summary": "/api/{workspace}/collection/{collection}/fs/{drive}/*",
+        "parameters": [
+          {
+            "name": "workspace",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "collection",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "drive",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {},
+        "tags": ["collection"]
+      }
+    },
+    "/api/{workspace}/collection/{collection}/fs/{drive}": {
+      "get": {
+        "summary": "/api/{workspace}/collection/{collection}/fs/{drive}",
+        "parameters": [
+          {
+            "name": "workspace",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "collection",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "drive",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {},
+        "tags": ["collection"]
+      }
+    },
+    "/api/{workspace}/collection/{collection}": {
+      "get": {
+        "summary": "/api/{workspace}/collection/{collection}",
+        "parameters": [
+          {
+            "name": "workspace",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "collection",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {},
+        "tags": ["collection"]
+      },
       "patch": {
-        "summary": "/api/v1/collection/{collection}",
-        "consumes": [
-          "application/json"
-        ],
+        "summary": "/api/{workspace}/collection/{collection}",
         "parameters": [
           {
-            "name": "collection",
+            "name": "workspace",
             "in": "path",
-            "required": true
-          }
-        ],
-        "responses": {}
-      },
-      "get": {
-        "summary": "/api/v1/collection/{collection}",
-        "consumes": [
-          "application/json"
-        ],
-        "parameters": [
-          {
-            "name": "collection",
-            "in": "path",
-            "required": true
-          }
-        ],
-        "responses": {}
-      }
-    },
-    "/api/v1/collection/{collection}/fs/{drive}/*": {
-      "get": {
-        "summary": "/api/v1/collection/{collection}/fs/{drive}/*",
-        "consumes": [
-          "application/json"
-        ],
-        "parameters": [
-          {
-            "name": "collection",
-            "in": "path",
-            "required": true
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
           },
           {
-            "name": "drive",
+            "name": "collection",
             "in": "path",
-            "required": true
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
           }
         ],
-        "responses": {}
-      },
+        "responses": {},
+        "tags": ["collection"]
+      }
+    },
+    "/api/{workspace}/collection/{collection}/db": {
       "put": {
-        "summary": "/api/v1/collection/{collection}/fs/{drive}/*",
-        "consumes": [
-          "application/json"
-        ],
+        "summary": "/api/{workspace}/collection/{collection}/db",
         "parameters": [
           {
-            "name": "collection",
+            "name": "workspace",
             "in": "path",
-            "required": true
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
           },
           {
-            "name": "drive",
-            "in": "path",
-            "required": true
-          }
-        ],
-        "responses": {}
-      }
-    },
-    "/api/v1/collection/{collection}/fs/{drive}": {
-      "get": {
-        "summary": "/api/v1/collection/{collection}/fs/{drive}",
-        "consumes": [
-          "application/json"
-        ],
-        "parameters": [
-          {
             "name": "collection",
             "in": "path",
-            "required": true
-          },
-          {
-            "name": "drive",
-            "in": "path",
-            "required": true
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
           }
         ],
-        "responses": {}
+        "responses": {},
+        "tags": ["collection"]
       }
     },
-    "/api/v1/collection/{collection}/db": {
-      "put": {
-        "summary": "/api/v1/collection/{collection}/db",
-        "consumes": [
-          "application/json"
-        ],
-        "parameters": [
-          {
-            "name": "collection",
-            "in": "path",
-            "required": true
-          }
-        ],
-        "responses": {}
-      }
-    },
-    "/api/v1/collection/{collection}/db/{id}": {
-      "put": {
-        "summary": "/api/v1/collection/{collection}/db/{id}",
-        "consumes": [
-          "application/json"
-        ],
-        "parameters": [
-          {
-            "name": "collection",
-            "in": "path",
-            "required": true
-          },
-          {
-            "name": "id",
-            "in": "path",
-            "required": true
-          }
-        ],
-        "responses": {}
-      },
+    "/api/{workspace}/collection/{collection}/db/{id}": {
       "delete": {
-        "summary": "/api/v1/collection/{collection}/db/{id}",
-        "consumes": [
-          "application/json"
-        ],
+        "summary": "/api/{workspace}/collection/{collection}/db/{id}",
         "parameters": [
+          {
+            "name": "workspace",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
           {
             "name": "collection",
             "in": "path",
-            "required": true
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
           },
           {
             "name": "id",
             "in": "path",
-            "required": true
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
           }
         ],
-        "responses": {}
+        "responses": {},
+        "tags": ["collection"]
       }
     },
-    "/api/v1/collection/{collection}/db/{key}/{seq}": {
+    "/api/{workspace}/collection/{collection}/db/{key}/{seq}": {
       "get": {
-        "summary": "/api/v1/collection/{collection}/db/{key}/{seq}",
-        "consumes": [
-          "application/json"
-        ],
+        "summary": "/api/{workspace}/collection/{collection}/db/{key}/{seq}",
         "parameters": [
+          {
+            "name": "workspace",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
           {
             "name": "collection",
             "in": "path",
-            "required": true
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
           },
           {
             "name": "key",
             "in": "path",
-            "required": true
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
           },
           {
             "name": "seq",
             "in": "path",
-            "required": true
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
           }
         ],
-        "responses": {}
+        "responses": {},
+        "tags": ["collection"]
       }
     },
-    "/api/v1/collection/{collection}/sync": {
+    "/api/{workspace}/collection/{collection}/sync": {
       "get": {
-        "summary": "/api/v1/collection/{collection}/sync",
-        "consumes": [
-          "application/json"
-        ],
+        "summary": "/api/{workspace}/collection/{collection}/sync",
         "parameters": [
+          {
+            "name": "workspace",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
           {
             "name": "collection",
             "in": "path",
-            "required": true
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
           }
         ],
-        "responses": {}
+        "responses": {},
+        "tags": ["collection"]
       }
     },
-    "/api/v1/collection/{collection}/query/{name}": {
+    "/api/{workspace}/collection/{collection}/query/{name}": {
       "post": {
-        "summary": "/api/v1/collection/{collection}/query/{name}",
-        "consumes": [
-          "application/json"
-        ],
+        "summary": "/api/{workspace}/collection/{collection}/query/{name}",
         "parameters": [
+          {
+            "name": "workspace",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
           {
             "name": "collection",
             "in": "path",
-            "required": true
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
           },
           {
             "name": "name",
             "in": "path",
-            "required": true
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
           }
         ],
-        "responses": {}
-      }
-    },
-    "/api/v1/collection/{collection}/schema": {
+        "responses": {},
+        "tags": ["collection"]
+      },
       "get": {
-        "summary": "/api/v1/collection/{collection}/schema",
-        "consumes": [
-          "application/json"
-        ],
+        "summary": "/api/{workspace}/collection/{collection}/query/{name}",
         "parameters": [
+          {
+            "name": "workspace",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
           {
             "name": "collection",
             "in": "path",
-            "required": true
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
           }
         ],
-        "responses": {}
+        "responses": {},
+        "tags": ["collection"]
+      }
+    },
+    "/api/{workspace}/collection/{collection}/schema": {
+      "get": {
+        "summary": "/api/{workspace}/collection/{collection}/schema",
+        "parameters": [
+          {
+            "name": "workspace",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "collection",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {},
+        "tags": ["collection"]
       },
       "post": {
-        "summary": "/api/v1/collection/{collection}/schema",
-        "consumes": [
-          "application/json"
-        ],
+        "summary": "/api/{workspace}/collection/{collection}/schema",
         "parameters": [
+          {
+            "name": "workspace",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
           {
             "name": "collection",
             "in": "path",
-            "required": true
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
           }
         ],
-        "responses": {}
+        "responses": {},
+        "tags": ["collection"]
       }
     },
-    "/api/v1/collection/{collection}/feed/{key}": {
+    "/api/{workspace}/collection/{collection}/feed/{key}": {
       "put": {
-        "summary": "/api/v1/collection/{collection}/feed/{key}",
-        "consumes": [
-          "application/json"
-        ],
+        "summary": "/api/{workspace}/collection/{collection}/feed/{key}",
         "parameters": [
+          {
+            "name": "workspace",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
           {
             "name": "collection",
             "in": "path",
-            "required": true
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
           },
           {
             "name": "key",
             "in": "path",
-            "required": true
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
           }
         ],
-        "responses": {}
+        "responses": {},
+        "tags": ["collection"]
       }
     },
-    "/api/v1/collection/{collection}/debug": {
+    "/api/{workspace}/collection/{collection}/debug": {
       "get": {
-        "summary": "/api/v1/collection/{collection}/debug",
-        "consumes": [
-          "application/json"
-        ],
+        "summary": "/api/{workspace}/collection/{collection}/debug",
         "parameters": [
+          {
+            "name": "workspace",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
           {
             "name": "collection",
             "in": "path",
-            "required": true
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
           }
         ],
-        "responses": {}
+        "responses": {},
+        "tags": ["collection"]
       }
     },
-    "/api/v1/collection/{collection}/subscription/{name}": {
+    "/api/{workspace}/collection/{collection}/subscription/{name}": {
       "put": {
-        "summary": "/api/v1/collection/{collection}/subscription/{name}",
-        "consumes": [
-          "application/json"
-        ],
+        "summary": "/api/{workspace}/collection/{collection}/subscription/{name}",
         "parameters": [
+          {
+            "name": "workspace",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
           {
             "name": "collection",
             "in": "path",
-            "required": true
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
           },
           {
             "name": "name",
             "in": "path",
-            "required": true
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
           }
         ],
-        "responses": {}
+        "responses": {},
+        "tags": ["collection"]
       },
       "get": {
-        "summary": "/api/v1/collection/{collection}/subscription/{name}",
-        "consumes": [
-          "application/json"
-        ],
+        "summary": "/api/{workspace}/collection/{collection}/subscription/{name}",
         "parameters": [
+          {
+            "name": "workspace",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
           {
             "name": "collection",
             "in": "path",
-            "required": true
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
           },
           {
             "name": "name",
             "in": "path",
-            "required": true
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
           }
         ],
-        "responses": {}
+        "responses": {},
+        "tags": ["collection"]
       }
     },
-    "/api/v1/collection/{collection}/subscription/{name}/sse": {
+    "/api/{workspace}/collection/{collection}/subscription/{name}/sse": {
       "get": {
-        "summary": "/api/v1/collection/{collection}/subscription/{name}/sse",
-        "consumes": [
-          "application/json"
-        ],
+        "summary": "/api/{workspace}/collection/{collection}/subscription/{name}/sse",
         "parameters": [
+          {
+            "name": "workspace",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
           {
             "name": "collection",
             "in": "path",
-            "required": true
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
           },
           {
             "name": "name",
             "in": "path",
-            "required": true
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
           }
         ],
-        "responses": {}
+        "responses": {},
+        "tags": ["collection"]
       }
     },
-    "/api/v1/collection/{collection}/subscription/{name}/{cursor}": {
+    "/api/{workspace}/collection/{collection}/subscription/{name}/{cursor}": {
       "post": {
-        "summary": "/api/v1/collection/{collection}/subscription/{name}/{cursor}",
-        "consumes": [
-          "application/json"
-        ],
+        "summary": "/api/{workspace}/collection/{collection}/subscription/{name}/{cursor}",
         "parameters": [
+          {
+            "name": "workspace",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
           {
             "name": "collection",
             "in": "path",
-            "required": true
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
           },
           {
             "name": "name",
             "in": "path",
-            "required": true
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
           },
           {
             "name": "cursor",
             "in": "path",
-            "required": true
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
           }
         ],
-        "responses": {}
+        "responses": {},
+        "tags": ["collection"]
       }
     },
-    "/api/v1/collection/{collection}/events": {
+    "/api/{workspace}/collection/{collection}/events": {
       "get": {
-        "summary": "/api/v1/collection/{collection}/events",
-        "consumes": [
-          "application/json"
-        ],
+        "summary": "/api/{workspace}/collection/{collection}/events",
         "parameters": [
+          {
+            "name": "workspace",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
           {
             "name": "collection",
             "in": "path",
-            "required": true
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
           }
         ],
-        "responses": {}
+        "responses": {},
+        "tags": ["collection"]
       }
     },
-    "/api/v1/collection/{collection}/reindex": {
+    "/api/{workspace}/collection/{collection}/reindex": {
       "post": {
-        "summary": "/api/v1/collection/{collection}/reindex",
-        "consumes": [
-          "application/json"
-        ],
+        "summary": "/api/{workspace}/collection/{collection}/reindex",
         "parameters": [
+          {
+            "name": "workspace",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
           {
             "name": "collection",
             "in": "path",
-            "required": true
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
           }
         ],
-        "responses": {}
+        "responses": {},
+        "tags": ["collection"]
       }
     },
-    "/api/v1/collection/{collection}/fs-info": {
+    "/api/{workspace}/collection/{collection}/fs-info": {
       "get": {
-        "summary": "/api/v1/collection/{collection}/fs-info",
-        "consumes": [
-          "application/json"
-        ],
+        "summary": "/api/{workspace}/collection/{collection}/fs-info",
         "parameters": [
+          {
+            "name": "workspace",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
           {
             "name": "collection",
             "in": "path",
-            "required": true
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
           }
         ],
-        "responses": {}
+        "responses": {},
+        "tags": ["collection"]
       }
-    }
+    },
+    "/api/*": {}
   },
-  "swagger": "2.0"
+  "tags": [
+    {
+      "name": "collection"
+    }
+  ]
 }

@@ -41,4 +41,4 @@ Commands:
   sonar db put-schema [name]  put schema from stdin
   sonar db get-schema [name]  get schemas
   sonar db list-schemas       list schemas
-
+```

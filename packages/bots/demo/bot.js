@@ -8,7 +8,7 @@ if (require.main === module) {
   run(main)
 }
 
-function main (client) {
+function main (workspace) {
   const name = 'download'
 
   const spec = readYaml(p.join(__dirname, 'bot.yaml'))
@@ -81,7 +81,9 @@ class DownloadSession {
     const [url] = args
     const res = await fetch(url)
     const contentType = res.headers.get('content-type')
-    const hash = createHash('sha256').update(url, 'utf8').digest('hex')
+    const hash = createHash('sha256')
+      .update(url, 'utf8')
+      .digest('hex')
     console.log(hash)
     // const filename = url.replace("://", "_").replace(".", "_").replace("/", "_")
     const resourceRecord = {
@@ -90,7 +92,8 @@ class DownloadSession {
     }
     const resource = await this.collection.resources.create(resourceRecord)
     await this.collection.resources.writeFile(resource, res, {
-      requestType: 'stream'
+      force: true,
+      requestType: 'buffer'
     })
   }
 }

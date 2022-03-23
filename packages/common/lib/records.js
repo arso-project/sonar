@@ -5,6 +5,11 @@ const { bindSymbol } = require('./util')
 const Versions = require('./versions')
 const Emitter = require('./emitter')
 
+function fmtAddress (address) {
+  const [key, seq] = address.split('@')
+  return key.substring(0, 5) + '..' + key.substring(30, 32) + '@' + seq
+}
+
 // Base class for Record and Entity
 class Node extends Emitter {
   constructor (schema) {
@@ -224,6 +229,10 @@ class Record extends Node {
     this._latest.links = links
   }
 
+  update (nextValue) {
+    this._latest.update(nextValue)
+  }
+
   getType () {
     return this._latest.getType()
   }
@@ -235,6 +244,10 @@ class Record extends Node {
   // Invoked by the Node high-level methods.
   _field (fieldName, single = true) {
     return this._latest._field(fieldName, single)
+  }
+
+  toJSON () {
+    return this._latest.toJSON()
   }
 }
 
@@ -299,8 +312,7 @@ class RecordVersion extends Node {
   }
 
   get shortAddress () {
-    return this._record.key.substring(0, 8) + '..' + this._record.key.substring(30, 32) + '@' + this._record.seq
-    // return pretty(this._record.key) + '@' + this._record.seq
+    return fmtAddress(this.address)
   }
 
   get path () {
@@ -405,7 +417,11 @@ class RecordVersion extends Node {
       field._build(false)
       if (this._record.value[field.name] !== undefined) {
         // const fieldValue = new FieldValue(field, this._record.value[field.name])
-        const fieldValue = new FieldValue(field, this._record.value[field.name], this)
+        const fieldValue = new FieldValue(
+          field,
+          this._record.value[field.name],
+          this
+        )
         this._fieldValues.push(fieldValue)
       }
     }
@@ -464,10 +480,18 @@ class RecordVersion extends Node {
     const h = str => stylize(str, 'special')
     const s = str => stylize(str)
     const links = this.links ? this.links.length : 0
-    const value = this.deleted ? '<deleted>' : JSON.stringify(this.value).substring(0, 320)
-    const meta = s('feed ') + h(pretty(this.key)) + s('@') + this.seq +
-      s(' lseq ') + (this.lseq || '--') +
-      s(' links ') + links
+    const value = this.deleted
+      ? '<deleted>'
+      : JSON.stringify(this.value).substring(0, 320)
+    const meta =
+      s('feed ') +
+      h(pretty(this.key)) +
+      s('@') +
+      this.seq +
+      s(' lseq ') +
+      (this.lseq || '--') +
+      s(' links ') +
+      links
     return `RecordVersion(
 ${ind}  ${s('type')} ${this.type} ${s('id')} ${this.id}
 ${ind}  ${s('value')} ${value}
@@ -536,10 +560,14 @@ class FieldValue {
 
 class MissingFieldValue extends FieldValue {
   constructor (field = {}) {
-    field = Object.assign({
-      title: '(missing field)',
-      name: '_missing'
-    }, field, { missing: true })
+    field = Object.assign(
+      {
+        title: '(missing field)',
+        name: '_missing'
+      },
+      field,
+      { missing: true }
+    )
     super(field, undefined)
   }
 }
@@ -585,9 +613,7 @@ class Entity extends Node {
   }
 
   getTypes () {
-    return Array.from(new Set(
-      Array.from(this._records).map(r => r.getType())
-    ))
+    return Array.from(new Set(Array.from(this._records).map(r => r.getType())))
   }
 
   // Invoked by the Node high-level methods.

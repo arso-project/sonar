@@ -1,6 +1,7 @@
+# TODO: Remove once there's a way to remove schemas
 name: resource
 namespace: sonar
-title: Resource
+title: Resource (deprecated)
 fields:
   filename:
     type: string
@@ -46,4 +47,3 @@ fields:
       basic: true
       search:
         mode: facet
-

@@ -1,10 +1,7 @@
 const through = require('through2')
 const { Readable } = require('streamx')
 const keyEncoding = require('charwise')
-const {
-  mapRecordsIntoOps,
-  clearLevelDb
-} = require('./helpers')
+const { mapRecordsIntoOps, clearLevelDb } = require('./helpers')
 const Live = require('@frando/level-live')
 // const debug = require('debug')('db')
 // const collect = require('stream-collector')
@@ -31,6 +28,11 @@ module.exports = function createRecordView (lvl, db, opts) {
     api: {
       query (req, opts = {}) {
         if (!req) return this.view.all(opts)
+        if (req.path) {
+          const [typens, typename, id] = req.path.split('/')
+          req.type = typens + '/' + typename
+          req.id = id
+        }
         if (req.lseq) {
           const stream = new Readable()
           stream.push(req)

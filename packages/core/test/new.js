@@ -65,7 +65,9 @@ async function createN (createSDK, n, opts = {}) {
       cleanupSDK()
       await Promise.all(dirs.map(dir => rimraf(dir)))
       await new Promise(resolve => setTimeout(resolve, 200))
-    } catch (err) { console.error('Closing error', err) }
+    } catch (err) {
+      console.error('Closing error', err)
+    }
   }
 }
 
@@ -156,10 +158,10 @@ function runTests (create) {
     const storagePath = workspace._storagePath
 
     await workspace.close()
-    await timeout(100)
+    await timeout(200)
 
     workspace = new Workspace({ storagePath, sdk })
-    await workspace.ready()
+    await workspace.open()
     col = await workspace.createCollection('first')
     await col.ready()
     const key = col.key
@@ -167,7 +169,7 @@ function runTests (create) {
     t.equal(type2.name, 'doc')
     t.deepEqual(type1, type2)
     await workspace.close()
-    await timeout(100)
+    await timeout(200)
 
     workspace = new Workspace({ storagePath, sdk })
     await workspace.ready()
@@ -189,6 +191,43 @@ function runTests (create) {
     const drives = feeds.filter(record => record.value.type === 'hyperdrive')
     t.equal(drives.length, 1)
     await cleanup()
+  })
+
+  test('replication with 3 workspaces', async t => {
+    const [w1, w2, cleanup] = await create(2)
+    const c1 = await w1.createCollection('foo')
+    const c2 = await w2.createCollection('foo')
+    const { id } = await c1.put({
+      type: 'sonar/entity',
+      value: { label: 'foo1' }
+    })
+    await c2.putFeed(c1.localKey)
+    await c1.putFeed(c2.localKey)
+    await timeout(100)
+    await c2.sync()
+    await c2.put({ id, type: 'sonar/entity', value: { label: 'foo1 edit' } })
+    await timeout(100)
+    await c2.sync()
+    await c1.sync()
+    const res1 = await c1.query('records', { type: 'sonar/entity' })
+    t.equal(res1[0].value.label, 'foo1 edit')
+    const res2 = await c2.query('records', { type: 'sonar/entity' })
+    t.equal(res2[0].value.label, 'foo1 edit')
+
+    // close first workspace
+    await c1.close()
+    await w1.close()
+    // create third workspace
+    const [w3, cleanup2] = await create(1)
+    const c3 = await w3.createCollection('foo')
+    await c3.putFeed(c2.localKey)
+    await timeout(100)
+    await c3.sync()
+    const res3 = await c3.query('records', { type: 'sonar/entity' })
+    const oldVersion = await c3.get({ address: res3[0].links[0] })
+    t.equal(oldVersion[0].value.label, 'foo1')
+    await cleanup()
+    await cleanup2()
   })
 }
 
@@ -219,13 +258,12 @@ function applyStacktrace () {
     try {
       let maybePromise = origCb(t, ...args)
       if (maybePromise && maybePromise.then) {
-        return maybePromise
-          .catch(async err => {
-            console.error('Original error', err)
-            throw err
-            // t.fail(err)
-            // t.end()
-          })
+        return maybePromise.catch(async err => {
+          console.error('Original error', err)
+          throw err
+          // t.fail(err)
+          // t.end()
+        })
       }
     } catch (err) {
       t.fail(err)

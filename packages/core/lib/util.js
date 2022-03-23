@@ -45,7 +45,9 @@ exports.deriveId = function (value, opts = {}) {
   if (!Buffer.isBuffer(namespace)) namespace = Buffer.from(namespace, 'utf8')
   if (!Buffer.isBuffer(value)) value = Buffer.from(value, encoding)
   value = Buffer.concat([namespace, value])
-  const hash = createHash('sha256').update(value).digest()
+  const hash = createHash('sha256')
+    .update(value)
+    .digest()
   return base32.encode(hash.slice(0, 16))
 }
 
@@ -77,7 +79,8 @@ exports.defaultTrue = function (val) {
 exports.noop = function () {}
 
 exports.maybeCallback = function (callback) {
-  if (typeof callback === 'function' && callback.promise) callback.promise = undefined
+  if (typeof callback === 'function' && callback.promise)
+    callback.promise = undefined
   if (callback) return callback
   let _resolve, _reject
   callback = function (err, result) {
@@ -102,7 +105,7 @@ exports.clock = function clock () {
   const [ss, sn] = process.hrtime()
   return () => {
     const [ds, dn] = process.hrtime([ss, sn])
-    const ns = (ds * 1e9) + dn
+    const ns = ds * 1e9 + dn
     const ms = round(ns / 1e6)
     const s = round(ms / 1e3)
     if (s >= 1) return s + 's'

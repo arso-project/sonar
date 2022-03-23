@@ -20,7 +20,8 @@ module.exports = class BotBackend {
     // console.log('REGISTER BOT', { spec, sessionId })
     const name = spec.name
     if (!name) throw new Error('Name is required')
-    if (this.bots.has(spec.name)) throw new Error(`Bot ${name} already registered`)
+    if (this.bots.has(spec.name))
+      throw new Error(`Bot ${name} already registered`)
 
     // TODO: This would be the step to check auth
     if (!sessionId) sessionId = randomId()
@@ -46,14 +47,16 @@ module.exports = class BotBackend {
   }
 
   async join (botName, collection) {
-    if (!this.bots.has(botName)) throw new Error(`Bot ${botName} not registered`)
+    if (!this.bots.has(botName))
+      throw new Error(`Bot ${botName} not registered`)
 
     const remoteBot = this.bots.get(botName)
     return remoteBot.join(collection)
   }
 
   async leave (botName, collection) {
-    if (!this.bots.has(botName)) throw new Error(`Bot ${botName} not registered`)
+    if (!this.bots.has(botName))
+      throw new Error(`Bot ${botName} not registered`)
     const remoteBot = this.bots.get(botName)
     return remoteBot.leave(collection)
   }
@@ -163,7 +166,9 @@ class RemoteBot {
 
   async command (command, args, env) {
     if (env.collection && !this.collections.has(env.collection)) {
-      throw new Error(`Bot ${this.name} did not join collection ${env.collection}`)
+      throw new Error(
+        `Bot ${this.name} did not join collection ${env.collection}`
+      )
     }
     // TODO: Validate before sending? We have the spec available for this.
     return this._request('command', {

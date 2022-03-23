@@ -1,13 +1,25 @@
 const tape = require('tape')
-const { promisify } = require('util')
+const { createOne, createMany } = require('./lib/create')
 
-const { createMany } = require('./lib/create')
+tape('simple resources test', async t => {
+  const { cleanup, client } = await createOne()
+  const col = await client.createCollection('first')
+  await writeResource(col, 'one', 'foo')
+  await writeResource(col, 'two', 'bar')
+  const res = await readResources(col)
+  t.deepEqual(res.sort(), ['bar', 'foo'])
+  await cleanup()
+})
+
 tape('replicate resources', { timeout: 5000 }, async t => {
   const { cleanup, clients } = await createMany(2)
   const [client1, client2] = clients
 
   const collection1 = await client1.createCollection('first')
-  const collection2 = await client2.createCollection('second', { key: collection1.key, alias: 'second' })
+  const collection2 = await client2.createCollection('second', {
+    key: collection1.key,
+    alias: 'second'
+  })
 
   t.equal(collection1.info.key, collection1.info.localKey)
   t.equal(collection2.info.key, collection1.info.key)
@@ -25,6 +37,7 @@ tape('replicate resources', { timeout: 5000 }, async t => {
   // await timeout(500)
 
   let contents1 = await readResources(collection1)
+
   t.deepEqual(contents1.sort(), ['onfirst'], 'collection 1 ok')
   let contents2 = await readResources(collection2)
   t.deepEqual(contents2.sort(), ['onfirst', 'onsecond'], 'collection 2 ok')
@@ -43,18 +56,21 @@ tape('replicate resources', { timeout: 5000 }, async t => {
 async function readResources (collection) {
   const records = await collection.query(
     'records',
-    { type: 'sonar/resource' },
+    { type: 'sonar/file' },
     { sync: true }
   )
-  const contents = await Promise.all(records.map(r => {
-    return collection.resources.readFile(r).then(c => c.toString())
-  }))
+  const contents = await Promise.all(
+    records.map(record => {
+      return collection.fs
+        .readFile(record.id, { responseType: 'buffer' })
+        .then(c => c.toString())
+    })
+  )
   return contents
 }
 
 async function writeResource (collection, filename, content) {
-  const url = '~me/' + filename
-  await collection.fs.writeFile(url, content)
+  await collection.fs.createFile(content, { filename })
   // const resource = await collection.resources.create({ filename })
   // await collection.resources.writeFile(resource, content)
   // return resource

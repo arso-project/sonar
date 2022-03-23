@@ -9,17 +9,23 @@ const levelMem = require('level-mem')
 const sublevel = require('subleveldown')
 const { promisify } = require('util')
 const mkdirp = promisify(require('mkdirp-classic'))
-const { NanoresourcePromise: Nanoresource } = require('nanoresource-promise/emitter')
+const {
+  NanoresourcePromise: Nanoresource
+} = require('nanoresource-promise/emitter')
 // const why = require('why-is-node-running')
 
 const createLogger = require('@arsonar/common/log')
 
 const Collection = require('./collection')
 const LevelMap = require('./utils/level-map')
-const { defaultStoragePath, maybeCallback, deriveId, resolveKeyOrName, discoveryKey, uuid } = require('./util')
-
-// Import for views - move into module.
-const registerHyperdrive = require('./fs')
+const {
+  defaultStoragePath,
+  maybeCallback,
+  deriveId,
+  resolveKeyOrName,
+  discoveryKey,
+  uuid
+} = require('./util')
 
 function defaultWorkspaceStoragePath () {
   return p.join(defaultStoragePath(), 'workspace', '_default')
@@ -42,7 +48,6 @@ module.exports = class Workspace extends Nanoresource {
       for (const plugin of defaultPlugins) {
         this.registerPlugin(plugin)
       }
-      this.registerPlugin(registerHyperdrive)
     }
 
     if (opts.plugins) {
@@ -106,7 +111,9 @@ module.exports = class Workspace extends Nanoresource {
 
     this.id = this._workspaceInfo.get('id')
     if (this.id && this._opts.id && this._opts.id !== this.id) {
-      throw new Error(`Opening workspace failed: ID mismatch(saved: ${this.id}, requested: ${this._opts.id}`)
+      throw new Error(
+        `Opening workspace failed: ID mismatch(saved: ${this.id}, requested: ${this._opts.id}`
+      )
     }
     if (!this.id) {
       this.id = this._opts.id || uuid()
@@ -129,7 +136,7 @@ module.exports = class Workspace extends Nanoresource {
     await this._workspaceInfo.close()
     await this._collectionInfo.close()
     try {
-      this._leveldb.close()
+      await this._leveldb.close()
     } catch (err) {}
     if (this._ownSDK) {
       await this._sdk.close()
@@ -188,11 +195,9 @@ module.exports = class Workspace extends Nanoresource {
   }
 
   _findCollectionInfo (keyOrName) {
-    return this._collectionInfo.find(
-      info => {
-        return info.key === keyOrName || info.name === keyOrName
-      }
-    )
+    return this._collectionInfo.find(info => {
+      return info.key === keyOrName || info.name === keyOrName
+    })
   }
 
   async _nameToKey (keyOrName) {
@@ -210,7 +215,8 @@ module.exports = class Workspace extends Nanoresource {
     if (this._collections.has(keyOrName)) {
       return this._collections.get(keyOrName)
     }
-    if (opts.create && this._opening.has(keyOrName)) this._opening.delete(keyOrName)
+    if (opts.create && this._opening.has(keyOrName))
+      this._opening.delete(keyOrName)
 
     if (!this._opening.has(keyOrName)) {
       const promise = this._openCollection(keyOrName, opts)
@@ -277,6 +283,7 @@ module.exports = class Workspace extends Nanoresource {
     this.emit('collection', collection)
     await collection.open()
     this._opening.delete(keyOrName)
+    this._opening.delete(collection.name)
     return collection
   }
 

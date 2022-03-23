@@ -5,6 +5,7 @@ module.exports = class Versions extends Emitter {
     super()
     this._versions = new Map()
     this._current = new Set()
+    this._outdated = new Set()
   }
 
   current () {
@@ -33,10 +34,17 @@ module.exports = class Versions extends Emitter {
     this._versions.set(version.address, version)
     let isCurrent = true
     if (!version.links) version.links = []
-    for (const current of this._current) {
-      if (current.links.indexOf(version.link) !== -1) {
-        isCurrent = false
+    if (this._outdated.has(version.address)) {
+      isCurrent = false
+    } else {
+      for (const current of this._current) {
+        if (current.links.indexOf(version.address) !== -1) {
+          isCurrent = false
+        }
       }
+    }
+    for (const link of version.links) {
+      this._outdated.add(link)
     }
     if (isCurrent) {
       for (const link of version.links) {

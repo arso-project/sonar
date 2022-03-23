@@ -1,9 +1,13 @@
 import React from 'react'
-import useCollection from './use-collection'
-import useAsync from './use-async'
+import { useAsync, useCollection } from '..'
+
+export function useRecords (props = {}) {
+  props.single = false
+  return useRecord(props)
+}
 
 export default function useRecord (props = {}) {
-  let { path, type, id, update } = props
+  let { path, type, id, update, single = true } = props
   if (path) {
     const parts = path.split('/')
     id = parts.pop()
@@ -17,22 +21,22 @@ export default function useRecord (props = {}) {
     if (!collection) return null
     if (!id || !type) return null
     let record
-    if (!update) {
+    if (!update && single) {
       record = collection.store.getRecord(path)
     }
     if (!record) {
       record = await collection.get({ type, id })
       if (!record.length) return null
-      record = record[0]
+      if (single) record = record[0]
     }
     return record
-  }, [collection, path, update])
+  }, [collection, path, update, single])
 
-  let record = state.data
+  const record = state.data
   // if (state.data && state.data.length) record = state.data[0]
 
   React.useEffect(() => {
-    if (!record) return
+    if (!record || !single) return
     return record.subscribe(() => {
       setUpdateCounter(updateCounter => updateCounter + 1)
     })

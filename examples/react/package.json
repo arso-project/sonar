@@ -1,0 +1,50 @@
+{
+  "name": "@arsonar/react-example",
+  "version": "0.0.1",
+  "description": "A arsonar module",
+  "module": "main.jsx",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build"
+  },
+  "dependencies": {
+    "@arsonar/react": "*",
+    "react": "^17.0.1",
+    "react-dom": "^17.0.2"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react-refresh": "^1.3.6",
+    "sass": "^1.43.2",
+    "vite": "^2.6.1"
+  },
+  "standard": {
+    "env": [
+      "es6",
+      "node",
+      "browser"
+    ],
+    "ignore": [
+      "build",
+      "dist"
+    ]
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/arso-project/sonar.git"
+  },
+  "keywords": [
+    "arso-project"
+  ],
+  "author": {
+    "name": "arso contributors",
+    "email": "hi@arso.xyz"
+  },
+  "license": "GPL-3.0",
+  "bugs": {
+    "url": "https://github.com/arso-project/sonar/issues"
+  },
+  "homepage": "https://github.com/arso-project/sonar#readme",
+  "publishConfig": {
+    "access": "public"
+  }
+}

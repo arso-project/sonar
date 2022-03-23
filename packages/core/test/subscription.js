@@ -35,11 +35,17 @@ tape('subscription stream', async t => {
     })
 
     timer = clock()
-    await collection.putType({ name: 'foo', fields: { title: { type: 'string' } } })
+    await collection.putType({
+      name: 'foo',
+      fields: { title: { type: 'string' } }
+    })
     await collection.put({ type: 'foo', value: { title: 'hello' } })
     debug('put took', timer())
     timer = clock()
-    const fail = setTimeout(() => t.fail('record was not in subscription stream'), 1000)
+    const fail = setTimeout(
+      () => t.fail('record was not in subscription stream'),
+      1000
+    )
     await promise
     clearTimeout(fail)
     debug('sub took', timer())
@@ -71,7 +77,7 @@ function clock () {
   const [ss, sn] = process.hrtime()
   return () => {
     const [ds, dn] = process.hrtime([ss, sn])
-    const ns = (ds * 1e9) + dn
+    const ns = ds * 1e9 + dn
     const ms = round(ns / 1e6)
     const s = round(ms / 1e3)
     if (s >= 1) return s + 's'

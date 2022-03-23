@@ -1,11 +1,14 @@
 {
   "name": "@arsonar/bots",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "main": "index.js",
   "license": "GPL-3.0",
   "dependencies": {
-    "@arsonar/client": "^0.4.0",
+    "@arsonar/client": "^0.5.0",
     "js-yaml": "^3.14.0",
     "little-process-box": "^0.2.3"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

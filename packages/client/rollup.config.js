@@ -11,14 +11,26 @@ import autoExternal from 'rollup-plugin-auto-external'
 // import visualizer from 'rollup-plugin-visualizer'
 // import nodeBuiltins from 'rollup-plugin-node-builtins'
 // import analyze from 'rollup-plugin-analyzer'
-import { terser } from 'rollup-plugin-terser'
+// import { terser } from 'rollup-plugin-terser'
+
+const BUNDLED_DEPENDENCIES = ['@arsonar/common', 'streamx', 'parse-dat-url']
 
 const extensions = ['.js', '.ts']
 
 const shared = {
   input: 'index.js',
   output: {
-    intro: 'const global = window; const process = { nextTick: cb => new Promise(() => cb && cb()) }',
+    intro: `
+      // minimal browser mocks needed for some nodejs modules
+      if (window) {
+        window.global = window
+        window.process = {
+          nextTick: function(cb) {
+            new Promise(() => cb && cb())
+          }
+        }
+      }
+    `,
     sourcemap: true
   },
   plugins: [
@@ -49,6 +61,28 @@ const shared = {
   ]
 }
 
+// In the default bundle, don't bundle dependencies, but bundle streamx
+// because some other bundlers (eg vite) seem to have a problem with it.
+// TODO: Investigate and remove.
+function autoExternalWithoutStreamx (opts) {
+  const plugin = autoExternal(opts)
+  const origOptions = plugin.options
+  plugin.options = function (opts) {
+    const ret = origOptions(opts)
+    const external = ret.external
+    ret.external = function (id) {
+      if (BUNDLED_DEPENDENCIES.indexOf(id) !== -1) return false
+      if (typeof external === 'function') {
+        return external(id)
+      } else {
+        return external.indexOf(id) !== -1
+      }
+    }
+    return ret
+  }
+  return plugin
+}
+
 export default [
   {
     ...shared,
@@ -58,7 +92,7 @@ export default [
       format: 'esm'
     },
     plugins: [
-      ...shared.plugins,
+      ...shared.plugins
       // terser()
     ]
   },
@@ -70,7 +104,7 @@ export default [
       format: 'esm'
     },
     plugins: [
-      autoExternal(),
+      autoExternalWithoutStreamx(),
       ...shared.plugins
     ]
   }

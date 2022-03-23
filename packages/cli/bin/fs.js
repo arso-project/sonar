@@ -108,7 +108,8 @@ async function readid (argv) {
   console.error('reading ' + id)
   const res = await client.get({ id, type: 'sonar/resource' })
   if (!res.length) throw new Error('id not found')
-  if (res.length > 1) return console.error('warn: multiple files found. reading first')
+  if (res.length > 1)
+    return console.error('warn: multiple files found. reading first')
   const rs = await client.readResourceFile(res[0])
   rs.pipe(process.stdout)
 }
@@ -181,7 +182,10 @@ async function _importfolder ({ client, path, opts }) {
   console.log(prefix)
 }
 
-function reportProgress (stream, { total, msg, bytes = true, interval = 1000 }) {
+function reportProgress (
+  stream,
+  { total, msg, bytes = true, interval = 1000 }
+) {
   let len = 0
   if (msg) msg = msg + ' ... '
   else msg = ''
@@ -227,7 +231,7 @@ function formatStat (files, opts = {}) {
   if (!opts.list) {
     return rows.map(f => f.name).join(' ')
   } else {
-    const list = table(rows.map(f => ([f.size, f.mtime, f.name])))
+    const list = table(rows.map(f => [f.size, f.mtime, f.name]))
     return `total ${rows.length}\n${list}`
   }
 }
@@ -266,8 +270,21 @@ function formatDate (d) {
 
 function parseStat (s) {
   const { Stats } = require('fs')
-  return new Stats(s.dev, s.mode, s.nlink, s.uid, s.gid, s.rdev, s.blksize,
-    s.ino, s.size, s.blocks, s.atime, s.mtime, s.ctime)
+  return new Stats(
+    s.dev,
+    s.mode,
+    s.nlink,
+    s.uid,
+    s.gid,
+    s.rdev,
+    s.blksize,
+    s.ino,
+    s.size,
+    s.blocks,
+    s.atime,
+    s.mtime,
+    s.ctime
+  )
 }
 
 function pify (fn, ...args) {

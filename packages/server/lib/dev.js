@@ -5,12 +5,6 @@ const mkdirp = require('mkdirp')
 module.exports = { initTop, initBottom }
 
 function initTop (app, opts) {
-  // If in dev mode, serve the webpack dev middleware for the UI at /ui-dev
-  if (opts.uiWatch) {
-    const uiDevMiddleware = require('@arsonar/ui/express-dev')
-    uiDevMiddleware(app, { publicPath: '/ui-dev', workdir: opts.workdir })
-  }
-
   // express-oas-generator: handle responses
   if (opts.expressOas) {
     const oas = require('express-oas-generator')
