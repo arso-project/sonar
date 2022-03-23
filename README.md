@@ -48,6 +48,12 @@ If the start fails with errors related to `sonar-tantivy`, try to redownload or 
 yarn run build:sonar-tantivy
 ```
 
+If the start fails with errors related to `client`, try to rebuild client :
+
+```
+yarn run build:client
+```
+
 ```sh
 # start the sonar server
 ./sonar start
