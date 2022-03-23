@@ -8,7 +8,10 @@ const isBuffer = require('is-buffer')
  * This is a wrapper around the fetch web API. It should be API compatible to fetch,
  * with the following changes:
  *
+ * TODO: Rethink the default responseType cascade.
+ *
  * @async
+ * @param {string} url - The url to fetch
  * @param {string} [opts.endpoint=''] Endpoint URL (will be prefixed to URL)
  * @param {string} [opts.requestType='json'] Request encoding and content type.
  *   Supported values are 'json' and 'binary'
@@ -20,8 +23,6 @@ const isBuffer = require('is-buffer')
  * @return {Promise<object>} If the response has a JSON content type header, the
  *    decoded JSON will be returned. if opts.responseType is 'binary' or 'text',
  *    the response will be returned as a buffer or text.
- *
- * TODO: Rethink the default responseType cascade.
  */
 module.exports = async function makeFetch (url, opts) {
   if (!url.match(/^https?:\/\//)) {

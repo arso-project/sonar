@@ -11,7 +11,7 @@
     "doc": "run-p doc:*",
     "doc:md": "jsdoc2md --files lib/workspace.js lib/collection.js lib/fs.js --param-list-format list --separators --partial doc-gen/scope.hbs --helper doc-gen/helpers.js > api.md",
     "doc:html": "rm -rf apidocs && jsdoc --configure doc-gen/jsdoc.json --verbose .",
-    "doc:tsd": "jsdoc --configure doc-gen/jsdoc-tsd.json --verbose -d . -t ../../node_modules/tsd-jsdoc/dist -r .",
+    "doc:tsd": "true || jsdoc --configure doc-gen/jsdoc-tsd.json --verbose -d . -t ../../node_modules/tsd-jsdoc/dist -r .",
     "prepublishOnly": "npm run build"
   },
   "types": "types.d.ts",
