@@ -342,9 +342,9 @@ module.exports = function createCollectionRoutes () {
     '/:collection/file',
     AH(async function (req, res, next) {
       let metadata = {}
-      if (req.params.metadata) {
+      if (req.query.metadata) {
         try {
-          metadata = JSON.parse(req.params.metadata)
+          metadata = JSON.parse(req.query.metadata)
           if (typeof metadata !== 'object' || Array.isArray(metadata)) {
             throw new Error('Metadata has to be a JSON object')
           }
@@ -360,17 +360,26 @@ module.exports = function createCollectionRoutes () {
   router.get(
     '/:collection/file/:id',
     AH(async function (req, res, next) {
-      if (req.query.meta) {
+      const query = req.query
+      if (query.meta) {
         const record = await req.collection.files.getRecord(req.params.id)
         return res.json(record)
       }
       const {
         headers,
         stream,
-        statusCode
+        statusCode,
+        record
       } = await req.collection.files.readFileWithHeaders(req.params.id, req)
       for (const [name, value] of Object.entries(headers)) {
         res.setHeader(name, value)
+      }
+
+      if (query.dl) {
+        const filename = record.value.filename || record.id
+        res.setHeader('Content-Disposition', `attachment; filename="${filename}"`)
+      } else {
+        res.setHeader('Content-Disposition', 'inline')
       }
       res.status(statusCode)
 

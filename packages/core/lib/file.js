@@ -120,7 +120,7 @@ module.exports = class Files {
 
     if (method === 'HEAD') return new EmptyStream()
     const readStream = hyperdrive.createReadStream(path, range)
-    return { stream: readStream, headers: responseHeaders, statusCode }
+    return { stream: readStream, headers: responseHeaders, statusCode, record }
   }
 
   async resolveFile (id) {

@@ -35,6 +35,7 @@ class Files {
     const requestType = 'stream'
     const params = {}
     if (metadata) params.metadata = JSON.stringify(metadata)
+
     return await this.collection.fetch('/file', {
       method: 'POST',
       body: stream,
@@ -81,7 +82,8 @@ class Files {
     if (opts.range) {
       opts.headers.Range = `bytes=${opts.range.from || 0}-${opts.range.to || ''}`
     }
-    return this.collection.fetch('/file/' + id, opts)
+    const query = opts.query || ''
+    return this.collection.fetch('/file/' + id + query, opts)
   }
 
   /**
