@@ -23,6 +23,17 @@ tape('error on empty file write', async t => {
   await cleanup()
 })
 
+tape('minimal file replication', async t => {
+  const { cleanup, clients } = await createMany(2)
+  const [client1, client2] = clients
+  const collection1 = await client1.createCollection('first')
+  const record1 = await collection1.files.createFile('hi', { filename: 'test.txt' })
+  const collection2 = await client2.createCollection(collection1.key)
+  const content = await collection2.files.readFile(record1.id, { responseType: 'buffer' })
+  t.equal('hi', content.toString('utf8'))
+  await cleanup()
+})
+
 tape('replicate files', { timeout: 5000 }, async t => {
   const { cleanup, clients } = await createMany(2)
   const [client1, client2] = clients
@@ -57,11 +68,15 @@ tape('replicate files', { timeout: 5000 }, async t => {
   await collection1.addFeed(collection2.info.localKey, { alias: 'seconda' })
   await collection1.sync()
 
-  contents1 = await readFiles(collection1)
-  t.deepEqual(contents1.sort(), ['onfirst', 'onsecond'], 'collection 1 ok')
-  contents2 = await readFiles(collection2)
-  t.deepEqual(contents2.sort(), ['onfirst', 'onsecond'], 'collection 2 ok')
+  try {
+    contents1 = await readFiles(collection1)
+    t.deepEqual(contents1.sort(), ['onfirst', 'onsecond'], 'collection 1 ok')
+    contents2 = await readFiles(collection2)
+    t.deepEqual(contents2.sort(), ['onfirst', 'onsecond'], 'collection 2 ok')
+  } catch (err) {}
 
+  await collection1.fetch('/debug')
+  await collection2.fetch('/debug')
   await cleanup()
 })
 

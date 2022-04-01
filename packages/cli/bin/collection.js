@@ -85,7 +85,6 @@ async function list (argv) {
         collection.key.toString('hex'),
         'Shared:      ' + chalk.bold(collection.config.share ? 'Yes' : 'No'),
         'Local key:   ' + chalk.bold(collection.localKey),
-        // 'Local drive: ' + chalk.bold(collection.localDrive),
         'Length:      ' + chalk.bold(collection.length),
         'Feeds:',
         '    ' + collection.feeds.map(feed => {

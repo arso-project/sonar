@@ -87,7 +87,7 @@ More on this project on [arso.xyz](https://arso.xyz).
 
 The repo is structured as a monorepo of different packages (that are interdependent at several points).
 
-- **[core](packages/core/README.md)** it the core module. It manages _collections_, which are our notion of "a group of feeds\*. Each collection has a [kappa-record-db](https://github.com/arso-project/kappa-record-db) that's plugged into a search index through [tantivy](https://github.com/arso-project/packages/tantivy). Each collection has also a list of associated [hyperdrives](https://github.com/mafintosh/hyperdrive).
+- **[core](packages/core/README.md)** it the core module. It manages _collections_, which are our notion of "a group of feeds\*. Each collection has a [kappa-record-db](https://github.com/arso-project/kappa-record-db) that's plugged into a search index through [tantivy](https://github.com/arso-project/packages/tantivy). Each collection has also a list of associated [Hyperblobs](https://github.com/andrewosh/hyperblobs) to store raw file contents.
 
 - **[server](packages/server/README.md)** provides a REST style HTTP api that's used both by the CLI and the UI to access and manage the data in packages/core.
 

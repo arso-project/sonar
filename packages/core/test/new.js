@@ -183,16 +183,6 @@ function runTests (create) {
     await cleanup()
   })
 
-  test('sonar fs', async t => {
-    const [workspace, cleanup] = await create(1, { persist: true })
-    const collection = await workspace.createCollection('default')
-    await collection.open()
-    const feeds = await collection.get({ type: 'sonar/feed' })
-    const drives = feeds.filter(record => record.value.type === 'hyperdrive')
-    t.equal(drives.length, 1)
-    await cleanup()
-  })
-
   test('replication with 3 workspaces', async t => {
     const [w1, w2, cleanup] = await create(2)
     const c1 = await w1.createCollection('foo')

@@ -225,6 +225,7 @@ module.exports = function createCollectionRoutes () {
   router.get(
     '/:collection/debug',
     AH(async (req, res, next) => {
+      console.log(req.collection)
       return { hello: 'world' }
     })
   )
@@ -315,23 +316,6 @@ module.exports = function createCollectionRoutes () {
 
       await req.collection.reindex(views)
       res.send()
-    })
-  )
-
-  router.get(
-    '/:collection/fs-info',
-    AH(async function (req, res, next) {
-      const { collection } = req
-      const records = await collection.query('records', { type: 'sonar/feed' })
-      const drives = records
-        .filter(record => record.value.type === 'hyperdrive')
-        .map(record => record.value)
-      if (!drives.length) return res.send([])
-      for (const drive of drives) {
-        const info = await collection.drive(drive.key)
-        drive.writable = info.writable
-      }
-      res.send(drives)
     })
   )
 

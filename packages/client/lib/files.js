@@ -13,17 +13,6 @@ class Files {
   }
 
   /**
-   * List the drives that are part of this collection.
-   *
-   * @async
-   * @return {Promise<Array<object>>} Array of drive objects with keys `{ alias, key, writable }`
-   */
-  async listDrives () {
-    // TODO: Move route under /fs somehow. Maybe HEAD on /?
-    return this.collection.fetch('/fs-info')
-  }
-
-  /**
    * Create a new file
    * @param {Stream|Buffer} stream - File content as stream or buffer
    * @param {object} [metadata] - File record metadata (see file record schema)

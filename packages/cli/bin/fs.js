@@ -7,8 +7,6 @@ const makeClient = require('../client')
 const pretty = require('pretty-bytes')
 const table = require('text-table')
 const date = require('date-fns')
-const mime = require('mime-types')
-const speedometer = require('speedometer')
 const yargs = require('yargs')
 
 exports.command = 'fs'
@@ -16,11 +14,6 @@ exports.describe = 'file system'
 exports.handler = () => yargs.showHelp()
 exports.builder = function (yargs) {
   yargs
-    .command({
-      command: 'list',
-      describe: 'list drives',
-      handler: list
-    })
     .command({
       command: 'read <path>',
       describe: 'read file to stdout',
@@ -80,12 +73,6 @@ exports.builder = function (yargs) {
         }
       }
     })
-}
-
-async function list (argv) {
-  const client = makeClient(argv)
-  const list = await client.getDrives()
-  console.log(list)
 }
 
 async function ls (argv) {

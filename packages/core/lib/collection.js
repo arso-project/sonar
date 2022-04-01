@@ -26,15 +26,6 @@ const createIndexView = require('../views/indexes')
 const createHistoryView = require('../views/history')
 const CORE_TYPE_SPECS = require('./types.json')
 const Files = require('./file')
-const makeGetDriveFunction = require('./hyperdrive')
-
-const driveStruct = require('./struct/drive')
-const recordsStruct = require('./struct/records')
-
-function getStruct (feedType) {
-  if (feedType === 'hyperdrive') return driveStruct
-  else return recordsStruct
-}
 
 const FEED_TYPE_ROOT = 'sonar.root'
 
@@ -358,16 +349,8 @@ class Collection extends Nanoresource {
     return batch.entries
   }
 
-  _struct (key) {
-    // Structs are our small abstraction around different feed types
-    const info = this.feedInfo(key)
-    const struct = getStruct(info.type)
-    return struct
-  }
-
   _decodeBlock (block, req) {
-    const struct = this._struct(req.key)
-    const decodedBlock = struct.decodeBlock(block, req)
+    const decodedBlock = RecordEncoder.decode(block, req)
     return decodedBlock
   }
 
@@ -392,6 +375,7 @@ class Collection extends Nanoresource {
   async getBlock (req, opts = {}) {
     if (!this.opened && !this.opening) await this.open()
     if (opts.wait === undefined) opts.wait = true
+
     req = await this.resolveBlock(req)
 
     const block = await this._blockCache.getBlock(req.key, req.seq)
@@ -444,7 +428,7 @@ class Collection extends Nanoresource {
       let list = []
       if ((req.key && req.seq) || req.lseq || req.address) {
         try {
-          const block = await this.getBlock(req)
+          const block = await this.getBlock(req, opts)
           if (block) list.push(block)
         } catch (err) {
           // TODO: throw or log?
@@ -587,6 +571,7 @@ class Collection extends Nanoresource {
       network,
       config
     }
+    this.emit('onstatus', status)
     if (cb) process.nextTick(cb, null, status)
     return status
   }
@@ -693,9 +678,7 @@ class Collection extends Nanoresource {
     // our local resources are not yet initialized
     // ====
     const rootInfo = { type: FEED_TYPE_ROOT }
-    this._rootFeed = await this._initFeed(this._keyOrName, rootInfo, {
-      index: false
-    })
+    this._rootFeed = await this._initFeed(this._keyOrName, rootInfo)
     this._id = deriveId(this._rootFeed.discoveryKey)
 
     if (this._keyOrName !== this._rootFeed.key.toString('hex')) {
@@ -777,10 +760,6 @@ class Collection extends Nanoresource {
     const [openPromises, addOpenPromise] = promiseFactory()
     this.emit('opening', addOpenPromise)
     await Promise.all(openPromises)
-
-    // Init hyperdrives.
-    const { onClose, getDrive } = await makeGetDriveFunction(this)
-    this.drive = getDrive
 
     // Emit open event
     this.log.debug(`Collection open: ${pretty(this.key)}`)
@@ -876,14 +855,19 @@ class Collection extends Nanoresource {
 
     // Add feed to indexer
     // TODO: Change default to false?
-    if (opts.index !== false) {
+    let index = false
+    if (opts.index === true) index = true
+    if (opts.index === undefined && info.type === FEED_TYPE_ROOT) index = true
+    if (index && this._indexer) {
       this._indexer.addReady(feed, { scan: true })
     }
 
     // TODO: Start to not download everything, always.
     // Note: null as second argument is needed, see
     // https://github.com/geut/hypercore-promise/issues/8
-    feed.download({ start: 0, end: -1 }, null)
+    if (index) {
+      feed.download({ start: 0, end: -1 }, null)
+    }
 
     // Look for the feed in the swarm if added by myself
     if (!opts.origin || opts.origin === this.localKey.toString('hex')) {

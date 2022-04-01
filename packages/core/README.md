@@ -9,7 +9,7 @@ A battery-including kappa database for hypercores.
 - Add data types (models) to collections
 - Add data records to feeds
 - Replicate collections between peers
-- File system per collection (using hyperdrives)
+- Blob store per collection
 - Full-text search
 - Pluggable query backends
 - Remote queries (into the peer to peer swarm)
