@@ -2,6 +2,8 @@ const fetch = require('isomorphic-fetch')
 const debug = require('debug')('sonar:fetch')
 const isBuffer = require('is-buffer')
 
+module.exports = makeFetch
+
 /**
  * Fetch a resource.
  *
@@ -24,10 +26,11 @@ const isBuffer = require('is-buffer')
  *    decoded JSON will be returned. if opts.responseType is 'binary' or 'text',
  *    the response will be returned as a buffer or text.
  */
-module.exports = async function makeFetch (url, opts) {
+async function makeFetch (url, opts) {
   if (!url.match(/^https?:\/\//)) {
-    if (url.indexOf('://') !== -1)
+    if (url.indexOf('://') !== -1) {
       throw new Error('Only http: and https: protocols are supported.')
+    }
     if (!url.startsWith('/')) url = '/' + url
     if (opts.endpoint) url = opts.endpoint + url
   }
