@@ -375,8 +375,10 @@ module.exports = function createCollectionRoutes () {
       res.status(statusCode)
 
       pipeline(stream, res, err => {
-        if (err) next(err)
-        else res.end()
+        if (err) {
+          req.collection.log.warn('File request produced error', err)
+        }
+        res.end()
       })
     })
   )

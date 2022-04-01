@@ -145,17 +145,21 @@ module.exports = function SonarServer (opts = {}) {
   )
   app.use('/api-docs-client', express.static(clientApiDocsPath))
 
-  // Include the static UI at /
-  if (!config.server.dev.uiWatch) {
-    const uiStaticPath = p.join(
-      p.dirname(require.resolve('@arsonar/ui/package.json')),
-      'dist'
-    )
-    app.use('/', express.static(uiStaticPath))
-  } else {
-    const uiDevMiddleware = require('@arsonar/ui/express-dev')
-    api.log.warn('UI development server started. UI will rebuild on changes!')
-    uiDevMiddleware(app)
+  // Include the static UI at / if it is installed
+  try {
+    if (!config.server.dev.uiWatch) {
+      const uiStaticPath = p.join(
+        p.dirname(require.resolve('@arsonar/ui/package.json')),
+        'dist'
+      )
+      app.use('/', express.static(uiStaticPath))
+    } else {
+      const uiDevMiddleware = require('@arsonar/ui/express-dev')
+      api.log.warn('UI development server started. UI will rebuild on changes!')
+      uiDevMiddleware(app)
+    }
+  } catch (err) {
+    api.log.warn('The default UI is not installed. Install @arsonar/ui to fix.')
   }
 
   // Error handling
@@ -167,9 +171,9 @@ module.exports = function SonarServer (opts = {}) {
     if (!err.statusCode && err.code === 'ENOENT') {
       err.statusCode = 404
     }
+    api.log.error({ err, req, message: `Request ${req.url} produced error` })
     res.status(err.statusCode || 500)
     res.send(result)
-    api.log.error({ err, req, message: `Request ${req.url} produced error` })
   })
 
   // Dev middleware.
