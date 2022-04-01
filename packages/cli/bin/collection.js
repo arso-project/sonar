@@ -1,6 +1,7 @@
 const chalk = require('chalk')
 const makeClient = require('../client')
 const yargs = require('yargs')
+const prettyBytes = require('pretty-bytes')
 
 exports.command = 'collection'
 exports.describe = 'manage collections'
@@ -60,7 +61,7 @@ async function create (argv) {
 
 async function addFeed (argv) {
   const client = makeClient(argv)
-  const collection = await client.focusedCollection()
+  const collection = await client.openCollection(argv.collection)
   const { key, name, type } = argv
   const info = { name, type }
   const result = await collection.addFeed(key, info)
@@ -69,23 +70,32 @@ async function addFeed (argv) {
 
 async function info (argv) {
   const client = makeClient(argv)
-  const collection = await client.focusedCollection()
+  const collection = await client.openCollection(argv.collection)
   // const status = await collection.status()
   console.log(JSON.stringify(collection.info))
 }
 
 async function list (argv) {
   const client = makeClient(argv)
-  const info = await client.info()
-  const output = Object.values(info.collections)
+  const collections = await client.listCollections()
+  const output = Object.values(collections)
     .map(collection => {
       return [
         chalk.bold.blueBright(collection.name),
         collection.key.toString('hex'),
-        'Shared:      ' + chalk.bold(collection.share ? 'Yes' : 'No'),
+        'Shared:      ' + chalk.bold(collection.config.share ? 'Yes' : 'No'),
         'Local key:   ' + chalk.bold(collection.localKey),
-        'Local drive: ' + chalk.bold(collection.localDrive),
-        'Length:      ' + chalk.bold(collection.length)
+        // 'Local drive: ' + chalk.bold(collection.localDrive),
+        'Length:      ' + chalk.bold(collection.length),
+        'Feeds:',
+        '    ' + collection.feeds.map(feed => {
+          return '        ' + [
+            'Key: ' + feed.key,
+            'Type: ' + feed.type,
+            'Length: ' + feed.length,
+            'Size: ' + prettyBytes(feed.byteLength)
+          ].join('    ')
+        }).join('\n    ')
       ].join('\n')
     })
     .join('\n\n')
