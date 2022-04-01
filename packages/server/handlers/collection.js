@@ -1,5 +1,4 @@
 const SseStream = require('ssestream').default
-const hyperdriveHttp = require('hyperdrive-http')
 const express = require('express')
 const split2 = require('split2')
 const { pipeline } = require('streamx')
