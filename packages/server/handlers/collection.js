@@ -8,8 +8,6 @@ const AH = require('../lib/async-handler')
 
 const WAIT_TIMEOUT = 1000
 
-const createFsRouter = require('./fs')
-
 module.exports = function createCollectionRoutes () {
   const router = express.Router()
 
