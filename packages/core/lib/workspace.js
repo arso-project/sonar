@@ -14,7 +14,7 @@ const {
 } = require('nanoresource-promise/emitter')
 // const why = require('why-is-node-running')
 
-const createLogger = require('@arsonar/common/log')
+const { Logger } = require('@arsonar/common')
 
 const Collection = require('./collection')
 const LevelMap = require('./utils/level-map')
@@ -41,7 +41,7 @@ module.exports = class Workspace extends Nanoresource {
     this._storagePath = opts.storagePath || defaultWorkspaceStoragePath()
     this._opening = new Map()
 
-    this.log = opts.log || createLogger()
+    this.log = opts.log || new Logger()
 
     if (opts.defaultPlugins !== false) {
       const defaultPlugins = require('./default-plugins')

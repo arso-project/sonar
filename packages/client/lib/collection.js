@@ -202,7 +202,7 @@ class Collection extends EventEmitter {
     record = this.schema.RecordVersion(record)
     const resultRecord = await this.fetch('/', {
       method: 'POST',
-      body: record
+      body: record.toJSON()
     })
     return this.store.cacheRecord(resultRecord)
   }

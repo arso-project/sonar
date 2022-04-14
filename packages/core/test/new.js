@@ -115,13 +115,18 @@ function runTests (create) {
     const c1 = await w1.createCollection('default')
     await setup(c1)
 
+    let res = await c1.query('records', { type: 'doc' })
+    t.equal(res.length, 1, 'c1 len ok')
+    let record = res[0]
+    t.equal(record && record.get('title'), 'hello', 'c2 val ok')
+
     const c2 = await w2.createCollection(c1.key)
     await c2.open()
     await c2.sync()
 
-    let res = await c2.query('records', { type: 'doc' })
+    res = await c2.query('records', { type: 'doc' })
     t.equal(res.length, 1, 'c2 len ok')
-    const record = res[0]
+    record = res[0]
     t.equal(record && record.get('title'), 'hello', 'c2 val ok')
 
     const updatedRecord = record.update({ title: 'hi' })

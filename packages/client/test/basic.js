@@ -99,18 +99,22 @@ tape('get and delete record', async t => {
     name: 'foo',
     fields: { title: { type: 'string' } }
   })
-  const nuRecord = {
+  const form = {
     type: 'foo',
     id: 'bar',
     value: { title: 'bar' }
   }
-  const res = await collection.put(nuRecord)
-  const id = res.id
-  const records = await collection.get({ id }, { waitForSync: true })
-  t.equals(records.length, 1)
-  await collection.del(nuRecord)
-  const nuRecords = await collection.get({ id }, { waitForSync: true })
-  t.equals(nuRecords.length, 0)
+  const record = await collection.put(form)
+  const id = record.id
+  let queriedRecords = await collection.get({ id }, { waitForSync: true })
+  t.equals(queriedRecords.length, 1)
+  // let searchedRecords = await collection.query('search', 'bar')
+  // t.equals(searchedRecords.length, 1)
+  await collection.del(record)
+  queriedRecords = await collection.get({ id }, { sync: true })
+  t.equals(queriedRecords.length, 0)
+  // searchedRecords = await collection.query('search', 'bar', { sync: true })
+  // t.equals(searchedRecords.length, 0, 'search was cleared')
 
   await cleanup()
   t.ok(true, 'cleanup ok')
@@ -198,14 +202,14 @@ tape('subscribe to record', async t => {
       }
     }
   })
-  const putted = await collection.put({
+  const record = await collection.put({
     type: 'doc',
     value: { title: 'hello world' }
   })
 
   let didNotify = false
   const notifyPromise = new Promise(resolve => {
-    putted.subscribe(record => {
+    record.subscribe(record => {
       if (didNotify) t.fail('subscribe emitted more than once')
       t.equal(record.get('title'), 'hello moon', 'subscribe called correctly')
       didNotify = true
@@ -213,7 +217,7 @@ tape('subscribe to record', async t => {
     })
   })
 
-  const newVersion = putted.latest.update({
+  const newVersion = record.update({
     title: 'hello moon'
   })
   await collection.put(newVersion)

@@ -47,10 +47,9 @@ module.exports = function indexedView (lvl, db, opts) {
     const lseq = record.lseq
     const ops = []
     for (const fieldValue of record.fields()) {
-      const field = fieldValue.field
-      if (fieldValue.empty() || !field.index.basic) continue
+      const { field, value } = fieldValue
+      if (value !== undefined || !field.index.basic) continue
       const fieldAddress = fieldValue.fieldAddress
-      const value = fieldValue.value
       ops.push({
         key: [fieldAddress, value, lseq].join(CHAR_SPLIT),
         value: ''

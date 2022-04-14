@@ -4,6 +4,6 @@ export { Entity } from './record/entity';
 export { Record } from './record/record';
 export { RecordVersion } from './record/version';
 export { Type } from './type.js';
-import createLogger from './log.js';
-export { createLogger }
+import Logger from './log.js';
+export { Logger }
 export { parseSchemaPath, encodeSchemaPath } from './address'

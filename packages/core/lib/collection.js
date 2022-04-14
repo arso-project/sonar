@@ -276,6 +276,9 @@ class Collection extends Nanoresource {
   }
 
   async put (record, opts = {}) {
+    if (!(record instanceof RecordVersion)) {
+      record = new RecordVersion(this.schema, record)
+    }
     const batch = new Batch(this)
     await batch.put(record, opts)
     await batch.flush()
@@ -332,6 +335,7 @@ class Collection extends Nanoresource {
       },
       destroy (cb) {
         if (batch) batch._unlock()
+        cb()
       }
     })
     return stream
@@ -1025,33 +1029,40 @@ class Batch {
   }
 
   async del ({ id, type }, opts) {
-    const record = { id, type, deleted: true }
+    const record = new RecordVersion(this.collection.schema, { id, type, deleted: true })
     return this._append(record, opts)
   }
 
   async _append (record, opts = {}) {
     try {
+      record = new RecordVersion(this.collection.schema, record)
       if (!this.locked) await this._lock()
-      if (!record.id) record.id = uuid()
+      const id = record.id || uuid()
+
+      // Set feed, links, timestamp
+      const links = await this._getLinks(record, opts)
+      const feed = this._findFeed(record, opts)
+
+      record = {
+        ...record.toJSON(),
+        id,
+        key: feed.key.toString('hex'),
+        timestamp: Date.now(),
+        links
+      }
+      // Never store value for deleted records
+      if (record.deleted) {
+        record.value = undefined
+      }
 
       // Upcast record
       // Throws an error if the record is invalid.
       // TODO: Currently it only checks if id and value are non-empty and type is valid
       // type in the schema.
       record = new RecordVersion(this.collection.schema, record)
-
-      // Set feed, links, timestamp
-      record.links = await this._getLinks(record, opts)
-      const feed = this._findFeed(record, opts)
-      record.key = feed.key.toString('hex')
-      record.timestamp = Date.now()
-
-      // Never store value for deleted records
-      if (record.deleted) {
-        record.value = undefined
-      }
       this.entries.push(record)
     } catch (err) {
+      console.log('err', err)
       this._unlock()
       throw err
     }
@@ -1078,7 +1089,7 @@ class Batch {
         )
         await feed.append(blocks)
         for (const record of records) {
-          record._record.seq = ++seq
+          record.inner.seq = ++seq
         }
         return records
       }
