@@ -1,11 +1,20 @@
-const { Entity, Record, RecordVersion } = require('./records')
-module.exports = class Store {
-  constructor (opts = {}) {
+import { Entity, Record, RecordVersion } from './index.js'
+import type { Schema } from './schema.js'
+
+export type StoreArgs = {
+  schema: Schema
+}
+
+export class Store {
+  _opts: StoreArgs
+  _schema: Schema
+  _records = new Map<string, Record> ()
+  _entities = new Map<string, Entity> ()
+  _versions = new Map<string, RecordVersion>()
+
+  constructor (opts: StoreArgs) {
     this._opts = opts
     this._schema = opts.schema
-    this._records = new Map()
-    this._entities = new Map()
-    this._versions = new Map()
   }
 
   records () {
@@ -16,19 +25,19 @@ module.exports = class Store {
     return Array.from(this._entities.values())
   }
 
-  getEntity (id) {
+  getEntity (id: string): Entity|undefined {
     return this._entities.get(id)
   }
 
-  getRecord (path) {
+  getRecord (path: string): Record | undefined {
     return this._records.get(path)
   }
 
-  getRecordVersion (address) {
+  getRecordVersion (address: string): RecordVersion | undefined {
     return this._versions.get(address)
   }
 
-  cacheRecord (recordVersion) {
+  cacheRecord (recordVersion: Record | RecordVersion) {
     // TODO: Rethink if we want this.
     if (recordVersion instanceof Record) {
       for (const version of recordVersion.allVersions()) {
@@ -36,26 +45,22 @@ module.exports = class Store {
       }
       return this.getRecord(recordVersion.path)
     }
-
     if (!(recordVersion instanceof RecordVersion)) {
       recordVersion = new RecordVersion(this._schema, recordVersion)
     }
-
     if (this._records.has(recordVersion.path)) {
-      this._records.get(recordVersion.path).addVersion(recordVersion)
+      this._records.get(recordVersion.path)!.addVersion(recordVersion)
     } else {
       const record = new Record(this._schema, recordVersion)
       this._records.set(record.path, record)
-
       if (!this._entities.has(record.id)) {
         const entity = new Entity(this._schema, [record])
         this._entities.set(entity.id, entity)
       } else {
-        const entity = this._entities.get(record.id)
+        const entity = this._entities.get(record.id)!
         entity.add(record)
       }
     }
-
     const record = this._records.get(recordVersion.path)
     this._versions.set(recordVersion.address, recordVersion)
     return record
