@@ -2,8 +2,8 @@
   "name": "@arsonar/client",
   "version": "0.5.0",
   "description": "Client for sonar",
-  "main": "index.js",
-  "type": "module",
+  "main": "dist/cjs",
+  "module": "dist/esm",
   "scripts": {
     "test": "tape dist/cjs/test/*.js",
     "doc": "run-p doc:*",
