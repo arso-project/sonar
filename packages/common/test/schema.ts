@@ -1,5 +1,5 @@
 import tape from 'tape'
-/* @ts-ignore */
+/* @ts-expect-error */
 import table from 'text-table'
 import { Schema, Store } from '../index.js'
 tape('basics', t => {

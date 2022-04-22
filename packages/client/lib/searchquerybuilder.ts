@@ -1,10 +1,15 @@
-module.exports = class SearchQueryBuilder {
-  constructor (schema) {
+import type { Schema } from '@arsonar/common/dist/cjs'
+
+export class SearchQueryBuilder {
+  schema: string 
+  query: any
+  limit?: number
+  constructor (schema: string) {
     this.schema = schema
     this.query = {}
   }
 
-  bool (boolType, queries) {
+  bool (boolType: string, queries: any) {
     if (!this.query.hasOwnProperty('bool')) {
       this.query.bool = {}
     }
@@ -12,7 +17,7 @@ module.exports = class SearchQueryBuilder {
     return this
   }
 
-  phrase (field, terms) {
+  phrase (field: string, terms: any) {
     if (!this.query.hasOwnProperty('phrase')) {
       this.query.phrase = {}
     }
@@ -20,12 +25,12 @@ module.exports = class SearchQueryBuilder {
     return this
   }
 
-  limit (limit) {
+  setLimit (limit: number) {
     this.limit = limit
     return this
   }
 
-  term (field, value) {
+  term (field: string, value: string) {
     return { term: { [field]: value } }
   }
 

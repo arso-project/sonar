@@ -1,9 +1,7 @@
-const test = require('tape')
-
-const { SearchQueryBuilder } = require('..')
-const { createOne } = require('./lib/create')
-
-async function prepare (t) {
+import test from 'tape'
+import { SearchQueryBuilder } from '../index.js'
+import { createOne } from './lib/create.js'
+async function prepare (t: test.Test) {
   const { client, cleanup } = await createOne()
   const collection = await client.createCollection('default')
   try {
@@ -16,15 +14,13 @@ async function prepare (t) {
     await collection.sync()
   } catch (e) {
     console.error(e)
-    t.fail(e)
+    t.fail(String(e))
     await cleanup()
     throw e
   }
-
   return { client, cleanup, collection }
 }
-
-test('basic query', async t => {
+test('basic query', async (t) => {
   try {
     const { collection, cleanup } = await prepare(t)
     let results = await collection.query('search', 'hello')
@@ -38,22 +34,19 @@ test('basic query', async t => {
     console.error('error', e)
   }
 })
-
-test('querybuilder: simple bool search', async t => {
+test('querybuilder: simple bool search', async (t) => {
   const { collection, cleanup } = await prepare(t)
   const query = new SearchQueryBuilder('doc')
   query
     .bool('must', [query.term('title', 'hello')])
     .bool('must_not', [query.term('title', 'moon')])
-    .limit(10)
-
+    .setLimit(10)
   const results = await collection.query('search', query, { waitForSync: true })
   t.equal(results.length, 1, 'should return one result')
   t.equal(results[0].value.title, 'hello world', 'toshi query worked')
   await cleanup()
   t.end()
 })
-
 // TODO: Test query for all documents
 // TODO: Test range query
 // TODO: Test regex query
@@ -61,7 +54,7 @@ test('querybuilder: simple bool search', async t => {
 // TODO: Test exact query
 // TODO: Test fuzzy query
 // TODO: Test phrase query
-test('querybuilder: phrase search', async t => {
+test('querybuilder: phrase search', async (t) => {
   const { collection, cleanup } = await prepare(t)
   const query = new SearchQueryBuilder('doc')
   query.phrase('title', ['hello', 'moon'])
@@ -70,8 +63,7 @@ test('querybuilder: phrase search', async t => {
   t.equal(results[0].value.title, 'hello moon', 'phrase search worked')
   await cleanup()
 })
-
-test('toshi query', async t => {
+test('toshi query', async (t) => {
   const { collection, cleanup } = await prepare(t)
   const results = await collection.query('search', {
     query: {

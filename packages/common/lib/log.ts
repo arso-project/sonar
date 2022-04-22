@@ -1,6 +1,7 @@
 import pino, {Level} from 'pino'
 import type { Logger, LoggerOptions, WriteFn } from 'pino'
 import type { Color } from 'chalk'
+export type { Logger }
 import chalk from 'chalk'
 /* @ts-ignore */
 import prettyHash from 'pretty-hash'
@@ -128,7 +129,7 @@ function convertLogNumber (obj: any): { name: Level, color: typeof Color } | und
   if (obj.level === 50) { return { name: 'error', color: 'red' } }
   if (obj.level === 60) { return { name: 'fatal', color: 'red' } }
 }
-export default function createLogger (opts: LoggerOptions): Logger {
+export function createLogger (opts?: LoggerOptions): Logger {
   const defaultOpts: LoggerOptions = {
     level: getLogLevel(),
     prettifier: createPrettifier,
@@ -143,3 +144,5 @@ export default function createLogger (opts: LoggerOptions): Logger {
   })
   return logger
 }
+
+export default createLogger

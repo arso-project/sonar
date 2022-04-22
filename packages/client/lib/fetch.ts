@@ -1,8 +1,22 @@
-const fetch = require('isomorphic-fetch')
-const debug = require('debug')('sonar:fetch')
-const isBuffer = require('is-buffer')
+import fetch from 'isomorphic-fetch'
+import Debug from 'debug'
+import isBuffer from 'is-buffer'
+import type { Readable as StreamXReadable } from 'streamx'
+import type { Readable } from 'stream'
+const debug = Debug('sonar:fetch')
 
-module.exports = makeFetch
+export type FetchOpts = Omit<RequestInit, 'body'> & {
+  opening?: boolean
+  token?: string
+  endpoint?: string
+  requestType?: 'buffer' | 'stream' | 'json'
+  responseType?: 'json' | 'text' | 'buffer' | 'stream' | 'raw'
+  params?: Record<string, any>
+  headers?: Record<string, string>
+  log?: (msg: string) => void
+  // any is included because anything can be passed and serialized as JSON
+  body?: BodyInit | Uint8Array | Buffer | ReadableStream | any
+}
 
 /**
  * Fetch a resource.
@@ -26,29 +40,25 @@ module.exports = makeFetch
  *    decoded JSON will be returned. if opts.responseType is 'binary' or 'text',
  *    the response will be returned as a buffer or text.
  */
-async function makeFetch (url, opts) {
-  if (!url.match(/^https?:\/\//)) {
-    if (url.indexOf('://') !== -1) {
+export default async function makeFetch (url: string, opts: FetchOpts) {
+  if (url.match(/^https?:\/\//) == null) {
+    if (url.includes('://')) {
       throw new Error('Only http: and https: protocols are supported.')
     }
-    if (!url.startsWith('/')) url = '/' + url
-    if (opts.endpoint) url = opts.endpoint + url
+    if (!url.startsWith('/')) { url = '/' + url }
+    if (opts.endpoint) { url = opts.endpoint + url }
   }
-
-  if (!opts.headers) opts.headers = {}
+  if (opts.headers == null) { opts.headers = {} }
   if (!opts.requestType) {
-    if (isBuffer(opts.body)) opts.requestType = 'buffer'
-    else opts.requestType = 'json'
+    if (isBuffer(opts.body)) { opts.requestType = 'buffer' } else { opts.requestType = 'json' }
   }
-
-  if (opts.params) {
+  if (opts.params != null) {
     const searchParams = new URLSearchParams()
     for (const [key, value] of Object.entries(opts.params)) {
       searchParams.append(key, value)
     }
     url += '?' + searchParams.toString()
   }
-
   if (opts.requestType === 'json') {
     opts.body = JSON.stringify(opts.body)
     opts.headers['content-type'] = 'application/json'
@@ -56,9 +66,7 @@ async function makeFetch (url, opts) {
   if (opts.requestType === 'buffer') {
     opts.headers['content-type'] = 'application/octet-stream'
   }
-
-  const log = opts.log === false ? () => {} : opts.log || debug
-
+  const log = opts.log || debug
   try {
     debug('fetch', url, opts)
     const res = await fetch(url, opts)
@@ -72,9 +80,7 @@ async function makeFetch (url, opts) {
       log(`error ${res.status} ${url}`)
       throw new Error('Remote error (code ' + res.status + '): ' + message)
     }
-
     log(`ok ${res.status} fetch ${url}`)
-
     if (opts.responseType === 'raw') {
       return res
     }
@@ -83,27 +89,25 @@ async function makeFetch (url, opts) {
     }
     if (opts.responseType === 'buffer') {
       // nodejs only: res.buffer() returns a Buffer instance.
-      if (res.buffer) return await res.buffer()
+      // @ts-expect-error
+      if (res.buffer) { return await res.buffer() }
       // browser: Fetch API res.arrayBuffer returns ArrayBuffer.
-      else return await res.arrayBuffer()
+      else { return await res.arrayBuffer() }
     }
-
     if (isJsonResponse(res)) {
       return await res.json()
     }
-
     return await res.text()
   } catch (err) {
     // TODO: If error fails for insufficient authorization, try creating
     // a new token if accessCode is set
     debug('fetch error', err)
-    log(`error: fetch ${url} ${err.message}`)
+    log(`error: fetch ${url} ${(err as Error).message}`)
     throw err
   }
 }
-
-function isJsonResponse (res) {
+function isJsonResponse (res: Response) {
   const header = res.headers.get('content-type')
-  if (!header) return false
-  return header.indexOf('application/json') !== -1
+  if (!header) { return false }
+  return header.includes('application/json')
 }

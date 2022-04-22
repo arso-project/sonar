@@ -1,7 +1,6 @@
-const tape = require('tape')
-const { createOne } = require('./lib/create')
-
-tape('sync', async t => {
+import tape from 'tape'
+import { createOne } from './lib/create.js'
+tape('sync', async (t) => {
   const { client, cleanup } = await createOne()
   const collection = await client.createCollection('sync')
   try {
@@ -21,17 +20,16 @@ tape('sync', async t => {
     t.equal(records.length, 1)
     t.equal(records[0].id, 'bar')
   } catch (err) {
-    t.fail(err)
+    t.fail(String(err))
   }
   await cleanup()
 })
-
-tape('events', async t => {
+tape('events', async (t) => {
   const { client, cleanup } = await createOne()
   try {
     const collection = await client.createCollection('test')
     const eventStream = collection.createEventStream()
-    const events = []
+    const events: Array<any> = []
     eventStream.on('data', event => {
       events.push(event)
     })
@@ -45,11 +43,8 @@ tape('events', async t => {
     await collection.sync()
     // Check that at least one schema-update and update event was received.
     const eventTypes = events.map(e => e.event)
-    t.ok(eventTypes.indexOf('update') !== -1, 'update event received')
-    t.ok(
-      eventTypes.indexOf('schema-update') !== -1,
-      'schema update update event received'
-    )
+    t.ok(eventTypes.includes('update'), 'update event received')
+    t.ok(eventTypes.includes('schema-update'), 'schema update update event received')
   } catch (e) {
     console.log(e)
     throw e

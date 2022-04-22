@@ -25,6 +25,8 @@ export type WireRecordVersion = {
   meta?: globalThis.Record<string, any>
 }
 
+export type RecordVersionForm = Omit<WireRecordVersion, "id">
+
 // export class FieldValueSet extends SchemaMember {
 
 //   constructor (schema: Schema) {

@@ -100,9 +100,9 @@ export class Schema {
     return encodeSchemaPath(parts)
   }
 
-  addType (spec: TypeSpecInput, opts: AddTypeOpts = {}) {
+  addType (spec: TypeSpecInput, opts: AddTypeOpts = {}): Type {
     if (spec.address && this._types.has(spec.address)) {
-      return this._types.get(spec.address)
+      return this._types.get(spec.address)!
     }
     // TODO: Remove
     if (Type.isJsonSchema(spec)) {

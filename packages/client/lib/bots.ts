@@ -1,19 +1,41 @@
-const debug = require('debug')('sonar:bots')
-
+import { Logger } from '@arsonar/common'
+import type EventSource from 'eventsource'
+import Debug from 'debug'
+import type { Workspace } from './workspace'
+import { FetchOpts } from './fetch'
+import { Collection } from './collection'
+const debug = Debug('sonar:bots')
 const SESSION_HEADER = 'X-Sonar-Bot-Session-Id'
+export interface Reply {
+  requestId: string
+  error?: any
+  result?: any
+}
+export interface BotMessage {
+  bot: string
+  op: string
+  data?: any
+  requestId: string
+}
 
-class Bots {
-  constructor (workspace) {
+export class Bots {
+  workspace: Workspace
+  bots: Map<string, Bot>
+  log: Logger
+  _eventSource?: EventSource
+  _init?: boolean
+  _sessionId?: string
+  constructor (workspace: Workspace) {
     this.workspace = workspace
     this.bots = new Map()
     this.log = this.workspace.log.child({ name: 'bots' })
   }
 
   async close () {
-    this._eventSource.close()
+    if (this._eventSource != null) this._eventSource.close()
   }
 
-  async join (botName, collection) {
+  async join (botName: string, collection: string) {
     const res = await this.fetch('/join', {
       method: 'POST',
       body: { bot: botName, collection }
@@ -21,7 +43,7 @@ class Bots {
     return res
   }
 
-  async leave (botName, collection) {
+  async leave (botName: string, collection: string) {
     const res = await this.fetch('/leave', {
       method: 'POST',
       body: { bot: botName, collection }
@@ -34,7 +56,7 @@ class Bots {
     return res
   }
 
-  async command (botName, command, args, env) {
+  async command (botName: string, command: string, args: any, env: any) {
     const path = '/command'
     const res = await this.fetch(path, {
       method: 'POST',
@@ -43,28 +65,25 @@ class Bots {
     return res
   }
 
-  async commandStatus (botName, requestId) {
+  async commandStatus (botName: string, requestId: string) {
     const path = `/status/${botName}/${requestId}`
     const res = await this.fetch(path)
     return res
   }
 
-  async getCommands () {}
-
+  async getCommands () { }
   async _initListener () {
     this._init = true
-
     // const path = this.workspace.endpoint + '/bot/events'
     // const headers = {
     //   ...this.workspace.getAuthHeaders(),
     //   ...this.getHeaders()
     // }
-
     const path = '/bot/events'
     this._eventSource = this.workspace.createEventSource(path, {
       headers: this.getHeaders(),
       onmessage: this._onmessage.bind(this),
-      onerror: err => {
+      onerror: (err: any) => {
         // TODO: Where do these errors go?
         // TODO: After a couple of fails die.
         this.log.error({ err, message: 'Event source error' })
@@ -84,7 +103,7 @@ class Bots {
     // })
   }
 
-  async reply ({ requestId, error, result }) {
+  async reply ({ requestId, error, result }: Reply): Promise<any> {
     await this.fetch('/reply', {
       method: 'POST',
       body: {
@@ -95,12 +114,12 @@ class Bots {
     })
   }
 
-  async _onmessage (message) {
+  async _onmessage (message: any) {
     console.log('onmessage', message)
     try {
       const { bot: name, op, data, requestId } = message
       const bot = this.bots.get(name)
-      if (!bot) throw new Error('Unknown bot: ' + bot)
+      if (bot == null) { throw new Error('Unknown bot: ' + bot) }
       try {
         if (op === 'join') {
           const { collection: collectionKey } = data
@@ -124,13 +143,13 @@ class Bots {
         console.error(err)
         // this.log.error({ message: 'bot onmessage handle error: ' + err.message + ' from ' + JSON.stringify(message), err })
         this.log.error({
-          message: 'bot onmessage handle error: ' + err.message,
+          message: 'bot onmessage handle error: ' + (err as Error).message,
           err
         })
         debug(err)
         await this.reply({
           requestId: requestId,
-          error: err.message
+          error: (err as Error).message
         })
       }
     } catch (err) {
@@ -141,47 +160,48 @@ class Bots {
   }
 
   getHeaders () {
-    const headers = {}
+    const headers: Record<string, string> = {}
     if (this._sessionId) {
       headers[SESSION_HEADER] = this._sessionId
     }
     return headers
   }
 
-  async fetch (url, opts = {}) {
+  async fetch (url: string, opts: FetchOpts = {}) {
     url = '/bot' + url
     opts.headers = opts.headers || {}
     opts.headers = { ...this.getHeaders(), ...opts.headers }
-    return this.workspace.fetch(url, opts)
+    return await this.workspace.fetch(url, opts)
   }
 
-  async register (name, spec, handlers) {
-    if (typeof spec !== 'object') throw new Error('Spec must be an object')
+  async register (name: string, spec: any, handlers: any) {
+    if (typeof spec !== 'object') { throw new Error('Spec must be an object') }
     spec.name = name
     const { config, sessionId } = await this.fetch('/register', {
       method: 'POST',
       body: spec
     })
     this._sessionId = sessionId
-    if (!this._init) await this._initListener()
-    this.bots.set(
-      name,
-      new Bot({
-        spec,
-        workspace: this.workspace,
-        config,
-        handlers
-      })
-    )
+    if (!this._init) { await this._initListener() }
+    this.bots.set(name, new Bot({
+      spec,
+      workspace: this.workspace,
+      config,
+      handlers
+    }))
   }
-
-  // async configure (name, config) {
-  //   const config = await this.workspace.fetch('/bot/configure/' + name, config)
-  // }
 }
-
 class Bot {
-  constructor ({ spec, config, handlers, workspace }) {
+  spec: any
+  name: string
+  workspace: Workspace
+  config: any
+  handlers: any
+  opened: boolean
+  log: Logger
+  opening: any
+  sessions: Map<string, any>
+  constructor ({ spec, config, handlers, workspace }: any) {
     this.spec = spec
     this.name = spec.name
     this.workspace = workspace
@@ -196,17 +216,18 @@ class Bot {
   }
 
   async open () {
-    if (this.opened) return
-    if (this.opening) return this.opening
+    if (this.opened) { return }
+    if (this.opening) { return this.opening }
     let _resolve
     this.opening = new Promise(resolve => (_resolve = resolve))
-    if (this.handlers.open) await this.handlers.open()
+    if (this.handlers.open) { await this.handlers.open() }
+    // @ts-expect-error
     _resolve()
     this.opened = true
     this.log.debug('open')
   }
 
-  async onjoin (collection, config) {
+  async onjoin (collection: Collection, config: any) {
     await this._ensureTypes(collection)
     await this.open()
     if (!this.opened && this.handlers.open) {
@@ -220,46 +241,41 @@ class Bot {
     if (session.onrecord) {
       collection.subscribe('bot:' + this.name, session.onrecord.bind(session))
     }
-    this.sessions.set(collection.key, session)
+    this.sessions.set(collection.key as string, session)
     this.log.debug({ message: 'join', collection })
   }
 
-  async _ensureTypes (collection) {
-    if (!this.spec.types) return
+  async _ensureTypes (collection: Collection) {
+    if (!this.spec.types) { return }
     for (const typeSpec of this.spec.types) {
-      if (!collection.schema.hasType(typeSpec)) {
+      if (!collection.schema!.hasType(typeSpec.address)) {
         await collection.putType(typeSpec)
       }
     }
   }
 
-  async onleave (collection) {
+  async onleave (collection: Collection) {
+    if (!collection.key) throw new Error('Collection not opened')
     const session = this.sessions.get(collection.key)
-    if (!session) return
-    if (session.close) await session.close()
+    if (!session) { return }
+    if (session.close) { await session.close() }
     this.sessions.delete(collection.key)
     this.log.debug({ message: 'leave', collection })
   }
 
-  async oncommand (command, args, env) {
+  async oncommand (command: string, args: any, env: any) {
     await this.open()
-
     if (!env.collection && this.handlers.oncommand) {
       this.log.debug('workspace command: ' + command)
       return await this.handlers.oncommand(command, args)
     }
-
     this.log.debug({
       message: 'collection command: ' + command,
       collection: env.collection
     })
     const session = this.sessions.get(env.collection.key)
-    if (!session) throw new Error('Bot did not join collection')
-    if (!session.oncommand) throw new Error('Bot cannot handle commands')
-
+    if (!session) { throw new Error('Bot did not join collection') }
+    if (!session.oncommand) { throw new Error('Bot cannot handle commands') }
     return await session.oncommand(command, args)
   }
 }
-
-module.exports = Bots
-module.exports.Bots = Bots

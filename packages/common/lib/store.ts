@@ -1,4 +1,5 @@
 import { Entity, Record, RecordVersion } from './index.js'
+import {WireRecordVersion} from './record/version.js'
 import type { Schema } from './schema.js'
 
 export type StoreArgs = {
@@ -37,13 +38,13 @@ export class Store {
     return this._versions.get(address)
   }
 
-  cacheRecord (recordVersion: Record | RecordVersion) {
+  cacheRecord (recordVersion: Record | RecordVersion | WireRecordVersion): Record {
     // TODO: Rethink if we want this.
     if (recordVersion instanceof Record) {
       for (const version of recordVersion.allVersions()) {
         this.cacheRecord(version)
       }
-      return this.getRecord(recordVersion.path)
+      return this.getRecord(recordVersion.path)!
     }
     if (!(recordVersion instanceof RecordVersion)) {
       recordVersion = new RecordVersion(this._schema, recordVersion)
@@ -61,7 +62,7 @@ export class Store {
         entity.add(record)
       }
     }
-    const record = this._records.get(recordVersion.path)
+    const record = this._records.get(recordVersion.path)!
     this._versions.set(recordVersion.address, recordVersion)
     return record
   }
