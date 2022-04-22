@@ -5,9 +5,9 @@ export type EmitCb<T> = (obj: T) => void
 
 export class Emitter<T> {
   [kSubs]: Set<EmitCb<T>> = new Set();
-  [kSelf]: T;
+  [kSelf]: T
 
-  constructor(self: T) {
+  constructor (self: T) {
     this[kSelf] = self
   }
 

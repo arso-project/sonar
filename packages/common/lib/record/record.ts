@@ -1,10 +1,10 @@
-import {SchemaMember} from "../base"
-import { Schema } from "../schema"
-import {RecordVersion, WireRecordVersion, RecordValue} from "./version"
+import { SchemaMember } from '../base'
+import { Schema } from '../schema'
+import { RecordVersion, WireRecordVersion, RecordValue, FieldValue } from './version'
 import Versions from '../versions.js'
-import { Emitter, EmitCb} from "../emitter"
-import {SC} from "../symbols"
-// @ts-ignore
+import { Emitter, EmitCb } from '../emitter'
+import { SC } from '../symbols'
+// @ts-expect-error
 import { inspectSymbol, InspectOptions } from '../util/inspect'
 
 export class Record extends SchemaMember {
@@ -133,8 +133,13 @@ export class Record extends SchemaMember {
   getOne (fieldName: string): any {
     return this.latest.getOne(fieldName)
   }
+
   getMany (fieldName: string): any[] {
     return this.latest.getMany(fieldName)
+  }
+
+  fields (): FieldValue[] {
+    return this.latest.fields()
   }
 
   // @deprecated use getOne
@@ -145,12 +150,13 @@ export class Record extends SchemaMember {
   toJSON () {
     return this.latest.toJSON()
   }
-  
+
   [inspectSymbol] (depth: number, opts: InspectOptions) {
     return this.inspect(depth, opts)
   }
+
   inspect (_depth: number, opts: InspectOptions = {}): string {
-    if (!opts.stylize) opts.stylize = (msg: string) => msg
+    if (opts.stylize == null) opts.stylize = (msg: string) => msg
     const { stylize } = opts
     const ind = ' '.repeat(opts.indentationLvl || 0)
     // const h = (str: string) => stylize(str, 'special')

@@ -1,7 +1,7 @@
-export type SchemaPath = {
-  namespace: string,
-  type: string,
-  field?: string,
+export interface SchemaPath {
+  namespace: string
+  type: string
+  field?: string
   version?: number
   /* @deprecated use type */
   name?: string
@@ -26,9 +26,9 @@ export function parseSchemaPath (address: SchemaPathInput): SchemaPath {
   // sonar/Entity@3#label
   const regex = /^(?:([^/#@]+)\/)?([^@#/]+)(?:@(\d+))?(?:#([^/#@]+))?$/
   const matches = address.match(regex)
-  if (!matches) { throw new Error('Invalid address') }
+  if (matches == null) { throw new Error('Invalid address') }
   matches.shift()
-  let [namespace, type, versionString, field] = matches
+  const [namespace, type, versionString, field] = matches
   let version
   if (versionString) { version = parseInt(versionString) }
   return { namespace, type, field, version }
@@ -59,5 +59,5 @@ function validSegment (segment: string) {
   return (!hasChar(segment, '/') && !hasChar(segment, '#') && !hasChar(segment, '@'))
 }
 function hasChar (str: string, char: string) {
-  return str.indexOf(char) !== -1
+  return str.includes(char)
 }

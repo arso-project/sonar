@@ -1,31 +1,31 @@
-import { Schema } from "../schema"
-// @ts-ignore
+import { Schema } from '../schema'
+// @ts-expect-error
 import pretty from 'pretty-hash'
 import { inspectSymbol, InspectOptions } from '../util/inspect'
-import {SchemaMember} from "../base"
-import { Type } from "../type"
-import {SC} from "../symbols"
-import { Field } from "../field"
+import { SchemaMember } from '../base'
+import { Type } from '../type'
+import { SC } from '../symbols'
+import { Field } from '../field'
 
 export type RecordValue = globalThis.Record<string, any>
 
-export type WireRecordVersion = {
-  type: string,
-  id: string,
-  value: RecordValue | null,
+export interface WireRecordVersion {
+  type: string
+  id: string
+  value: RecordValue | null
 
-  key?: string,
-  seq?: number,
-  lseq?: number,
+  key?: string
+  seq?: number
+  lseq?: number
 
-  links?: string[],
-  timestamp?: string,
+  links?: string[]
+  timestamp?: string
   deleted?: boolean
 
   meta?: globalThis.Record<string, any>
 }
 
-export type RecordVersionForm = Omit<WireRecordVersion, "id">
+export type RecordVersionForm = Omit<WireRecordVersion, 'id'>
 
 // export class FieldValueSet extends SchemaMember {
 
@@ -50,7 +50,7 @@ export class RecordVersion extends SchemaMember {
     this.inner = input
     this._fields = new Map()
     const type = this.schema.getType(input.type)
-    if (!type) {
+    if (type == null) {
       throw new Error(`Cannot upcast record: Unknown type "${input.type}"`)
     }
     this._type = type.address
@@ -94,7 +94,7 @@ export class RecordVersion extends SchemaMember {
   }
 
   get links () {
-    return this.inner.links || []
+    return (this.inner.links != null) || []
   }
 
   get lseq () {
@@ -111,13 +111,13 @@ export class RecordVersion extends SchemaMember {
 
   allTypes (): string[] {
     const type = this.getType()
-    if (!type) return []
+    if (type == null) return []
     return type.allParents()
   }
 
   hasType (typeAddress: string): boolean {
     typeAddress = this[SC].resolveTypeAddress(typeAddress)
-    return this.allTypes().indexOf(typeAddress) !== -1
+    return this.allTypes().includes(typeAddress)
   }
 
   update (inputForNextValue: RecordValue) {
@@ -150,16 +150,16 @@ export class RecordVersion extends SchemaMember {
   getOne (fieldName: string): any {
     this._build()
     const fieldSchema = this.getField(fieldName)
-    if (!fieldSchema) return undefined
+    if (fieldSchema == null) return undefined
     return this._fields.get(fieldSchema.address)
   }
 
-  getMany (fieldName: string): Array<any> {
+  getMany (fieldName: string): any[] {
     this._build()
     // const fieldAddress = this.schema.resolveFieldAddress(fieldName)
     // const fieldSchema = this.schema.getField(fieldAddress)
     const fieldSchema = this.getField(fieldName)
-    if (!fieldSchema) return []
+    if (fieldSchema == null) return []
     const value = this._fields.get(fieldSchema.address)
     if (fieldSchema.multiple) return value
     else return [value]
@@ -170,12 +170,12 @@ export class RecordVersion extends SchemaMember {
     return this.getOne(fieldName)
   }
 
-  fields (): Array<FieldValue> {
+  fields (): FieldValue[] {
     this._build()
     const list = []
     for (const [address, value] of this._fields.entries()) {
       const field = this[SC].getField(address)
-      if (field) list.push(new FieldValue(field, value))
+      if (field != null) list.push(new FieldValue(field, value))
     }
     return list
   }
@@ -183,7 +183,7 @@ export class RecordVersion extends SchemaMember {
   mapFields (name: string, fn: (field: any) => void) {
     return this.getMany(name).map(fn)
   }
-  
+
   toJSON () {
     // TODO: Add opts to skip encoding lseq on put.
     // TODO: We don't need both address and key, seq.
@@ -198,7 +198,7 @@ export class RecordVersion extends SchemaMember {
       // wire key
       key: this.key,
       seq: this.seq,
-      lseq: this.lseq,
+      lseq: this.lseq
       // meta: this.meta
     }
   }
@@ -208,7 +208,7 @@ export class RecordVersion extends SchemaMember {
   }
 
   inspect (_depth: number, opts: InspectOptions = { stylize: msg => msg }): string {
-    if (!opts.stylize) opts.stylize = (msg: string) => msg
+    if (opts.stylize == null) opts.stylize = (msg: string) => msg
     const { stylize } = opts
     const ind = ' '.repeat(opts.indentationLvl || 0)
     const h = (str: string) => stylize(str, 'special')
@@ -236,9 +236,9 @@ ${ind})`
 
 function resolveFieldValues (schema: Schema, record: WireRecordVersion): FieldValueSet {
   const type = schema.getType(record.type)
-  if (!type) return new Map()
+  if (type == null) return new Map()
   const fields = type.fields()
-  if (!record.value) return new Map() 
+  if (record.value == null) return new Map()
   const ret = new Map()
   for (const field of fields) {
     if (record.value[field.name] !== undefined) {
@@ -254,15 +254,15 @@ function fmtShortAddress (address: string): string {
   return key.substring(0, 5) + '..' + key.substring(30, 32) + '@' + seq
 }
 
-class FieldValue {
+export class FieldValue {
   field: Field
   value: any
-  constructor(field: Field, value: any) {
+  constructor (field: Field, value: any) {
     this.field = field
     this.value = value
   }
 
-  get fieldAddress ()  {
+  get fieldAddress () {
     return this.field.address
   }
 

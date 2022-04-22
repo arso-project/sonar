@@ -1,16 +1,16 @@
 import { Entity, Record, RecordVersion } from './index.js'
-import {WireRecordVersion} from './record/version.js'
+import { WireRecordVersion } from './record/version.js'
 import type { Schema } from './schema.js'
 
-export type StoreArgs = {
+export interface StoreArgs {
   schema: Schema
 }
 
 export class Store {
   _opts: StoreArgs
   _schema: Schema
-  _records = new Map<string, Record> ()
-  _entities = new Map<string, Entity> ()
+  _records = new Map<string, Record>()
+  _entities = new Map<string, Entity>()
   _versions = new Map<string, RecordVersion>()
 
   constructor (opts: StoreArgs) {

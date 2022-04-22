@@ -1,5 +1,5 @@
-import { Emitter, EmitCb} from './emitter.js'
-import {RecordVersion} from './record/version.js'
+import { Emitter, EmitCb } from './emitter.js'
+import { RecordVersion } from './record/version.js'
 export default class Versions {
   _versions: Map<string, RecordVersion>
   _current: Set<RecordVersion>
@@ -12,17 +12,19 @@ export default class Versions {
     this._outdated = new Set()
   }
 
-  get length() {
+  get length () {
     return this._versions.size
   }
 
   get conflict () {
     return this._current.size > 1
   }
-  emit() {
+
+  emit () {
     this._emitter.emit()
   }
-  subscribe(fn: EmitCb<Versions>) {
+
+  subscribe (fn: EmitCb<Versions>) {
     return this._emitter.subscribe(fn)
   }
 

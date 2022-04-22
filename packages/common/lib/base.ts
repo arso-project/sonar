@@ -16,5 +16,3 @@ export class SchemaMember {
     return this[SC]
   }
 }
-
-

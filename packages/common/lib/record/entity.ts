@@ -1,6 +1,6 @@
-import {SchemaMember} from "../base"
-import { Schema } from "../schema"
-import {Record} from "./record"
+import { SchemaMember } from '../base'
+import { Schema } from '../schema'
+import { Record } from './record'
 
 export class Entity extends SchemaMember {
   _records: Set<Record> = new Set()
@@ -47,8 +47,8 @@ export class Entity extends SchemaMember {
     return Array.from(new Set(Array.from(this._records).map(r => r.getType())))
   }
 
-  getMany (fieldName: string): Array<any> {
-    const fieldValues = new Array()
+  getMany (fieldName: string): any[] {
+    const fieldValues = []
     for (const record of this._records) {
       fieldValues.push(...record.getMany(fieldName))
     }
@@ -57,11 +57,10 @@ export class Entity extends SchemaMember {
 
   get (fieldName: string): any {
     const fieldValues = this.getMany(fieldName)
-    if (fieldValues.length) {
+    if (fieldValues.length > 0) {
       return fieldValues[0]
     } else {
       return undefined
     }
   }
-
 }

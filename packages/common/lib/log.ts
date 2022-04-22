@@ -1,11 +1,11 @@
-import pino, {Level} from 'pino'
+import pino, { Level } from 'pino'
 import type { Logger, LoggerOptions, WriteFn } from 'pino'
 import type { Color } from 'chalk'
-export type { Logger }
 import chalk from 'chalk'
-/* @ts-ignore */
+/* @ts-expect-error */
 import prettyHash from 'pretty-hash'
 import prettyBytes from 'pretty-bytes'
+export type { Logger }
 const isBrowser = process.title === 'browser'
 function getLogLevel () {
   if (isBrowser) {
@@ -19,10 +19,10 @@ function browserWrite (obj: object): void {
   let method = convertLogNumber(obj)?.name
   if (method === 'fatal') { method = 'error' }
   if (method === 'trace') { method = 'debug' }
-  /* @ts-ignore */
+  /* @ts-expect-error */
   if (method && !console[method]) { method = 'log' }
   const prettified = prettify(obj)
-  /* @ts-ignore */
+  /* @ts-expect-error */
   console[method](prettified)
 }
 
@@ -100,9 +100,9 @@ function collectionLabel (collection: any) {
 
 function formatLevel (obj: any) {
   const { name, color } = convertLogNumber(obj) as any
-  /* @ts-ignore */
+  /* @ts-expect-error */
   let format = chalk[color]
-  /* @ts-ignore */
+  /* @ts-expect-error */
   if (obj.level >= 40) { format = chalk[color].bold }
   return format(name.toUpperCase())
 }

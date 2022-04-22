@@ -2,6 +2,7 @@
   "name": "@arsonar/common",
   "version": "0.5.0",
   "main": "dist/cjs",
+  "module": "dist/esm",
   "description": "",
   "scripts": {
     "test": "tape -r source-map-support/register dist/cjs/test/*.js",

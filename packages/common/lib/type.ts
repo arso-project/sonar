@@ -6,7 +6,7 @@ import type { JSONSchema4 } from 'json-schema'
 
 import type { Schema, TypeSpec, TypeSpecInput } from './schema.js'
 import { SchemaMember } from './base.js'
-import type { Field, FieldSpec}  from './field'
+import type { Field, FieldSpec } from './field'
 
 export class Type extends SchemaMember {
   static MissingType: typeof MissingType
@@ -52,7 +52,7 @@ export class Type extends SchemaMember {
     })
     if (spec.fields) {
       for (const [name, fieldSpecInput] of Object.entries(spec.fields)) {
-        let fieldSpec: FieldSpec = { ...fieldSpecInput, name }
+        const fieldSpec: FieldSpec = { ...fieldSpecInput, name }
         const field = this[SC]._addFieldForType(this, fieldSpec)
         this._fields.add(field.address)
       }
@@ -92,13 +92,13 @@ export class Type extends SchemaMember {
 
   parentType (): null | Type {
     if (!this._parent) { return null }
-    return this[SC].getType(this._parent) || null
+    return (this[SC].getType(this._parent) != null) || null
   }
 
   allParents () {
     const addresses = [this.address]
     const parentType = this.parentType()
-    if (parentType) { addresses.push(...parentType.allParents()) }
+    if (parentType != null) { addresses.push(...parentType.allParents()) }
     return addresses
   }
 
@@ -107,19 +107,19 @@ export class Type extends SchemaMember {
   fields (): Field[] {
     const fields = Array.from(this._fields).map(address => this[SC].getField(address)).filter(x => x) as Field[]
     const parentType = this.parentType()
-    if (parentType) {
+    if (parentType != null) {
       fields.push(...parentType.fields())
     }
     return fields
   }
 
   hasField (fieldName: string): boolean {
-    let address = this[SC].resolveFieldAddress(fieldName, this)
-    return this.fieldAddresses().indexOf(address) !== -1
+    const address = this[SC].resolveFieldAddress(fieldName, this)
+    return this.fieldAddresses().includes(address)
   }
 
   getField (fieldName: string): Field | undefined {
-    let address = this[SC].resolveFieldAddress(fieldName, this)
+    const address = this[SC].resolveFieldAddress(fieldName, this)
     return this.fields().find(field => field.address === address)
   }
 
@@ -149,10 +149,10 @@ export class Type extends SchemaMember {
       title: this.title,
       description: this.description,
       refines: this._parent || undefined,
-      fields: this.fields().reduce((all, field) => {
+      fields: this.fields().reduce<Record<string, FieldSpec>>((all, field) => {
         all[field.name] = field.toJSON()
         return all
-      }, {} as Record<string, FieldSpec>)
+      }, {})
     }
   }
 }
@@ -166,8 +166,8 @@ Type.MissingType = MissingType
 
 function jsonSchemaToSpec (spec: JSONSchema4): TypeSpec {
   if (!spec.fields) { spec.fields = {} }
-  if (spec.properties) {
-    for (let [name, fieldSpec]  of Object.entries(spec.properties)) {
+  if (spec.properties != null) {
+    for (let [name, fieldSpec] of Object.entries(spec.properties)) {
       if (fieldSpec.sonar) {
         fieldSpec = Object.assign(fieldSpec, fieldSpec.sonar)
         fieldSpec.sonar = undefined
@@ -187,7 +187,7 @@ function jsonSchemaToSpec (spec: JSONSchema4): TypeSpec {
   return spec as TypeSpec
 }
 function isJsonSchema (spec: TypeSpec & JSONSchema4): boolean {
-  if (spec.properties) { return true }
+  if (spec.properties != null) { return true }
   return false
 }
 export default Type

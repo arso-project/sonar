@@ -1,15 +1,15 @@
 import { MapSet } from './util.js'
 import { parseSchemaPath, encodeSchemaPath } from './address.js'
 import { Type } from './type.js'
-import {Field, FieldSpec, FieldSpecInput} from './field.js'
+import { Field, FieldSpec, FieldSpecInput } from './field.js'
 import { Record, RecordVersion, Entity } from './index.js'
 // import {JSONSchema4} from 'json-schema'
 
 export type SchemaOnChangeCallback = (schema: Schema) => void
 
-export type TypeSpecInput = {
-  name?: string,
-  namespace?: string,
+export interface TypeSpecInput {
+  name?: string
+  namespace?: string
   version?: number
   missing?: boolean
   fields: globalThis.Record<string, FieldSpecInput>,
@@ -17,26 +17,25 @@ export type TypeSpecInput = {
   address?: string
   refines?: string
 
-  title?: string,
+  title?: string
   description?: string
 }
 
-
 export type TypeSpec = TypeSpecInput & {
-  name: string,
-  namespace: string,
+  name: string
+  namespace: string
   version: number
   address: string
 }
 
-export type SchemaSpec = globalThis.Record<string, TypeSpec>;
+export type SchemaSpec = globalThis.Record<string, TypeSpec>
 
-export type SchemaOpts = {
+export interface SchemaOpts {
   defaultNamespace?: string
   onchange?: SchemaOnChangeCallback
 }
 
-export type AddTypeOpts = {
+export interface AddTypeOpts {
   onchange?: boolean
 }
 
@@ -45,12 +44,12 @@ export class Schema {
   _fields = new Map<string, Field>()
   _typeVersions = new MapSet<number>()
 
-  _defaultNamespace: string | undefined 
+  _defaultNamespace: string | undefined
   _onchange: (schema: Schema) => void
 
   constructor (opts: SchemaOpts = {}) {
     this._defaultNamespace = opts.defaultNamespace
-    this._onchange = opts.onchange || noop
+    this._onchange = (opts.onchange != null) || noop
   }
 
   // TODO: Remove any
@@ -92,7 +91,7 @@ export class Schema {
   }
 
   resolveFieldAddress (address: string, type?: Type) {
-    if (type && address.indexOf('#') === -1) {
+    if ((type != null) && !address.includes('#')) {
       address = encodeSchemaPath({ namespace: type.namespace, type: type.name, field: address, version: type.version })
     }
     const parts = this._parseSchemaPath(address)
@@ -117,7 +116,7 @@ export class Schema {
   }
 
   getType (address: string): Type | undefined {
-    return (this._types.get(address) ||
+    return ((this._types.get(address) != null) ||
             this._types.get(this.resolveTypeAddress(address)))
   }
 
@@ -155,7 +154,7 @@ export class Schema {
   }
 
   getField (address: string): Field | undefined {
-    return (this._fields.get(address) ||
+    return ((this._fields.get(address) != null) ||
             this._fields.get(this.resolveFieldAddress(address)))
   }
 

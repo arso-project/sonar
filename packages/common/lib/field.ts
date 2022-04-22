@@ -1,16 +1,16 @@
 import objectPath from 'object-path'
 import { SC } from './symbols.js'
 import type { Schema } from './schema.js'
-import {TypeSpec} from './schema.js'
+import { TypeSpec } from './schema.js'
 import { SchemaMember } from './base.js'
-import {JSONSchema4, JSONSchema4TypeName, JSONSchema4Type } from 'json-schema'
+import { JSONSchema4, JSONSchema4TypeName, JSONSchema4Type } from 'json-schema'
 
-export type FieldSpecInput = {
+export interface FieldSpecInput {
   name?: string
-  type: JSONSchema4TypeName | "relation"
-  multiple?: boolean,
-  refines?: string,
-  fieldType?: string,
+  type: JSONSchema4TypeName | 'relation'
+  multiple?: boolean
+  refines?: string
+  fieldType?: string
   index?: IndexOpts
   targetTypes?: string[]
   properties?: Record<string, JSONSchema4>
@@ -29,10 +29,10 @@ export type FieldSpec = FieldSpecInput & { name: string }
 //   type: JSONSchema4TypeName | "relation"
 // } & JSONSchema4 & SonarFieldInfo
 
-export type SonarFieldInfo = {
-  multiple?: boolean,
-  refines?: string,
-  fieldType?: string,
+export interface SonarFieldInfo {
+  multiple?: boolean
+  refines?: string
+  fieldType?: string
   index?: IndexOpts
 }
 
@@ -98,7 +98,7 @@ export class Field extends SchemaMember {
   }
 
   get index () {
-    return this._spec.index || {}
+    return (this._spec.index != null) || {}
   }
 
   get multiple () {
@@ -108,9 +108,9 @@ export class Field extends SchemaMember {
   allVariants () {
     const addresses = [this.address]
     addresses.push(...this._children)
-    if (this._parent) { 
+    if (this._parent) {
       const parentField = this[SC].getField(this._parent)
-      if (parentField) {
+      if (parentField != null) {
         addresses.push(...parentField.allVariants())
       }
     }
@@ -134,9 +134,9 @@ export class Field extends SchemaMember {
     // TODO: This will endlessly loop for nested refineds.
     // It should throw or stop when recursion is encountered.
     const parent = this[SC].getField(this._spec.refines)
-    if (strict && !parent) {
+    if (strict && (parent == null)) {
       throw new Error(`Missing parent field ${this._spec.refines} while resolving ${this.address}`)
-    } else if (!parent) { return }
+    } else if (parent == null) { return }
     parent._build()
     this._parent = parent.address
     parent._children.add(this.address)
