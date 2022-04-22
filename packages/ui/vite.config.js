@@ -9,6 +9,7 @@ export default {
     'process.env': {}
   },
   build: {
+    minify: false,
     rollupOptions: {
       output: {
         intro: `

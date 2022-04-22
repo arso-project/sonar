@@ -146,7 +146,7 @@ export function RecordJsonDisplay (props) {
   const { record } = props
   return (
     <JsonTree
-      data={record._latest.toJSON()}
+      data={record.latest.toJSON()}
       invertTheme
       hideRoot
       theme='bright'
@@ -171,6 +171,7 @@ export function RecordFieldDisplay (props) {
   if (!collection) return null
 
   if (!type) return <NoTypeError record={record} message='type not found' />
+  console.log('RECORD', record)
   return (
     <Box>
       {record.fields().map((fieldValue, i) => (
@@ -251,7 +252,7 @@ function FieldViewer (props) {
   return (
     <Box display={['block', 'flex']} borderBottomWidth='1px' py='2'>
       <Box flexShrink='0' width={['auto', '12rem']} color='teal.400'>
-        {fieldValue.title}
+        {fieldValue.field.title}
       </Box>
       <Box flex='1' style={{ overflowWrap: 'anywhere' }}>
         <Viewer value={fieldValue.value} field={fieldValue.field} />
