@@ -92,13 +92,13 @@ export class Type extends SchemaMember {
 
   parentType (): null | Type {
     if (!this._parent) { return null }
-    return (this[SC].getType(this._parent) != null) || null
+    return this[SC].getType(this._parent) || null
   }
 
   allParents () {
     const addresses = [this.address]
     const parentType = this.parentType()
-    if (parentType != null) { addresses.push(...parentType.allParents()) }
+    if (parentType) { addresses.push(...parentType.allParents()) }
     return addresses
   }
 
@@ -107,7 +107,7 @@ export class Type extends SchemaMember {
   fields (): Field[] {
     const fields = Array.from(this._fields).map(address => this[SC].getField(address)).filter(x => x) as Field[]
     const parentType = this.parentType()
-    if (parentType != null) {
+    if (parentType) {
       fields.push(...parentType.fields())
     }
     return fields
@@ -166,7 +166,7 @@ Type.MissingType = MissingType
 
 function jsonSchemaToSpec (spec: JSONSchema4): TypeSpec {
   if (!spec.fields) { spec.fields = {} }
-  if (spec.properties != null) {
+  if (spec.properties) {
     for (let [name, fieldSpec] of Object.entries(spec.properties)) {
       if (fieldSpec.sonar) {
         fieldSpec = Object.assign(fieldSpec, fieldSpec.sonar)
@@ -187,7 +187,7 @@ function jsonSchemaToSpec (spec: JSONSchema4): TypeSpec {
   return spec as TypeSpec
 }
 function isJsonSchema (spec: TypeSpec & JSONSchema4): boolean {
-  if (spec.properties != null) { return true }
+  if (spec.properties) { return true }
   return false
 }
 export default Type

@@ -49,7 +49,7 @@ export class Schema {
 
   constructor (opts: SchemaOpts = {}) {
     this._defaultNamespace = opts.defaultNamespace
-    this._onchange = (opts.onchange != null) || noop
+    this._onchange = opts.onchange || noop
   }
 
   // TODO: Remove any
@@ -91,7 +91,7 @@ export class Schema {
   }
 
   resolveFieldAddress (address: string, type?: Type) {
-    if ((type != null) && !address.includes('#')) {
+    if (type && !address.includes('#')) {
       address = encodeSchemaPath({ namespace: type.namespace, type: type.name, field: address, version: type.version })
     }
     const parts = this._parseSchemaPath(address)
@@ -116,8 +116,7 @@ export class Schema {
   }
 
   getType (address: string): Type | undefined {
-    return ((this._types.get(address) != null) ||
-            this._types.get(this.resolveTypeAddress(address)))
+    return this._types.get(address) || this._types.get(this.resolveTypeAddress(address))
   }
 
   hasType (address: string): boolean {
@@ -154,8 +153,7 @@ export class Schema {
   }
 
   getField (address: string): Field | undefined {
-    return ((this._fields.get(address) != null) ||
-            this._fields.get(this.resolveFieldAddress(address)))
+    return this._fields.get(address) || this._fields.get(this.resolveFieldAddress(address))
   }
 
   build (strict = true) {

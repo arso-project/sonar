@@ -94,7 +94,7 @@ export class RecordVersion extends SchemaMember {
   }
 
   get links () {
-    return (this.inner.links != null) || []
+    return this.inner.links || []
   }
 
   get lseq () {

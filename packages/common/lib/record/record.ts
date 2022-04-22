@@ -4,7 +4,7 @@ import { RecordVersion, WireRecordVersion, RecordValue, FieldValue } from './ver
 import Versions from '../versions.js'
 import { Emitter, EmitCb } from '../emitter'
 import { SC } from '../symbols'
-// @ts-expect-error
+// @ts-ignore
 import { inspectSymbol, InspectOptions } from '../util/inspect'
 
 export class Record extends SchemaMember {
