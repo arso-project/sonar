@@ -120,7 +120,7 @@ export class Workspace extends EventEmitter {
     if (this.opened) {
       return
     }
-    if (this._openPromise == null) {
+    if (!this._openPromise) {
       this._openPromise = this._open()
     }
     await this._openPromise
@@ -263,7 +263,7 @@ export class Workspace extends EventEmitter {
     if (!opts.endpoint && this.endpoint) {
       opts.endpoint = this.endpoint
     }
-    if (opts.headers == null) { opts.headers = {} }
+    if (!opts.headers) { opts.headers = {} }
     const authOpts: Record<string, string> = {}
     if (opts.token) authOpts.token = opts.token
     opts.headers = {
@@ -287,7 +287,7 @@ export class Workspace extends EventEmitter {
     eventSource.addEventListener('message', message => {
       try {
         const event = JSON.parse(message.data)
-        if (opts.onmessage != null) { opts.onmessage(event) }
+        if (opts.onmessage) opts.onmessage(event)
       } catch (e) { }
     })
     eventSource.addEventListener('error', err => {

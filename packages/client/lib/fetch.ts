@@ -46,18 +46,18 @@ export default async function makeFetch (url: string, opts: FetchOpts & { respon
 export default async function makeFetch (url: string, opts: FetchOpts & { responseType: 'raw' }): Promise<Response>;
 export default async function makeFetch (url: string, opts: FetchOpts): Promise<any>;
 export default async function makeFetch (url: string, opts: FetchOpts): Promise<any> {
-  if (url.match(/^https?:\/\//) == null) {
+  if (!url.match(/^https?:\/\//)) {
     if (url.includes('://')) {
       throw new Error('Only http: and https: protocols are supported.')
     }
     if (!url.startsWith('/')) { url = '/' + url }
     if (opts.endpoint) { url = opts.endpoint + url }
   }
-  if (opts.headers == null) { opts.headers = {} }
+  if (!opts.headers) opts.headers = {}
   if (!opts.requestType) {
     if (isBuffer(opts.body)) { opts.requestType = 'buffer' } else { opts.requestType = 'json' }
   }
-  if (opts.params != null) {
+  if (opts.params) {
     const searchParams = new URLSearchParams()
     for (const [key, value] of Object.entries(opts.params)) {
       searchParams.append(key, value)

@@ -50,7 +50,7 @@ export class RecordVersion extends SchemaMember {
     this.inner = input
     this._fields = new Map()
     const type = this.schema.getType(input.type)
-    if (type == null) {
+    if (!type) {
       throw new Error(`Cannot upcast record: Unknown type "${input.type}"`)
     }
     this._type = type.address
@@ -111,7 +111,7 @@ export class RecordVersion extends SchemaMember {
 
   allTypes (): string[] {
     const type = this.getType()
-    if (type == null) return []
+    if (!type) return []
     return type.allParents()
   }
 
@@ -150,7 +150,7 @@ export class RecordVersion extends SchemaMember {
   getOne (fieldName: string): any {
     this._build()
     const fieldSchema = this.getField(fieldName)
-    if (fieldSchema == null) return undefined
+    if (!fieldSchema) return undefined
     return this._fields.get(fieldSchema.address)
   }
 
@@ -159,7 +159,7 @@ export class RecordVersion extends SchemaMember {
     // const fieldAddress = this.schema.resolveFieldAddress(fieldName)
     // const fieldSchema = this.schema.getField(fieldAddress)
     const fieldSchema = this.getField(fieldName)
-    if (fieldSchema == null) return []
+    if (!fieldSchema) return []
     const value = this._fields.get(fieldSchema.address)
     if (fieldSchema.multiple) return value
     else return [value]
@@ -175,7 +175,7 @@ export class RecordVersion extends SchemaMember {
     const list = []
     for (const [address, value] of this._fields.entries()) {
       const field = this[SC].getField(address)
-      if (field != null) list.push(new FieldValue(field, value))
+      if (field) list.push(new FieldValue(field, value))
     }
     return list
   }
@@ -208,7 +208,7 @@ export class RecordVersion extends SchemaMember {
   }
 
   inspect (_depth: number, opts: InspectOptions = { stylize: msg => msg }): string {
-    if (opts.stylize == null) opts.stylize = (msg: string) => msg
+    if (!opts.stylize) opts.stylize = (msg: string) => msg
     const { stylize } = opts
     const ind = ' '.repeat(opts.indentationLvl || 0)
     const h = (str: string) => stylize(str, 'special')
@@ -236,9 +236,9 @@ ${ind})`
 
 function resolveFieldValues (schema: Schema, record: WireRecordVersion): FieldValueSet {
   const type = schema.getType(record.type)
-  if (type == null) return new Map()
+  if (!type) return new Map()
   const fields = type.fields()
-  if (record.value == null) return new Map()
+  if (!record.value) return new Map()
   const ret = new Map()
   for (const field of fields) {
     if (record.value[field.name] !== undefined) {

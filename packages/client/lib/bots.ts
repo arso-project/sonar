@@ -32,7 +32,7 @@ export class Bots {
   }
 
   async close () {
-    if (this._eventSource != null) this._eventSource.close()
+    if (this._eventSource) this._eventSource.close()
   }
 
   async join (botName: string, collection: string) {
@@ -119,7 +119,7 @@ export class Bots {
     try {
       const { bot: name, op, data, requestId } = message
       const bot = this.bots.get(name)
-      if (bot == null) { throw new Error('Unknown bot: ' + bot) }
+      if (!bot) throw new Error('Unknown bot: ' + bot)
       try {
         if (op === 'join') {
           const { collection: collectionKey } = data

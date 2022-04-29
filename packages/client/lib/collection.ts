@@ -96,7 +96,7 @@ export class Collection extends EventEmitter {
   }
 
   get name() {
-    if (this._info != null) { return this._info.name }
+    if (this._info) { return this._info.name }
     return this._nameOrKey
   }
 
@@ -127,7 +127,7 @@ export class Collection extends EventEmitter {
      * @throws Will throw if this collection does not exist or cannot be accessed.
      */
   async open(reset = false) {
-    if ((this._openPromise == null) || reset) { this._openPromise = this._open() }
+    if (!this._openPromise || reset) { this._openPromise = this._open() }
     return await this._openPromise
   }
 
@@ -162,7 +162,7 @@ export class Collection extends EventEmitter {
     // for (const stream of this._eventStreams) {
     //     stream.destroy();
     // }
-    if (this._eventSource != null) { this._eventSource.close() }
+    if (this._eventSource) { this._eventSource.close() }
   }
 
   /**
@@ -388,14 +388,14 @@ export class Collection extends EventEmitter {
      * @return {Readable<object>}
      */
   createEventStream() {
-    if (this._eventStream == null) {
+    if (!this._eventStream) {
       this._initEventSource()
     }
     return this._eventStream!.subscribe()
   }
 
   async _initEventSource() {
-    if (this._eventStream != null) { return }
+    if (this._eventStream) return
     this._eventStream = new TeeStream()
     const onerror = (_err: any) => {
       // TODO: Where should the error go?
@@ -519,7 +519,7 @@ export class Collection extends EventEmitter {
      */
   async reindex(views?: string[]) {
     const params: any = {}
-    if (views != null) { params.views = views }
+    if (views) params.views = views 
     return await this.fetch('/reindex', {
       method: 'post',
       params

@@ -90,8 +90,8 @@ export class Files {
   async readFile (id: string, opts?: RangeOpts & FetchOpts): Promise<ArrayBuffer|Buffer|string|ReadableStream<Uint8Array>|Response> {
     opts = opts || {}
     opts.responseType = opts.responseType || 'stream'
-    if (opts.headers == null) { opts.headers = {} }
-    if (opts.range != null) {
+    if (!opts.headers) { opts.headers = {} }
+    if (opts.range) {
       opts.headers.Range = `bytes=${opts.range.from || 0}-${opts.range.to || ''}`
     }
     return await this.collection.fetch('/file/' + id, opts)

@@ -156,7 +156,7 @@ export class Record extends SchemaMember {
   }
 
   inspect (_depth: number, opts: InspectOptions = {}): string {
-    if (opts.stylize == null) opts.stylize = (msg: string) => msg
+    if (!opts.stylize) opts.stylize = (msg: string) => msg
     const { stylize } = opts
     const ind = ' '.repeat(opts.indentationLvl || 0)
     // const h = (str: string) => stylize(str, 'special')

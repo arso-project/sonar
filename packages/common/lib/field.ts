@@ -98,7 +98,7 @@ export class Field extends SchemaMember {
   }
 
   get index () {
-    return (this._spec.index != null) || {}
+    return this._spec.index || {}
   }
 
   get multiple () {
@@ -110,7 +110,7 @@ export class Field extends SchemaMember {
     addresses.push(...this._children)
     if (this._parent) {
       const parentField = this[SC].getField(this._parent)
-      if (parentField != null) {
+      if (parentField) {
         addresses.push(...parentField.allVariants())
       }
     }
@@ -134,9 +134,9 @@ export class Field extends SchemaMember {
     // TODO: This will endlessly loop for nested refineds.
     // It should throw or stop when recursion is encountered.
     const parent = this[SC].getField(this._spec.refines)
-    if (strict && (parent == null)) {
+    if (strict && !parent) {
       throw new Error(`Missing parent field ${this._spec.refines} while resolving ${this.address}`)
-    } else if (parent == null) { return }
+    } else if (!parent) return
     parent._build()
     this._parent = parent.address
     parent._children.add(this.address)

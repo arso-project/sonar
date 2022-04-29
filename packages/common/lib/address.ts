@@ -26,7 +26,7 @@ export function parseSchemaPath (address: SchemaPathInput): SchemaPath {
   // sonar/Entity@3#label
   const regex = /^(?:([^/#@]+)\/)?([^@#/]+)(?:@(\d+))?(?:#([^/#@]+))?$/
   const matches = address.match(regex)
-  if (matches == null) { throw new Error('Invalid address') }
+  if (!matches) { throw new Error('Invalid address') }
   matches.shift()
   const [namespace, type, versionString, field] = matches
   let version
