@@ -7,10 +7,9 @@ const DatSDK = require('hyper-sdk')
 const p = require('path')
 const RAF = require('random-access-file')
 const RAM = require('random-access-memory')
-const createLogger = require('@arsonar/common/log')
+const { createLogger } = require('@arsonar/common')
 
 const { defaultStoragePath } = require('./util')
-
 const Workspace = require('./workspace')
 
 module.exports = class WorkspaceManager extends Nanoresource {

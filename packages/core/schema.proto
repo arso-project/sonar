@@ -22,4 +22,10 @@ message Record {
   repeated string links = 6;
   optional string typeVersion = 7;
   optional bool deleted = 8;
+  optional Changes changes = 9;
+}
+
+message Changes {
+  required string format = 1;
+  required bytes payload = 2;
 }

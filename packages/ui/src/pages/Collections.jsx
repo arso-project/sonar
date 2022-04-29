@@ -269,18 +269,6 @@ function CollectionList (props) {
                     <Key k={collection.localKey} mr='4' />
                   </Box>
                 </Flex>
-                <Flex direction='row' justify='flex-start'>
-                  <Box
-                    flexShrink='0'
-                    width={['auto', '12rem']}
-                    color='teal.400'
-                  >
-                    Local drive:
-                  </Box>
-                  <Box style={{ overflowWrap: 'anywhere' }}>
-                    <Key k={collection.localDrive} mr='4' />
-                  </Box>
-                </Flex>
                 {collection.network.shared && (
                   <Flex direction='row' justify='flex-start'>
                     <Box

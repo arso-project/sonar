@@ -1,0 +1,45 @@
+{
+  "date": "2022-04-28 15:10:26",
+  "operations": [
+    {
+      "source": "./hook/use-record.js",
+      "target": "./hook/use-record.ts"
+    },
+    {
+      "source": "./hook/use-config.js",
+      "target": "./hook/use-config.ts"
+    },
+    {
+      "source": "./hook/use-async.js",
+      "target": "./hook/use-async.ts"
+    },
+    {
+      "source": "./lib/config.js",
+      "target": "./lib/config.ts"
+    },
+    {
+      "source": "./comp/context.js",
+      "target": "./comp/context.ts"
+    },
+    {
+      "source": "./hook/use-query.js",
+      "target": "./hook/use-query.ts"
+    },
+    {
+      "source": "./package.json",
+      "target": "./package.tson"
+    },
+    {
+      "source": "./index.js",
+      "target": "./index.ts"
+    },
+    {
+      "source": "./rollup.config.js",
+      "target": "./rollup.config.ts"
+    },
+    {
+      "source": "./rnr-2022-04-28_151022.json",
+      "target": "./rnr-2022-04-28_151022.tson"
+    }
+  ]
+}

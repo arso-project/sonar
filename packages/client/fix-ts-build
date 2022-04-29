@@ -1,0 +1,16 @@
+#!/bin/sh
+
+cat > dist/cjs/package.json <<!EOF
+{
+    "name": "@arsonar/client-cjs",
+    "type": "commonjs"
+}
+!EOF
+
+cat > dist/esm/package.json <<!EOF
+{
+    "name": "@arsonar/client-esm",
+    "type": "module"
+}
+!EOF
+

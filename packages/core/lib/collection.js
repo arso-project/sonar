@@ -1,6 +1,7 @@
 const hcrypto = require('hypercore-crypto')
 const mutexify = require('mutexify/promise')
 const datEncoding = require('dat-encoding')
+const { EventEmitter } = require('events')
 const pretty = require('pretty-hash')
 const inspect = require('inspect-custom-symbol')
 const pump = require('pump')
@@ -26,15 +27,6 @@ const createIndexView = require('../views/indexes')
 const createHistoryView = require('../views/history')
 const CORE_TYPE_SPECS = require('./types.json')
 const Files = require('./file')
-const makeGetDriveFunction = require('./hyperdrive')
-
-const driveStruct = require('./struct/drive')
-const recordsStruct = require('./struct/records')
-
-function getStruct (feedType) {
-  if (feedType === 'hyperdrive') return driveStruct
-  else return recordsStruct
-}
 
 const FEED_TYPE_ROOT = 'sonar.root'
 
@@ -43,6 +35,72 @@ const TYPE_TYPE = 'sonar/type'
 
 const DEFAULT_CONFIG = {
   share: true
+}
+
+class PeerMap extends EventEmitter {
+  constructor () {
+    super()
+    this.peers = new Map()
+  }
+
+  list () {
+    const list = []
+    for (const [remotePublicKey, peer] of this.peers.entries()) {
+      const feeds = []
+      for (const feed of peer.feeds) {
+        feeds.push({
+          key: feed.feed.key.toString('hex'),
+          stats: feed.stats
+        })
+      }
+      // const feeds = Array.from(...peer.feeds).map(feed => ({
+      //   key: feed.key.toString('hex')
+      //   // stats: instance.stats
+      // }))
+      list.push({ remotePublicKey, info: peer.info, feeds })
+    }
+    return list
+  }
+
+  add (peer) {
+    const remotePublicKey = peer.stream.stream.remotePublicKey.toString('hex')
+    const info = {
+      remotePublicKey,
+      remoteAddress: peer.stream.stream.remoteAddress
+    }
+    console.log('ADD PEER', {
+      info,
+      feed: peer.feed.key.toString('hex'),
+      stats: peer.stats
+    })
+    if (!this.peers.has(remotePublicKey)) {
+      const feeds = [peer]
+      this.peers.set(remotePublicKey, { info, feeds })
+      console.log('CORE EMIT add', info)
+      this.emit('add', info)
+    } else {
+      const existing = this.peers.get(remotePublicKey)
+      existing.feeds = existing.feeds.filter(info => info.feed.key.toString('hex') !== peer.feed.key.toString('hex'))
+      existing.feeds.push(peer)
+      // this.peers.get(remotePublicKey).feeds
+      // this.peers.get(remotePublicKey).feeds.add(peer)
+    }
+    console.log('THIS', this.peers)
+  }
+
+  remove (peer) {
+    const remotePublicKey = peer.stream.stream.remotePublicKey
+    if (!this.peers.has(remotePublicKey)) return
+    const existing = this.peers.get(remotePublicKey)
+    existing.feeds = peer.feeds.filter(info => info.feed.key.toString('hex') !== peer.feed.key.toString('hex'))
+    // const { info, feeds } = this.peers.get(remotePublicKey)
+    // feeds.delete(peer)
+    if (!existing.feeds.length) {
+      this.peers.delete(remotePublicKey)
+      // console.log('CORE EMIT remove', info)
+      this.emit('remove', existing.info)
+    }
+  }
 }
 
 class Collection extends Nanoresource {
@@ -71,6 +129,8 @@ class Collection extends Nanoresource {
 
     this._feeds = new Map()
 
+    this._peers = new PeerMap()
+
     // Set in _open()
     this._indexer = null
     this._localState = null
@@ -89,7 +149,11 @@ class Collection extends Nanoresource {
 
     // Push some events into event streams
     // Event streams are an easy way to forward events over RPC or HTTP.
+    this._peers.on('add', info => this.emit('peer-add', info))
+    this._peers.on('remove', info => this.emit('peer-remove', info))
     this._forwardEvent('open')
+    this._forwardEvent('peer-add')
+    this._forwardEvent('peer-remove')
     this._forwardEvent('update', lseq => ({ lseq }))
     this._forwardEvent('feed', (feed, info) => ({ ...info }))
     this._forwardEvent('schema-update', () => ({}))
@@ -286,6 +350,9 @@ class Collection extends Nanoresource {
   }
 
   async put (record, opts = {}) {
+    if (!(record instanceof RecordVersion)) {
+      record = new RecordVersion(this.schema, record)
+    }
     const batch = new Batch(this)
     await batch.put(record, opts)
     await batch.flush()
@@ -342,6 +409,7 @@ class Collection extends Nanoresource {
       },
       destroy (cb) {
         if (batch) batch._unlock()
+        cb()
       }
     })
     return stream
@@ -359,16 +427,8 @@ class Collection extends Nanoresource {
     return batch.entries
   }
 
-  _struct (key) {
-    // Structs are our small abstraction around different feed types
-    const info = this.feedInfo(key)
-    const struct = getStruct(info.type)
-    return struct
-  }
-
   _decodeBlock (block, req) {
-    const struct = this._struct(req.key)
-    const decodedBlock = struct.decodeBlock(block, req)
+    const decodedBlock = RecordEncoder.decode(block, req)
     return decodedBlock
   }
 
@@ -393,6 +453,7 @@ class Collection extends Nanoresource {
   async getBlock (req, opts = {}) {
     if (!this.opened && !this.opening) await this.open()
     if (opts.wait === undefined) opts.wait = true
+
     req = await this.resolveBlock(req)
 
     const block = await this._blockCache.getBlock(req.key, req.seq)
@@ -445,7 +506,7 @@ class Collection extends Nanoresource {
       let list = []
       if ((req.key && req.seq) || req.lseq || req.address) {
         try {
-          const block = await this.getBlock(req)
+          const block = await this.getBlock(req, opts)
           if (block) list.push(block)
         } catch (err) {
           // TODO: throw or log?
@@ -528,18 +589,36 @@ class Collection extends Nanoresource {
       cb = views
       views = null
     }
+    const self = this
     cb = maybeCallback(cb)
 
     // const timeout = setTimeout(() => {
     //   cb(new Error('Sync timeout')
     // }, SYNC_TIMEOUT)
+    // const updateFeeds = true
 
     process.nextTick(() => {
-      this._kappa.ready(views, () => {
+      syncKappa()
+      // TODO: Do we optionally want to wait for all feeds to update?
+      // if (updateFeeds) {
+      //   let pending = this.feeds().length
+      //   const ondone = () => {
+      //     if (--pending === 0) syncKappa()
+      //   }
+      //   for (const feed of this.feeds()) {
+      //     feed.update({ ifAvailable: true, length: feed.length }, ondone)
+      //   }
+      // } else {
+      //   syncKappa()
+      // }
+    })
+
+    function syncKappa () {
+      self._kappa.ready(views, () => {
         // clearTimeout(timeout)
         cb()
       })
-    })
+    }
 
     return cb.promise
   }
@@ -586,8 +665,10 @@ class Collection extends Nanoresource {
       feeds,
       kappa,
       network,
-      config
+      config,
+      peers: this._peers.list()
     }
+    this.emit('onstatus', status)
     if (cb) process.nextTick(cb, null, status)
     return status
   }
@@ -694,9 +775,7 @@ class Collection extends Nanoresource {
     // our local resources are not yet initialized
     // ====
     const rootInfo = { type: FEED_TYPE_ROOT }
-    this._rootFeed = await this._initFeed(this._keyOrName, rootInfo, {
-      index: false
-    })
+    this._rootFeed = await this._initFeed(this._keyOrName, rootInfo)
     this._id = deriveId(this._rootFeed.discoveryKey)
 
     if (this._keyOrName !== this._rootFeed.key.toString('hex')) {
@@ -779,10 +858,6 @@ class Collection extends Nanoresource {
     this.emit('opening', addOpenPromise)
     await Promise.all(openPromises)
 
-    // Init hyperdrives.
-    const { onClose, getDrive } = await makeGetDriveFunction(this)
-    this.drive = getDrive
-
     // Emit open event
     this.log.debug(`Collection open: ${pretty(this.key)}`)
     process.nextTick(() => this.emit('open'))
@@ -857,7 +932,11 @@ class Collection extends Nanoresource {
       this.emit('remote-update', feed)
     })
     feed.on('peer-open', peer => {
-      this.emit('peer-open', feed, peer)
+      // console.log('peer-open', keyOrName, peer)
+      this._peers.add(peer)
+    })
+    feed.on('peer-remove', peer => {
+      this._peers.remove(peer)
     })
 
     // If the feed is unknown add it to the local feed store.
@@ -877,18 +956,23 @@ class Collection extends Nanoresource {
 
     // Add feed to indexer
     // TODO: Change default to false?
-    if (opts.index !== false) {
+    let index = false
+    if (opts.index === true) index = true
+    if (opts.index === undefined && info.type === FEED_TYPE_ROOT) index = true
+    if (index && this._indexer) {
       this._indexer.addReady(feed, { scan: true })
     }
 
     // TODO: Start to not download everything, always.
     // Note: null as second argument is needed, see
     // https://github.com/geut/hypercore-promise/issues/8
-    feed.download({ start: 0, end: -1 }, null)
+    if (index) {
+      feed.download({ start: 0, end: -1 }, null)
+    }
 
     // Look for the feed in the swarm if added by myself
     if (!opts.origin || opts.origin === this.localKey.toString('hex')) {
-      const networkPromise = this._workspace.network.configure(
+      const _networkPromise = this._workspace.network.configure(
         feed.discoveryKey,
         {
           announce: true,
@@ -1042,33 +1126,40 @@ class Batch {
   }
 
   async del ({ id, type }, opts) {
-    const record = { id, type, deleted: true }
+    const record = new RecordVersion(this.collection.schema, { id, type, deleted: true })
     return this._append(record, opts)
   }
 
   async _append (record, opts = {}) {
     try {
+      record = new RecordVersion(this.collection.schema, record)
       if (!this.locked) await this._lock()
-      if (!record.id) record.id = uuid()
+      const id = record.id || uuid()
+
+      // Set feed, links, timestamp
+      const links = await this._getLinks(record, opts)
+      const feed = this._findFeed(record, opts)
+
+      record = {
+        ...record.toJSON(),
+        id,
+        key: feed.key.toString('hex'),
+        timestamp: Date.now(),
+        links
+      }
+      // Never store value for deleted records
+      if (record.deleted) {
+        record.value = undefined
+      }
 
       // Upcast record
       // Throws an error if the record is invalid.
       // TODO: Currently it only checks if id and value are non-empty and type is valid
       // type in the schema.
       record = new RecordVersion(this.collection.schema, record)
-
-      // Set feed, links, timestamp
-      record.links = await this._getLinks(record, opts)
-      const feed = this._findFeed(record, opts)
-      record.key = feed.key.toString('hex')
-      record.timestamp = Date.now()
-
-      // Never store value for deleted records
-      if (record.deleted) {
-        record.value = undefined
-      }
       this.entries.push(record)
     } catch (err) {
+      console.log('err', err)
       this._unlock()
       throw err
     }
@@ -1095,7 +1186,7 @@ class Batch {
         )
         await feed.append(blocks)
         for (const record of records) {
-          record._record.seq = ++seq
+          record.inner.seq = ++seq
         }
         return records
       }

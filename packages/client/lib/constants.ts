@@ -1,0 +1,7 @@
+export const DEFAULT_URL = 'http://localhost:9191/api/v1/default'
+export const DEFAULT_COLLECTION = 'default'
+export const SCHEMA_RESOURCE = 'sonar/resource'
+export const METADATA_ID = 'sonar.id'
+export const HYPERDRIVE_SCHEME = 'hyper:'
+export const DEFAULT_ENDPOINT = 'http://localhost:9191/api/v1/default'
+export const DEFAULT_WORKSPACE = 'default'

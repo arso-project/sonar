@@ -1,6 +1,6 @@
 const { Quadstore } = require('quadstore')
 const { Transform, Readable } = require('streamx')
-const { parseAddress } = require('@arsonar/common/lib/address')
+const { parseSchemaPath } = require('@arsonar/common')
 const { batchToDiff } = require('@arsonar/core/lib/utils/batch-diff')
 
 // HACK: Quadstore is not compatible with subleveldown
@@ -118,7 +118,7 @@ function upcastQuery (df, collection, query) {
 }
 
 function typeFromPredicate (quad) {
-  const { namespace, type } = parseAddress(quad.predicate.value)
+  const { namespace, type } = parseSchemaPath(quad.predicate.value)
   return `${namespace}/${type}`
 }
 
@@ -130,7 +130,7 @@ function recordToQuads (df, collection, record) {
   const quads = []
   const graph = df.namedNode(collection.id)
   const relationValues = record.fields().filter(fieldValue => {
-    return fieldValue.fieldType === 'relation'
+    return fieldValue.field.fieldType === 'relation'
   })
   for (const fieldValue of relationValues) {
     for (const value of fieldValue.values()) {

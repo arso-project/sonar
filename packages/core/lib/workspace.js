@@ -14,7 +14,7 @@ const {
 } = require('nanoresource-promise/emitter')
 // const why = require('why-is-node-running')
 
-const createLogger = require('@arsonar/common/log')
+const { createLogger } = require('@arsonar/common')
 
 const Collection = require('./collection')
 const LevelMap = require('./utils/level-map')
@@ -169,7 +169,6 @@ module.exports = class Workspace extends Nanoresource {
       const key = info.key
       if (!collections[key]) {
         collections[key] = {
-          localDrive: '',
           config: {},
           kappa: {},
           alias: null,
@@ -332,10 +331,6 @@ module.exports = class Workspace extends Nanoresource {
     const core = this._sdk.Hypercore(keyOrName, opts)
     core.setMaxListeners(128)
     return core
-  }
-
-  Hyperdrive (keyOrName, opts) {
-    return this._sdk.Hyperdrive(keyOrName, opts)
   }
 
   // registerPlugin (name, handlers) {

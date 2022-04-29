@@ -28,11 +28,8 @@ git clone https://github.com/arso-project/sonar.git
 cd sonar
 # install dependencies of all workspaces
 yarn
-# (re)build the user interface and docs
-yarn run rebuild
-# when developing on something that uses the ESM version of the
-# `@arsonar/client` library: watch and rebuild on changes.
-yarn dev:client
+# build the typescript modules and bundle the UI
+yarn run build
 ```
 
 You can start sonar with `./sonar` from the repository root.
@@ -40,7 +37,7 @@ You can start sonar with `./sonar` from the repository root.
 If the start fails with errors related to `sonar-tantivy`, try to redownload or rebuild sonar-tantivy (the search engine included in sonar):
 
 ```
-yarn run build:sonar-tantivy
+yarn run rebuild:tantivy
 ```
 
 If the start fails with errors related to `client`, try to rebuild client :
@@ -63,8 +60,8 @@ yarn run build:client
 This repo includes a few examples. To run them locally, do the following:
 
 ```sh
-# build the client library
-yarn build:client
+# build the typecript modules
+yarn build
 # start sonar
 ./sonar start --disable-authentication --dev
 # run the example from the examples/ folder
@@ -87,7 +84,7 @@ More on this project on [arso.xyz](https://arso.xyz).
 
 The repo is structured as a monorepo of different packages (that are interdependent at several points).
 
-- **[core](packages/core/README.md)** it the core module. It manages _collections_, which are our notion of "a group of feeds\*. Each collection has a [kappa-record-db](https://github.com/arso-project/kappa-record-db) that's plugged into a search index through [tantivy](https://github.com/arso-project/packages/tantivy). Each collection has also a list of associated [hyperdrives](https://github.com/mafintosh/hyperdrive).
+- **[core](packages/core/README.md)** it the core module. It manages _collections_, which are our notion of "a group of feeds\*. Each collection has a [kappa-record-db](https://github.com/arso-project/kappa-record-db) that's plugged into a search index through [tantivy](https://github.com/arso-project/packages/tantivy). Each collection has also a list of associated [Hyperblobs](https://github.com/andrewosh/hyperblobs) to store raw file contents.
 
 - **[server](packages/server/README.md)** provides a REST style HTTP api that's used both by the CLI and the UI to access and manage the data in packages/core.
 
