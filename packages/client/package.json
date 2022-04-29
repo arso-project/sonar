@@ -1,6 +1,6 @@
 {
   "name": "@arsonar/client",
-  "version": "0.6.0-alpha.2",
+  "version": "0.6.0-alpha.3",
   "description": "Client for sonar",
   "main": "dist/cjs",
   "module": "dist/esm",
@@ -19,10 +19,10 @@
   "author": "arso contributors",
   "license": "GPL-3.0",
   "dependencies": {
-    "@arsonar/common": "^0.6.0-alpha.2",
+    "@arsonar/common": "^0.6.0-alpha.3",
     "@types/debug": "^4.1.7",
-    "@types/isomorphic-fetch": "^0.0.36",
     "@types/eventsource": "^1.1.8",
+    "@types/isomorphic-fetch": "^0.0.36",
     "@types/randombytes": "^2.0.0",
     "@types/streamx": "^2.9.1",
     "base32-encode": "^1.1.1",
@@ -37,7 +37,7 @@
     "streamx": "^2.11.0"
   },
   "devDependencies": {
-    "@arsonar/server": "^0.6.0-alpha.2",
+    "@arsonar/server": "^0.6.0-alpha.3",
     "@hyperswarm/dht": "^3.6.5",
     "@rollup/plugin-alias": "^3.1.1",
     "@rollup/plugin-commonjs": "^17.0.0",

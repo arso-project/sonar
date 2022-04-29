@@ -1,6 +1,6 @@
 {
   "name": "@arsonar/common",
-  "version": "0.6.0-alpha.2",
+  "version": "0.6.0-alpha.3",
   "main": "dist/cjs",
   "module": "dist/esm",
   "description": "",
@@ -20,9 +20,9 @@
     "text-table": "^0.2.0"
   },
   "dependencies": {
-    "@types/pino": "^7.0.5",
     "@types/json-schema": "^7.0.11",
     "@types/object-path": "^0.11.1",
+    "@types/pino": "^7.0.5",
     "chalk": "^4.1.0",
     "crypto-hash": "^1.3.0",
     "inspect-custom-symbol": "^1.1.1",

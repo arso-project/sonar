@@ -1,10 +1,10 @@
 {
   "name": "@arsonar/bots",
-  "version": "0.6.0-alpha.2",
+  "version": "0.6.0-alpha.3",
   "main": "index.js",
   "license": "GPL-3.0",
   "dependencies": {
-    "@arsonar/client": "^0.6.0-alpha.2",
+    "@arsonar/client": "^0.6.0-alpha.3",
     "js-yaml": "^3.14.0",
     "little-process-box": "^0.2.3"
   },

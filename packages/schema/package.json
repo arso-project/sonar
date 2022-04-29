@@ -1,6 +1,6 @@
 {
   "name": "@arsonar/schema",
-  "version": "0.6.0-alpha.2",
+  "version": "0.6.0-alpha.3",
   "description": "A arsonar module",
   "bin": {
     "sonar-build-types": "bin.js"
