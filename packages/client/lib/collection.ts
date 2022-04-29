@@ -40,6 +40,7 @@ export interface CollectionInfo {
   localKey: string
   length: number
   feeds: FeedInfo[]
+  peers: any
 }
 
 export interface FeedInfo {
@@ -100,11 +101,11 @@ export class Collection extends EventEmitter {
   }
 
   get key() {
-    return (this._info != null) && this._info.key
+    return this._info && this._info.key
   }
 
   get localKey() {
-    return (this._info != null) && this._info.localKey
+    return this._info && this._info.localKey
   }
 
   get info() {
@@ -112,7 +113,7 @@ export class Collection extends EventEmitter {
   }
 
   get id() {
-    return (this._info != null) && this._info.id
+    return this._info && this._info.id
   }
 
   get length() {
@@ -128,6 +129,11 @@ export class Collection extends EventEmitter {
   async open(reset = false) {
     if ((this._openPromise == null) || reset) { this._openPromise = this._open() }
     return await this._openPromise
+  }
+
+  async updateInfo () {
+    const info = await this.fetch('/')
+    this._info = info
   }
 
   async _open() {

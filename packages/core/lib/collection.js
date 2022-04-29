@@ -1,6 +1,7 @@
 const hcrypto = require('hypercore-crypto')
 const mutexify = require('mutexify/promise')
 const datEncoding = require('dat-encoding')
+const { EventEmitter } = require('events')
 const pretty = require('pretty-hash')
 const inspect = require('inspect-custom-symbol')
 const pump = require('pump')
@@ -36,6 +37,72 @@ const DEFAULT_CONFIG = {
   share: true
 }
 
+class PeerMap extends EventEmitter {
+  constructor () {
+    super()
+    this.peers = new Map()
+  }
+
+  list () {
+    const list = []
+    for (const [remotePublicKey, peer] of this.peers.entries()) {
+      const feeds = []
+      for (const feed of peer.feeds) {
+        feeds.push({
+          key: feed.feed.key.toString('hex'),
+          stats: feed.stats
+        })
+      }
+      // const feeds = Array.from(...peer.feeds).map(feed => ({
+      //   key: feed.key.toString('hex')
+      //   // stats: instance.stats
+      // }))
+      list.push({ remotePublicKey, info: peer.info, feeds })
+    }
+    return list
+  }
+
+  add (peer) {
+    const remotePublicKey = peer.stream.stream.remotePublicKey.toString('hex')
+    const info = {
+      remotePublicKey,
+      remoteAddress: peer.stream.stream.remoteAddress
+    }
+    console.log('ADD PEER', {
+      info,
+      feed: peer.feed.key.toString('hex'),
+      stats: peer.stats
+    })
+    if (!this.peers.has(remotePublicKey)) {
+      const feeds = [peer]
+      this.peers.set(remotePublicKey, { info, feeds })
+      console.log('CORE EMIT add', info)
+      this.emit('add', info)
+    } else {
+      const existing = this.peers.get(remotePublicKey)
+      existing.feeds = existing.feeds.filter(info => info.feed.key.toString('hex') !== peer.feed.key.toString('hex'))
+      existing.feeds.push(peer)
+      // this.peers.get(remotePublicKey).feeds
+      // this.peers.get(remotePublicKey).feeds.add(peer)
+    }
+    console.log('THIS', this.peers)
+  }
+
+  remove (peer) {
+    const remotePublicKey = peer.stream.stream.remotePublicKey
+    if (!this.peers.has(remotePublicKey)) return
+    const existing = this.peers.get(remotePublicKey)
+    existing.feeds = peer.feeds.filter(info => info.feed.key.toString('hex') !== peer.feed.key.toString('hex'))
+    // const { info, feeds } = this.peers.get(remotePublicKey)
+    // feeds.delete(peer)
+    if (!existing.feeds.length) {
+      this.peers.delete(remotePublicKey)
+      // console.log('CORE EMIT remove', info)
+      this.emit('remove', existing.info)
+    }
+  }
+}
+
 class Collection extends Nanoresource {
   constructor (keyOrName, opts) {
     super()
@@ -62,6 +129,8 @@ class Collection extends Nanoresource {
 
     this._feeds = new Map()
 
+    this._peers = new PeerMap()
+
     // Set in _open()
     this._indexer = null
     this._localState = null
@@ -80,7 +149,11 @@ class Collection extends Nanoresource {
 
     // Push some events into event streams
     // Event streams are an easy way to forward events over RPC or HTTP.
+    this._peers.on('add', info => this.emit('peer-add', info))
+    this._peers.on('remove', info => this.emit('peer-remove', info))
     this._forwardEvent('open')
+    this._forwardEvent('peer-add')
+    this._forwardEvent('peer-remove')
     this._forwardEvent('update', lseq => ({ lseq }))
     this._forwardEvent('feed', (feed, info) => ({ ...info }))
     this._forwardEvent('schema-update', () => ({}))
@@ -515,18 +588,36 @@ class Collection extends Nanoresource {
       cb = views
       views = null
     }
+    const self = this
     cb = maybeCallback(cb)
 
     // const timeout = setTimeout(() => {
     //   cb(new Error('Sync timeout')
     // }, SYNC_TIMEOUT)
+    // const updateFeeds = true
 
     process.nextTick(() => {
-      this._kappa.ready(views, () => {
+      syncKappa()
+      // TODO: Do we optionally want to wait for all feeds to update?
+      // if (updateFeeds) {
+      //   let pending = this.feeds().length
+      //   const ondone = () => {
+      //     if (--pending === 0) syncKappa()
+      //   }
+      //   for (const feed of this.feeds()) {
+      //     feed.update({ ifAvailable: true, length: feed.length }, ondone)
+      //   }
+      // } else {
+      //   syncKappa()
+      // }
+    })
+
+    function syncKappa () {
+      self._kappa.ready(views, () => {
         // clearTimeout(timeout)
         cb()
       })
-    })
+    }
 
     return cb.promise
   }
@@ -573,7 +664,8 @@ class Collection extends Nanoresource {
       feeds,
       kappa,
       network,
-      config
+      config,
+      peers: this._peers.list()
     }
     this.emit('onstatus', status)
     if (cb) process.nextTick(cb, null, status)
@@ -819,6 +911,7 @@ class Collection extends Nanoresource {
   }
 
   async _initFeed (keyOrName, info = {}, opts = {}) {
+    console.log('initFeed', info.type, keyOrName)
     // Open the feed if it's not yet opened
     // if (this._feeds.has(keyOrName)) return this._feeds.get(keyOrName)
     const feed = this._workspace.Hypercore(keyOrName)
@@ -839,7 +932,11 @@ class Collection extends Nanoresource {
       this.emit('remote-update', feed)
     })
     feed.on('peer-open', peer => {
-      this.emit('peer-open', feed, peer)
+      // console.log('peer-open', keyOrName, peer)
+      this._peers.add(peer)
+    })
+    feed.on('peer-remove', peer => {
+      this._peers.remove(peer)
     })
 
     // If the feed is unknown add it to the local feed store.
@@ -875,7 +972,7 @@ class Collection extends Nanoresource {
 
     // Look for the feed in the swarm if added by myself
     if (!opts.origin || opts.origin === this.localKey.toString('hex')) {
-      const networkPromise = this._workspace.network.configure(
+      const _networkPromise = this._workspace.network.configure(
         feed.discoveryKey,
         {
           announce: true,
