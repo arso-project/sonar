@@ -912,7 +912,6 @@ class Collection extends Nanoresource {
   }
 
   async _initFeed (keyOrName, info = {}, opts = {}) {
-    console.log('initFeed', info.type, keyOrName)
     // Open the feed if it's not yet opened
     // if (this._feeds.has(keyOrName)) return this._feeds.get(keyOrName)
     const feed = this._workspace.Hypercore(keyOrName)
