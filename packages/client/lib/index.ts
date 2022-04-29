@@ -12,7 +12,11 @@ export type {
   Store,
   Type,
   TypeSpecInput,
-  WireRecordVersion
+  WireRecordVersion,
+  FieldSpecInput,
+  JSONSchema4,
+  JSONSchema4TypeName,
+  JSONSchema4Type
 } from '@arsonar/common'
 
 export type {

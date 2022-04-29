@@ -144,7 +144,7 @@ tape('files with buffers', async (t) => {
   const result = await collection.files.readFile(record.id, { responseType: 'buffer' })
   console.log({ record, result })
   t.ok(Buffer.isBuffer(result), 'res is buffer')
-  t.equal(buf.toString('hex'), result.toString('hex'), 'buffer matches')
+  t.equal(buf.toString('hex'), (result as Buffer).toString('hex'), 'buffer matches')
   await cleanup()
   t.ok(true, 'cleanup ok')
 })

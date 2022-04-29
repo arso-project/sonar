@@ -1,5 +1,6 @@
 import type { Logger } from './log.js'
 export { Schema, TypeSpecInput } from './schema.js'
+export type { Field, FieldSpec, FieldSpecInput } from './field.js'
 export { Store } from './store.js'
 export { Entity } from './record/entity'
 export { Record } from './record/record'
@@ -8,3 +9,4 @@ export { Type } from './type.js'
 export { createLogger } from './log.js'
 export type { Logger }
 export { parseSchemaPath, encodeSchemaPath } from './address'
+export type { JSONSchema4, JSONSchema4TypeName, JSONSchema4Type } from 'json-schema'

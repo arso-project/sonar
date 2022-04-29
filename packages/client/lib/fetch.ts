@@ -40,7 +40,12 @@ export type FetchOpts = Omit<RequestInit, 'body'> & {
  *    decoded JSON will be returned. if opts.responseType is 'binary' or 'text',
  *    the response will be returned as a buffer or text.
  */
-export default async function makeFetch (url: string, opts: FetchOpts) {
+export default async function makeFetch (url: string, opts: FetchOpts & { responseType: 'text' }): Promise<string>;
+export default async function makeFetch (url: string, opts: FetchOpts & { responseType: 'buffer' }): Promise<Buffer|ArrayBuffer>;
+export default async function makeFetch (url: string, opts: FetchOpts & { responseType: 'stream' }): Promise<ReadableStream<Uint8Array>>;
+export default async function makeFetch (url: string, opts: FetchOpts & { responseType: 'raw' }): Promise<Response>;
+export default async function makeFetch (url: string, opts: FetchOpts): Promise<any>;
+export default async function makeFetch (url: string, opts: FetchOpts): Promise<any> {
   if (url.match(/^https?:\/\//) == null) {
     if (url.includes('://')) {
       throw new Error('Only http: and https: protocols are supported.')
