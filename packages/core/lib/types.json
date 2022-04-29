@@ -39,7 +39,9 @@
       "parent": {
         "type": "relation",
         "targetKind": "record",
-        "targetTypes": ["sonar.feed"],
+        "targetTypes": [
+          "sonar.feed"
+        ],
         "title": "Parent"
       },
       "description": {
@@ -117,7 +119,7 @@
   {
     "name": "resource",
     "namespace": "sonar",
-    "title": "Resource",
+    "title": "Resource (deprecated)",
     "fields": {
       "filename": {
         "type": "string",
@@ -164,7 +166,13 @@
       "mediaType": {
         "type": "string",
         "title": "Media type",
-        "enum": ["audio", "video", "image", "document", "other"],
+        "enum": [
+          "audio",
+          "video",
+          "image",
+          "document",
+          "other"
+        ],
         "index": {
           "basic": true,
           "search": {
