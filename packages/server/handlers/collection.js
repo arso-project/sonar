@@ -16,6 +16,7 @@ module.exports = function createCollectionRoutes () {
       const { name, key, alias } = req.body
       const opts = { alias, name }
       const collection = await req.workspace.createCollection(key || name, opts)
+      await collection.open()
       return collection.status()
     })
   )
@@ -201,9 +202,9 @@ module.exports = function createCollectionRoutes () {
         const record = await collection.putType(spec)
         const type = collection.getType(record.value.address)
         if (!type)
-          return next(
+          {return next(
             HttpError(404, 'Type not found after put - please report bug')
-          )
+          )}
         return type.toJSONSchema()
       } catch (err) {
         err.statusCode = 400
