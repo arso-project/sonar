@@ -293,7 +293,7 @@ export class Workspace extends EventEmitter {
     eventSource.addEventListener('error', err => {
       // TODO: Where do these errors go?
       // TODO: After a couple of fails die.
-      if (opts.onerror != null) { opts.onerror(err) } else { console.error('Event source error', err) }
+      if (opts.onerror) { opts.onerror(err) } else { console.error('Event source error', err) }
     })
     this._eventSources.push(eventSource)
     return eventSource

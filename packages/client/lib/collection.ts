@@ -11,7 +11,7 @@ import type { Logger, Record, RecordVersion, WireRecordVersion, RecordVersionFor
 import { FetchOpts } from './fetch.js'
 
 const debug = Debug('sonar-client')
-function uuid () {
+function uuid() {
   return base32Encode(randomBytes(16), 'Crockford').toLowerCase()
 }
 
@@ -67,7 +67,7 @@ export class Collection extends EventEmitter {
   private readonly _cacheid?: string
   private _liveUpdates = false
 
-  static uuid () {
+  static uuid() {
     return uuid()
   }
 
@@ -75,11 +75,10 @@ export class Collection extends EventEmitter {
      * Remote collection
      *
      * @constructor
-     * @param {Workspace} workspace - Remote workspace
-     * @param {string} nameOrKey - Name or key of the collection
-     * @return {Collection}
+     * @param workspace - Remote workspace
+     * @param nameOrKey - Name or key of the collection
      */
-  constructor (workspace: Workspace, nameOrKey: string) {
+  constructor(workspace: Workspace, nameOrKey: string) {
     super()
     /** @member {string} - API endpoint URL for this collection */
     this.endpoint = workspace.endpoint + '/collection/' + nameOrKey
@@ -95,28 +94,28 @@ export class Collection extends EventEmitter {
     // this._eventStreams = new Set();
   }
 
-  get name () {
+  get name() {
     if (this._info != null) { return this._info.name }
     return this._nameOrKey
   }
 
-  get key () {
+  get key() {
     return (this._info != null) && this._info.key
   }
 
-  get localKey () {
+  get localKey() {
     return (this._info != null) && this._info.localKey
   }
 
-  get info () {
+  get info() {
     return this._info
   }
 
-  get id () {
+  get id() {
     return (this._info != null) && this._info.id
   }
 
-  get length () {
+  get length() {
     return this._length || this._info?.length || 0
   }
 
@@ -125,14 +124,13 @@ export class Collection extends EventEmitter {
      *
      * @async
      * @throws Will throw if this collection does not exist or cannot be accessed.
-     * @return {Promise<void>}
      */
-  async open (reset = false) {
+  async open(reset = false) {
     if ((this._openPromise == null) || reset) { this._openPromise = this._open() }
     return await this._openPromise
   }
 
-  async _open () {
+  async _open() {
     const [info, fetchedSchema] = await Promise.all([
       this.fetch('/'),
       this.fetch('/schema')
@@ -154,7 +152,7 @@ export class Collection extends EventEmitter {
      * Properly closes open HTTP requests.
      * @async
      */
-  async close () {
+  async close() {
     // for (const stream of this._eventStreams) {
     //     stream.destroy();
     // }
@@ -165,18 +163,18 @@ export class Collection extends EventEmitter {
      * Put a new feed to the collection.
      *
      * @async
-     * @param {string} key - The hex-encoded key of the feed to add.
-     * @param {object} [info] - Optional information about the feed.
+     * @param key - The hex-encoded key of the feed to add.
+     * @param [info] - Optional information about the feed.
      *                          TODO: Document
      */
-  async putFeed (key: string, info = {}) {
+  async putFeed(key: string, info = {}) {
     return await this.fetch('/feed/' + key, {
       method: 'PUT',
       body: info
     })
   }
 
-  async addFeed (key: string, info = {}) {
+  async addFeed(key: string, info = {}) {
     return await this.putFeed(key, info)
   }
 
@@ -206,7 +204,7 @@ export class Collection extends EventEmitter {
      *
      * @return {Promise<Array<Record>>} A promise that resolves to an array of record objects.
      */
-  async query (name: string, args: any, opts?: any): Promise<Record[]> {
+  async query(name: string, args: any, opts?: any): Promise<Record[]> {
     if (this._cacheid) {
       opts.cacheid = this._cacheid
     }
@@ -238,7 +236,7 @@ export class Collection extends EventEmitter {
      * @throws Throws if the record is invalid.
      * @return {Promise<object>} An object with an `{ id }` property.
      */
-  async put (record: RecordVersion | WireRecordVersion | RecordVersionForm): Promise<Record> {
+  async put(record: RecordVersion | WireRecordVersion | RecordVersionForm): Promise<Record> {
     // If the record has no id set (= is a new record), generate and add a random id.
     // if (!record.id) { record.id = uuid() }
     // This checks if the record has type, id, value set and if the type is present
@@ -261,7 +259,7 @@ export class Collection extends EventEmitter {
      * @param {boolean} [opts.sync=false] Wait for all pending indexing operations to be finished.
      * @return {Promise<Array<object>>} A promise that resolves to an array of record objects.
      */
-  async get (req: GetRequest, opts?: GetOpts): Promise<Record[]> {
+  async get(req: GetRequest, opts?: GetOpts): Promise<Record[]> {
     // TODO: Implement RecordCache.has
     // if (this._cache.has(req)) {
     //   return this._cache.get(req)
@@ -276,7 +274,7 @@ export class Collection extends EventEmitter {
      * @param {string} address - The block address of the record version `feedkey@seq`
      *    where `feedkey` is the hex-encoded public key of a feed and `seq` is a sequence number (uint).
      */
-  async getVersion (address: string): Promise<Record> {
+  async getVersion(address: string): Promise<Record> {
     const [key, seq] = address.split('@')
     const version = await this.fetch(`/db/${key}/${seq}`)
     return this.store!.cacheRecord(version)
@@ -289,7 +287,7 @@ export class Collection extends EventEmitter {
      * @param {object} record - The record to delete. Has to have `{ id, type }` properties set.
      * @return {Promise<object>} - An object with `{ id, type }` properties of the deleted record.
      */
-  async del (record: Record | RecordVersion | WireRecordVersion): Promise<void> {
+  async del(record: Record | RecordVersion | WireRecordVersion): Promise<void> {
     return await this.fetch(`/record/${record.type}/${record.id}`, {
       method: 'DELETE'
     })
@@ -303,7 +301,7 @@ export class Collection extends EventEmitter {
      * @throws Throws if the schema object is invalid or cannot be saved.
      * @return {Promise<object>} A promise that resolves to the saved schema object.
      */
-  async putType (spec: TypeSpecInput) {
+  async putType(spec: TypeSpecInput) {
     const type = this.schema!.addType(spec)
     return await this.fetch('/schema', {
       method: 'POST',
@@ -323,13 +321,13 @@ export class Collection extends EventEmitter {
      *
      * @return {Writable<Record>} A writable stream
      */
-  createBatchStream (): Transform<Recordlike, string, string> & { finished: Promise<void> } {
+  createBatchStream(): Transform<Recordlike, string, string> & { finished: Promise<void> } {
     const self = this
     const stream: Transform<Recordlike, string, string> & { finished?: Promise<void> } = new Transform({
-      open (cb) {
+      open(cb) {
         cb()
       },
-      transform (record, cb) {
+      transform(record, cb) {
         // if (!record.id) { record.id = uuid() }
         try {
           const recordVersion = self.schema!.RecordVersion(record)
@@ -340,7 +338,7 @@ export class Collection extends EventEmitter {
           cb(err as Error)
         }
       },
-      final (cb) {
+      final(cb) {
         cb()
       }
     })
@@ -364,7 +362,7 @@ export class Collection extends EventEmitter {
      * @async
      * @return {Promise<void>}
      */
-  async sync () {
+  async sync() {
     return await this.fetch('/sync')
   }
 
@@ -383,14 +381,14 @@ export class Collection extends EventEmitter {
      *
      * @return {Readable<object>}
      */
-  createEventStream () {
+  createEventStream() {
     if (this._eventStream == null) {
       this._initEventSource()
     }
     return this._eventStream!.subscribe()
   }
 
-  async _initEventSource () {
+  async _initEventSource() {
     if (this._eventStream != null) { return }
     this._eventStream = new TeeStream()
     const onerror = (_err: any) => {
@@ -424,7 +422,7 @@ export class Collection extends EventEmitter {
      * are pulled from the server once available. The `update` event
      * is emitted when new records are about to arrive.
      */
-  pullLiveUpdates () {
+  pullLiveUpdates() {
     if (this._liveUpdates) { return }
     this._liveUpdates = true
     const eventStream = this.createEventStream()
@@ -435,7 +433,7 @@ export class Collection extends EventEmitter {
       const oldLength = this.length
       this._length = lseq + 1
       for (let i = oldLength + 1; i < this.length; i++) {
-        this.get({ lseq: i }).catch(e => { })
+        this.get({ lseq: i }).catch(_e => { })
       }
       this.emit('update', lseq)
     })
@@ -453,7 +451,7 @@ export class Collection extends EventEmitter {
      * @param {string} Subscription name. Has to be unique per running Sonar instance
      * @param {function} Async callback function that will be called for each incoming record
      */
-  async subscribe (name: string, onRecord: (record: Record) => Promise<void>) {
+  async subscribe(name: string, onRecord: (record: Record) => Promise<void>) {
     const self = this
     await this._initEventSource()
     run().catch(err => {
@@ -461,7 +459,7 @@ export class Collection extends EventEmitter {
       this.log.error('subscription error', err)
     })
     return true
-    async function run () {
+    async function run() {
       // const eventStream = self.createEventStream()
       while (true) {
         // wait for one incoming update event
@@ -491,14 +489,14 @@ export class Collection extends EventEmitter {
     }
   }
 
-  async _pullSubscription (name: string, opts?: any) {
+  async _pullSubscription(name: string, opts?: any) {
     // TODO: Prefix name with client id.
     return await this.fetch('/subscription/' + name, {
       params: opts
     })
   }
 
-  async _ackSubscription (name: string, cursor: number) {
+  async _ackSubscription(name: string, cursor: number) {
     // TODO: Prefix name with client id.
     return await this.fetch('/subscription/' + name + '/' + cursor, {
       method: 'post'
@@ -513,7 +511,7 @@ export class Collection extends EventEmitter {
      * @param {Array<string>} Optional array of view names to reindex.
      *  If unset all views will be reindexed.
      */
-  async reindex (views?: string[]) {
+  async reindex(views?: string[]) {
     const params: any = {}
     if (views != null) { params.views = views }
     return await this.fetch('/reindex', {
@@ -522,7 +520,7 @@ export class Collection extends EventEmitter {
     })
   }
 
-  async fetch (path: string, opts: FetchOpts = {}) {
+  async fetch(path: string, opts: FetchOpts = {}) {
     if (!opts.endpoint) { opts.endpoint = this.endpoint }
     return await this.workspace.fetch(path, opts)
   }
@@ -530,12 +528,12 @@ export class Collection extends EventEmitter {
 
 class TeeStream extends Writable {
   _streams: Set<Readable>
-  constructor (opts?: any) {
+  constructor(opts?: any) {
     super(opts)
     this._streams = new Set()
   }
 
-  subscribe (opts?: any): Readable {
+  subscribe(opts?: any): Readable {
     const stream = new Readable(opts)
     // @ts-expect-error
     stream.on('destroy', (_: any) => this._streams.remove(stream))
@@ -543,14 +541,14 @@ class TeeStream extends Writable {
     return stream
   }
 
-  _write (data: any, cb: any) {
+  _write(data: any, cb: any) {
     for (const stream of this._streams) {
       stream.push(data)
     }
     cb()
   }
 
-  _destroy (err: any) {
+  _destroy(err: any) {
     for (const stream of this._streams) {
       stream.destroy(err)
     }

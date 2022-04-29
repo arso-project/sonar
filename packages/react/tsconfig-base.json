@@ -1,0 +1,30 @@
+{
+    "compilerOptions": {
+        "jsx": "react",
+        "allowJs": true,
+        "allowSyntheticDefaultImports": true,
+        "baseUrl": ".",
+        "declaration": true,
+        "declarationMap": true,
+        "sourceMap": true,
+        "esModuleInterop": true,
+        "inlineSourceMap": false,
+        "lib": ["esnext", "dom"],
+        "listEmittedFiles": false,
+        "listFiles": false,
+        "moduleResolution": "node",
+        "noFallthroughCasesInSwitch": true,
+        "pretty": true,
+        "resolveJsonModule": true,
+        "rootDir": ".",
+        "skipLibCheck": true,
+        "strict": true,
+        "traceResolution": false,
+        "types": ["node"]
+    },
+    "compileOnSave": false,
+    "exclude": ["node_modules", "dist"],
+    "include": ["src", "test", "index.ts"]
+}
+
+

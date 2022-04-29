@@ -6,12 +6,19 @@ import chalk from 'chalk'
 import prettyHash from 'pretty-hash'
 import prettyBytes from 'pretty-bytes'
 export type { Logger }
-const isBrowser = process.title === 'browser'
+
+function getEnv () {
+  if (typeof process !== 'undefined') return process.env
+  else if (typeof window !== 'undefined' && (window as any).env !== undefined) return (window as any).env
+  else return {}
+}
+
+const isBrowser = (typeof process === 'undefined') || process.title === 'browser'
 function getLogLevel () {
   if (isBrowser) {
     return window.localStorage.getItem('LOG') || 'info'
   } else {
-    return process.env.SONAR_LOG || process.env.LOG || 'info'
+    return getEnv().SONAR_LOG || getEnv().LOG || 'info'
   }
 }
 
@@ -31,9 +38,9 @@ function createPrettifier () {
 }
 
 function prettify (obj: any) {
-  const trace = !!process.env.ERROR_TRACE ||
-        process.env.LOG === 'debug' ||
-        process.env.LOG === 'trace' ||
+  const trace = !!getEnv().ERROR_TRACE ||
+        getEnv().LOG === 'debug' ||
+        getEnv().LOG === 'trace' ||
         false
   const opts = {
     trace,
@@ -137,7 +144,7 @@ export function createLogger (opts?: LoggerOptions): Logger {
       write: browserWrite
     }
   }
-  if (!process.env.SONAR_LOG_JSON) { defaultOpts.prettyPrint = {} }
+  if (!getEnv().SONAR_LOG_JSON) { defaultOpts.prettyPrint = {} }
   const logger = pino({
     ...defaultOpts,
     ...opts
