@@ -28,11 +28,8 @@ git clone https://github.com/arso-project/sonar.git
 cd sonar
 # install dependencies of all workspaces
 yarn
-# (re)build the user interface and docs
-yarn run rebuild
-# when developing on something that uses the ESM version of the
-# `@arsonar/client` library: watch and rebuild on changes.
-yarn dev:client
+# build the typescript modules and bundle the UI
+yarn run build
 ```
 
 You can start sonar with `./sonar` from the repository root.
@@ -40,7 +37,7 @@ You can start sonar with `./sonar` from the repository root.
 If the start fails with errors related to `sonar-tantivy`, try to redownload or rebuild sonar-tantivy (the search engine included in sonar):
 
 ```
-yarn run build:sonar-tantivy
+yarn run rebuild:tantivy
 ```
 
 If the start fails with errors related to `client`, try to rebuild client :
@@ -63,8 +60,8 @@ yarn run build:client
 This repo includes a few examples. To run them locally, do the following:
 
 ```sh
-# build the client library
-yarn build:client
+# build the typecript modules
+yarn build
 # start sonar
 ./sonar start --disable-authentication --dev
 # run the example from the examples/ folder
