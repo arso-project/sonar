@@ -19,6 +19,8 @@
     "react-dom": "^17.0.2"
   },
   "devDependencies": {
+    "@types/react": "^18.0.8",
+    "@types/react-dom": "^18.0.3",
     "standard": "^14.3.3",
     "tape": "^5.0"
   },
