@@ -252,6 +252,7 @@ class Collection extends Nanoresource {
   }
 
   feedInfo (key) {
+    if (!this._feedInfo) return undefined
     if (Buffer.isBuffer(key)) key = key.toString('hex')
     return this._feedInfo.get(key)
   }
