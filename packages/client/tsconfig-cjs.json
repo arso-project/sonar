@@ -1,8 +1,10 @@
 {
-    "extends": "./tsconfig-base.json",
+    "extends": "../../tsconfig.base.json",
+    "include": ["src", "test", "index.ts"],
+    "exclude": ["node_modules", "dist"],
     "compilerOptions": {
         "module": "commonjs",
-        "outDir": "dist/cjs",
-        "target": "es2019"
+        "rootDir": ".",
+        "outDir": "dist/cjs"
     }
 }

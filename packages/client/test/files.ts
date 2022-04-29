@@ -1,5 +1,4 @@
-import type {Collection} from 'lib/collection.js'
-import {FileBody} from 'lib/files.js'
+import type { Collection, FileBody } from '..'
 import tape from 'tape'
 import { createOne, createMany } from './lib/create.js'
 tape('simple files test', async (t) => {
@@ -18,7 +17,7 @@ tape('error on empty file write', async (t) => {
     await col.files.createFile(new Uint8Array(), { requestType: 'buffer' })
     t.fail('Expected error to be thrown for empty file write')
   } catch (err) {
-    t.equal(err.message, 'Remote error (code 500): Stream was empty')
+    t.equal((err as Error).message, 'Remote error (code 500): Stream was empty')
   }
   await cleanup()
 })

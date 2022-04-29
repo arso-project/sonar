@@ -185,7 +185,7 @@ tape('subscribe to record', async (t) => {
       if (didNotify) { t.fail('subscribe emitted more than once') }
       t.equal(record.get('title'), 'hello moon', 'subscribe called correctly')
       didNotify = true
-      resolve()
+      resolve(undefined)
     })
   })
   const newVersion = record.update({

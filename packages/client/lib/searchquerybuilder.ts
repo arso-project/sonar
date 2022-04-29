@@ -1,4 +1,4 @@
-import type { Schema } from '@arsonar/common/dist/cjs'
+import type { Schema } from '@arsonar/common'
 
 export class SearchQueryBuilder {
   schema: string 
