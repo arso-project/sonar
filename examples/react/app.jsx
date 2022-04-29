@@ -1,6 +1,7 @@
 import React from 'react'
 import {
   useCollection,
+  useCollectionState,
   useAsync,
   useRecord,
   useQuery,
@@ -21,9 +22,8 @@ export default function App () {
 }
 
 function Header () {
-  const { collection, pending, error } = useCollection({
-    liveUpdates: true,
-    state: true
+  const { collection, pending, error } = useCollectionState({
+    liveUpdates: true
   })
   const collectionName = collection ? collection.name : null
   const [showWorkspace, toggleWorkspace] = useToggle(false)
@@ -62,7 +62,7 @@ function Header () {
 }
 
 function CollectionPage () {
-  const { pending, error } = useCollection({ liveUpdates: true, state: true })
+  const { pending, error } = useCollectionState({ liveUpdates: true, state: true })
   const [currentRecord, setCurrentRecord] = React.useState(undefined)
   const [query, setQuery] = React.useState(null)
   if (error) return <Error error={error} />
@@ -222,7 +222,7 @@ function QueryRecords (props) {
 
 function ViewRecord (props = {}) {
   const { path, selected, onSelect } = props
-  const record = useRecord({ path })
+  const record = useRecord({ path, single: true })
   const [version, setVersion] = React.useState(null)
   if (!record) return null
   const current = version || record
@@ -352,9 +352,11 @@ function fieldValueToString (field, value) {
 function stringToFieldValue (field, value) {
   if (field.fieldType === 'object') return JSON.parse(value)
   if (field.fieldType === 'number') return Number(value)
-  if (field.fieldType === 'boolean')
+  if (field.fieldType === 'boolean') {
     return value.lowercase() === 'true' || value === '1'
-  else return value
+  } else {
+    return value
+  }
 }
 
 function EditRecord (props = {}) {

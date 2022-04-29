@@ -14,7 +14,7 @@ const {
 } = require('nanoresource-promise/emitter')
 // const why = require('why-is-node-running')
 
-const createLogger = require('@arsonar/common/log')
+const { createLogger } = require('@arsonar/common')
 
 const Collection = require('./collection')
 const LevelMap = require('./utils/level-map')

@@ -60,6 +60,7 @@ function searchView (level, _scope, opts) {
         // await pushToNamedIndex(msg)
       } catch (err) {
         log.error('Could not prepare message:', msg, err)
+        console.error(err)
       }
     }
 
@@ -75,23 +76,23 @@ function searchView (level, _scope, opts) {
 
     log.debug('Indexed %d records [time: %s]', msgs.length, time())
 
-    // return docs
-
-    async function pushToTexdump (msg) {
+    async function pushToTexdump (recordVersion) {
       let title = ''
       let body = ''
-      if (msg.hasField('title')) title = msg.getOne('title')
-      if (msg.hasField('label')) title = msg.getOne('label')
+      if (!recordVersion.deleted) {
+        if (recordVersion.hasField('title')) title = recordVersion.getOne('title')
+        if (recordVersion.hasField('label')) title = recordVersion.getOne('label')
+      }
 
-      for (const fieldValue of msg.fields()) {
+      for (const fieldValue of recordVersion.fields()) {
         body += ' ' + objectToString(fieldValue.value)
       }
       docs.textdump.push({
         title,
         body,
-        source: msg.key,
-        seq: msg.seq,
-        type: msg.type
+        source: recordVersion.key,
+        seq: recordVersion.seq,
+        type: recordVersion.type
       })
     }
 
