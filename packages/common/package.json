@@ -1,6 +1,6 @@
 {
   "name": "@arsonar/common",
-  "version": "0.6.0-alpha.3",
+  "version": "0.6.0-alpha.4",
   "main": "dist/cjs",
   "module": "dist/esm",
   "description": "",
