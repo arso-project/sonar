@@ -1,15 +1,15 @@
 const LRU = require('lru-cache')
 
-module.exports = class BlockCache {
+module.exports = class VersionCache {
   constructor (corestore, opts = {}) {
     const { map, cacheSize = 1000 } = opts
     this.corestore = corestore
     this.cache = new LRU({ max: cacheSize })
-    this.map = map || (block => block)
+    this.map = map || (version => version)
     this.pending = new Map()
   }
 
-  async getBlock (key, seq, getOpts = {}) {
+  async getVersion (key, seq, getOpts = {}) {
     if (!Buffer.isBuffer(key)) key = Buffer.from(key, 'hex')
     const id = keyseq(key, seq)
     if (this.cache.has(id)) {
@@ -18,7 +18,7 @@ module.exports = class BlockCache {
 
     if (this.pending.has(id)) {
       await this.pending.get(id)
-      return this.getBlock(key, seq, getOpts)
+      return this.getVersion(key, seq, getOpts)
     }
 
     let ondone
@@ -26,24 +26,27 @@ module.exports = class BlockCache {
     this.pending.set(id, promise)
 
     try {
-      const block = await this._getBlock(id, key, seq, getOpts)
-      this.cache.set(id, block)
-      return block
+      const version = await this._getVersion(id, key, seq, getOpts)
+      this.cache.set(id, version)
+      return version
     } finally {
       ondone()
       this.pending.delete(id)
     }
   }
 
-  async _getBlock (id, key, seq, getOpts = {}) {
+  async _getVersion (id, key, seq, getOpts = {}) {
     const feed = this.corestore.get({ key })
-    const rawBlock = await new Promise((resolve, reject) => {
-      feed.get(seq, getOpts, (err, block) =>
-        err ? reject(err) : resolve(block)
+    const rawVersion = await new Promise((resolve, reject) => {
+      feed.get(seq, getOpts, (err, version) =>
+        err ? reject(err) : resolve(version)
       )
     })
-    const mappedBlock = this.map(rawBlock, { key: key.toString('hex'), seq })
-    return mappedBlock
+    const mappedVersion = this.map(rawVersion, {
+      key: key.toString('hex'),
+      seq
+    })
+    return mappedVersion
   }
 }
 

@@ -124,12 +124,15 @@ module.exports = function createCollectionRoutes () {
       const { key, seq } = req.params
       const timeout = req.query.timeout || WAIT_TIMEOUT
       try {
-        const record = await req.collection.getBlock({ key, seq }, { timeout })
+        const record = await req.collection.getVersion(
+          { key, seq },
+          { timeout }
+        )
         return record.toJSON()
       } catch (err) {
         if (err.code === 'ETIMEDOUT') {
           res.status(404)
-          return { error: 'Block not available from peers' }
+          return { error: 'Version not available from peers' }
         } else {
           throw err
         }
@@ -144,7 +147,7 @@ module.exports = function createCollectionRoutes () {
         throw new HttpError(400, 'Invalid lseq')
       }
       const lseq = Number(req.params.lseq)
-      const record = await req.collection.getBlock({ lseq })
+      const record = await req.collection.getVersion({ lseq })
       return record.toJSON()
     })
   )

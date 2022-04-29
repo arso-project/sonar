@@ -14,7 +14,7 @@ const Kappa = require('kappa-core')
 const Indexer = require('kappa-sparse-indexer')
 
 const { RecordVersion, Type, Schema } = require('@arsonar/common')
-const BlockCache = require('./block-cache')
+const VersionCache = require('./version-cache')
 const LevelMap = require('./utils/level-map')
 const EventStream = require('./utils/eventstream')
 const Workspace = require('./workspace')
@@ -143,8 +143,8 @@ class Collection extends Nanoresource {
     this.lock = opts.lock || mutexify()
 
     this._eventStream = new EventStream()
-    this._blockCache = new BlockCache(this.workspace.corestore, {
-      map: (block, req) => this._decodeBlock(block, req)
+    this._versionCache = new VersionCache(this.workspace.corestore, {
+      map: (version, req) => this._decodeVersion(version, req)
     })
 
     // Push some events into event streams
@@ -270,7 +270,7 @@ class Collection extends Nanoresource {
           messages[i] = undefined
           return ondone()
         }
-        self.getBlock(req, getOpts).then(
+        self.getVersion(req, getOpts).then(
           record => {
             if (record) messages[i] = record
             else messages[i] = undefined
@@ -427,12 +427,12 @@ class Collection extends Nanoresource {
     return batch.entries
   }
 
-  _decodeBlock (block, req) {
-    const decodedBlock = RecordEncoder.decode(block, req)
-    return decodedBlock
+  _decodeVersion (version, req) {
+    const decodedVersion = RecordEncoder.decode(version, req)
+    return decodedVersion
   }
 
-  async resolveBlock (req, opts = {}) {
+  async resolveVersion (req, opts = {}) {
     if (req.address) {
       const [key, seq] = req.address.split('@')
       req.key = key
@@ -450,26 +450,26 @@ class Collection extends Nanoresource {
     return req
   }
 
-  async getBlock (req, opts = {}) {
+  async getVersion (req, opts = {}) {
     if (!this.opened && !this.opening) await this.open()
     if (opts.wait === undefined) opts.wait = true
 
-    req = await this.resolveBlock(req)
+    req = await this.resolveVersion(req)
 
-    const block = await this._blockCache.getBlock(req.key, req.seq)
-    if (!block) return null
+    const version = await this._versionCache.getVersion(req.key, req.seq)
+    if (!version) return null
     if (opts.upcast === false) {
-      return block
+      return version
     }
-    if (req.lseq) block.lseq = req.lseq
+    if (req.lseq) version.lseq = req.lseq
     try {
       try {
-        const record = new RecordVersion(this.schema, block)
+        const record = new RecordVersion(this.schema, version)
         return record
       } catch (err) {
         if (opts.wait === false) throw err
         await this.sync('root')
-        const record = new RecordVersion(this.schema, block)
+        const record = new RecordVersion(this.schema, version)
         return record
       }
     } catch (err) {
@@ -506,8 +506,8 @@ class Collection extends Nanoresource {
       let list = []
       if ((req.key && req.seq) || req.lseq || req.address) {
         try {
-          const block = await this.getBlock(req, opts)
-          if (block) list.push(block)
+          const version = await this.getVersion(req, opts)
+          if (version) list.push(version)
         } catch (err) {
           // TODO: throw or log?
         }
@@ -1126,7 +1126,11 @@ class Batch {
   }
 
   async del ({ id, type }, opts) {
-    const record = new RecordVersion(this.collection.schema, { id, type, deleted: true })
+    const record = new RecordVersion(this.collection.schema, {
+      id,
+      type,
+      deleted: true
+    })
     return this._append(record, opts)
   }
 
@@ -1181,10 +1185,10 @@ class Batch {
         if (!feed) throw new Error('Feed not found: ' + key)
         if (!feed.writable) throw new Error('Feed not writable: ' + key)
         let seq = feed.length - 1
-        const blocks = records.map(record =>
+        const versions = records.map(record =>
           RecordEncoder.encode(record.toJSON())
         )
-        await feed.append(blocks)
+        await feed.append(versions)
         for (const record of records) {
           record.inner.seq = ++seq
         }
@@ -1353,7 +1357,7 @@ function feedStatus (collection, feed) {
     type: info.type
   }
   if (feed.opened) {
-    status.downloadedBlocks = feed.downloaded(0, feed.length)
+    status.downloadedVersions = feed.downloaded(0, feed.length)
     status.stats = feed.stats
   }
   return status

@@ -31,7 +31,11 @@ module.exports = class Files {
   }
 
   async _getBlobs (keyOrName) {
-    const core = await this.collection._initFeed(keyOrName, { type: 'sonar.blobs' }, { index: false })
+    const core = await this.collection._initFeed(
+      keyOrName,
+      { type: 'sonar.blobs' },
+      { index: false }
+    )
     const blobs = new Hyperblobs(core)
     return blobs
   }
@@ -48,7 +52,10 @@ module.exports = class Files {
         didWrite = true
         writeStream = blobs.createWriteStream()
         writeStream.write(chunk)
-        stream.pipe(writeStream).once('error', reject).once('finish', resolve)
+        stream
+          .pipe(writeStream)
+          .once('error', reject)
+          .once('finish', resolve)
       })
       stream.once('end', () => {
         if (!didWrite) reject(new Error('Stream was empty'))
