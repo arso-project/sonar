@@ -1,4 +1,4 @@
-import { Collection } from '../lib/collection.js'
+import { Collection } from '..'
 import tape from 'tape'
 import { createMany } from './lib/create.js'
 
