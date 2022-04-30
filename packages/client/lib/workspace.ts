@@ -1,7 +1,5 @@
-import randombytes from 'randombytes'
 import EventSource from 'eventsource'
 import type { EventSourceInitDict } from 'eventsource'
-
 import { EventEmitter } from 'events'
 import makeFetch, { FetchOpts } from './fetch.js'
 import { Collection } from './collection.js'
@@ -52,16 +50,15 @@ export interface WorkspaceOpts {
 
 export class Workspace extends EventEmitter {
   endpoint: string
-  _collections: Map<string, Collection>
-  _id: string
-  _token?: string
-  _accessCode?: string
-  _eventSources: EventSource[]
   log: Logger
   bots: Bots
-
   opened: boolean = false
-  _openPromise?: Promise<void>
+
+  private _collections: Map<string, Collection>
+  private _token?: string
+  private _accessCode?: string
+  private _eventSources: EventSource[]
+  private _openPromise?: Promise<void>
 
   /**
      * A Sonar workspace. Provides methods to open collection under this endpoint.
@@ -89,7 +86,6 @@ export class Workspace extends EventEmitter {
       this.endpoint = this.endpoint.substring(0, this.endpoint.length - 1)
     }
     this._collections = new Map()
-    this._id = opts.id || randombytes(16).toString('hex')
     this._token = opts.token
     this._accessCode = opts.accessCode
     this._eventSources = []
@@ -126,13 +122,13 @@ export class Workspace extends EventEmitter {
     await this._openPromise
   }
 
-  async _open () {
+  private async _open () {
     await this._login()
     this.opened = true
   }
 
   // TODO: Support re-logins
-  async _login () {
+  private async _login () {
     if (this._accessCode && !this._token) {
       const res = await this.fetch('/login', {
         params: { code: this._accessCode },

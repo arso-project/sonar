@@ -7,9 +7,7 @@
   "scripts": {
     "test": "tape dist/cjs/test/*.js",
     "doc": "run-p doc:*",
-    "doc:md": "jsdoc2md --files lib/workspace.js lib/collection.js lib/fs.js --param-list-format list --separators --partial doc-gen/scope.hbs --helper doc-gen/helpers.js > api.md",
-    "doc:html": "rm -rf apidocs && jsdoc --configure doc-gen/jsdoc.json --verbose .",
-    "doc:tsd": "jsdoc --configure doc-gen/jsdoc-tsd.json --verbose -d . -t ../../node_modules/tsd-jsdoc/dist -r .",
+    "doc:html": "typedoc --excludePrivate --out docs index.ts",
     "prepublishOnly": "npm run build",
     "build": "rm -fr dist/* && run-s buildts:* && ./fix-ts-build",
     "buildts:esm": "tsc -p tsconfig.json",
@@ -41,15 +39,12 @@
     "@hyperswarm/dht": "^3.6.5",
     "express-oas-generator": "^1.0.25",
     "find-free-ports": "^2.0.3",
-    "jsdoc": "^3.6.4",
-    "jsdoc-to-markdown": "^6.0",
-    "minami": "^1.2.3",
     "nanobench-utils": "^0.1.1",
     "npm-run-all": "^4.1.5",
     "tape": "^5.0",
     "tape-plus": "^1.0.0",
     "temporary-directory": "^1.0.2",
-    "tsd-jsdoc": "^2.5.0"
+    "typedoc": "^0.23.0-beta.1"
   },
   "publishConfig": {
     "access": "public"

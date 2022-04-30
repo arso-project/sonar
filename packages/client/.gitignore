@@ -3,3 +3,4 @@ dist
 build
 node_modules
 types.d.ts
+docs

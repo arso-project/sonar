@@ -1,10 +1,10 @@
 import { Emitter, EmitCb } from './emitter.js'
 import { RecordVersion } from './record/version.js'
 export default class Versions {
-  _versions: Map<string, RecordVersion>
-  _current: Set<RecordVersion>
-  _outdated: Set<string>
-  _emitter: Emitter<Versions>
+  private _versions: Map<string, RecordVersion>
+  private _current: Set<RecordVersion>
+  private _outdated: Set<string>
+  private _emitter: Emitter<Versions>
   constructor () {
     this._emitter = new Emitter(this as Versions)
     this._versions = new Map()

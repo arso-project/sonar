@@ -67,6 +67,7 @@ function searchView (level, _scope, opts) {
     for (const [schemaName, currentDocs] of Object.entries(docs)) {
       const index = await manager.get(schemaName)
       try {
+        console.log(currentDocs)
         await index.addDocuments(currentDocs)
       } catch (e) {
         log.error(e)

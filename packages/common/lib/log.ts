@@ -1,5 +1,5 @@
 import pino, { Level } from 'pino'
-import type { Logger, LoggerOptions, WriteFn } from 'pino'
+import type { Logger, LoggerOptions } from 'pino'
 import type { Color } from 'chalk'
 import chalk from 'chalk'
 /* @ts-expect-error */

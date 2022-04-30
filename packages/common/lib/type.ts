@@ -1,4 +1,3 @@
-import { bindSymbol } from './util.js'
 import { parseSchemaPath, encodeSchemaPath } from './address.js'
 import { SC } from './symbols.js'
 
@@ -18,14 +17,13 @@ export class Type extends SchemaMember {
     return isJsonSchema(spec)
   }
 
-  _fields: Set<string> = new Set()
-  _namespace: string
-  _name: string
-  _version: number
-  _address: string
-  _parent: string | null = null
-
-  _info: { title?: string, description?: string }
+  private _fields: Set<string> = new Set()
+  private _namespace: string
+  private _name: string
+  private _version: number
+  private _address: string
+  private _parent: string | null = null
+  private _info: { title?: string, description?: string }
 
   // static fromJSONSchema (schema, spec) {
   //   return new Type(schema, jsonSchemaToSpec(spec))
@@ -156,7 +154,7 @@ export class Type extends SchemaMember {
     }
   }
 }
-class MissingType extends Type {
+export class MissingType extends Type {
   constructor (schema: Schema) {
     super(schema, { name: '_missing', namespace: '_missing', version: 1, missing: true, fields: {} })
   }

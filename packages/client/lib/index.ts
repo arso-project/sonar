@@ -2,22 +2,7 @@ export * from './workspace'
 export * from './searchquerybuilder'
 export * from './constants'
 
-export type {
-  Entity,
-  Record,
-  RecordVersion,
-  RecordVersionForm,
-  Logger,
-  Schema,
-  Store,
-  Type,
-  TypeSpecInput,
-  WireRecordVersion,
-  FieldSpecInput,
-  JSONSchema4,
-  JSONSchema4TypeName,
-  JSONSchema4Type
-} from '@arsonar/common'
+export * from '@arsonar/common'
 
 export type {
   Collection,
@@ -37,9 +22,13 @@ export type {
 } from './files'
 
 export type {
-  BotMessage,
   Bots,
-  Reply
+  BotHandlersInit,
+  BotHandlersInitArgs,
+  BotHandlers,
+  BotSession,
+  BotConfig,
+  BotSpec
 } from './bots'
 
 export type {

@@ -4,27 +4,60 @@ import Debug from 'debug'
 import type { Workspace } from './workspace'
 import { FetchOpts } from './fetch'
 import { Collection } from './collection'
+import type { Record, TypeSpec } from '@arsonar/common'
+
 const debug = Debug('sonar:bots')
 const SESSION_HEADER = 'X-Sonar-Bot-Session-Id'
-export interface Reply {
+
+interface Reply {
   requestId: string
   error?: any
   result?: any
 }
-export interface BotMessage {
+interface BotMessage {
   bot: string
   op: string
   data?: any
   requestId: string
 }
 
-export class Bots {
+export type BotConfig = any
+export type BotSpec = {
+  name?: string,
+  types: TypeSpec[]
+}
+
+export type BotHandlersInit = ((opts : BotHandlersInitArgs) => BotHandlers) | BotHandlers
+export type BotHandlersInitArgs = {
+  spec: BotSpec,
+  config: BotConfig,
   workspace: Workspace
-  bots: Map<string, Bot>
-  log: Logger
-  _eventSource?: EventSource
-  _init?: boolean
-  _sessionId?: string
+}
+
+type BotInitArgs = BotHandlersInitArgs & {
+  handlers: BotHandlersInit
+}
+
+export interface BotHandlers {
+  open?: () => Promise<void> | void
+  onjoin: (collection: Collection, config: any) =>  Promise<BotSession>
+  oncommand?: (command: string, args: any) => Promise<any>
+}
+
+export interface BotSession {
+  open?: () => Promise<void> | void
+  close?: () => Promise<void> | void
+  oncommand: (command: string, args: any) => Promise<any>
+  onrecord?: (record: Record) => Promise<void>
+}
+
+export class Bots {
+  private workspace: Workspace
+  private bots: Map<string, Bot>
+  private log: Logger
+  private _eventSource?: EventSource
+  private _init?: boolean
+  private _sessionId?: string
   constructor (workspace: Workspace) {
     this.workspace = workspace
     this.bots = new Map()
@@ -72,13 +105,8 @@ export class Bots {
   }
 
   async getCommands () { }
-  async _initListener () {
+  private async _initListener () {
     this._init = true
-    // const path = this.workspace.endpoint + '/bot/events'
-    // const headers = {
-    //   ...this.workspace.getAuthHeaders(),
-    //   ...this.getHeaders()
-    // }
     const path = '/bot/events'
     this._eventSource = this.workspace.createEventSource(path, {
       headers: this.getHeaders(),
@@ -89,21 +117,9 @@ export class Bots {
         this.log.error({ err, message: 'Event source error' })
       }
     })
-    // this._eventSource = new EventSource(path, { headers })
-    // this._eventSource.addEventListener('message', message => {
-    //   try {
-    //     const event = JSON.parse(message.data)
-    //     this._onmessage(event)
-    //   } catch (e) {}
-    // })
-    // this._eventSource.addEventListener('error', err => {
-    //   // TODO: Where do these errors go?
-    //   // TODO: After a couple of fails die.
-    //   this.log.error({ err, message: 'Event source error' })
-    // })
   }
 
-  async reply ({ requestId, error, result }: Reply): Promise<any> {
+  private async reply ({ requestId, error, result }: Reply): Promise<any> {
     await this.fetch('/reply', {
       method: 'POST',
       body: {
@@ -114,8 +130,7 @@ export class Bots {
     })
   }
 
-  async _onmessage (message: any) {
-    console.log('onmessage', message)
+  private async _onmessage (message: any) {
     try {
       const { bot: name, op, data, requestId } = message
       const bot = this.bots.get(name)
@@ -159,22 +174,22 @@ export class Bots {
     }
   }
 
-  getHeaders () {
-    const headers: Record<string, string> = {}
+  private getHeaders () {
+    const headers: globalThis.Record<string, string> = {}
     if (this._sessionId) {
       headers[SESSION_HEADER] = this._sessionId
     }
     return headers
   }
 
-  async fetch (url: string, opts: FetchOpts = {}) {
+  private async fetch (url: string, opts: FetchOpts = {}) {
     url = '/bot' + url
     opts.headers = opts.headers || {}
     opts.headers = { ...this.getHeaders(), ...opts.headers }
     return await this.workspace.fetch(url, opts)
   }
 
-  async register (name: string, spec: any, handlers: any) {
+  async register (name: string, spec: BotSpec, handlers: BotHandlersInit) {
     if (typeof spec !== 'object') { throw new Error('Spec must be an object') }
     spec.name = name
     const { config, sessionId } = await this.fetch('/register', {
@@ -191,19 +206,20 @@ export class Bots {
     }))
   }
 }
+
 class Bot {
-  spec: any
-  name: string
-  workspace: Workspace
-  config: any
-  handlers: any
-  opened: boolean
-  log: Logger
-  opening: any
-  sessions: Map<string, any>
-  constructor ({ spec, config, handlers, workspace }: any) {
+  private spec: BotSpec 
+  private name: string
+  private workspace: Workspace
+  private config: any
+  private handlers: BotHandlers 
+  private opened: boolean
+  private log: Logger
+  private opening: any
+  private sessions: Map<string, BotSession>
+  constructor ({ spec, config, handlers, workspace }: BotInitArgs) {
     this.spec = spec
-    this.name = spec.name
+    this.name = spec.name!
     this.workspace = workspace
     this.config = config
     if (typeof handlers === 'function') {
@@ -234,7 +250,7 @@ class Bot {
       await this.handlers.open()
       this.opened = true
     }
-    const session = await this.handlers.onjoin(collection, config)
+    const session = await this.handlers.onjoin(collection, config || this.config)
     if (session.open) {
       await session.open()
     }
@@ -245,7 +261,7 @@ class Bot {
     this.log.debug({ message: 'join', collection })
   }
 
-  async _ensureTypes (collection: Collection) {
+  private async _ensureTypes (collection: Collection) {
     if (!this.spec.types) { return }
     for (const typeSpec of this.spec.types) {
       if (!collection.schema!.hasType(typeSpec.address)) {

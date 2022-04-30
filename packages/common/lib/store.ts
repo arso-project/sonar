@@ -7,11 +7,11 @@ export interface StoreArgs {
 }
 
 export class Store {
-  _opts: StoreArgs
-  _schema: Schema
-  _records = new Map<string, Record>()
-  _entities = new Map<string, Entity>()
-  _versions = new Map<string, RecordVersion>()
+  private _opts: StoreArgs
+  private _schema: Schema
+  private _records = new Map<string, Record>()
+  private _entities = new Map<string, Entity>()
+  private _versions = new Map<string, RecordVersion>()
 
   constructor (opts: StoreArgs) {
     this._opts = opts

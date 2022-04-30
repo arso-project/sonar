@@ -40,12 +40,11 @@ export interface AddTypeOpts {
 }
 
 export class Schema {
-  _types = new Map<string, Type>()
-  _fields = new Map<string, Field>()
-  _typeVersions = new MapSet<number>()
-
-  _defaultNamespace: string | undefined
-  _onchange: (schema: Schema) => void
+  private _types = new Map<string, Type>()
+  private _fields = new Map<string, Field>()
+  private _typeVersions = new MapSet<number>()
+  private _defaultNamespace: string | undefined
+  private _onchange: (schema: Schema) => void
 
   constructor (opts: SchemaOpts = {}) {
     this._defaultNamespace = opts.defaultNamespace

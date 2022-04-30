@@ -8,10 +8,10 @@ import { SC } from '../symbols'
 import { inspectSymbol, InspectOptions } from '../util/inspect'
 
 export class Record extends SchemaMember {
-  _versions: Versions
-  _emitter: Emitter<Record>
-  _id?: string
-  _type?: string
+  private _versions: Versions
+  private _emitter: Emitter<Record>
+  private _id?: string
+  private _type?: string
   constructor (schema: Schema, initialVersion: RecordVersion) {
     super(schema)
     this._emitter = new Emitter(this as Record)

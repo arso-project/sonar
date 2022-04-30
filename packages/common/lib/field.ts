@@ -1,7 +1,6 @@
 import objectPath from 'object-path'
 import { SC } from './symbols.js'
 import type { Schema } from './schema.js'
-import { TypeSpec } from './schema.js'
 import { SchemaMember } from './base.js'
 import { JSONSchema4, JSONSchema4TypeName, JSONSchema4Type } from 'json-schema'
 
@@ -54,12 +53,12 @@ export type FieldType =
   | 'relation'
 
 export class Field extends SchemaMember {
-  _address: string
-  _defaultWidget: string
-  _spec: FieldSpec
-  _children: Set<string> = new Set()
-  _parent: string | null = null
-  _built = false
+  private _address: string
+  private _defaultWidget: string
+  private _spec: FieldSpec
+  private _children: Set<string> = new Set()
+  private _parent: string | null = null
+  private _built = false
   missing = false
   constructor (schema: Schema, spec: FieldSpec) {
     super(schema)
@@ -128,7 +127,7 @@ export class Field extends SchemaMember {
     this._built = true
   }
 
-  _mergeRefines (strict = true) {
+  private _mergeRefines (strict = true) {
     // Nothing to do for fields without parents.
     if (!this._spec.refines) { return }
     // TODO: This will endlessly loop for nested refineds.

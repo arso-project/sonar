@@ -136,7 +136,7 @@ export class Collection extends EventEmitter {
     this._info = info
   }
 
-  async _open() {
+  private async _open() {
     const [info, fetchedSchema] = await Promise.all([
       this.fetch('/'),
       this.fetch('/schema')
@@ -394,7 +394,7 @@ export class Collection extends EventEmitter {
     return this._eventStream!.subscribe()
   }
 
-  async _initEventSource() {
+  private async _initEventSource() {
     if (this._eventStream) return
     this._eventStream = new TeeStream()
     const onerror = (_err: any) => {
@@ -495,14 +495,14 @@ export class Collection extends EventEmitter {
     }
   }
 
-  async _pullSubscription(name: string, opts?: any) {
+  private async _pullSubscription(name: string, opts?: any) {
     // TODO: Prefix name with client id.
     return await this.fetch('/subscription/' + name, {
       params: opts
     })
   }
 
-  async _ackSubscription(name: string, cursor: number) {
+  private async _ackSubscription(name: string, cursor: number) {
     // TODO: Prefix name with client id.
     return await this.fetch('/subscription/' + name + '/' + cursor, {
       method: 'post'
