@@ -53,10 +53,6 @@ class PeerMap extends EventEmitter {
           stats: feed.stats
         })
       }
-      // const feeds = Array.from(...peer.feeds).map(feed => ({
-      //   key: feed.key.toString('hex')
-      //   // stats: instance.stats
-      // }))
       list.push({ remotePublicKey, info: peer.info, feeds })
     }
     return list
@@ -68,24 +64,15 @@ class PeerMap extends EventEmitter {
       remotePublicKey,
       remoteAddress: peer.stream.stream.remoteAddress
     }
-    console.log('ADD PEER', {
-      info,
-      feed: peer.feed.key.toString('hex'),
-      stats: peer.stats
-    })
     if (!this.peers.has(remotePublicKey)) {
       const feeds = [peer]
       this.peers.set(remotePublicKey, { info, feeds })
-      console.log('CORE EMIT add', info)
       this.emit('add', info)
     } else {
       const existing = this.peers.get(remotePublicKey)
       existing.feeds = existing.feeds.filter(info => info.feed.key.toString('hex') !== peer.feed.key.toString('hex'))
       existing.feeds.push(peer)
-      // this.peers.get(remotePublicKey).feeds
-      // this.peers.get(remotePublicKey).feeds.add(peer)
     }
-    console.log('THIS', this.peers)
   }
 
   remove (peer) {
@@ -93,11 +80,8 @@ class PeerMap extends EventEmitter {
     if (!this.peers.has(remotePublicKey)) return
     const existing = this.peers.get(remotePublicKey)
     existing.feeds = peer.feeds.filter(info => info.feed.key.toString('hex') !== peer.feed.key.toString('hex'))
-    // const { info, feeds } = this.peers.get(remotePublicKey)
-    // feeds.delete(peer)
     if (!existing.feeds.length) {
       this.peers.delete(remotePublicKey)
-      // console.log('CORE EMIT remove', info)
       this.emit('remove', existing.info)
     }
   }
@@ -810,7 +794,7 @@ class Collection extends Nanoresource {
     // Load persisted schema
     const storedSchema = this._localState.get('schema')
     if (storedSchema) {
-      this.schema.addTypes(storedSchema, { onchange: false })
+      this.schema.addTypes(storedSchema.types, { onchange: false })
     }
 
     // Init indexer

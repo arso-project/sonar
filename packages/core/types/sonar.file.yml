@@ -6,6 +6,11 @@ fields:
     type: string
     title: Filename
     refines: sonar/entity#label
+  folder:
+    type: relation
+    title: Folder
+    targetType: sonar/folder
+
   description:
     type: string
     title: Description
