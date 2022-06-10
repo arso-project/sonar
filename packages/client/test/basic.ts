@@ -46,7 +46,7 @@ tape('db basic put and query', async (t) => {
       }
     }
   })
-  await collection.open()
+  await collection.updateInfo()
   const res = await collection.put({
     type: 'doc',
     value: { title: 'hello world' }

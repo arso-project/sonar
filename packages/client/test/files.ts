@@ -44,7 +44,7 @@ tape('replicate files', { timeout: 5000 }, async (t) => {
   t.notEqual(collection2.info!.key, collection2.info!.localKey)
   await writeFile(collection1, 'one', 'onfirst')
   // TODO: This refetches the schema. We should automate this.
-  await collection2.open()
+  await collection2.updateInfo()
   await writeFile(collection2, 'two', 'onsecond')
   // t.equal(file1.key, collection1.info.localKey, 'key of file1 ok')
   // t.equal(file2.key, collection2.info.localKey, 'key of resourc2 ok')

@@ -7,7 +7,7 @@ import { EventEmitter } from 'events'
 import { Schema, Store } from '@arsonar/common'
 import { Files } from './files.js'
 import type { Workspace } from './workspace.js'
-import type { Logger, Record, RecordVersion, WireRecordVersion, RecordVersionForm, TypeSpecInput } from '@arsonar/common'
+import type { Logger, Record, RecordVersion, WireRecordVersion, RecordVersionForm, TypeSpecInput, SchemaSpec } from '@arsonar/common'
 import { FetchOpts } from './fetch.js'
 
 const debug = Debug('sonar-client')
@@ -41,6 +41,7 @@ export interface CollectionInfo {
   length: number
   feeds: FeedInfo[]
   peers: any
+  schema: SchemaSpec
 }
 
 export interface FeedInfo {
@@ -51,20 +52,19 @@ export interface FeedInfo {
 }
 
 export class Collection extends EventEmitter {
-  opened: boolean = false
-  endpoint: string
-  workspace: Workspace
-  files: Files
-  log: Logger
-  schema?: Schema
-  store?: Store
+  readonly opened: boolean = false
+  readonly endpoint: string
+  readonly workspace: Workspace
+  readonly files: Files
+  readonly log: Logger
+  readonly schema: Schema
+  readonly store: Store
 
   private _info: CollectionInfo | null
   private readonly _nameOrKey: string
   private _eventStream?: TeeStream | null
   private _eventSource?: EventSource
   private _length: number
-  private _openPromise?: Promise<void>
   private readonly _cacheid?: string
   private _liveUpdates = false
 
@@ -79,20 +79,28 @@ export class Collection extends EventEmitter {
      * @param workspace - Remote workspace
      * @param nameOrKey - Name or key of the collection
      */
-  constructor(workspace: Workspace, nameOrKey: string) {
+  constructor(workspace: Workspace, nameOrKey: string, info: CollectionInfo) {
     super()
-    /** @member {string} - API endpoint URL for this collection */
+
     this.endpoint = workspace.endpoint + '/collection/' + nameOrKey
-    /** @member {Workspace} */
     this.workspace = workspace
-    /** @member {Files} - File API for this collection */
     this.files = new Files(this)
     this.log = workspace.log.child({ collection: this })
     this.setMaxListeners(256)
-    this._info = null
+    this.schema = Schema.fromJSON(info.schema)
+    this._info = info
+    this.store = new Store({ schema: this.schema })
+    this.opened = true
+
+    this._info = info
     this._nameOrKey = nameOrKey
     this._length = 0
-    // this._eventStreams = new Set();
+  }
+
+  static async open (workspace: Workspace, nameOrKey: string) {
+    const info = await workspace.fetch(`/collection/${nameOrKey}`)
+    const self = new Collection(workspace, nameOrKey, info)
+    return self
   }
 
   get name() {
@@ -121,35 +129,14 @@ export class Collection extends EventEmitter {
   }
 
   /**
-     * Populate info and schemas for this collection from server.
-     *
-     * @async
-     * @throws Will throw if this collection does not exist or cannot be accessed.
-     */
-  async open(reset = false) {
-    if (!this._openPromise || reset) { this._openPromise = this._open() }
-    return await this._openPromise
-  }
-
+   * Update collection info and schema from endpoint.
+   */
   async updateInfo () {
-    const info = await this.fetch('/')
+    const info: CollectionInfo = await this.fetch('/')
     this._info = info
-  }
-
-  private async _open() {
-    const [info, fetchedSchema] = await Promise.all([
-      this.fetch('/'),
-      this.fetch('/schema')
-    ])
-    this._info = info
-    /** @member {Schema} - The schema for all types in this collection */
-    this.schema = new Schema({ defaultNamespace: this.id || undefined })
-    for (const typeSpec of Object.values(fetchedSchema)) {
-      this.schema.addType(typeSpec as TypeSpecInput)
+    for (const type of Object.values(info.schema.types)) {
+      this.schema.addType(type)
     }
-    this.store = new Store({ schema: this.schema })
-    this.opened = true
-    this.emit('open')
   }
 
   /**

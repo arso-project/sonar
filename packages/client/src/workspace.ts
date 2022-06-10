@@ -194,25 +194,19 @@ export class Workspace extends EventEmitter {
      * @param {string} keyOrName - Key or name of the collection to open/return.
      * @return {Promise<Collection>}
      */
-  async openCollection (keyOrName: string, opts: OpenCollectionOpts = {}) {
+  async openCollection (keyOrName: string, opts: OpenCollectionOpts = {}): Promise<Collection> {
     if (this._collections.has(keyOrName)) {
       const collection = this._collections.get(keyOrName)!
-      if (!collection.opened) { await collection.open(opts.reset) }
+      // if (!collection.opened) { await collection.open(opts.reset) }
       return collection
     }
-    const collection = new Collection(this, keyOrName)
-    collection.on('open', () => this.emit('collection-open', collection))
-    this._collections.set(keyOrName, collection)
     // This will throw if the collection does not exist.
-    try {
-      await collection.open(opts.reset)
-      this._collections.set(collection.name, collection)
-      if (collection.key) this._collections.set(collection.key, collection)
-      return collection
-    } catch (err) {
-      this._collections.delete(keyOrName)
-      throw err
-    }
+    const collection = await Collection.open(this, keyOrName)
+    this._collections.set(collection.name, collection)
+    this._collections.set(keyOrName, collection)
+    if (collection.key) this._collections.set(collection.key, collection)
+    this.emit('collection-open', collection)
+    return collection
   }
 
   getCollection (keyOrName: string) {

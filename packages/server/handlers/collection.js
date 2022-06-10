@@ -35,7 +35,12 @@ module.exports = function createCollectionRoutes () {
   router.get(
     '/:collection',
     AH(async (req, res, next) => {
-      return req.collection.status()
+      const status = await req.collection.status()
+      const schema = req.collection.schema.toJSON()
+      return {
+        ...status,
+        schema
+      }
     })
   )
 
