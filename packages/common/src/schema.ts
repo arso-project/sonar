@@ -7,6 +7,11 @@ import { Record, RecordVersion, Entity } from './index.js'
 
 export type SchemaOnChangeCallback = (schema: Schema) => void
 
+export interface SchemaSpec {
+  defaultNamespace?: string,
+  types: globalThis.Record<string, TypeSpecInput>
+}
+
 export interface TypeSpecInput {
   name?: string
   namespace?: string
@@ -28,8 +33,6 @@ export type TypeSpec = TypeSpecInput & {
   address: string
 }
 
-export type SchemaSpec = globalThis.Record<string, TypeSpec>
-
 export interface SchemaOpts {
   defaultNamespace?: string
   onchange?: SchemaOnChangeCallback
@@ -49,6 +52,17 @@ export class Schema {
   constructor (opts: SchemaOpts = {}) {
     this._defaultNamespace = opts.defaultNamespace
     this._onchange = opts.onchange || noop
+  }
+
+  static fromJSON (json: SchemaSpec, opts: SchemaOpts = {}): Schema {
+    if (json.defaultNamespace && !opts.defaultNamespace) {
+      opts.defaultNamespace = json.defaultNamespace
+    }
+    const self = new Schema(opts)
+    for (const typeSpec of Object.values(json.types)) {
+      self.addType(typeSpec as TypeSpecInput)
+    }
+    return self
   }
 
   // TODO: Remove any
@@ -162,9 +176,14 @@ export class Schema {
   }
 
   toJSON (): SchemaSpec {
-    const spec: SchemaSpec = {}
+    const types: globalThis.Record<string, TypeSpec> = {}
     for (const type of this._types.values()) {
-      spec[type.address] = type.toJSON()
+      types[type.address] = type.toJSON()
+    }
+    const spec: SchemaSpec = {
+      defaultNamespace: this.defaultNamespace(),
+      types
+
     }
     return spec
   }

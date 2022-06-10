@@ -2,7 +2,7 @@ import type { Schema } from './schema.js'
 import { SC } from './symbols.js'
 
 export class SchemaMember {
-  [SC]: Schema
+  [SC]!: Schema
   constructor (schema: Schema) {
     Object.defineProperty(this, SC, {
       enumerable: false,
