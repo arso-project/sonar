@@ -25,6 +25,7 @@
     "@types/streamx": "^2.9.1",
     "base32-encode": "^1.1.1",
     "debug": "^4.1.1",
+    "events": "^3.3.0",
     "eventsource": "github:Frando/eventsource",
     "is-buffer": "^2.0.5",
     "isomorphic-fetch": "^2.2.1",
