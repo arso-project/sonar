@@ -1,8 +1,8 @@
 import React from 'react'
-import { useCollection } from '@arsonar/react'
+import { useCollectionState } from '@arsonar/react'
 
 export function CollectionName (props) {
-  const { collection, pending, error } = useCollection({ state: true })
+  const { collection, pending, error } = useCollectionState()
   if (pending) return <em>Loading</em>
   if (error) return <em>Error</em>
   if (!collection) return null

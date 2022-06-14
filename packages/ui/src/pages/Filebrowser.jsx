@@ -7,6 +7,7 @@ import styled from '@emotion/styled'
 import { useCollection } from '@arsonar/react'
 
 export default function Filebrowser (props) {
+  return 'unimplemented'
   const [path, setPath] = useState('')
   const [files, setFiles] = useState([])
   const collection = useCollection()
