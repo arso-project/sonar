@@ -278,7 +278,7 @@ function RecordVersionSelector (props) {
   const collection = useCollection()
   const { record, selected, onSelect } = props
   const isSelected = val => (selected === val ? 'selected' : '')
-  const latest = record.versions().length
+  const latest = record.allVersions().length
   return (
     <div className='RecordVersionSelector'>
       Loaded: &nbsp;{record.allVersions().length}&nbsp;
@@ -287,7 +287,7 @@ function RecordVersionSelector (props) {
         latest
       </a>
       Latest versions:
-      {record.versions().map((version, i) => (
+      {record.currentVersions().map((version, i) => (
         <a
           key={version.address}
           onClick={e => {
@@ -369,7 +369,7 @@ function EditRecord (props = {}) {
   React.useEffect(() => {
     if (!current) return setFormState({})
     const state = current.fields().reduce((state, field) => {
-      state[field.name] = fieldValueToString(field, field.value)
+      state[field.field.name] = fieldValueToString(field.field, field.value)
       return state
     }, {})
     setSubmitState({})
@@ -379,7 +379,7 @@ function EditRecord (props = {}) {
   const create = !current
   let fields, type
   if (current) {
-    fields = current.fields()
+    fields = current.fields().map(f => f.field)
     type = current.getType()
     for (const field of type.fields()) {
       if (!fields.find(f => f.address === field.address)) fields.push(field)
