@@ -87,13 +87,15 @@ function searchView (level, _scope, opts) {
       for (const fieldValue of recordVersion.fields()) {
         body += ' ' + objectToString(fieldValue.value)
       }
-      docs.textdump.push({
-        title,
-        body,
-        source: recordVersion.key,
-        seq: recordVersion.seq,
-        type: recordVersion.type
-      })
+      if (title || body) {
+        docs.textdump.push({
+          title,
+          body,
+          source: recordVersion.key,
+          seq: recordVersion.seq,
+          type: recordVersion.type
+        })
+      }
     }
 
     // TODO: Update for schema API.
