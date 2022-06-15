@@ -25,6 +25,16 @@ tape('simple files test', async (t) => {
 
   await cleanup()
 })
+
+tape('create with metadata', async t => {
+  const { cleanup, client } = await createOne()
+  const col = await client.createCollection('first',)
+  let fileRecord = await col.files.createFile('foo', { filename: 'hello.txt', contentType: 'text/plain' })
+  t.equal(fileRecord.value.filename, 'hello.txt')
+  fileRecord = await col.files.getFileMetadata(fileRecord.id)
+  t.equal(fileRecord.value.filename, 'hello.txt')
+  await cleanup()
+})
 tape('error on empty file write', async (t) => {
   const { cleanup, client } = await createOne()
   const col = await client.createCollection('first')
