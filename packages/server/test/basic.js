@@ -1,4 +1,4 @@
-const fetch = require('isomorphic-fetch')
+const { fetch } = require('fetch-undici')
 const { createOne } = require('./lib/create')
 const tape = require('tape')
 

@@ -82,12 +82,13 @@ export class Files {
      * @throws Will throw if the path is not found.
      * @return {Promise<ArrayBuffer|Buffer>} The file content. A Buffer object in Node.js, a ArrayBuffer object in the browser.
      */
+  async readFile (id: string): Promise<Readable<Uint8Array>>;
+  async readFile (id: string, opts?: RangeOpts & FetchOpts & { responseType: undefined }): Promise<Readable<Uint8Array>>;
   async readFile (id: string, opts?: RangeOpts & FetchOpts & { responseType: 'text' }): Promise<string>;
-  async readFile (id: string, opts?: RangeOpts & FetchOpts & { responseType: 'buffer' }): Promise<Buffer|ArrayBuffer>;
+  async readFile (id: string, opts?: RangeOpts & FetchOpts & { responseType: 'buffer' }): Promise<Uint8Array>;
   async readFile (id: string, opts?: RangeOpts & FetchOpts & { responseType: 'stream' }): Promise<ReadableStream<Uint8Array>>;
   async readFile (id: string, opts?: RangeOpts & FetchOpts & { responseType: 'raw' }): Promise<Response>;
-  async readFile (id: string, opts?: RangeOpts & FetchOpts): Promise<any>;
-  async readFile (id: string, opts?: RangeOpts & FetchOpts): Promise<ArrayBuffer|Buffer|string|ReadableStream<Uint8Array>|Response> {
+  async readFile (id: string, opts?: RangeOpts & FetchOpts): Promise<ArrayBuffer|string|ReadableStream<Uint8Array>|Readable<Uint8Array>|Response> {
     opts = opts || {}
     opts.responseType = opts.responseType || 'stream'
     if (!opts.headers) { opts.headers = {} }

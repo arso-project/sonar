@@ -1,4 +1,5 @@
-import fetch from 'isomorphic-fetch'
+// @ts-ignore
+import { fetch } from 'fetch-undici'
 import Debug from 'debug'
 import isBuffer from 'is-buffer'
 import type { Readable as StreamXReadable } from 'streamx'
@@ -93,11 +94,7 @@ export default async function makeFetch (url: string, opts: FetchOpts): Promise<
       return res.body
     }
     if (opts.responseType === 'buffer') {
-      // nodejs only: res.buffer() returns a Buffer instance.
-      // @ts-expect-error
-      if (res.buffer) { return await res.buffer() }
-      // browser: Fetch API res.arrayBuffer returns ArrayBuffer.
-      else { return await res.arrayBuffer() }
+      return await res.arrayBuffer()
     }
     if (isJsonResponse(res)) {
       return await res.json()

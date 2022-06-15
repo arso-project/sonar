@@ -1,5 +1,5 @@
 const { createHash } = require('crypto')
-const fetch = require('isomorphic-fetch')
+const fetch = require('fetch-undici')
 const p = require('path')
 const { run, readYaml } = require('../run')
 

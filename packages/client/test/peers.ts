@@ -2,7 +2,7 @@ import { Collection } from '..'
 import tape from 'tape'
 import { createMany } from './lib/create.js'
 
-tape.only('peer events', async t => {
+tape('peer events', async t => {
   const { cleanup, clients } = await createMany(3)
   const [client1, client2, client3] = clients
   const collection1 = await client1.createCollection('first')

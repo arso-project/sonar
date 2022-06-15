@@ -1,13 +1,28 @@
 import type { Collection, FileBody } from '..'
 import tape from 'tape'
 import { createOne, createMany } from './lib/create.js'
+
 tape('simple files test', async (t) => {
   const { cleanup, client } = await createOne()
   const col = await client.createCollection('first')
-  await col.files.createFile('foo')
-  await col.files.createFile('bar')
-  const res = await readFiles(col)
-  t.deepEqual(res.sort(), ['bar', 'foo'])
+  const fileRecord = await col.files.createFile('foo')
+
+  // read as stream (default)
+  {
+    const fileStream = await col.files.readFile(fileRecord.id)
+    for await (const chunk of fileStream) {
+      t.deepEqual(chunk, new TextEncoder().encode('foo'))
+    }
+  }
+
+  // read as text
+  const text = await col.files.readFile(fileRecord.id, { responseType: 'text' })
+  t.equal(text, 'foo')
+
+  // read as buffer (Uint8Array)
+  const buffer = await col.files.readFile(fileRecord.id, { responseType: 'buffer' })
+  t.equal(new TextDecoder().decode(buffer), 'foo')
+
   await cleanup()
 })
 tape('error on empty file write', async (t) => {
@@ -28,7 +43,7 @@ tape('minimal file replication', async (t) => {
   const record1 = await collection1.files.createFile('hi', { filename: 'test.txt' })
   const collection2 = await client2.createCollection(collection1.key as string)
   const content = await collection2.files.readFile(record1.id, { responseType: 'buffer' })
-  t.equal('hi', content.toString('utf8'))
+  t.equal('hi', new TextDecoder().decode(content))
   await cleanup()
 })
 tape('replicate files', { timeout: 5000 }, async (t) => {
