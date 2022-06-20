@@ -1,6 +1,6 @@
 {
   "name": "@arsonar/react",
-  "version": "0.6.0-alpha.5",
+  "version": "0.6.0-alpha.6",
   "description": "A arsonar module",
   "main": "dist/cjs",
   "module": "dist/esm",
@@ -12,7 +12,7 @@
     "buildts:cjs": "tsc -p tsconfig-cjs.json"
   },
   "dependencies": {
-    "@arsonar/client": "^0.6.0-alpha.5",
+    "@arsonar/client": "^0.6.0-alpha.6",
     "@types/react": "^17",
     "@types/react-dom": "^17"
   },

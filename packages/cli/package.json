@@ -1,6 +1,6 @@
 {
   "name": "@arsonar/cli",
-  "version": "0.6.0-alpha.5",
+  "version": "0.6.0-alpha.6",
   "description": "",
   "main": "cli.js",
   "scripts": {
@@ -10,7 +10,7 @@
   "author": "",
   "license": "GPL-3.0",
   "dependencies": {
-    "@arsonar/client": "^0.6.0-alpha.5",
+    "@arsonar/client": "^0.6.0-alpha.6",
     "ansi-styles": "^4.2.1",
     "chalk": "^4.0.0",
     "date-fns": "^2.11.1",
