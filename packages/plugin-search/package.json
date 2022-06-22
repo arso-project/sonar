@@ -7,7 +7,7 @@
     "test": "tape test/*.js"
   },
   "dependencies": {
-    "@arso-project/sonar-tantivy": "^0.2.14",
+    "@arso-project/sonar-tantivy": "^0.3.1",
     "through2": "^4.0.2"
   },
   "devDependencies": {

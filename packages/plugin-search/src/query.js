@@ -54,12 +54,15 @@ function executeQuery (indexManager, query, indexName) {
 
 function transformResults () {
   const transform = through.obj(function (row, enc, next) {
+    const { doc, score, snippet } = row
+    const key = Array.isArray(doc.source) ? doc.source[0] : doc.source
+    const seq = Array.isArray(doc.seq) ? doc.seq[0] : doc.seq
     const record = {
-      key: row.doc.source && row.doc.source[0],
-      seq: row.doc.seq && row.doc.seq[0],
+      key,
+      seq,
       meta: {
-        snippet: row.snippet,
-        score: row.score
+        snippet,
+        score
       }
     }
     this.push(record)
