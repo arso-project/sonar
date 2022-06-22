@@ -4,6 +4,7 @@ import { promisify } from 'util'
 import streamCollector from 'stream-collector'
 import { Readable } from 'stream'
 import { createOne } from './lib/create.js'
+import { FieldSpecInput, TypeSpecInput } from '../src/index.js'
 const collect = promisify(streamCollector)
 tape('minimal open and put', async (t) => {
   const { client, cleanup } = await createOne({ network: false })
@@ -137,17 +138,15 @@ tape('files with strings', async (t) => {
 tape('files with buffers', async (t) => {
   const { client, cleanup } = await createOne({ network: false })
   const collection = await client.createCollection('test')
-  // with buffer
-  // const buf = Buffer.from(randomBytes(16))
   const buf = Buffer.from('hello')
   const record = await collection.files.createFile(buf)
   const result = await collection.files.readFile(record.id, { responseType: 'buffer' })
-  console.log({ record, result })
-  t.ok(Buffer.isBuffer(result), 'res is buffer')
-  t.equal(buf.toString('hex'), (result as Buffer).toString('hex'), 'buffer matches')
+  t.ok(result instanceof Uint8Array, 'res is buffer')
+  t.equal(buf.toString('hex'), Buffer.from(result).toString('hex'), 'buffer matches')
   await cleanup()
   t.ok(true, 'cleanup ok')
 })
+
 tape('files with streams', async (t) => {
   const { client, cleanup } = await createOne({ network: false })
   const collection = await client.createCollection('test')
@@ -159,7 +158,7 @@ tape('files with streams', async (t) => {
     rs.push(null)
   }, 50)
   const record = await collection.files.createFile(rs)
-  const result = await collection.files.readFile(record.id)
+  const result = Readable.from(await collection.files.readFile(record.id))
   const chunks = await collect(result)
   t.equal(Buffer.concat(chunks).toString(), 'foobar', 'result matches')
   await cleanup()
@@ -195,4 +194,29 @@ tape('subscribe to record', async (t) => {
   await notifyPromise
   await cleanup()
   t.ok(true, 'cleanup ok')
+})
+
+tape('multiple values', async t => {
+  const { client, cleanup } = await createOne({ network: false })
+  const collection = await client.createCollection('foobar')
+  const type: TypeSpecInput = {
+    name: 'test',
+    namespace: 'test',
+    fields: {
+      tags: {
+        type: 'string',
+        multiple: true
+      }
+    }
+  }
+  await collection.putType(type)
+  const created = await collection.put({
+    type: 'test/test',
+    value: {
+      tags: ['foo', 'bar']
+    }
+  })
+  const fetched = (await collection.get({ id: created.id }))[0]
+  t.deepEqual(fetched.value.tags, ['foo', 'bar'])
+  await cleanup()
 })

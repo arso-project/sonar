@@ -374,7 +374,7 @@ export class Collection extends EventEmitter {
      *
      * @return {Readable<object>}
      */
-  createEventStream() {
+  createEventStream(): Readable<any> {
     if (!this._eventStream) {
       this._initEventSource()
     }

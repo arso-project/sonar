@@ -95,7 +95,7 @@ async function readFiles (collection: Collection) {
   const contents = await Promise.all(records.map(record => {
     return collection.files
       .readFile(record.id, { responseType: 'buffer' })
-      .then(c => c.toString())
+      .then(buf => new TextDecoder().decode(buf))
   }))
   return contents
 }

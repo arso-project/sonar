@@ -4,9 +4,21 @@ import type { Schema } from './schema.js'
 import { SchemaMember } from './base.js'
 import { JSONSchema4, JSONSchema4TypeName, JSONSchema4Type } from 'json-schema'
 
+export type FieldDataType = 
+    | 'string' //
+    | 'number'
+    | 'integer'
+    | 'boolean'
+    | 'object'
+    | 'array'
+    | 'null'
+    | 'any'
+    | 'relation'
+
 export interface FieldSpecInput {
   name?: string
-  type: JSONSchema4TypeName | 'relation'
+  // type: JSONSchema4TypeName | 'relation'
+  type: FieldDataType,
   multiple?: boolean
   refines?: string
   fieldType?: string

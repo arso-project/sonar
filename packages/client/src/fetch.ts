@@ -94,7 +94,8 @@ export default async function makeFetch (url: string, opts: FetchOpts): Promise<
       return res.body
     }
     if (opts.responseType === 'buffer') {
-      return await res.arrayBuffer()
+      const buf = await res.arrayBuffer()
+      return new Uint8Array(buf)
     }
     if (isJsonResponse(res)) {
       return await res.json()
