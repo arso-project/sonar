@@ -57,10 +57,11 @@ const config = {
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
     ({
       navbar: {
-        title: 'Sonar',
+        // title: 'Sonar',
         logo: {
           alt: 'Sonar logo',
-          src: 'img/logo.svg',
+          src: 'img/sonar.png',
+          srcDark: 'img/sonar.dark.png',
         },
         items: [
           {
