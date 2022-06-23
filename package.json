@@ -26,7 +26,6 @@
     "precommit": "prettier-standard --staged"
   },
   "workspaces": [
-    "*",
     "bots/**",
     "packages/**",
     "examples/**"
