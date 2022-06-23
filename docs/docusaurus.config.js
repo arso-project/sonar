@@ -9,7 +9,7 @@ const config = {
   title: 'Sonar',
   tagline: 'A peer to peer database and search engine',
   url: 'https://sonar-docs.netlify.app',
-  baseUrl: '/docs/',
+  baseUrl: '/',
   onBrokenLinks: 'throw',
   onBrokenMarkdownLinks: 'warn',
   favicon: 'img/favicon.ico',
