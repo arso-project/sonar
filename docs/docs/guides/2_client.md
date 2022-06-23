@@ -1,6 +1,6 @@
 ---
 id: api-client
-title: Client
+title: Client and Workspaces
 ---
 ## Intro
 
@@ -15,11 +15,11 @@ Add the client to your project:
 npm install @arso-project/sonar-client
 ```
 
-Then, you can import the client and start using it.
+Then, you can import the workspace class from the client and start using it. By default, it will talk to a Sonar server running on `http://localhost:9191`.
 
 ```javascript
-const Client = require('@arso-project/sonar-client')
-const client = new Client(opts)
+const { Workspace } = require('@arsonar/client')
+const client = new Workspace()
 ```
 
 ### API
@@ -29,8 +29,8 @@ const client = new Client(opts)
 *This is a draft page for the revised client API. It is not yet complete*.
 
 ```javascript
-const collection = await client.createCollection(name, opts)
-const collection = await client.collection(keyOrName)
+const collection = await workspace.createCollection(name, opts)
+const collection = await workspace.openCollection(keyOrName)
 await client.listCollections
 
 collection.key

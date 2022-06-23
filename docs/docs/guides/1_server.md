@@ -22,3 +22,15 @@ The built-in CLI commands are documented:
 sonar help
 ```
 
+When including the Sonar server within a Node.js application, you can also start it programmatically.
+
+```javascript
+const Server = require('@arsonar/server/server.js')
+const opts = {
+  port: 9191,
+  hostname: 'localhost',
+  storage: './data',
+}
+const server = new Server(opts)
+await server.start()
+```
