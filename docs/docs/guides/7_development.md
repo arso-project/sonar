@@ -1,17 +1,8 @@
 ---
-title: Run a Server
-id: runServer
+title: Development
+id: development
+sidebar_position: 20
 ---
-
-The usual setup is that you run sonar-server on localhost and then interact with Sonar through the client, the UI running on http://localhost:9191 or the CLI. The CLI can be invoked with ./sonar from the root of this repository, and is also used to start the server.
-
-## Installation
-
-```bash
-npm install -g @arsonar/server
-sonar help
-sonar start
-```
 
 ## Development
 

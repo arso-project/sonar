@@ -70,7 +70,7 @@ const config = {
             label: 'Docs',
           },
           {
-            href: '/apidocs-client/',
+            href: '/apidocs-client/modules.html',
             label: 'Client API docs',
             target: '_blank',
             position: 'left'
