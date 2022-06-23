@@ -1,5 +1,5 @@
 [build]
   base = "docs/"
-  publish = "docs/build/"
-  command = "cd docs && yarn && yarn build"
+  publish = "build/"
+  command = "yarn && yarn build"
 
