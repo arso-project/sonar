@@ -28,9 +28,6 @@ When getting Sonar records from the database, they are upcasted into `Record` ob
 * `record.fields()`: Get a list of `FieldValue`s for this record
 * `record.getOne(field)`: Get a single value for a field
 * `record.getMany(field)`: Get all current values for a field
-* `record.goto(field)`: Follow a relation field
-
-> TODO: support `schema.map(record, targetSchema)`: Map a record onto a target schema. Returns an array of fields
 
 
 ## Defining schema
