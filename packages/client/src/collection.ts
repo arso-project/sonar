@@ -167,6 +167,9 @@ export class Collection extends EventEmitter {
     })
   }
 
+  /**
+     *  @deprecated
+     */
   async addFeed(key: string, info = {}) {
     return await this.putFeed(key, info)
   }
