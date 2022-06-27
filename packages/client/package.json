@@ -7,7 +7,7 @@
   "scripts": {
     "test": "tape dist/cjs/test/*.js",
     "doc": "run-p doc:*",
-    "doc:html": "typedoc --excludePrivate --out docs --logLevel Verbose index.ts",
+    "doc:html": "typedoc --out docs index.ts",
     "prepublishOnly": "npm run build",
     "build": "rm -fr dist/* && run-s buildts:* && ./fix-ts-build",
     "buildts:esm": "tsc -p tsconfig.json",
@@ -43,7 +43,7 @@
     "tape": "^5.0",
     "tape-plus": "^1.0.0",
     "temporary-directory": "^1.0.2",
-    "typedoc": "^0.23.0-beta.1"
+    "typedoc": "^0.23.1"
   },
   "publishConfig": {
     "access": "public"

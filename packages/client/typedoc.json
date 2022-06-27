@@ -1,0 +1,5 @@
+{
+  "excludePrivate": true,
+  "blockTags": ["@returns", "@deprecated"],
+  "logLevel": "Verbose"
+}

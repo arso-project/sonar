@@ -168,8 +168,10 @@ export class Collection extends EventEmitter {
   }
 
   /**
-     *  @deprecated
-     */
+   * Put a new feed to the collection.
+   *
+   * @deprecated replaced with putFeed.
+   */
   async addFeed(key: string, info = {}) {
     return await this.putFeed(key, info)
   }

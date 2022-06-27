@@ -78,7 +78,7 @@ tape('replicate files', { timeout: 5000 }, async (t) => {
   t.deepEqual(contents1.sort(), ['onfirst'], 'collection 1 ok')
   let contents2 = await readFiles(collection2)
   t.deepEqual(contents2.sort(), ['onfirst', 'onsecond'], 'collection 2 ok')
-  await collection1.addFeed(collection2.info!.localKey, { alias: 'seconda' })
+  await collection1.putFeed(collection2.info!.localKey, { alias: 'seconda' })
   await collection1.sync()
   try {
     contents1 = await readFiles(collection1)
