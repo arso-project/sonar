@@ -12,9 +12,22 @@ The **[Docs website](https://sonar.dev.arso.xyz)** has more documentation (WIP).
 
 ## Installation
 
+Sonar requires Node.js version 16 or higher. If your system ships an older version, you can use a tool like [NVM](https://github.com/nvm-sh/nvm) to install an up-to-date version. On Debian-based system, you can also try the Node.js distributions from [Nodesource](https://github.com/nvm-sh/nvm).
+
+You can check your Node.js version by running `node --version` on a command-line.
+
+Afterwards, install Sonar with the following command:
 ```sh
 npm install -g @arsonar/server
+```
+
+You  can then run the `sonar` command-line interface. With this, you can both start the server and interact with it from the command-line.
+```sh
+# show help
 sonar help
+# show help for specific commands
+sonar help collection
+# start a server
 sonar start
 ```
 

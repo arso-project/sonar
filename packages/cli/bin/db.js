@@ -96,6 +96,7 @@ async function get (argv) {
 
 async function put (argv) {
   const client = makeClient(argv)
+  const collection = await client.openCollection(argv.collection)
   let { type, id, data } = argv
   if (!data) {
     data = await collectJson(process.stdin)
@@ -103,21 +104,22 @@ async function put (argv) {
     data = JSON.parse(data)
   }
   const record = { type, id, value: data }
-  const result = await client.put(record)
+  const result = await collection.put(record)
   console.log(result.id)
 }
 
 async function query (argv) {
   const client = makeClient(argv)
+  const collection = await client.openCollection(argv.collection)
   let { name, args } = argv
   if (args) args = JSON.parse(args)
-  const results = await client.query(name, args)
+  const results = await collection.query(name, args)
   console.log(results)
 }
 
 async function putType (argv) {
   const client = makeClient(argv)
-  const collection = await client.focusedCollection()
+  const collection = await client.openCollection(argv.collection)
   const value = await collectJson(process.stdin)
   const result = await collection.putType(value)
   console.log(result)
@@ -125,14 +127,16 @@ async function putType (argv) {
 
 async function getType (argv) {
   const client = makeClient(argv)
+  const collection = await client.openCollection(argv.collection)
   const { name } = argv
-  const result = await client.getType(name)
+  const result = await collection.getType(name)
   console.log(JSON.stringify(result))
 }
 
 async function listTypes (argv) {
   const client = makeClient(argv)
-  const types = await client.getTypes()
+  const collection = await client.openCollection(argv.collection)
+  const types = await collection.schema.getTypes()
   if (!types) return console.error('No types')
   console.log(Object.keys(types).join('\n'))
 }

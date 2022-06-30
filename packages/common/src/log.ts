@@ -144,7 +144,14 @@ export function createLogger (opts?: LoggerOptions): Logger {
       write: browserWrite
     }
   }
-  if (!getEnv().SONAR_LOG_JSON) { defaultOpts.prettyPrint = {} }
+  if (!getEnv().SONAR_LOG_JSON) {
+    defaultOpts.transport = {
+      target: 'pino-pretty',
+      options: {
+          ignore:'req.headers,res',
+      }
+    }
+  }
   const logger = pino({
     ...defaultOpts,
     ...opts

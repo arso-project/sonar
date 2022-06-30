@@ -27,8 +27,9 @@ exports.builder = {
 
 async function search (argv) {
   const client = makeClient(argv)
+  const collection = await client.openCollection(argv.collection)
   const query = argv.query
-  const results = await client.search(query)
+  const results = await collection.query('search', query)
   if (argv.json) {
     console.log(JSON.stringify(results, 0, 2))
   } else {
@@ -43,7 +44,7 @@ function formatResults (results, opts) {
   if (!opts.full) {
     const rows = results.map(r => {
       return [
-        r.meta.score || 0,
+        r.meta?.score || 0,
         formatType(r),
         r.id,
         chalk.bold.yellow(r.getOne('title') || r.getOne('sonar/entity#label'))
