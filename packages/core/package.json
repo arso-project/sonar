@@ -1,6 +1,6 @@
 {
   "name": "@arsonar/core",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "description": "",
   "main": "index.js",
   "scripts": {
@@ -13,9 +13,9 @@
   "author": "arso team <hi@arso.xyz>",
   "license": "GPL-3.0",
   "dependencies": {
-    "@arsonar/common": "^0.6.0",
-    "@arsonar/plugin-relations": "^0.6.0",
-    "@arsonar/plugin-search": "^0.6.0",
+    "@arsonar/common": "^0.6.1",
+    "@arsonar/plugin-relations": "^0.6.1",
+    "@arsonar/plugin-search": "^0.6.1",
     "@frando/level-live": "^1.1.0",
     "base32": "^0.0.6",
     "charwise": "^3.0.1",
