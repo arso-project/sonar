@@ -23,7 +23,7 @@
     "dat-encoding": "^5.0.1",
     "debug": "^4.1.1",
     "fast-bitfield": "^1.2.2",
-    "hyper-sdk": "github:datproject/sdk#v3.0.3",
+    "hyper-sdk": "github:RangerMauve/hyper-sdk#v3.0.9",
     "hyperblobs": "^1.1.2",
     "hypercore-crypto": "^2.1.1",
     "inspect-custom-symbol": "^1.1.1",
