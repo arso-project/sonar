@@ -90,7 +90,6 @@ Run `./sonar help` for a list of supported commands.
 Sonar is a young open source project and all kinds of contributions are welcome. We're in the process of writing up more documentation and overviews of how things work and come together (in a [book](https://github.com/arso-project/sonar-book)).
 
 If in doubt, talk to us! For example on IRC in #dat on freenode (or in the browser through [gitter](https://gitter.im/datproject/discussions).
-
 More on this project on [arso.xyz](https://arso.xyz).
 
 ## Repo layout
@@ -106,3 +105,9 @@ The repo is structured as a monorepo of different packages (that are interdepend
 - **[ui](packages/ui/README.md)** is a single-page application to browse data in Sonar.
 
 - **[cli](packages/cli/README.md)** is a command-line application. It can manage collections, put and get into the database, upload and download files, and make search queries.
+
+## Support
+
+This project was kindly supported by [NLNet](https://nlnet.nl) in the Next Generation Search & Discovery program.
+
+![logo](https://nlnet.nl/image/logo_nlnet.svg)
