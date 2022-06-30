@@ -146,9 +146,9 @@ export function createLogger (opts?: LoggerOptions): Logger {
   }
   if (!getEnv().SONAR_LOG_JSON) {
     defaultOpts.transport = {
-      target: 'pino-pretty',
+      target: require.resolve('@arsonar/common/pino-pretty-transport.js'),
       options: {
-          ignore:'req.headers,res',
+        ignore:'req.headers,res',
       }
     }
   }
