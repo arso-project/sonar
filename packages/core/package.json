@@ -3,6 +3,10 @@
   "version": "0.6.1",
   "description": "",
   "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/arso-project/sonar.git"
+  },
   "scripts": {
     "test": "tape test/*.js",
     "build": "npm run build:protobuf && npm run build:types",

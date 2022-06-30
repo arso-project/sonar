@@ -4,6 +4,10 @@
   "description": "Client for sonar",
   "main": "dist/cjs",
   "module": "dist/esm",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/arso-project/sonar.git"
+  },
   "scripts": {
     "test": "tape dist/cjs/test/*.js",
     "doc": "run-p doc:*",

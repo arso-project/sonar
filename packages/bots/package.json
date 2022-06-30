@@ -3,6 +3,10 @@
   "version": "0.6.1",
   "main": "index.js",
   "license": "GPL-3.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/arso-project/sonar.git"
+  },
   "dependencies": {
     "@arsonar/client": "^0.6.1",
     "js-yaml": "^3.14.0",

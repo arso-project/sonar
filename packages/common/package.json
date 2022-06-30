@@ -3,7 +3,11 @@
   "version": "0.6.1",
   "main": "dist/cjs",
   "module": "dist/esm",
-  "description": "",
+  "description": "Common libraries for Sonar",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/arso-project/sonar.git"
+  },
   "scripts": {
     "test": "tape -r source-map-support/register dist/cjs/test/*.js",
     "build": "rm -fr dist/* && run-s build:* && ./fix-ts-build",

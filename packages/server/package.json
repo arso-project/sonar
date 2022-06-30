@@ -6,6 +6,10 @@
   "bin": {
     "sonar": "bin.js"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/arso-project/sonar.git"
+  },
   "scripts": {
     "start": "node bin.js server start",
     "dev:server": "DEBUG=* node bin.js server start",

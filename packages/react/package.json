@@ -4,6 +4,10 @@
   "description": "A arsonar module",
   "main": "dist/cjs",
   "module": "dist/esm",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/arso-project/sonar.git"
+  },
   "scripts": {
     "example": "cd ../../examples/react && yarn dev",
     "test": "tape test/*.js",

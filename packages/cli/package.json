@@ -9,6 +9,10 @@
   "keywords": [],
   "author": "",
   "license": "GPL-3.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/arso-project/sonar.git"
+  },
   "dependencies": {
     "@arsonar/client": "^0.6.1",
     "ansi-styles": "^4.2.1",
