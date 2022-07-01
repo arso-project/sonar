@@ -1,6 +1,6 @@
 {
   "name": "@arsonar/bots",
-  "version": "0.6.2",
+  "version": "0.6.3",
   "main": "index.js",
   "license": "GPL-3.0",
   "repository": {
@@ -8,7 +8,7 @@
     "url": "git+https://github.com/arso-project/sonar.git"
   },
   "dependencies": {
-    "@arsonar/client": "^0.6.2",
+    "@arsonar/client": "^0.6.3",
     "js-yaml": "^3.14.0",
     "little-process-box": "^0.2.3"
   },
