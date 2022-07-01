@@ -144,7 +144,6 @@ export function createLogger (opts?: LoggerOptions): Logger {
       write: browserWrite
     }
   }
-  console.log('b', isBrowser)
   if (!getEnv().SONAR_LOG_JSON && !isBrowser && typeof require === 'function') {
     defaultOpts.transport = {
       target: require.resolve('@arsonar/common/pino-pretty-transport.js'),
