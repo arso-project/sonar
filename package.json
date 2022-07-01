@@ -12,7 +12,7 @@
     "dev:client": "cd packages/client; yarn dev",
     "dev:example-react": "yarn example react",
     "example": "node scripts/example.js",
-    "build": "run-s build:*",
+    "build": "run-s build:common build:client build:react build:ui",
     "build:common": "cd packages/common; yarn run build",
     "build:client": "cd packages/client; yarn run build",
     "build:react": "cd packages/react; yarn run build",

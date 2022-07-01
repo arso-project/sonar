@@ -187,6 +187,7 @@ export function RecordDrawerByID (props) {
   const btnRef = React.useRef()
   const { id } = props
   const record = useRecord({ id })
+  console.log('useRecord res', id, record)
   if (!collection || !record) return null
   const records = [record]
   const types = collection.schema.getTypes()

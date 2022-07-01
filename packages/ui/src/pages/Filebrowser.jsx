@@ -7,15 +7,18 @@ import styled from '@emotion/styled'
 import { useCollection } from '@arsonar/react'
 
 export default function Filebrowser (props) {
-  return 'unimplemented'
   const [path, setPath] = useState('')
   const [files, setFiles] = useState([])
   const collection = useCollection()
 
-  useEffect(() => {
+  useEffect(async () => {
     if (!collection) return
     let mounted = true
-    collection.fs.readdir(path).then(files => mounted && setFiles(files))
+    try {
+      const files = await collection.query('records', { type: 'sonar/file' })
+      console.log('files', files)
+      if (mounted) setFiles(files)
+    } catch (err) {}
     return () => (mounted = false)
   }, [collection, path])
 
@@ -49,21 +52,16 @@ export default function Filebrowser (props) {
               <a
                 target='_blank'
                 rel='noopener noreferrer'
-                href={file.link}
+                href={collection.files.getURL(file.id, true)}
                 onClick={e => onFileClick(file, e)}
               >
-                {file.name}
+                {file.value.filename}
               </a>
             </span>
-            <span>{file.directory ? '–' : pretty(file.size)}</span>
-            {file.resource && (
-              <span>
-                <RecordDrawerByID id={file.resource} />
-              </span>
-            )}
-            {file.mtime && false && (
-              <span>{formatDistance(Date.now(), file.mtime)} ago</span>
-            )}
+            <span>{pretty(file.value.contentSize)}</span>
+            <span>
+              <RecordDrawerByID id={file.id} />
+            </span>
           </li>
         ))}
         {!files.length && (
@@ -105,7 +103,7 @@ export default function Filebrowser (props) {
 const Wrapper = styled.div`
   --color-border: ${props => props.theme.colors.border1};
   --color-link: ${props => props.theme.colors.main};
-  --color-bg-hover: ${props => props.theme.colors.bg2};
+  --color-bg-hover: ${props => props.theme.colors.border1};
   font-size: 1.5rem;
   width: 100%;
 `

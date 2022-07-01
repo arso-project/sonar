@@ -104,8 +104,12 @@ export class Files {
      * @param {string} id - A file ID
      * @return {Promise<string>} The file URL
      */
-  getURL (id: string): string {
-    return `${this.collection.endpoint}/file/${id}`
+  getURL (id: string, includeToken?: boolean): string {
+    let url = `${this.collection.endpoint}/file/${id}`
+    if (includeToken && this.collection.workspace.token) {
+      url += `?token=${this.collection.workspace.token}`
+    }
+    return url
   }
 
   /**

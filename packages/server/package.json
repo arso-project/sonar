@@ -24,6 +24,7 @@
     "@arsonar/cli": "^0.6.2",
     "@arsonar/common": "^0.6.2",
     "@arsonar/core": "^0.6.2",
+    "@arsonar/ui": "^0.6.2",
     "async-exit-hook": "^2.0.1",
     "body-parser": "^1.19.0",
     "collect-stream": "^1.2.1",

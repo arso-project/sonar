@@ -13,7 +13,7 @@ function getEnv () {
   else return {}
 }
 
-const isBrowser = (typeof process === 'undefined') || process.title === 'browser'
+const isBrowser = (typeof process === 'undefined') || process.title === 'browser' || process.arch === undefined
 function getLogLevel () {
   if (isBrowser) {
     return window.localStorage.getItem('LOG') || 'info'
@@ -144,7 +144,8 @@ export function createLogger (opts?: LoggerOptions): Logger {
       write: browserWrite
     }
   }
-  if (!getEnv().SONAR_LOG_JSON) {
+  console.log('b', isBrowser)
+  if (!getEnv().SONAR_LOG_JSON && !isBrowser && typeof require === 'function') {
     defaultOpts.transport = {
       target: require.resolve('@arsonar/common/pino-pretty-transport.js'),
       options: {
