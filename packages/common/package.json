@@ -1,6 +1,6 @@
 {
   "name": "@arsonar/common",
-  "version": "0.6.3",
+  "version": "0.6.4",
   "main": "dist/cjs",
   "module": "dist/esm",
   "description": "Common libraries for Sonar",
