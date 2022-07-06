@@ -214,8 +214,9 @@ module.exports = class Workspace extends Nanoresource {
     if (this._collections.has(keyOrName)) {
       return this._collections.get(keyOrName)
     }
-    if (opts.create && this._opening.has(keyOrName))
+    if (opts.create && this._opening.has(keyOrName)) {
       this._opening.delete(keyOrName)
+    }
 
     if (!this._opening.has(keyOrName)) {
       const promise = this._openCollection(keyOrName, opts)
@@ -231,12 +232,12 @@ module.exports = class Workspace extends Nanoresource {
   async _openCollection (keyOrName, opts = {}) {
     // Resolve basic info
     let { key, name } = resolveKeyOrName(keyOrName)
+    if (key && !name && opts.name) name = opts.name
+    const isLocalCreate = name && !key && opts.create
     if (!key) {
       key = await this._nameToKey(name)
     }
     const id = deriveId(discoveryKey(key))
-
-    const isLocalCreate = name && opts.create
 
     if (this._collections.has(id)) {
       return this._collections.get(id)
@@ -252,7 +253,7 @@ module.exports = class Workspace extends Nanoresource {
 
     let localKey = info.localKey
     if (!isLocalCreate && !localKey && info.writable !== false) {
-      localKey = await this._localNameToKey('local')
+      localKey = await this._localNameToKey(id, 'local')
     }
     if (!name && info.name) {
       name = info.name

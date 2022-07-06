@@ -56,7 +56,8 @@ async function create (argv) {
   const key = argv.key
   const alias = argv.alias
   const collection = await client.createCollection(name, { key, alias })
-  console.log(collection.info)
+  if (argv.json) console.log(JSON.stringify(collection.info))
+  else console.log(showCollection(collection.info))
 }
 
 async function addFeed (argv) {
@@ -72,33 +73,39 @@ async function info (argv) {
   const client = makeClient(argv)
   const collection = await client.openCollection(argv.collection)
   // const status = await collection.status()
-  console.log(JSON.stringify(collection.info))
+  if (argv.json) console.log(JSON.stringify(collection.info))
+  else console.log(showCollection(collection.info))
 }
 
 async function list (argv) {
   const client = makeClient(argv)
   const collections = await client.listCollections()
   const output = Object.values(collections)
-    .map(collection => {
-      return [
-        chalk.bold.blueBright(collection.name),
-        collection.key.toString('hex'),
-        'Shared:      ' + chalk.bold(collection.config.share ? 'Yes' : 'No'),
-        'Local key:   ' + chalk.bold(collection.localKey),
-        'Length:      ' + chalk.bold(collection.length),
-        'Feeds:',
-        '    ' + collection.feeds.map(feed => {
-          return '        ' + [
-            'Key: ' + feed.key,
-            'Type: ' + feed.type,
-            'Length: ' + feed.length,
-            'Size: ' + prettyBytes(feed.byteLength)
-          ].join('    ')
-        }).join('\n    ')
-      ].join('\n')
-    })
+    .map(collection => showCollection(collection))
     .join('\n\n')
   console.log(output)
+}
+
+function showCollection (info) {
+  return [
+    'Name:        ' + chalk.bold.blueBright(info.name),
+    'Primary key: ' + chalk.bold(info.key.toString('hex')),
+    'Shared:      ' + chalk.blue(info.config.share ? 'Yes' : 'No'),
+    'Local key:   ' + chalk.blue(info.localKey),
+    'Length:      ' + chalk.blue(info.length),
+    'Feeds:',
+    info.feeds.map(feed => {
+      return [
+        '        ' + 'Key: ' + feed.key,
+        '        ' + [
+          'Type: ' + chalk.blue(feed.type),
+          ' Length: ' + chalk.blue(feed.length),
+          ' Size: ' + chalk.blue(prettyBytes(feed.byteLength)),
+          ' Writable: ' + chalk.blue(feed.writable ? 'yes' : 'no')
+        ].join('')
+      ].join('\n')
+    }).join('\n')
+  ].join('\n')
 }
 
 async function debug (argv) {

@@ -13,8 +13,8 @@ module.exports = function createCollectionRoutes () {
   router.post(
     '/',
     AH(async (req, res, next) => {
-      const { name, key, alias } = req.body
-      const opts = { alias, name }
+      const { name, key } = req.body
+      const opts = { name }
       const collection = await req.workspace.createCollection(key || name, opts)
       await collection.open()
       return collection.status()
