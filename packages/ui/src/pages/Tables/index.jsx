@@ -192,6 +192,7 @@ function TypeSelect (props) {
 
   function onSelect (name) {
     const type = types.filter(s => s.name === name)[0]
+    console.log('onSelect', { name, type })
     onType(type)
   }
 }
@@ -202,12 +203,12 @@ function TypeMenu (props) {
   return (
     <Menu>
       <MenuButton as={Button} size='sm' rightIcon={<FaChevronDown />}>
-        {title}
+        {title} {value}
       </MenuButton>
       <MenuList>
-        <MenuOptionGroup type='radio' onChange={onChange} defaultValue={value}>
+        <MenuOptionGroup type='radio' value={value}>
           {items.map(item => (
-            <MenuItemOption key={item.key} value={item.key}>
+            <MenuItemOption key={item.key} value={item.key} onClick={_e => onChange(item.key)}>
               {item.value}
             </MenuItemOption>
           ))}
