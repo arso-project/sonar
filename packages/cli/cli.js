@@ -38,13 +38,22 @@ const args = yargs
       describe: 'api endpoint url',
       default: process.env.SONAR_ENDPOINT || DEFAULT_ENDPOINT
     },
+    storage: {
+      alias: 's',
+      describe: 'storage path',
+      default: process.env.SONAR_STORAGE
+    },
     collection: {
       alias: 'c',
       describe: 'collection key or name',
       default: process.env.SONAR_COLLECTION || DEFAULT_COLLECTION
     },
-    token: {
-      describe: 'access token'
+    // token: {
+    //   describe: 'access token'
+    // }
+    accessCode: {
+      alias: 'a',
+      describe: 'access code'
     }
   })
   .help()

@@ -131,7 +131,7 @@ export class Workspace extends EventEmitter {
   private async _login () {
     if (this._accessCode && !this._token) {
       const res = await this.fetch('/login', {
-        params: { code: this._accessCode },
+        body: { code: this._accessCode },
         method: 'POST',
         opening: true
       })

@@ -13,7 +13,11 @@ module.exports = function createAuthHandler (auth) {
     },
     login (req, res, next) {
       // TODO: What to return if auth is disabled?
-      const { code } = req.query
+      let code
+      try {
+        if (req.body && req.body.code) code = req.body.code
+        else if (req.query && req.query.code) code = req.query.code
+      } catch (_err) {}
       if (!code) return next(HttpError(403, 'Code is required'))
       auth.login(code, (err, token) => {
         if (err) return next(err)

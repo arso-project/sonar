@@ -21,4 +21,4 @@ class NodeWorkspace extends Workspace {
     super(opts)
   }
 }
-module.exports.Workspace = Workspace
+module.exports.Workspace = NodeWorkspace
