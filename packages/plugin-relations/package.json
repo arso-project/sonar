@@ -1,6 +1,6 @@
 {
   "name": "@arsonar/plugin-relations",
-  "version": "0.6.8",
+  "version": "0.6.9",
   "main": "plugin.js",
   "license": "MIT",
   "repository": {
@@ -14,7 +14,7 @@
     "quadstore": "^9"
   },
   "devDependencies": {
-    "@arsonar/core": "^0.6.8",
+    "@arsonar/core": "^0.6.9",
     "tape": "^5.0.1"
   },
   "publishConfig": {

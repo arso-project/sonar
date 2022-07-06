@@ -1,6 +1,6 @@
 {
   "name": "@arsonar/common",
-  "version": "0.6.4",
+  "version": "0.6.9",
   "main": "dist/cjs",
   "module": "dist/esm",
   "description": "Common libraries for Sonar",
@@ -18,11 +18,11 @@
   "author": "",
   "license": "GPL-3.0",
   "devDependencies": {
+    "@types/pino": "^6",
     "@types/tape": "^4.13.2",
     "source-map-support": "^0.5.21",
     "tape": "^5.0",
-    "text-table": "^0.2.0",
-    "@types/pino": "^6"
+    "text-table": "^0.2.0"
   },
   "dependencies": {
     "@types/json-schema": "^7.0.11",

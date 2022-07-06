@@ -1,6 +1,6 @@
 {
   "name": "@arsonar/client",
-  "version": "0.6.8",
+  "version": "0.6.9",
   "description": "Client for sonar",
   "main": "dist/cjs",
   "module": "dist/esm",
@@ -20,7 +20,7 @@
   "author": "arso contributors",
   "license": "GPL-3.0",
   "dependencies": {
-    "@arsonar/common": "^0.6.4",
+    "@arsonar/common": "^0.6.9",
     "@frando/eventsource": "^1.0.8",
     "@frando/randombytes": "^2.1.1",
     "@types/debug": "^4.1.7",
@@ -36,7 +36,7 @@
     "streamx": "^2.11.0"
   },
   "devDependencies": {
-    "@arsonar/server": "^0.6.8",
+    "@arsonar/server": "^0.6.9",
     "@hyperswarm/dht": "^3.6.5",
     "find-free-ports": "^2.0.3",
     "nanobench-utils": "^0.1.1",
