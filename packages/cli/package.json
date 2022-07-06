@@ -1,6 +1,6 @@
 {
   "name": "@arsonar/cli",
-  "version": "0.6.9",
+  "version": "0.6.10",
   "description": "",
   "main": "cli.js",
   "scripts": {
@@ -14,7 +14,7 @@
     "url": "git+https://github.com/arso-project/sonar.git"
   },
   "dependencies": {
-    "@arsonar/client": "^0.6.9",
+    "@arsonar/client": "^0.6.10",
     "ansi-styles": "^4.2.1",
     "chalk": "^4.0.0",
     "date-fns": "^2.11.1",
