@@ -1,5 +1,5 @@
 import { Logger } from '@arsonar/common'
-import type EventSource from 'eventsource'
+import type EventSource from '@frando/eventsource'
 import Debug from 'debug'
 import type { Workspace } from './workspace'
 import { FetchOpts } from './fetch'

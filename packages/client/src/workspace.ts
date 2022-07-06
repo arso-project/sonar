@@ -1,5 +1,5 @@
-import EventSource from 'eventsource'
-import type { EventSourceInitDict } from 'eventsource'
+import EventSource from '@frando/eventsource'
+import type { EventSourceInitDict } from '@frando/eventsource'
 import { EventEmitter } from 'events'
 import makeFetch, { FetchOpts } from './fetch.js'
 import { Collection } from './collection.js'
