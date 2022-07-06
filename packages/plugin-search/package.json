@@ -1,6 +1,6 @@
 {
   "name": "@arsonar/plugin-search",
-  "version": "0.6.7",
+  "version": "0.6.8",
   "main": "plugin.js",
   "license": "MIT",
   "repository": {
@@ -15,7 +15,7 @@
     "through2": "^4.0.2"
   },
   "devDependencies": {
-    "@arsonar/core": "^0.6.7",
+    "@arsonar/core": "^0.6.8",
     "tape": "^5.0.1"
   },
   "publishConfig": {
