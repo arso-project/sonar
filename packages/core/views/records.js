@@ -27,7 +27,7 @@ module.exports = function createRecordView (lvl, db, opts) {
 
     api: {
       query (req, opts = {}) {
-        if (!req) return this.view.all(opts)
+        if (!req) return query(lvl, includerange(['is']))
         if (req.path) {
           const [typens, typename, id] = req.path.split('/')
           req.type = typens + '/' + typename

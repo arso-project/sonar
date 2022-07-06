@@ -1,5 +1,5 @@
 const makeClient = require('../client')
-// const chalk = require('chalk')
+const chalk = require('chalk')
 // const pretty = require('pretty-bytes')
 const table = require('text-table')
 // const date = require('date-fns')
@@ -19,7 +19,7 @@ exports.builder = function (yargs) {
           alias: 't',
           describe: 'type'
         },
-        type: {
+        json: {
           alias: 'j',
           boolean: true,
           describe: 'output as json'
@@ -78,18 +78,20 @@ exports.builder = function (yargs) {
 
 async function get (argv) {
   const client = makeClient(argv)
+  const collection = await client.openCollection(argv.collection)
   const { id, type } = argv
-  const records = await client.get({ id, type })
+  const records = await collection.get({ id, type })
   if (argv.json) return console.log(JSON.stringify(records))
   const rows = []
   for (const record of records) {
     const type = record.getType()
-    rows.push(['id', record.id])
-    rows.push(['type', type.address])
+    rows.push([chalk.gray('id'), chalk.bold(chalk.blue(record.id))])
+    rows.push([chalk.gray('type'), chalk.gray(type.address)])
+    rows.push([chalk.gray('version'), chalk.gray(record.shortAddress)])
     for (const fieldValue of record.fields()) {
-      rows.push(['  ', fieldValue.field.name, JSON.stringify(fieldValue.value)])
+      rows.push([chalk.gray(fieldValue.field.name), JSON.stringify(fieldValue.value)])
     }
-    rows.push(['--', '--'])
+    rows.push(['-------', ''])
   }
   console.log(table(rows))
 }
