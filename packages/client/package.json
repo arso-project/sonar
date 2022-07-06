@@ -1,6 +1,6 @@
 {
   "name": "@arsonar/client",
-  "version": "0.6.10",
+  "version": "0.6.11",
   "description": "Client for sonar",
   "main": "dist/cjs",
   "module": "dist/esm",
@@ -36,7 +36,7 @@
     "streamx": "^2.11.0"
   },
   "devDependencies": {
-    "@arsonar/server": "^0.6.10",
+    "@arsonar/server": "^0.6.11",
     "@hyperswarm/dht": "^3.6.5",
     "find-free-ports": "^2.0.3",
     "nanobench-utils": "^0.1.1",

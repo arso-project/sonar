@@ -1,6 +1,6 @@
 {
   "name": "@arsonar/server",
-  "version": "0.6.10",
+  "version": "0.6.11",
   "description": "",
   "main": "server.js",
   "bin": {
@@ -20,11 +20,11 @@
   "author": "",
   "license": "GPL-3.0",
   "dependencies": {
-    "@arsonar/bots": "^0.6.10",
-    "@arsonar/cli": "^0.6.10",
+    "@arsonar/bots": "^0.6.11",
+    "@arsonar/cli": "^0.6.11",
     "@arsonar/common": "^0.6.9",
-    "@arsonar/core": "^0.6.10",
-    "@arsonar/ui": "^0.6.10",
+    "@arsonar/core": "^0.6.11",
+    "@arsonar/ui": "^0.6.11",
     "async-exit-hook": "^2.0.1",
     "body-parser": "^1.19.0",
     "collect-stream": "^1.2.1",
