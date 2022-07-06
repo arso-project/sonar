@@ -12,7 +12,6 @@ logs/
 .vscode
 
 # npm and yarn
-package-lock.json
 pnpm-lock.yaml
 pnpm-debug.log
 npm-debug.log*
