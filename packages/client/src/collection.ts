@@ -1,6 +1,6 @@
 import base32Encode from 'base32-encode'
 import type EventSource from '@frando/eventsource'
-import randomBytes from 'randombytes'
+import randomBytes from '@frando/randombytes'
 import Debug from 'debug'
 import { Readable, Writable, Transform } from 'streamx'
 import { EventEmitter } from 'events'

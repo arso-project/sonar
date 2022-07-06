@@ -10,7 +10,7 @@ const { Transform } = require('streamx')
 const {
   NanoresourcePromise: Nanoresource
 } = require('nanoresource-promise/emitter')
-const Kappa = require('kappa-core')
+const Kappa = require('@frnado/kappa-core')
 const Indexer = require('kappa-sparse-indexer')
 
 const { RecordVersion, Type, Schema } = require('@arsonar/common')
