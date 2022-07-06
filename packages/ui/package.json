@@ -1,6 +1,6 @@
 {
   "name": "@arsonar/ui",
-  "version": "0.6.4",
+  "version": "0.6.5",
   "description": "",
   "main": "bin.js",
   "browser": "dist/bundle.js",
@@ -17,7 +17,7 @@
     "prepublishOnly": "vite build"
   },
   "devDependencies": {
-    "@arsonar/react": "^0.6.4",
+    "@arsonar/react": "^0.6.5",
     "@chakra-ui/react": "^1.7.1",
     "@emotion/react": "^11",
     "@emotion/styled": "^11",
