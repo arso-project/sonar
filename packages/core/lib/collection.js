@@ -60,7 +60,7 @@ class PeerMap extends EventEmitter {
 
   add (peer, feed) {
     const remotePublicKey = peer.remotePublicKey.toString('hex')
-    this.log.debug('add peer', feed.key.toString('hex').slice(0, 8), remotePublicKey.slice(0, 9))
+    // this.log.debug('add peer', feed.key.toString('hex').slice(0, 8), remotePublicKey.slice(0, 9))
     const info = {
       remotePublicKey
     }
