@@ -37,11 +37,7 @@ module.exports = class VersionCache {
 
   async _getVersion (id, key, seq, getOpts = {}) {
     const feed = this.corestore.get({ key })
-    const rawVersion = await new Promise((resolve, reject) => {
-      feed.get(seq, getOpts, (err, version) =>
-        err ? reject(err) : resolve(version)
-      )
-    })
+    const rawVersion = await feed.get(seq, getOpts)
     const mappedVersion = this.map(rawVersion, {
       key: key.toString('hex'),
       seq

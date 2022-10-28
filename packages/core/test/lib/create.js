@@ -1,11 +1,14 @@
-const tmp = require('temporary-directory')
 const tmpPromise = require('tmp-promise')
-const { Workspace, LegacyWorkspace } = require('../..')
+const createTestnet = require('@hyperswarm/testnet')
+const createSDK = require('../../lib/sdk')
+const { Workspace } = require('../..')
 
-module.exports = Object.assign(createStore, {
+module.exports = {
   createOne,
-  createMany
-})
+  createMany,
+  createSDK,
+  createDHT
+}
 
 async function createOne (opts = {}) {
   let cleanupStorage
@@ -48,7 +51,7 @@ async function createMany (n, opts = {}) {
     workspaces.push(workspace)
     cleanups.push(cleanup)
   }
-  return { workspaces, cleanup }
+  return { workspaces, cleanup, bootstrap }
 
   async function cleanup () {
     await abortAfter(1000, 'Cleanup timeout', async () => {
@@ -76,66 +79,11 @@ async function abortAfter (ms, message, fn) {
 }
 
 async function createDHT () {
-  const bootstrapper = require('@hyperswarm/dht')({
-    bootstrap: false
-  })
-  bootstrapper.listen()
-  await new Promise(resolve => {
-    return bootstrapper.once('listening', resolve)
-  })
-  const bootstrapPort = bootstrapper.address().port
-  const bootstrapOpt = [`localhost:${bootstrapPort}}`]
-  return { bootstrap: bootstrapOpt, cleanup }
-
-  async function cleanup () {
-    await bootstrapper.destroy()
-  }
-}
-
-// TODO: Remove.
-function createStore (opts, cb) {
-  if (typeof opts === 'function') {
-    cb = opts
-    opts = {}
-  }
-  cb = maybepify(cb)
-  opts.swarmOpts = { bootstrap: false }
-  tmp('sonar-test', ondircreated)
-  function ondircreated (err, dir, cleanupTempdir) {
-    if (err) return cb(err)
-    const collections = new LegacyWorkspace(dir, opts)
-    collections.ready(err => {
-      if (err) return cb(err)
-      cb(null, collections, cleanup)
-    })
-    function cleanup (cb) {
-      cb = maybepify(cb)
-      collections.close(() => {
-        cleanupTempdir(err => {
-          cb(err)
-        })
-      })
-      return cb.promise
+  const testnet = await createTestnet(2)
+  return {
+    bootstrap: testnet.bootstrap,
+    async cleanup () {
+      await testnet.destroy()
     }
-  }
-  return cb.promise
-}
-
-function maybepify (cb) {
-  if (!cb) {
-    let pargs
-    const callback = (err, ...res) => {
-      if (err) return pargs.reject(err)
-      if (res.length === 1) pargs.resolve(res[0])
-      else pargs.resolve(res)
-    }
-    const promise = new Promise((resolve, reject) => {
-      pargs = { resolve, reject }
-    })
-    callback.promise = promise
-    return callback
-  } else {
-    cb.promise = undefined
-    return cb
   }
 }

@@ -1,4 +1,4 @@
-const DatSDK = require('hyper-sdk')
+// const DatSDK = require('hyper-sdk')
 // TODO: Think about using the hyperspace daemon :-)
 // const DatSDK = require('hyper-sdk/hyperspace')
 const RAF = require('random-access-file')
@@ -17,6 +17,7 @@ const {
 const { createLogger } = require('@arsonar/common')
 
 const Collection = require('./collection')
+const createSDK = require('./sdk')
 const LevelMap = require('./utils/level-map')
 const {
   defaultStoragePath,
@@ -58,11 +59,19 @@ module.exports = class Workspace extends Nanoresource {
   }
 
   get corestore () {
-    return this._sdk._corestore
+    return this._sdk.corestore
   }
 
   get network () {
-    return this._sdk._swarm
+    return this._sdk.swarm
+  }
+
+  get swarm () {
+    return this._sdk.swarm
+  }
+
+  get sdk () {
+    return this._sdk
   }
 
   get persist () {
@@ -84,9 +93,9 @@ module.exports = class Workspace extends Nanoresource {
       if (this._opts.persist === false) {
         sdkOpts.storage = RAM
       } else {
-        sdkOpts.storage = file => RAF(this.storagePath('cores/' + file))
+        sdkOpts.storage = file => new RAF(this.storagePath('cores/' + file))
       }
-      this._sdk = await DatSDK(sdkOpts)
+      this._sdk = await createSDK(sdkOpts)
       this._ownSDK = true
     } else {
       this._sdk = this._opts.sdk
@@ -129,23 +138,33 @@ module.exports = class Workspace extends Nanoresource {
   }
 
   async _close () {
+    this._closing = true
     if (!this.opened) await this.open()
     await new Promise(resolve => process.nextTick(resolve))
     const promises = this.collections().map(c => c.close())
     await Promise.all(promises)
     await this._workspaceInfo.close()
     await this._collectionInfo.close()
+    if (this._ownSDK) {
+      await this._sdk.swarm.destroy()
+      await this._sdk.corestore.close()
+    }
     try {
       await this._leveldb.close()
     } catch (err) {}
-    if (this._ownSDK) {
-      await this._sdk.close()
-    }
+    // if (this._ownSDK) {
+      // await this._sdk.close()
+    // }
     this._sdk = null
     // this._sdk = null
     // this._leveldb = null
     // this._collections = new Map()
     this.emit('close')
+    this._closed = true
+  }
+
+  get closing () {
+    return this._closing || this._closed
   }
 
   async status () {
@@ -200,7 +219,7 @@ module.exports = class Workspace extends Nanoresource {
   }
 
   async _nameToKey (keyOrName) {
-    const core = this.Hypercore(keyOrName)
+    const core = await this.Hypercore(keyOrName)
     await core.ready()
     return core.key
   }
@@ -322,15 +341,17 @@ module.exports = class Workspace extends Nanoresource {
     return subdb
   }
 
-  Hypercore (keyOrName, opts = {}) {
+  async Hypercore (keyOrName, opts = {}) {
+    if (this.closing) throw new Error('Workspace is closed or closing.')
     if (opts.announce === undefined) {
       opts.announce = false
     }
     if (opts.lookup === undefined) {
       opts.lookup = false
     }
-    const core = this._sdk.Hypercore(keyOrName, opts)
-    core.setMaxListeners(128)
+    await this.ready()
+    const core = await this._sdk.get(keyOrName, opts)
+    // core.setMaxListeners(128)
     return core
   }
 

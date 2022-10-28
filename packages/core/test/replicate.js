@@ -28,7 +28,8 @@ function doc (title, id) {
   return { type: 'doc', value: { title }, id }
 }
 
-tape('simple replication', { timeout: 5000 }, async t => {
+// TODO v10 test is very slow
+tape('simple replication', { timeout: 50000 }, async t => {
   const { workspaces, cleanup } = await createMany(2)
   const [workspace1, workspace2] = workspaces
 
@@ -64,6 +65,8 @@ tape('simple replication', { timeout: 5000 }, async t => {
   )
   const collection2localkey = collection2.localKey
   await collection.putFeed(collection2localkey, { alias: 'w2' })
+  // TODO v10: Remove timeout
+  await timeout(5000)
   await collection.sync()
   await collection2.put(doc('2rev1', id))
   // await waitForUpdate(collection)
@@ -100,4 +103,8 @@ function logCollection (collection, cb) {
 async function waitForUpdate (col) {
   await new Promise(resolve => col.once('update', resolve))
   await col.update()
+}
+
+function timeout (ms) {
+  return new Promise(resolve => setTimeout(resolve, ms))
 }
