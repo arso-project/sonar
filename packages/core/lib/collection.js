@@ -49,7 +49,7 @@ class PeerMap extends EventEmitter {
       const feeds = []
       for (const feed of peer.feeds) {
         feeds.push({
-          key: feed.feed.key.toString('hex'),
+          key: feed.key.toString('hex'),
           stats: feed.stats
         })
       }
@@ -58,29 +58,26 @@ class PeerMap extends EventEmitter {
     return list
   }
 
-  add (peer) {
-    const remotePublicKey = peer.stream.stream.remotePublicKey.toString('hex')
+  add (peer, feed) {
+    const remotePublicKey = peer.remotePublicKey.toString('hex')
+    // this.log.debug('add peer', feed.key.toString('hex').slice(0, 8), remotePublicKey.slice(0, 9))
     const info = {
-      remotePublicKey,
-      remoteAddress: peer.stream.stream.remoteAddress
+      remotePublicKey
     }
     if (!this.peers.has(remotePublicKey)) {
-      const feeds = [peer]
+      const feeds = new Set()
       this.peers.set(remotePublicKey, { info, feeds })
       this.emit('add', info)
-    } else {
-      const existing = this.peers.get(remotePublicKey)
-      existing.feeds = existing.feeds.filter(info => info.feed.key.toString('hex') !== peer.feed.key.toString('hex'))
-      existing.feeds.push(peer)
     }
+    this.peers.get(remotePublicKey).feeds.add(feed)
   }
 
-  remove (peer) {
-    const remotePublicKey = peer.stream.stream.remotePublicKey
+  remove (peer, feed) {
+    const remotePublicKey = peer.remotePublicKey
     if (!this.peers.has(remotePublicKey)) return
     const existing = this.peers.get(remotePublicKey)
-    existing.feeds = peer.feeds.filter(info => info.feed.key.toString('hex') !== peer.feed.key.toString('hex'))
-    if (!existing.feeds.length) {
+    existing.feeds.delete(feed)
+    if (!existing.feeds.size) {
       this.peers.delete(remotePublicKey)
       this.emit('remove', existing.info)
     }
@@ -310,14 +307,14 @@ class Collection extends Nanoresource {
   }
 
   async configure (configuration = {}, save = true) {
-    let promise
+    let discovery
     if (configuration.share !== false) {
-      promise = this._workspace.network.configure(this.discoveryKey, {
+      discovery = this._workspace.sdk.join(this.discoveryKey, {
         announce: true,
         lookup: true
       })
     } else {
-      promise = this._workspace.network.configure(this.discoveryKey, {
+      discovery = this._workspace.sdk.leave(this.discoveryKey, {
         announce: false,
         lookup: false
       })
@@ -575,6 +572,8 @@ class Collection extends Nanoresource {
     }
     const self = this
     cb = maybeCallback(cb)
+    // setTimeout(cb, 100)
+    // return cb.promise
 
     // const timeout = setTimeout(() => {
     //   cb(new Error('Sync timeout')
@@ -599,7 +598,6 @@ class Collection extends Nanoresource {
 
     function syncKappa () {
       self._kappa.ready(views, () => {
-        // clearTimeout(timeout)
         cb()
       })
     }
@@ -635,6 +633,7 @@ class Collection extends Nanoresource {
   status (cb) {
     const feeds = this.feeds().map(feed => feedStatus(this, feed))
     const kappa = this._kappa.getState()
+    // TODO v10: Port.
     const network = this._workspace.network.status(this.discoveryKey)
     const config = this.getConfig() || DEFAULT_CONFIG
     const status = {
@@ -648,7 +647,7 @@ class Collection extends Nanoresource {
       length: this.length,
       feeds,
       kappa,
-      network,
+      // network,
       config,
       peers: this._peers.list()
     }
@@ -888,9 +887,7 @@ class Collection extends Nanoresource {
     })
     // wait a tick
     await new Promise(resolve => process.nextTick(resolve))
-    await new Promise(resolve => {
-      this._indexer.close(resolve)
-    })
+    await this._indexer.close()
     this.emit('close')
     this._eventStream.destroy()
   }
@@ -898,7 +895,7 @@ class Collection extends Nanoresource {
   async _initFeed (keyOrName, info = {}, opts = {}) {
     // Open the feed if it's not yet opened
     // if (this._feeds.has(keyOrName)) return this._feeds.get(keyOrName)
-    const feed = this._workspace.Hypercore(keyOrName)
+    const feed = await this._workspace.Hypercore(keyOrName)
     if (!feed.opened) await feed.ready()
     const hkey = feed.key.toString('hex')
     // Recheck if feed is opened (if it was opened by name first)
@@ -915,12 +912,16 @@ class Collection extends Nanoresource {
     feed.on('remote-update', () => {
       this.emit('remote-update', feed)
     })
+    feed.on('peer-add', peer => {
+      // console.log('peer-open', keyOrName, peer)
+      this._peers.add(peer, feed)
+    })
     feed.on('peer-open', peer => {
       // console.log('peer-open', keyOrName, peer)
-      this._peers.add(peer)
+      this._peers.add(peer, feed)
     })
     feed.on('peer-remove', peer => {
-      this._peers.remove(peer)
+      this._peers.remove(peer, feed)
     })
 
     // If the feed is unknown add it to the local feed store.
@@ -956,13 +957,16 @@ class Collection extends Nanoresource {
 
     // Look for the feed in the swarm if added by myself
     if (!opts.origin || opts.origin === this.localKey.toString('hex')) {
-      const _networkPromise = this._workspace.network.configure(
-        feed.discoveryKey,
-        {
-          announce: true,
-          lookup: true
-        }
-      )
+      if (!this._workspace.closing) {
+        await this._workspace.sdk.join(feed.discoveryKey).flushed()
+      }
+      // const _networkPromise = this._workspace.network.configure(
+      //   feed.discoveryKey,
+      //   {
+      //     announce: true,
+      //     lookup: true
+      //   }
+      // )
     }
 
     this.emit('feed', feed, info)
@@ -1341,7 +1345,8 @@ function feedStatus (collection, feed) {
     type: info.type
   }
   if (feed.opened) {
-    status.downloadedVersions = feed.downloaded(0, feed.length)
+    // TODO: Port to v10
+    // status.downloadedVersions = feed.downloaded(0, feed.length)
     status.stats = feed.stats
   }
   return status

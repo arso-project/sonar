@@ -3,7 +3,8 @@ const {
 } = require('nanoresource-promise/emitter')
 const { promisify } = require('util')
 const mkdirp = promisify(require('mkdirp-classic'))
-const DatSDK = require('hyper-sdk')
+const createSDK = require('./sdk')
+// const DatSDK = require('hyper-sdk')
 const p = require('path')
 const RAF = require('random-access-file')
 const RAM = require('random-access-memory')
@@ -62,7 +63,7 @@ module.exports = class WorkspaceManager extends Nanoresource {
       } else {
         sdkOpts.storage = file => RAF(this.storagePath('cores/' + file))
       }
-      this.sdk = await DatSDK(sdkOpts)
+      this.sdk = await createSDK(sdkOpts)
       this.ownSDK = true
     } else {
       this.sdk = this.opts.sdk
